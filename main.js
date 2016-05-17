@@ -1,5 +1,9 @@
 import app from 'app';
 import BrowserWindow from 'browser-window';
+import openMarket from 'openMarket';
+
+
+openMarket.get('categories_list_all_use_case')
 
 
 // Keep a global reference of the window object, if you don't, the window will

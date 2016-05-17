@@ -3,7 +3,7 @@
  * */
 export default class CategoryRepository {
 
-    getAllCategories(){
+    findAllCategories({filters}){
         throw new Error('CategoryRepository#category must be implemented');
     }
 }
