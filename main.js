@@ -1,10 +1,11 @@
 import app from 'app';
 import BrowserWindow from 'browser-window';
-import openMarket from 'openMarket';
+import openMarket from './src/openMarket';
 
 
-console.log(openMarket.get('categories_list_all_use_case'));
-
+openMarket.get('categories_list_all_use_case')
+    .toObservable()
+    .subscribe(category => console.log(category));
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -20,9 +21,10 @@ app.on('ready', function () {
     mainWindow.loadURL('file://' + __dirname + '/view/index.html');
 
 // Open the DevTools.
-//mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     //mainWindow.webContents.send('online', clients);
+
 
 // Emitted when the window is closed.
     mainWindow.on('closed', function () {
