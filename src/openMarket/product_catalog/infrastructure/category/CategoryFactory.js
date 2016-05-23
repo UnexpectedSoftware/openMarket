@@ -1,5 +1,5 @@
 import ListAllCategories from '../../application/service/category/ListAllCategories';
-import LocalStorageCategoryRepository from '../../infrastructure/category/LocalStorageCategoryRepository';
+import LocalStorageCategoryRepository from './LocalStorageCategoryRepository';
 export default class CategoryFactory {
     
     static buildCategoryRepository(){
@@ -7,6 +7,6 @@ export default class CategoryFactory {
     }
     
     static buildListAllCategories(){
-        return new ListAllCategories({repository:CategoryFactory.buildCategoryRepository()});
+        return new ListAllCategories({repository: CategoryFactory.buildCategoryRepository()});
     }
 }

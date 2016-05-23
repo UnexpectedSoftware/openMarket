@@ -8,7 +8,7 @@ export default class UUIDGenerator extends IdGenerator{
     }
 
     generate(){
-        return new UUID.v4();
+        return UUID.v4();
     }
 
 }

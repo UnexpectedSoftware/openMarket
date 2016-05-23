@@ -1,6 +1,6 @@
 import CategoryFactory from './product_catalog/infrastructure/category/CategoryFactory';
 
-class openMarket {
+class OpenMarket {
 
     constructor(){
 
@@ -19,4 +19,4 @@ class openMarket {
 
 }
 
-export default new openMarket();
+export default new OpenMarket();
