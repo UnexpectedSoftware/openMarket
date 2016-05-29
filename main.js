@@ -4,8 +4,12 @@ import openMarket from './src/openMarket';
 
 
 openMarket.get('categories_list_all_use_case')
-    .toObservable()
+    .findAll()
     .subscribe(category => console.log(category));
+
+openMarket.get('products_list_all_use_case')
+    .findAll({limit:10, offset:0})
+    .subscribe(product => console.log(product));
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -21,7 +25,7 @@ app.on('ready', function () {
     mainWindow.loadURL('file://' + __dirname + '/view/index.html');
 
 // Open the DevTools.
-    mainWindow.webContents.openDevTools();
+    //mainWindow.webContents.openDevTools();
 
     //mainWindow.webContents.send('online', clients);
 

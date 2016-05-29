@@ -1,6 +1,18 @@
 export default class Product {
 
-    constructor({name,description,price,stock}){
+    constructor({identity,barcode,name,description,price,stock,imageUrl}){
+
+
+        /**
+         * @type {String}
+         * */
+        this.id = identity.generate();
+
+        /**
+         * @type {String}
+         * */
+        this.barcode = barcode;
+
         /**
          * @type {String}
          * */
@@ -20,6 +32,11 @@ export default class Product {
          * @type {number}
          * */
         this.stock = stock;
+
+        /**
+         * @type {String}
+         * */
+        this.imageUrl = imageUrl;
     }
 
 

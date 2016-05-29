@@ -4,7 +4,7 @@ export default class ListAllCategories {
         this.repository = repository;
     }
 
-    toObservable(){
+    findAll(){
         return this.repository.findAll();
     }
 }

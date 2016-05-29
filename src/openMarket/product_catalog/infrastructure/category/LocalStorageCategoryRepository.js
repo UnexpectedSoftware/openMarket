@@ -1,6 +1,5 @@
-import CategoryRepository from '../../domain/category/CategoryRepository';
-import Rx from 'rx';
-import RxLocalStorage from '../service/RxLocalStorage';
+import CategoryRepository from "../../domain/category/CategoryRepository";
+import RxLocalStorage from "../service/RxLocalStorage";
 
 const localStorageKey = 'categories';
 

@@ -1,7 +1,12 @@
 export default class Category{
 
-    constructor({name,imageUrl}){
+    constructor({identity,name,imageUrl}){
 
+        /**
+         * @type {String}
+         * */
+        this.id = identity.generate();
+        
         /**
          * @type {String}
          * */
