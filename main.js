@@ -1,11 +1,16 @@
 import app from 'app';
 import BrowserWindow from 'browser-window';
 import openMarket from './src/openMarket';
+import {ipcMain} from 'electron';
 
-
-openMarket.get('categories_list_all_use_case')
-    .findAll()
-    .subscribe(category => console.log(category));
+ipcMain.on('asynchronous-message', (event, arg) => {
+    console.log(arg);
+    openMarket.get(arg)
+        .findAll()
+        .subscribe(category => {
+            event.sender.send('asynchronous-reply',category);
+        });
+});
 
 openMarket.get('products_list_all_use_case')
     .findAll({limit:10, offset:0})
@@ -25,7 +30,7 @@ app.on('ready', function () {
     mainWindow.loadURL('file://' + __dirname + '/view/index.html');
 
 // Open the DevTools.
-    //mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     //mainWindow.webContents.send('online', clients);
 

@@ -3,8 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Hello WORLD!</title>
+    <script>
+        const {ipcRenderer} = require('electron');
+        ipcRenderer.on('asynchronous-reply', (event, arg) => {
+            console.log(arg);
+        });
+        ipcRenderer.send('asynchronous-message', 'categories_list_all_use_case');
+    </script>
 </head>
 <body>
-    <p>Blaaaa blaaa</p>
+    <p>Bienvenidos a SuperComprin!</p>
 </body>
+
 </html>
