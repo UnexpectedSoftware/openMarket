@@ -63,7 +63,7 @@ export default class FixturesService{
             })
         ]);
 
-        this.categoryRepository.save({category: categories }).subscribe();
+        this.categoryRepository.saveCollection({data: categories }).subscribe();
 
         const products = Array.from([
             this.productFactory.createWith({

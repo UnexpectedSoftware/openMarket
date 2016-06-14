@@ -16,6 +16,23 @@ openMarket.get('products_list_all_use_case')
     .findAll({limit:10, offset:0})
     .subscribe(product => console.log(product));
 
+openMarket.get('categories_create_use_case')
+    .createCategory({
+        name: "Forlayos Varios",
+        imageUrl: "htttp://www.rajoy.es"
+    })
+    .subscribe();
+
+openMarket.get('categories_update_use_case')
+    .updateCategory({
+        id: "pepe",
+        name: "Updated Forlayos Varios",
+        imageUrl: "htttp://www.rajoy.es"
+    })
+    .subscribe();
+
+
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;

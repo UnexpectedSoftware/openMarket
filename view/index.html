@@ -6,7 +6,7 @@
     <script>
         const {ipcRenderer} = require('electron');
         ipcRenderer.on('asynchronous-reply', (event, arg) => {
-            console.log(arg);
+            arg.forEach(data => console.log(data));
         });
         ipcRenderer.send('asynchronous-message', 'categories_list_all_use_case');
     </script>
