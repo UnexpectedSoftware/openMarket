@@ -7,14 +7,29 @@ export default class CategoryRepository {
         throw new Error('CategoryRepository#category must be implemented');
     }
 
+    /**
+     *
+     * @param {string} name
+     * @param {string} imageUrl
+     */
     save({name,imageUrl}){
         throw new Error('CategoryRepository#category must be implemented');
     }
 
+    /**
+     *
+     * @param {Array<Category>} data
+     */
     saveCollection({data}){
         throw new Error('CategoryRepository#category must be implemented');
     }
 
+    /**
+     *
+     * @param {string} id
+     * @param {string} name
+     * @param {string} imageUrl
+     */
     update({id,name,imageUrl}){
         throw new Error('CategoryRepository#category must be implemented');
     }

@@ -1,19 +1,40 @@
 import CategoryRepository from "../../domain/category/CategoryRepository";
 import RxLocalStorage from "../service/RxLocalStorage";
+import Rx from 'rx';
 
 const localStorageKey = 'categories';
-
+/**
+ * @class LocalStorageCategoryRepository
+ * @implements {CategoryRepository}
+ */
 export default class LocalStorageCategoryRepository extends CategoryRepository {
 
+    /**
+     * @constructor
+     * @param {CategoryFactory} categoryFactory
+     */
     constructor({categoryFactory}){
         super();
+        /**
+         * @member LocalStorageCategoryRepository#categoryFactory
+         */
         this.categoryFactory = categoryFactory;
     }
 
+    /**
+     *
+     * @returns {Observable.<Array<Category>>}
+     */
     findAll(){
         return RxLocalStorage.loadLocalStorage({localStorageKey: localStorageKey});
     }
 
+    /**
+     *
+     * @param name
+     * @param imageUrl
+     * @returns {Observable<null>}
+     */
     save({name,imageUrl}){
         let category = this.categoryFactory.createWith({
             name: name,
@@ -30,10 +51,22 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
 
     }
 
+    /**
+     *
+     * @param {Array<Category>} data
+     * @returns {Observable<null>}
+     */
     saveCollection({data}){
         return RxLocalStorage.saveLocalStorage({localStorageKey: localStorageKey, value:data});
     }
 
+    /**
+     *
+     * @param {string} id
+     * @param {string} name
+     * @param {string} imageUrl
+     * @returns {Observable<null>}
+     */
     update({id,name,imageUrl}){
         return RxLocalStorage.loadLocalStorage({localStorageKey: localStorageKey})
             .map(categoryArray => {
@@ -44,7 +77,7 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
                     categoryArray[optionalIndex].name = name;
                     categoryArray[optionalIndex].imageUrl = imageUrl;
                 }else{
-                    console.log("category not found!");
+                     throw new Error("category not found");
                 }
                 return categoryArray;
             })

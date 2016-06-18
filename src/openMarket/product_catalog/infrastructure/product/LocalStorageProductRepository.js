@@ -3,11 +3,23 @@ import RxLocalStorage from "../service/RxLocalStorage";
 import Rx from 'rx';
 
 const localStorageKey = 'products';
+/**
+ * @class LocalStorageProductRepository
+ * @implements {ProductRepository}
+ */
 export default class LocalStorageProductRepository extends ProductRepository {
+    /**
+     * @constructs LocalStorageProductRepository
+     */
     constructor(){
         super();
     }
 
+    /**
+     *
+     * @param {ProductFilter} productFilter
+     * @returns {Observable<Product>}
+     */
     findAll({productFilter}){
         return RxLocalStorage.loadLocalStorage({localStorageKey: localStorageKey})
             .flatMap(products => {
@@ -15,10 +27,22 @@ export default class LocalStorageProductRepository extends ProductRepository {
             });
     }
 
+    /**
+     *
+     * @param {string} name
+     * @param {number} limit
+     * @param {number} offset
+     * @returns {null}
+     */
     findAllByName({name,limit,offset}){
         return null;
     }
     //TODO Make an abstract LocalStorageRepository with methods like this
+    /**
+     *
+     * @param {Product} product
+     * @returns {Observable.<null>}
+     */
     save({product}){
         return RxLocalStorage.saveLocalStorage({localStorageKey: localStorageKey, value:product});
     }

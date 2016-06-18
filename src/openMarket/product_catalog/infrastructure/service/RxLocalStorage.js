@@ -1,8 +1,14 @@
 import Rx from 'rx';
 import {LocalStorage} from 'node-localstorage';
-
+/**
+ * @class
+ */
 export default class RxLocalStorage {
 
+    /**
+     * @param {string} localStorageKey
+     * @returns {Observable<Array>}
+     */
     static loadLocalStorage({localStorageKey}) {
         return Rx.Observable.create(observer => {
             let localStorage = new LocalStorage('./scratch');
@@ -16,6 +22,11 @@ export default class RxLocalStorage {
         });
     }
 
+    /**
+     * @param {string} localStorageKey
+     * @param {string} value
+     * @returns {Observable<null>}
+     */
     static saveLocalStorage({localStorageKey, value}){
         return Rx.Observable.create(observer => {
             try{

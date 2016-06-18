@@ -1,13 +1,33 @@
 import CategoryDependencyBuilder from '../category/CategoryDependencyBuilder';
 import ProductDependencyBuilder from '../product/ProductDependencyBuilder';
-
+/**
+ * @class FixturesService
+ */
 export default class FixturesService{
 
+    /**
+     * @constructs FixturesService
+     */
     constructor(){
+        /**
+         *
+         * @type {LocalStorageCategoryRepository}
+         */
         this.categoryRepository = CategoryDependencyBuilder.buildCategoryRepository();
+        /**
+         *
+         * @type {CategoryFactoryImpl}
+         */
         this.categoryFactory = CategoryDependencyBuilder.buildCategoryFactory();
-
+        /**
+         *
+         * @type {LocalStorageProductRepository}
+         */
         this.productRepository = ProductDependencyBuilder.buildProductRepository();
+        /**
+         * 
+         * @type {ProductFactoryImpl}
+         */
         this.productFactory = ProductDependencyBuilder.buildProductFactory();
     }
 
