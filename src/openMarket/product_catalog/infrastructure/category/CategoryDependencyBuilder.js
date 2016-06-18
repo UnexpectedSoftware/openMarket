@@ -1,4 +1,5 @@
 import ListAllCategories from '../../application/service/category/ListAllCategories';
+import FindCategoryById from '../../application/service/category/FindCategoryById';
 import CreateCategory from '../../application/service/category/CreateCategory';
 import UpdateCategory from '../../application/service/category/UpdateCategory';
 import LocalStorageCategoryRepository from './LocalStorageCategoryRepository';
@@ -23,6 +24,14 @@ export default class CategoryDependencyBuilder {
      */
     static buildListAllCategories(){
         return new ListAllCategories({repository: CategoryDependencyBuilder.buildCategoryRepository()});
+    }
+
+    /**
+     *
+      * @returns {FindCategoryById}
+     */
+    static buildFindCategoryById(){
+        return new FindCategoryById({repository: CategoryDependencyBuilder.buildCategoryRepository()});
     }
 
     /**

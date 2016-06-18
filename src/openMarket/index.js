@@ -24,6 +24,7 @@ class OpenMarket {
          */
         this._deps = new Map();
         this._deps.set('categories_list_all_use_case', CategoryDependencyBuilder.buildListAllCategories());
+        this._deps.set('categories_find_by_id_use_case', CategoryDependencyBuilder.buildFindCategoryById());
         this._deps.set('categories_create_use_case', CategoryDependencyBuilder.buildCreateCategory());
         this._deps.set('categories_update_use_case', CategoryDependencyBuilder.buildUpdateCategory());
         this._deps.set('products_list_all_use_case', ProductDependencyBuilder.buildListAllProductsUseCase());

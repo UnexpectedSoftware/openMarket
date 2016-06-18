@@ -32,10 +32,15 @@ export default class LocalStorageProductRepository extends ProductRepository {
      * @param {string} name
      * @param {number} limit
      * @param {number} offset
-     * @returns {null}
+     * @returns {Observable.<Product>}
      */
     findAllByName({name,limit,offset}){
-        return null;
+        return RxLocalStorage.loadLocalStorage({localStorageKey: localStorageKey})
+            .flatMap(products => {
+                return Rx.Observable.from(products);
+            })
+            .filter(product => product.name === name)
+            ;
     }
     //TODO Make an abstract LocalStorageRepository with methods like this
     /**

@@ -9,6 +9,14 @@ export default class CategoryRepository {
 
     /**
      *
+     * @param {string} id
+     */
+    findById({id}){
+        throw new Error('CategoryRepository#category must be implemented');
+    }
+
+    /**
+     *
      * @param {string} name
      * @param {string} imageUrl
      */

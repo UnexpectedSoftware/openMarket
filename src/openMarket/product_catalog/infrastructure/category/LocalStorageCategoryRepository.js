@@ -31,6 +31,19 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
 
     /**
      *
+     * @param {string} id
+     * @returns {Observable.<Category>}
+     */
+    findById({id}){
+        return RxLocalStorage.loadLocalStorage({localStorageKey: localStorageKey})
+            .flatMap(arrayData => Rx.Observable.from(arrayData))
+            .filter(category => category.id === id)
+            ;
+    }
+
+
+    /**
+     *
      * @param name
      * @param imageUrl
      * @returns {Observable<null>}
