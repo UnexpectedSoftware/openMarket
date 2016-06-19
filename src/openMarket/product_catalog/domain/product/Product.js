@@ -11,30 +11,31 @@ export default class Product {
      * @param {number} price
      * @param {number} stock
      * @param {string} imageUrl
+     * @param {string} categoryId
      */
-    constructor({identity,barcode,name,description,price,stock,imageUrl}){
+    constructor({identity,barcode,name,description,price,stock,imageUrl,categoryId}){
 
 
         /**
-         * @type {String}
+         * @type {string}
          * @member Product#id
          * */
         this.id = identity.generate();
 
         /**
-         * @type {String}
+         * @type {string}
          * @member Product#barcode
          * */
         this.barcode = barcode;
 
         /**
-         * @type {String}
+         * @type {string}
          * @member Product#name
          * */
         this.name = name;
 
         /**
-         * @type {String}
+         * @type {string}
          * @member Product@description
          * */
         this.description = description;
@@ -52,10 +53,17 @@ export default class Product {
         this.stock = stock;
 
         /**
-         * @type {String}
+         * @type {string}
          * @member Product#imageUrl
          * */
         this.imageUrl = imageUrl;
+
+        /**
+         * @type {string}
+         * @member Product#categoryId
+         */
+        this.categoryId = categoryId;
+
     }
 
 
