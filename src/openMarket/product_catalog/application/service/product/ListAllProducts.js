@@ -38,10 +38,10 @@ export default class ListAllProducts{
 
     /**
      *
-     * @param name
-     * @param limit
-     * @param offset
-     * @returns {*|null}
+     * @param {string} name
+     * @param {number} limit
+     * @param {number} offset
+     * @returns {*|Observable.<Product>}
      */
     findAllByName({name,limit,offset}){
         return this.repository.findAllByName({

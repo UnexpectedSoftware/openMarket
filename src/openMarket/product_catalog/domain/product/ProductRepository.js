@@ -27,4 +27,28 @@ export default class ProductRepository{
     save({product}){
         throw new Error('ProductRepository#product must be implemented');
     }
+
+    /**
+     *
+     * @param {Array} arrayProducts
+     */
+    saveCollection({arrayProducts}){
+        throw new Error('ProductRepository#product must be implemented');
+    }
+
+    /**
+     *
+     * @param {string} id
+     */
+    findById({id}){
+        throw new Error('ProductRepository#product must be implemented');
+    }
+
+    /**
+     *
+     * @param {string} barcode
+     */
+    findByBarcode({barcode}){
+        throw new Error('ProductRepository#product must be implemented');
+    }
 }

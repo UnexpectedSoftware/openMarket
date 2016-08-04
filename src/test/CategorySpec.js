@@ -52,6 +52,14 @@ describe("Category find by id use case", function(){
                 done()
             });
     });
+    it("has no errors and complete", (done) => {
+
+        observableFindByIdCategory
+            .findById({
+                id: "non-existent"
+            })
+            .subscribe(noop, crash, done)
+    })
 
 });
 
@@ -81,7 +89,7 @@ describe("Category list all use case", function() {
 
     });
 
-    it("has no errors", (done) => {
+    it("has no errors and complete", (done) => {
 
         observableCategories.subscribe(noop, crash, done)
     })
@@ -111,6 +119,13 @@ describe("Category create use case", function() {
         })
     });
 
+    it("has no errors and complete", (done) => {
+        observableCreateCategory.createCategory({
+            name: "category test",
+            imageUrl: "http://www.google.es/caca"
+        }).subscribe(noop, crash, done);
+    })
+
 });
 
 describe("Category update use case", function(){
@@ -132,6 +147,19 @@ describe("Category update use case", function(){
             })
             .subscribe(done,crash,noop);
     });
+
+    it("has no errors and complete", (done) => {
+        observableCategories
+            .first()
+            .flatMap(firstCategory => {
+                return observableUpdateCategory.updateCategory({
+                    id: firstCategory.id,
+                    name: "pepe",
+                    imageUrl: "http://42.com"
+                })
+            })
+            .subscribe(noop,crash,done);
+    })
 
 
     it("should try to update a non existent campaign and return error", (done) =>{

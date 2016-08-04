@@ -49,7 +49,40 @@ export default class LocalStorageProductRepository extends ProductRepository {
      * @returns {Observable.<null>}
      */
     save({product}){
-        return RxLocalStorage.saveLocalStorage({localStorageKey: localStorageKey, value:product});
+        return RxLocalStorage.loadLocalStorage({localStorageKey: localStorageKey})
+            .map(arrayProducts => {
+                arrayProducts.push(product);
+                return arrayProducts;
+            })
+            .flatMap(arrayProducts => RxLocalStorage.saveLocalStorage({localStorageKey: localStorageKey, value:arrayProducts}))
+            ;
     }
+
+    saveCollection({arrayProducts}){
+        return RxLocalStorage.saveLocalStorage({
+            localStorageKey: localStorageKey,
+            value: arrayProducts
+        });
+    }
+
+    findById({id}){
+        return RxLocalStorage.loadLocalStorage({localStorageKey: localStorageKey})
+            .flatMap(products => {
+                return Rx.Observable.from(products);
+            })
+            .filter(product => product.id === id)
+            ;
+    }
+
+    findByBarcode({barcode}){
+        return RxLocalStorage.loadLocalStorage({localStorageKey: localStorageKey})
+            .flatMap(products => {
+                return Rx.Observable.from(products);
+            })
+            .filter(product => product.barcode === barcode)
+            ;
+    }
+
+
 
 }

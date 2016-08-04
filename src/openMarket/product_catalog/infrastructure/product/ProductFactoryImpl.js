@@ -7,12 +7,12 @@ import Product from '../../domain/product/Product';
 export default class ProductFactoryImpl extends ProductFactory{
     /**
      *
-     * @param {UUIDIdentity} identity
+     * @param {Identity} identity
      */
     constructor({identity}){
         super();
         /**
-         * @type {UUIDIdentity}
+         * @type {Identity}
          * @member ProductFactoryImpl#identity
          */
         this.identity = identity;
@@ -49,7 +49,7 @@ export default class ProductFactoryImpl extends ProductFactory{
      * @param {string} imageUrl
      * @returns {Product}
      */
-    createWithImage({barcode,name,description,price,stock,imageUrl}){
+    createWithImage({barcode,name,description,price,stock,imageUrl,categoryId}){
         return new Product({
             identity: this.identity,
             barcode: barcode,
@@ -57,7 +57,8 @@ export default class ProductFactoryImpl extends ProductFactory{
             description: description,
             price: price,
             stock: stock,
-            imageUrl: imageUrl
+            imageUrl: imageUrl,
+            categoryId: categoryId
         })
     }
 

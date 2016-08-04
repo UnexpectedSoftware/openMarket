@@ -12,8 +12,9 @@ export default class Product {
      * @param {number} stock
      * @param {string} imageUrl
      * @param {string} categoryId
+     * @param {ProductStatus} status
      */
-    constructor({identity,barcode,name,description,price,stock,imageUrl,categoryId}){
+    constructor({identity,barcode,name,description,price,stock,imageUrl,categoryId,status}){
 
 
         /**
@@ -63,7 +64,28 @@ export default class Product {
          * @member Product#categoryId
          */
         this.categoryId = categoryId;
+        /**
+         * @type {ProductStatus}
+         * @member Product#status
+         */
+        this.status = status;
 
+    }
+
+    /**
+     *
+     * @param {number} quantity
+     */
+    addStock({quantity}){
+        this.stock += quantity;
+    }
+
+    /**
+     *
+     * @param {number} quantity
+     */
+    subtractStock({quantity}){
+        this.stock -= quantity;
     }
 
 

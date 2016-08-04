@@ -28,7 +28,7 @@ export default class FixturesService{
          * 
          * @type {ProductFactoryImpl}
          */
-        this.productFactory = ProductDependencyBuilder.buildProductFactory();
+        this.productFactory = ProductDependencyBuilder.buildProductFactoryTest();
     }
 
     load(){
@@ -102,7 +102,7 @@ export default class FixturesService{
             })
         ]);
 
-        this.productRepository.save({product: products}).subscribe();
+        this.productRepository.saveCollection({arrayProducts: products}).subscribe();
         
     }
 
