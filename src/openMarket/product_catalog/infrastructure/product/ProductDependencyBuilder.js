@@ -5,7 +5,7 @@ import UUIDIdentity from '../service/UUIDIdentity';
 import ProductFactory from '../product/ProductFactoryImpl'
 import FindProduct from "../../application/service/product/FindProduct";
 import SequentialIdentity from "../service/SequentialIdentity";
-import CreateProduct from "../../application/service/product/CreateProduct";
+import CreateOrUpdateProduct from "../../application/service/product/CreateOrUpdateProduct";
 /**
  * @class ProductDependencyBuilder
  */
@@ -59,7 +59,7 @@ export default class ProductDependencyBuilder {
     }
 
     static buildCreateProduct() {
-        return new CreateProduct({
+        return new CreateOrUpdateProduct({
             repository: ProductDependencyBuilder.buildProductRepository(),
             productFactory: ProductDependencyBuilder.buildProductFactory()
         });

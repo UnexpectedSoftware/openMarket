@@ -1,6 +1,7 @@
 import ProductRepository from '../../domain/product/ProductRepository';
 import RxLocalStorage from "../service/RxLocalStorage";
 import Rx from 'rx';
+import * as _ from "lodash";
 
 const localStorageKey = 'products';
 /**
@@ -51,10 +52,16 @@ export default class LocalStorageProductRepository extends ProductRepository {
     save({product}){
         return RxLocalStorage.loadLocalStorage({localStorageKey: localStorageKey})
             .map(arrayProducts => {
-                arrayProducts.push(product);
+                var index = _.indexOf(arrayProducts, _.find(arrayProducts,{barcode: product.barcode}));
+                if(index!=-1){
+                    arrayProducts.splice(index, 1, product);
+                }else{
+                    arrayProducts.push(product);
+                }
                 return arrayProducts;
             })
             .flatMap(arrayProducts => RxLocalStorage.saveLocalStorage({localStorageKey: localStorageKey, value:arrayProducts}))
+
             ;
     }
 

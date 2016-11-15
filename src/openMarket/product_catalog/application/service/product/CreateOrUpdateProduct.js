@@ -1,13 +1,13 @@
 /**
- * @class CreateProduct
+ * @class CreateOrUpdateProduct
  */
-export default class CreateProduct {
+export default class CreateOrUpdateProduct{
     constructor({repository,productFactory}){
         this.repository = repository;
         this.productFactory = productFactory;
     }
 
-    create({barcode,name,description,price,stock,imageUrl,categoryId}){
+    createOrUpdate({barcode,name,description,price,stock,imageUrl,categoryId}){
         let product = this.productFactory.createWithImage({
             barcode,
             name,

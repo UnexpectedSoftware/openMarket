@@ -19,7 +19,7 @@ class OpenMarket {
         this.fixturesService.load();
         /**
          *
-         * @type {Map<K, V>|Map}
+         * @type {Map<string, UseCase>|Map}
          * @private
          */
         this._deps = new Map();
@@ -29,13 +29,13 @@ class OpenMarket {
         this._deps.set('categories_update_use_case', CategoryDependencyBuilder.buildUpdateCategory());
         this._deps.set('products_list_all_use_case', ProductDependencyBuilder.buildListAllProductsUseCase());
         this._deps.set('products_find_use_case', ProductDependencyBuilder.buildFindProductsUseCase());
-        this._deps.set('products_create_use_case', ProductDependencyBuilder.buildCreateProduct());
+        this._deps.set('products_create_or_update_use_case', ProductDependencyBuilder.buildCreateProduct());
     }
 
     /**
      *
      * @param {string} key
-     * @returns {V}
+     * @returns {*}
      */
     get(key) {
         if (!this._deps.has(key)) {

@@ -4,10 +4,21 @@ import is from 'check-more-types';
 import Rx from 'rx';
 import FixturesService from '../openMarket/product_catalog/infrastructure/service/FixturesService';
 
-
+/**
+ *
+ * @type {ListAllProducts}
+ */
 const observableFindAllProducts = openMarket.get("products_list_all_use_case");
+/**
+ *
+ * @type {FindProduct}
+ */
 const observableFindProducts = openMarket.get("products_find_use_case");
-const observableCreateProducts = openMarket.get("products_create_use_case");
+/**
+ *
+ * @type {CreateOrUpdateProduct}
+ */
+const observableCreateProducts = openMarket.get("products_create_or_update_use_case");
 
 const noop = () => {}
 const crash = (err) => { throw err }  // rethrow
@@ -130,7 +141,7 @@ describe("Product create use case", function() {
     it("should create a new product and then would be 3 products", (done) => {
         var count = 0
         const onNumber = () => { count += 1 }
-        observableCreateProducts.create(productDTO).subscribe(data => console.log(data));
+        observableCreateProducts.createOrUpdate(productDTO).subscribe();
 
         observableFindAllProducts.findAll({limit:10,offset:0}).subscribe(onNumber, noop, () => {
             la(count === 3, 'got '+ count + ' products')
@@ -138,6 +149,35 @@ describe("Product create use case", function() {
         });
 
     });
+
+    it("should update an existing product with the new data", (done) => {
+        var count = 0
+        const onData = (product) => {
+            count += 1;
+            if(product.barcode == productDTONew.barcode) {
+                la(product.name == productDTONew.name, 'names are not the same')
+                la(product.description == productDTONew.description, 'descriptions are not the same')
+            }
+        }
+        const productDTONew = {
+            barcode: "0001",
+            name: "Updated Name",
+            description: "Updated Description",
+            price: 100,
+            stock: 100,
+            imageUrl: "http://www.nopuedocreer.com/noticias/wp-content/images/2010/05/vaca.jpg",
+            categoryId: 2
+        };
+        observableCreateProducts.createOrUpdate(productDTONew).subscribe();
+
+        observableFindAllProducts.findAll({limit:10,offset:0}).subscribe(onData, noop, () => {
+            la(count === 2, 'got '+ count + ' products')
+            done()
+        });
+
+    });
+
+
 
 
 });
