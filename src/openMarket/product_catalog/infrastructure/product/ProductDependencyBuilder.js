@@ -6,6 +6,7 @@ import ProductFactory from '../product/ProductFactoryImpl'
 import FindProduct from "../../application/service/product/FindProduct";
 import SequentialIdentity from "../service/SequentialIdentity";
 import CreateOrUpdateProduct from "../../application/service/product/CreateOrUpdateProduct";
+import AddStock from "../../application/service/product/AddStock";
 /**
  * @class ProductDependencyBuilder
  */
@@ -62,6 +63,12 @@ export default class ProductDependencyBuilder {
         return new CreateOrUpdateProduct({
             repository: ProductDependencyBuilder.buildProductRepository(),
             productFactory: ProductDependencyBuilder.buildProductFactory()
+        });
+    }
+
+    static buildAddStockProduct() {
+        return new AddStock({
+            repository: ProductDependencyBuilder.buildProductRepository()
         });
     }
 }

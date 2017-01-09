@@ -20,6 +20,12 @@ const observableFindProducts = openMarket.get("products_find_use_case");
  */
 const observableCreateProducts = openMarket.get("products_create_or_update_use_case");
 
+/**
+ *
+ * @type {AddStock}
+ */
+const observableAddStockProducts = openMarket.get("products_add_stock_use_case");
+
 const noop = () => {}
 const crash = (err) => { throw err }  // rethrow
 Rx.config.longStackSupport = true
@@ -141,12 +147,12 @@ describe("Product create use case", function() {
     it("should create a new product and then would be 3 products", (done) => {
         var count = 0
         const onNumber = () => { count += 1 }
-        observableCreateProducts.createOrUpdate(productDTO).subscribe();
-
-        observableFindAllProducts.findAll({limit:10,offset:0}).subscribe(onNumber, noop, () => {
-            la(count === 3, 'got '+ count + ' products')
-            done()
-        });
+        observableCreateProducts.createOrUpdate(productDTO)
+            .flatMap(observableFindAllProducts.findAll({limit:10,offset:0}))
+            .subscribe(onNumber, noop, () => {
+                la(count === 3, 'got '+ count + ' products')
+                done()
+            });
 
     });
 
@@ -168,17 +174,34 @@ describe("Product create use case", function() {
             imageUrl: "http://www.nopuedocreer.com/noticias/wp-content/images/2010/05/vaca.jpg",
             categoryId: 2
         };
-        observableCreateProducts.createOrUpdate(productDTONew).subscribe();
-
-        observableFindAllProducts.findAll({limit:10,offset:0}).subscribe(onData, noop, () => {
-            la(count === 2, 'got '+ count + ' products')
-            done()
-        });
+        observableCreateProducts.createOrUpdate(productDTONew)
+            .flatMap(observableFindAllProducts.findAll({limit:10,offset:0}))
+            .subscribe(onData, noop, () => {
+                la(count === 2, 'got '+ count + ' products')
+                done()
+            });
 
     });
-
-
-
-
 });
 
+describe("Product add stock use case", function() {
+    beforeEach(function() {
+        this.fixturesService = new FixturesService();
+        this.fixturesService.load();
+    });
+
+    it("should update an existing product with new stock quantity added", (done) => {
+
+        const onData = (product) => {
+            la(product.stock == 1500, 'Stock is not added correctly')
+        }
+
+        observableAddStockProducts.addStock({
+            barcode: "0002",
+            quantity: 500
+        })
+        .flatMap(observableFindProducts.findProductByBarcode({barcode: "0002"}))
+        .subscribe(onData, noop, done());
+    });
+
+});

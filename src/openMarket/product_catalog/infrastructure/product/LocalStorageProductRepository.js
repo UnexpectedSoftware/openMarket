@@ -90,6 +90,15 @@ export default class LocalStorageProductRepository extends ProductRepository {
             ;
     }
 
+    addStock({barcode,quantity}){
+        return this.findByBarcode({barcode})
+            .map(product => {
+                product.stock += quantity;
+                return product;
+            })
+            .flatMap(product => this.save({product}));
+    }
+
 
 
 }

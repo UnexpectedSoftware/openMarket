@@ -11,9 +11,7 @@ import FixturesService from '../openMarket/product_catalog/infrastructure/servic
 /**
  * @type {Observable.<Array.<Category>>}
  */
-const observableCategories = openMarket.get("categories_list_all_use_case")
-        .findAll()
-        .flatMap(arrayData => Rx.Observable.from(arrayData));
+const observableCategories = openMarket.get("categories_list_all_use_case");
 /**
  * @type {CreateCategory}
  */
@@ -72,17 +70,20 @@ describe("Category list all use case", function() {
     });
 
     it("should return an Observable of campaigns", function() {
-        la(is.fn(observableCategories.subscribe),'has subscribe method')
+        la(is.fn(observableCategories.findAll().subscribe),'has subscribe method')
     });
 
     it('should finish well', (done) => {
-        observableCategories.subscribe(noop, noop, done)
+        observableCategories.findAll().subscribe(noop, noop, done)
     })
 
     it("should return 12 campaigns", (done) => {
         var count = 0
         const onNumber = () => { count += 1 }
-        observableCategories.subscribe(onNumber, noop, () => {
+        observableCategories
+            .findAll()
+            .flatMap(arrayData => Rx.Observable.from(arrayData))
+            .subscribe(onNumber, noop, () => {
             la(count === 12, 'got '+ count + ' campaigns')
             done()
         })
@@ -91,7 +92,10 @@ describe("Category list all use case", function() {
 
     it("has no errors and complete", (done) => {
 
-        observableCategories.subscribe(noop, crash, done)
+        observableCategories
+            .findAll()
+            .flatMap(arrayData => Rx.Observable.from(arrayData))
+            .subscribe(noop, crash, done)
     })
 
 
@@ -111,12 +115,13 @@ describe("Category create use case", function() {
         observableCreateCategory.createCategory({
             name: "category test",
             imageUrl: "http://www.google.es/caca"
-        }).subscribe();
-
-        observableCategories.subscribe(onNumber, noop, () => {
-            la(count === 13, 'got '+ count + ' campaigns')
-            done()
         })
+            .flatMap(observableCategories.findAll())
+            .flatMap(arrayData => Rx.Observable.from(arrayData))
+            .subscribe(onNumber, noop, () => {
+                la(count === 13, 'got '+ count + ' campaigns')
+                done()
+            });
     });
 
     it("has no errors and complete", (done) => {
@@ -136,7 +141,8 @@ describe("Category update use case", function(){
     });
 
     it("should update the first campaign with a new name and image url", (done) =>{
-        observableCategories
+        observableCategories.findAll()
+            .flatMap(arrayData => Rx.Observable.from(arrayData))
             .first()
             .flatMap(firstCategory => {
                 return observableUpdateCategory.updateCategory({
@@ -149,7 +155,8 @@ describe("Category update use case", function(){
     });
 
     it("has no errors and complete", (done) => {
-        observableCategories
+        observableCategories.findAll()
+            .flatMap(arrayData => Rx.Observable.from(arrayData))
             .first()
             .flatMap(firstCategory => {
                 return observableUpdateCategory.updateCategory({

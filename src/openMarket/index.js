@@ -30,6 +30,7 @@ class OpenMarket {
         this._deps.set('products_list_all_use_case', ProductDependencyBuilder.buildListAllProductsUseCase());
         this._deps.set('products_find_use_case', ProductDependencyBuilder.buildFindProductsUseCase());
         this._deps.set('products_create_or_update_use_case', ProductDependencyBuilder.buildCreateProduct());
+        this._deps.set('products_add_stock_use_case', ProductDependencyBuilder.buildAddStockProduct());
     }
 
     /**

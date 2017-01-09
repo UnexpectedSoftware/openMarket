@@ -51,4 +51,12 @@ export default class ProductRepository{
     findByBarcode({barcode}){
         throw new Error('ProductRepository#product must be implemented');
     }
+
+    /**
+     * @param {string} barcode
+     * @param {number} quantity
+     */
+    addStock({barcode,quantity}){
+        throw new Error('ProductRepository#product must be implemented');
+    }
 }
