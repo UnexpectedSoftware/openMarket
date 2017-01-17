@@ -40,7 +40,8 @@ class OpenMarket {
      */
     get(key) {
         if (!this._deps.has(key)) {
-            throw new Error('Unsupported UseCase');
+            console.log(key);
+            throw new Error(`Unsupported UseCase ${key}`);
         }
         return this._deps.get(key);
     }

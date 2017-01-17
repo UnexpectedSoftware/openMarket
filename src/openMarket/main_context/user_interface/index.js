@@ -1,22 +1,17 @@
-import Cycle from '@cycle/xstream-run';
-import {div, label, input, hr, h1, makeDOMDriver} from '@cycle/dom';
-
+import Cycle from '@cycle/rx-run';
+import {div, label, input, hr, h1, p, makeDOMDriver} from '@cycle/dom';
+import openMarket from '../../index';
+import Rx from 'rx';
 function main(sources) {
+    const categories$ = sources.OPENMARKET;
     return {
-        DOM: sources.DOM.select('.myinput').events('input')
-            .map(ev => ev.target.value)
-            .startWith('')
-            .map(name =>
-                div([
-                    label('Name:'),
-                    input('.myinput', {attrs: {type: 'text'}}),
-                    hr(),
-                    h1(`Hello ${name}`)
-                ])
-            )
+        DOM: categories$
+            .flatMap(categories => Rx.Observable.from(categories))
+            .map(category => p(`hello ${category.name}`))
     };
 }
 
 Cycle.run(main, {
-    DOM: makeDOMDriver('#main-container')
+    DOM: makeDOMDriver('#main-container'),
+    OPENMARKET: () => { return openMarket.get("categories_list_all_use_case").findAll()}
 });
