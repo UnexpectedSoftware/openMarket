@@ -1,17 +1,31 @@
 import Cycle from '@cycle/rx-run';
-import {div, label, input, hr, h1, p, makeDOMDriver} from '@cycle/dom';
-import openMarket from '../../index';
-import Rx from 'rx';
+import {div, label, input, hr, h1, img, p, makeDOMDriver} from '@cycle/dom';
+import makeOpenMarketDriver from '../infrastructure/cyclejs/OpenMarketDriver';
+import {html} from 'snabbdom-jsx';
+
+
 function main(sources) {
-    const categories$ = sources.OPENMARKET;
+    const categoriesListAllUseCase$ = sources.OPENMARKET;
+
     return {
-        DOM: categories$
-            .flatMap(categories => Rx.Observable.from(categories))
-            .map(category => p(`hello ${category.name}`))
+        DOM: categoriesListAllUseCase$
+            .flatMap(categoriesListAllUseCase => categoriesListAllUseCase.findAll())
+            .map(categories =>
+                <div>
+                    {
+                        categories.map(category =>
+                        <div>
+                            <p>{category.name}</p>
+                            <img src={category.imageUrl} with="100" height="100"></img>
+                        </div>
+                        )
+                    }
+                </div>
+            )
     };
 }
 
 Cycle.run(main, {
     DOM: makeDOMDriver('#main-container'),
-    OPENMARKET: () => { return openMarket.get("categories_list_all_use_case").findAll()}
+    OPENMARKET: makeOpenMarketDriver("categories_list_all_use_case")
 });
