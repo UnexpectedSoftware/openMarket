@@ -5,7 +5,7 @@ import {html} from 'snabbdom-jsx';
 
 
 function main(sources) {
-    const categoriesListAllUseCase$ = sources.OPENMARKET;
+    const categoriesListAllUseCase$ = sources.OPENMARKET.select("categories_list_all_use_case");
 
     return {
         DOM: categoriesListAllUseCase$
@@ -27,5 +27,5 @@ function main(sources) {
 
 Cycle.run(main, {
     DOM: makeDOMDriver('#main-container'),
-    OPENMARKET: makeOpenMarketDriver("categories_list_all_use_case")
+    OPENMARKET: makeOpenMarketDriver()
 });
