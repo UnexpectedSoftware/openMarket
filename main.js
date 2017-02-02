@@ -1,6 +1,16 @@
 import app from 'app';
 import BrowserWindow from 'browser-window';
+import openMarket from './src/openMarket';
+import {ipcMain} from 'electron';
 
+ipcMain.on('asynchronous-message', (event, arg) => {
+    console.log(arg);
+    openMarket.get(arg)
+        .findAll()
+        .subscribe(category => {
+            event.sender.send('asynchronous-reply',category);
+        });
+});
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -13,12 +23,13 @@ app.on('ready', function () {
     mainWindow = new BrowserWindow({width: 1024, height: 768});
 
 // and load the index.html of the app.
-    mainWindow.loadURL('file://' + __dirname + '/view/index.html');
+    mainWindow.loadURL('file://' + __dirname + '/src/openMarket/main_context/user_interface/index.html');
 
 // Open the DevTools.
-//mainWindow.webContents.openDevTools();
+    mainWindow.webContents.openDevTools();
 
     //mainWindow.webContents.send('online', clients);
+
 
 // Emitted when the window is closed.
     mainWindow.on('closed', function () {
