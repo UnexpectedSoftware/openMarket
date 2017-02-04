@@ -7,19 +7,19 @@ export default class ListAllCategories {
      * @constructs ListAllCategories
      * @param {CategoryRepository} repository
      */
-    constructor({repository}) {
+  constructor({ repository }) {
         /**
          * @type {CategoryRepository}
          * @member ListAllCategories#repository
          * */
-        this.repository = repository;
-    }
+    this.repository = repository;
+  }
 
     /**
      *
      * @returns {Observable.<Array.<Category>>}
      */
-    findAll(){
-        return this.repository.findAll();
-    }
+  findAll() {
+    return this.repository.findAll();
+  }
 }

@@ -1,14 +1,14 @@
 import IdGenerator from '../domain/order/IdGenerator';
 import UUID from 'node-uuid';
 
-export default class UUIDGenerator extends IdGenerator{
+export default class UUIDGenerator extends IdGenerator {
 
-    constructor(){
-        super();
-    }
+  constructor() {
+    super();
+  }
 
-    generate(){
-        return UUID.v4();
-    }
+  generate() {
+    return UUID.v4();
+  }
 
 }

@@ -1,18 +1,15 @@
 export default class Order {
 
-    contructor({idGenerator,lines}){
-
+  contructor({ idGenerator, lines }) {
         /**
          * @type {String}
          * */
-        this.id = idGenerator.generate();
+    this.id = idGenerator.generate();
 
         /**
          * @type {Date}
          * */
-        this.createdAt = new Date().toLocaleString('es-ES');
-
-
-    }
+    this.createdAt = new Date().toLocaleString('es-ES');
+  }
 
 }

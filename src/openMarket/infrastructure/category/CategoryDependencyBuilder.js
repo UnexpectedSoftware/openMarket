@@ -14,49 +14,49 @@ export default class CategoryDependencyBuilder {
      *
      * @returns {LocalStorageCategoryRepository}
      */
-    static buildCategoryRepository(){
-        return new LocalStorageCategoryRepository({categoryFactory : CategoryDependencyBuilder.buildCategoryFactory()});
-    }
+  static buildCategoryRepository() {
+    return new LocalStorageCategoryRepository({ categoryFactory: CategoryDependencyBuilder.buildCategoryFactory() });
+  }
 
     /**
      *
      * @returns {ListAllCategories}
      */
-    static buildListAllCategories(){
-        return new ListAllCategories({repository: CategoryDependencyBuilder.buildCategoryRepository()});
-    }
+  static buildListAllCategories() {
+    return new ListAllCategories({ repository: CategoryDependencyBuilder.buildCategoryRepository() });
+  }
 
     /**
      *
       * @returns {FindCategoryById}
      */
-    static buildFindCategoryById(){
-        return new FindCategoryById({repository: CategoryDependencyBuilder.buildCategoryRepository()});
-    }
+  static buildFindCategoryById() {
+    return new FindCategoryById({ repository: CategoryDependencyBuilder.buildCategoryRepository() });
+  }
 
     /**
      *
      * @returns {CategoryFactoryImpl}
      */
-    static buildCategoryFactory(){
+  static buildCategoryFactory() {
         // TODO Refactory this
-        let identity = new UUIDIdentity();
-        return new CategoryFactoryImpl({identity:identity});
-    }
+    const identity = new UUIDIdentity();
+    return new CategoryFactoryImpl({ identity });
+  }
 
     /**
      *
      * @returns {CreateCategory}
      */
-    static buildCreateCategory() {
-        return new CreateCategory({repository: CategoryDependencyBuilder.buildCategoryRepository()});
-    }
+  static buildCreateCategory() {
+    return new CreateCategory({ repository: CategoryDependencyBuilder.buildCategoryRepository() });
+  }
 
     /**
      *
      * @returns {UpdateCategory}
      */
-    static buildUpdateCategory() {
-        return new UpdateCategory({repository: CategoryDependencyBuilder.buildCategoryRepository()});
-    }
+  static buildUpdateCategory() {
+    return new UpdateCategory({ repository: CategoryDependencyBuilder.buildCategoryRepository() });
+  }
 }

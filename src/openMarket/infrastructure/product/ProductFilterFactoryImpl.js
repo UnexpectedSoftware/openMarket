@@ -4,14 +4,14 @@ import ProductFilter from '../../domain/product/ProductFilter';
  * @class ProductFilterFactoryImpl
  * @implements ProductFilterFactory
  */
-export default class ProductFilterFactoryImpl extends ProductFilterFactory{
+export default class ProductFilterFactoryImpl extends ProductFilterFactory {
 
     /**
      * @constructs ProductFilterFactoryImpl
      */
-    constructor(){
-        super();
-    }
+  constructor() {
+    super();
+  }
 
     /**
      *
@@ -19,18 +19,17 @@ export default class ProductFilterFactoryImpl extends ProductFilterFactory{
      * @param {number} offset
      * @returns {ProductFilter}
      */
-    createWith({limit,offset}){
-        return new ProductFilter({limit: limit, offset: offset});
-    }
+  createWith({ limit, offset }) {
+    return new ProductFilter({ limit, offset });
+  }
 
     /**
      *
      * @returns {ProductFilter}
      */
-    createWithDefaults(){
-        return new ProductFilter();
-    }
-
+  createWithDefaults() {
+    return new ProductFilter();
+  }
 
 
 }
