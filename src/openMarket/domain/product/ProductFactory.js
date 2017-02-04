@@ -1,7 +1,7 @@
 /**
  * @interface
  * */
-export default class ProductFactory{
+export default class ProductFactory {
 
     /**
      *
@@ -11,9 +11,9 @@ export default class ProductFactory{
      * @param {number} price
      * @param {number} stock
      */
-    createWith({barcode,name,description,price,stock}){
-        throw new Error('ProductFactory#product must be implemented');
-    }
+  createWith({ barcode, name, description, price, stock }) {
+    throw new Error('ProductFactory#product must be implemented');
+  }
 
     /**
      *
@@ -24,9 +24,9 @@ export default class ProductFactory{
      * @param {number} stock
      * @param {string} imageUrl
      */
-    createWithImage({barcode,name,description,price,stock,imageUrl}){
-        throw new Error('ProductFactory#product must be implemented');
-    }
+  createWithImage({ barcode, name, description, price, stock, imageUrl }) {
+    throw new Error('ProductFactory#product must be implemented');
+  }
 
     /**
      *
@@ -37,7 +37,7 @@ export default class ProductFactory{
      * @param {number} price
      * @param {number} stock
      */
-    createWithCategory({category,barcode,name,description,price,stock}){
-        throw new Error('ProductFactory#product must be implemented');
-    }
+  createWithCategory({ category, barcode, name, description, price, stock }) {
+    throw new Error('ProductFactory#product must be implemented');
+  }
 }
