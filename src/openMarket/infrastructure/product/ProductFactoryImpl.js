@@ -1,23 +1,22 @@
-import ProductFactory from '../../domain/product/ProductFactory'
+import ProductFactory from '../../domain/product/ProductFactory';
 import Product from '../../domain/product/Product';
 /**
  * @class ProductFactoryImpl
  * @implements ProductFactory
  */
-export default class ProductFactoryImpl extends ProductFactory{
+export default class ProductFactoryImpl extends ProductFactory {
     /**
      *
      * @param {Identity} identity
      */
-    constructor({identity}){
-        super();
+  constructor({ identity }) {
+    super();
         /**
          * @type {Identity}
          * @member ProductFactoryImpl#identity
          */
-        this.identity = identity;
-
-    }
+    this.identity = identity;
+  }
 
     /**
      *
@@ -28,17 +27,17 @@ export default class ProductFactoryImpl extends ProductFactory{
      * @param {number} stock
      * @returns {Product}
      */
-    createWith({barcode,name,description,price,stock}){
-        return new Product({
-            identity: this.identity,
-            barcode: barcode,
-            name: name,
-            description: description,
-            price: price,
-            stock: stock
-        })
-    }
-    //TODO Refactor this shit
+  createWith({ barcode, name, description, price, stock }) {
+    return new Product({
+      identity: this.identity,
+      barcode,
+      name,
+      description,
+      price,
+      stock
+    });
+  }
+    // TODO Refactor this shit
     /**
      *
      * @param {string} barcode
@@ -49,18 +48,18 @@ export default class ProductFactoryImpl extends ProductFactory{
      * @param {string} imageUrl
      * @returns {Product}
      */
-    createWithImage({barcode,name,description,price,stock,imageUrl,categoryId}){
-        return new Product({
-            identity: this.identity,
-            barcode: barcode,
-            name: name,
-            description: description,
-            price: price,
-            stock: stock,
-            imageUrl: imageUrl,
-            categoryId: categoryId
-        })
-    }
+  createWithImage({ barcode, name, description, price, stock, imageUrl, categoryId }) {
+    return new Product({
+      identity: this.identity,
+      barcode,
+      name,
+      description,
+      price,
+      stock,
+      imageUrl,
+      categoryId
+    });
+  }
 
     /**
      *
@@ -71,7 +70,7 @@ export default class ProductFactoryImpl extends ProductFactory{
      * @param {number} price
      * @param {number} stock
      */
-    createWithCategory({category,barcode,name,description,price,stock}){
-        throw new Error('ProductFactory#product must be implemented');
-    }
+  createWithCategory({ category, barcode, name, description, price, stock }) {
+    throw new Error('ProductFactory#product must be implemented');
+  }
 }

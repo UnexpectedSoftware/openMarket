@@ -1,4 +1,5 @@
 # OpenMarket
+[![Build Status](https://travis-ci.org/UnexpectedSoftware/openMarket.svg?branch=master)](https://travis-ci.org/UnexpectedSoftware/openMarket)
 Desktop application to administrate a generic market with stocks, products, categories etc...
 
 ## Requirements

@@ -8,16 +8,16 @@ export default class UUIDIdentity extends Identity {
     /**
      * @constructs UUIDIdentity
      */
-    constructor(){
-        super();
-    }
+  constructor() {
+    super();
+  }
 
     /**
      *
      * @returns {string}
      */
-    generate(){
-        return uuid.v4();
-    }
+  generate() {
+    return uuid.v4();
+  }
 
 }
