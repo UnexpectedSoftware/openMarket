@@ -3,7 +3,7 @@
 // for babel-plugin-webpack-loaders
 require('babel-register');
 const validate = require('webpack-validator');
-const devConfig = require('./webpack.config.development');
+const devConfig = require('./webpack.config.development.js');
 
 module.exports = validate({
   output: {
