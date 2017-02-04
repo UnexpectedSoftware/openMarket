@@ -49,7 +49,7 @@ before_script:
   - sleep 3
 
 script:
-  - npm run lint
+  #- npm run lint
   - npm run test
   - npm run test:domain
   - npm run build

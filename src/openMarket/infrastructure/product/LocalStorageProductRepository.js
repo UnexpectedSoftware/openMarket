@@ -1,7 +1,7 @@
-import ProductRepository from '../../domain/product/ProductRepository';
-import RxLocalStorage from '../service/RxLocalStorage';
 import Rx from 'rx';
 import * as _ from 'lodash';
+import ProductRepository from '../../domain/product/ProductRepository';
+import RxLocalStorage from '../service/RxLocalStorage';
 
 const localStorageKey = 'products';
 /**
@@ -9,12 +9,6 @@ const localStorageKey = 'products';
  * @implements {ProductRepository}
  */
 export default class LocalStorageProductRepository extends ProductRepository {
-    /**
-     * @constructs LocalStorageProductRepository
-     */
-  constructor() {
-    super();
-  }
 
     /**
      *
@@ -23,7 +17,14 @@ export default class LocalStorageProductRepository extends ProductRepository {
      */
   findAll({ productFilter }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
-            .flatMap(products => Rx.Observable.from(products.slice(productFilter.offset, productFilter.limit)));
+      .flatMap(products =>
+        Rx.Observable.from(
+          products.slice(
+            productFilter.offset,
+            productFilter.limit
+          )
+        )
+      );
   }
 
     /**
@@ -48,15 +49,24 @@ export default class LocalStorageProductRepository extends ProductRepository {
   save({ product }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
             .map(arrayProducts => {
-              const index = _.indexOf(arrayProducts, _.find(arrayProducts, { barcode: product.barcode }));
-              if (index != -1) {
+              const index = _.indexOf(
+                arrayProducts,
+                _.find(arrayProducts, { barcode: product.barcode })
+              );
+              if (index !== -1) {
                 arrayProducts.splice(index, 1, product);
               } else {
                 arrayProducts.push(product);
               }
               return arrayProducts;
             })
-            .flatMap(arrayProducts => RxLocalStorage.saveLocalStorage({ localStorageKey, value: arrayProducts }))
+            .flatMap(arrayProducts =>
+              RxLocalStorage.saveLocalStorage(
+                { localStorageKey,
+                  value: arrayProducts
+                }
+                )
+            )
 
             ;
   }

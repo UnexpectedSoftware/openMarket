@@ -1,7 +1,7 @@
-import openMarket from '../openMarket';
 import la from 'lazy-ass';
 import is from 'check-more-types';
 import Rx from 'rx';
+import openMarket from '../openMarket';
 import FixturesService from '../openMarket/infrastructure/service/FixturesService';
 
 /**

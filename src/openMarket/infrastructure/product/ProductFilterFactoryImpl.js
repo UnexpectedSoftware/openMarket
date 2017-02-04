@@ -6,12 +6,7 @@ import ProductFilter from '../../domain/product/ProductFilter';
  */
 export default class ProductFilterFactoryImpl extends ProductFilterFactory {
 
-    /**
-     * @constructs ProductFilterFactoryImpl
-     */
-  constructor() {
-    super();
-  }
+
 
     /**
      *
