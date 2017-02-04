@@ -6,13 +6,13 @@ export default class UpdateCategory {
      * @constructs UpdateCategory
      * @param {CategoryRepository} repository
      */
-    constructor({repository}){
+  constructor({ repository }) {
         /**
          * @type {CategoryRepository}
          * @member UpdateCategory#repository
          */
-        this.repository = repository;
-    }
+    this.repository = repository;
+  }
 
     /**
      *
@@ -21,11 +21,11 @@ export default class UpdateCategory {
      * @param {string} imageUrl
      * @returns {Observable.<null>}
      */
-    updateCategory({id,name,imageUrl}){
-        return this.repository.update({
-            id: id,
-            name: name,
-            imageUrl: imageUrl
-        });
-    }
+  updateCategory({ id, name, imageUrl }) {
+    return this.repository.update({
+      id,
+      name,
+      imageUrl
+    });
+  }
 }

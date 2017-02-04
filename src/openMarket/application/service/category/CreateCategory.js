@@ -6,13 +6,13 @@ export default class CreateCategory {
      * @constructs CreateCategory
      * @param {CategoryRepository} repository
      */
-    constructor({repository}){
+  constructor({ repository }) {
         /**
          * @type CategoryRepository
          * @member CreateCategory#repository
          */
-        this.repository = repository;
-    }
+    this.repository = repository;
+  }
 
     /**
      *
@@ -20,7 +20,7 @@ export default class CreateCategory {
      * @param {string} imageUrl
      * @returns {*|Observable.<null>}
      */
-    createCategory({name,imageUrl}){
-        return this.repository.save({name,imageUrl});
-    }
+  createCategory({ name, imageUrl }) {
+    return this.repository.save({ name, imageUrl });
+  }
 }

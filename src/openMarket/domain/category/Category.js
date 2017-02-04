@@ -2,7 +2,7 @@
  * Category class
  * @class Category
  */
-export default class Category{
+export default class Category {
 
     /**
      * Category Constructor
@@ -11,30 +11,29 @@ export default class Category{
      * @param {string} name
      * @param {string} imageUrl
      */
-    constructor({identity,name,imageUrl}){
-
+  constructor({ identity, name, imageUrl }) {
         /**
          * @type {string}
          * @member Category#id
          * */
-        this.id = identity.generate();
-        
+    this.id = identity.generate();
+
         /**
          * @type {string}
          * @member Category#name
          * */
-        this.name = name;
+    this.name = name;
 
         /**
          * @type {string}
          * @member Category#imageUrl
          * */
-        this.imageUrl = imageUrl;
+    this.imageUrl = imageUrl;
 
         /**
          * @type {Array}
          * @member Category#products
          * */
-        this.products = [];
-    }
+    this.products = [];
+  }
 }
