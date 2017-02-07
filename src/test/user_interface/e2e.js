@@ -2,8 +2,8 @@ import { Application } from 'spectron';
 import { expect } from 'chai';
 import electronPath from 'electron';
 import path from 'path';
-import homeStyles from '../app/components/Home.css';
-import counterStyles from '../app/components/Counter.css';
+import homeStyles from '../../openMarket/user_interface/components/Home.css';
+import counterStyles from '../../openMarket/user_interface/components/Counter.css';
 
 const delay = time => new Promise(resolve => setTimeout(resolve, time));
 
@@ -13,7 +13,7 @@ describe('main window', function spec() {
   before(async () => {
     this.app = new Application({
       path: electronPath,
-      args: [path.join(__dirname, '..', 'app')],
+      args: [path.join(__dirname, '..', '../openMarket/user_interface')],
     });
     return this.app.start();
   });
