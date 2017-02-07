@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import counter from '../../app/reducers/counter';
-import { INCREMENT_COUNTER, DECREMENT_COUNTER } from '../../app/actions/counter';
+import counter from '../../../openMarket/user_interface/reducers/counter';
+import { INCREMENT_COUNTER, DECREMENT_COUNTER } from '../../../openMarket/user_interface/actions/counter';
 
 
 describe('reducers', () => {
