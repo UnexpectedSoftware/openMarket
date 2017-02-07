@@ -54,4 +54,4 @@ script:
   - npm run test:domain
   - npm run build
   - npm run test-e2e
-  - npm run package
+  #- npm run package

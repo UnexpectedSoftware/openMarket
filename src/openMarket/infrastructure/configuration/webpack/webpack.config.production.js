@@ -14,10 +14,10 @@ import baseConfig from './webpack.config.base';
 export default validate(merge(baseConfig, {
   devtool: 'cheap-module-source-map',
 
-  entry: ['babel-polyfill', './app/index'],
+  entry: ['babel-polyfill', './src/openMarket/user_interface/index'],
 
   output: {
-    path: path.join(__dirname, '../../../../../app/dist'),
+    path: path.join(__dirname, '../../../user_interface/dist'),
     publicPath: '../../../../../dist/'
   },
 
@@ -90,8 +90,8 @@ export default validate(merge(baseConfig, {
      * Dynamically generate index.html page
      */
     new HtmlWebpackPlugin({
-      filename: '../app.html',
-      template: 'app/app.html',
+      filename: 'app.html',
+      template: 'src/openMarket/user_interface/app.html',
       inject: false
     })
   ],
