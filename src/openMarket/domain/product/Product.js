@@ -4,77 +4,150 @@
 export default class Product {
     /**
      * @constructs Product
-     * @param {UUIDIdentity} identity
+     * @param {string} id
      * @param {string} barcode
      * @param {string} name
      * @param {string} description
      * @param {number} price
+     * @param {number} basePrice
      * @param {number} stock
+     * @param {number} stockMin
      * @param {string} imageUrl
      * @param {string} categoryId
-     * @param {ProductStatus} status
+     * @param {string} status
      */
-  constructor({ identity, barcode, name, description, price, stock, imageUrl, categoryId, status }) {
-        /**
-         * @type {string}
-         * @member Product#id
-         * */
-    this.id = identity.generate();
+  constructor({ id, barcode, name, description, price, basePrice, stock, stockMin, imageUrl, categoryId, status }) {
 
-        /**
-         * @type {string}
-         * @member Product#barcode
-         * */
-    this.barcode = barcode;
+      /**
+       *
+       * @type {string}
+       * @private
+       */
+    this._id = id;
 
-        /**
-         * @type {string}
-         * @member Product#name
-         * */
-    this.name = name;
+      /**
+       *
+       * @type {string}
+       * @private
+       */
+    this._barcode = barcode;
 
-        /**
-         * @type {string}
-         * @member Product@description
-         * */
-    this.description = description;
+      /**
+       *
+       * @type {string}
+       * @private
+       */
+    this._name = name;
 
-        /**
-         * @type {number}
-         * @member Product#price
-         * */
-    this.price = price;
+      /**
+       *
+       * @type {string}
+       * @private
+       */
+    this._description = description;
 
-        /**
-         * @type {number}
-         * @member Product#stock
-         * */
-    this.stock = stock;
+      /**
+       *
+       * @type {number}
+       * @private
+       */
+    this._price = price;
 
-        /**
-         * @type {string}
-         * @member Product#imageUrl
-         * */
-    this.imageUrl = imageUrl;
+      /**
+       * Price without profit
+       * @type {number}
+       * @private
+       */
+    this._basePrice = basePrice;
 
-        /**
-         * @type {string}
-         * @member Product#categoryId
-         */
-    this.categoryId = categoryId;
-        /**
-         * @type {ProductStatus}
-         * @member Product#status
-         */
-    this.status = status;
-  }
+      /**
+       *
+       * @type {number}
+       * @private
+       */
+    this._stock = stock;
 
     /**
+       *
+       * @type {number}
+       * @private
+       */
+    this._stockMin = stockMin;
+
+
+      /**
+       *
+       * @type {string}
+       * @private
+       */
+    this._imageUrl = imageUrl;
+
+      /**
+       *
+       * @type {string}
+       * @private
+       */
+    this._categoryId = categoryId;
+      /**
+       *
+       * @type {string}
+       * @private
+       */
+    this._status = status;
+
+  }
+
+
+  get id() {
+    return this._id;
+  }
+
+  get barcode() {
+    return this._barcode;
+  }
+
+  get name() {
+    return this._name;
+  }
+
+  get description() {
+    return this._description;
+  }
+
+  get price() {
+    return this._price;
+  }
+
+  get basePrice() {
+    return this._basePrice;
+  }
+
+  get stock() {
+    return this._stock;
+  }
+
+  get stockMin() {
+    return this._stockMin;
+  }
+
+  get imageUrl() {
+    return this._imageUrl;
+  }
+
+  get categoryId() {
+    return this._categoryId;
+  }
+
+  get status() {
+    return this._status;
+  }
+
+  /**
      *
      * @param {number} quantity
      */
   addStock({ quantity }) {
-    this.stock += quantity;
+    this._stock += quantity;
   }
 
     /**
@@ -82,7 +155,7 @@ export default class Product {
      * @param {number} quantity
      */
   subtractStock({ quantity }) {
-    this.stock -= quantity;
+    this._stock -= quantity;
   }
 
 

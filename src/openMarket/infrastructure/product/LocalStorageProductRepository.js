@@ -37,7 +37,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
   findAllByName({ name, limit, offset }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
             .flatMap(products => Rx.Observable.from(products))
-            .filter(product => product.name === name)
+            .filter(product => product._name === name)
             ;
   }
     // TODO Make an abstract LocalStorageRepository with methods like this
@@ -51,7 +51,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
             .map(arrayProducts => {
               const index = _.indexOf(
                 arrayProducts,
-                _.find(arrayProducts, { barcode: product.barcode })
+                _.find(arrayProducts, { _barcode: product.barcode })
               );
               if (index !== -1) {
                 arrayProducts.splice(index, 1, product);
@@ -71,6 +71,11 @@ export default class LocalStorageProductRepository extends ProductRepository {
             ;
   }
 
+  /**
+   *
+   * @param {Array} arrayProducts
+   * @returns {Observable.<null>}
+   */
   saveCollection({ arrayProducts }) {
     return RxLocalStorage.saveLocalStorage({
       localStorageKey,
@@ -78,28 +83,27 @@ export default class LocalStorageProductRepository extends ProductRepository {
     });
   }
 
+  /**
+   *
+   * @param {string} id
+   * @returns {Observable.<Product>}
+   */
   findById({ id }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
             .flatMap(products => Rx.Observable.from(products))
-            .filter(product => product.id === id)
+            .filter(product => product._id === id)
             ;
   }
-
+  /**
+   *
+   * @param {string} barcode
+   * @returns {Observable.<Product>}
+   */
   findByBarcode({ barcode }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
             .flatMap(products => Rx.Observable.from(products))
-            .filter(product => product.barcode === barcode)
+            .filter(product => product._barcode === barcode)
             ;
   }
-
-  addStock({ barcode, quantity }) {
-    return this.findByBarcode({ barcode })
-            .map(product => {
-              product.stock += quantity;
-              return product;
-            })
-            .flatMap(product => this.save({ product }));
-  }
-
 
 }

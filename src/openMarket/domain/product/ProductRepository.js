@@ -5,6 +5,7 @@ export default class ProductRepository {
     /**
      *
      * @param {ProductFilter} productFilter
+     * @returns {Observable<Product>}
      */
   findAll({ productFilter }) {
     throw new Error('ProductRepository#product must be implemented');
@@ -15,6 +16,7 @@ export default class ProductRepository {
      * @param {string} name
      * @param {number} limit
      * @param {number} offset
+     * @returns {Observable<Product>}
      */
   findAllByName({ name, limit, offset }) {
     throw new Error('ProductRepository#product must be implemented');
@@ -23,6 +25,7 @@ export default class ProductRepository {
     /**
      *
      * @param {Product} product
+     * @returns {Observable<null>}
      */
   save({ product }) {
     throw new Error('ProductRepository#product must be implemented');
@@ -31,6 +34,7 @@ export default class ProductRepository {
     /**
      *
      * @param {Array} arrayProducts
+     * @returns {Observable<null>}
      */
   saveCollection({ arrayProducts }) {
     throw new Error('ProductRepository#product must be implemented');
@@ -39,6 +43,7 @@ export default class ProductRepository {
     /**
      *
      * @param {string} id
+     * @returns {Observable.<Product>}
      */
   findById({ id }) {
     throw new Error('ProductRepository#product must be implemented');
@@ -47,16 +52,9 @@ export default class ProductRepository {
     /**
      *
      * @param {string} barcode
+     * @returns {Observable<Product>}
      */
   findByBarcode({ barcode }) {
-    throw new Error('ProductRepository#product must be implemented');
-  }
-
-    /**
-     * @param {string} barcode
-     * @param {number} quantity
-     */
-  addStock({ barcode, quantity }) {
     throw new Error('ProductRepository#product must be implemented');
   }
 }

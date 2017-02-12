@@ -1,5 +1,5 @@
-export default productStatus = {
-  OUT_OF_STOCK: 'without stock',
-  ENABLED: 'product enabled',
-  DISABLED: 'product deprecated'
+export default {
+  OUT_OF_STOCK: 'PRODUCT_OUT_OF_STOCK',
+  ENABLED: 'PRODUCT_ENABLED',
+  DISABLED: 'PRODUCT_DISABLED'
 };
