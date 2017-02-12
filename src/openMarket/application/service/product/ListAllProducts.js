@@ -9,16 +9,18 @@ export default class ListAllProducts {
      * @param {ProductFilterFactory} productFilterFactory
      */
   constructor({ repository, productFilterFactory }) {
-        /**
-         * @type ProductRepository
-         * @member ListAllProducts#repository
-         */
-    this.repository = repository;
-        /**
-         * @type ProductFilterFactory
-         * @member ListAllProducts#productFilterFactory
-         */
-    this.productFilterFactory = productFilterFactory;
+      /**
+       *
+        * @type {ProductRepository}
+       * @private
+       */
+    this._repository = repository;
+      /**
+       *
+        * @type {ProductFilterFactory}
+       * @private
+       */
+    this._productFilterFactory = productFilterFactory;
   }
 
     /**
@@ -28,8 +30,8 @@ export default class ListAllProducts {
      * @returns {Observable.<Array.<Category>>}
      */
   findAll({ limit, offset }) {
-    return this.repository.findAll({
-      productFilter: this.productFilterFactory.createWith({
+    return this._repository.findAll({
+      productFilter: this._productFilterFactory.createWith({
         limit,
         offset
       })
@@ -44,7 +46,7 @@ export default class ListAllProducts {
      * @returns {*|Observable.<Product>}
      */
   findAllByName({ name, limit, offset }) {
-    return this.repository.findAllByName({
+    return this._repository.findAllByName({
       name,
       limit,
       offset
