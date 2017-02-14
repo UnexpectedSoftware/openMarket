@@ -3,41 +3,37 @@
  * */
 export default class ProductFactory {
 
-    /**
-     *
-     * @param {string} barcode
-     * @param {string} name
-     * @param {string} description
-     * @param {number} price
-     * @param {number} stock
-     */
-  createWith({ barcode, name, description, price, stock }) {
+  /**
+   *
+   * @param {string} barcode
+   * @param {string} name
+   * @param {string} description
+   * @param {number} price
+   * @param {number} basePrice
+   * @param {number} stock
+   * @param {number} stockMin
+   * @param {imageUrl} imageUrl
+   * @param {string} categoryId
+   * @returns {Product}
+   */
+  createWith({ barcode, name, description, price, basePrice, stock, stockMin, imageUrl, categoryId }) {
     throw new Error('ProductFactory#product must be implemented');
   }
-
-    /**
-     *
-     * @param {string} barcode
-     * @param {string} name
-     * @param {string} description
-     * @param {number} price
-     * @param {number} stock
-     * @param {string} imageUrl
-     */
-  createWithImage({ barcode, name, description, price, stock, imageUrl }) {
-    throw new Error('ProductFactory#product must be implemented');
-  }
-
-    /**
-     *
-     * @param {Category} category
-     * @param {string} barcode
-     * @param {string} name
-     * @param {string} description
-     * @param {number} price
-     * @param {number} stock
-     */
-  createWithCategory({ category, barcode, name, description, price, stock }) {
+  /**
+   * @param {string} id
+   * @param {string} barcode
+   * @param {string} name
+   * @param {string} description
+   * @param {number} price
+   * @param {number} basePrice
+   * @param {number} stock
+   * @param {number} stockMin
+   * @param {imageUrl} imageUrl
+   * @param {string} categoryId
+   * @param {string} status
+   * @returns {Product}
+   */
+  createWithId({ id, barcode, name, description, price, basePrice, stock, stockMin, imageUrl, categoryId, status }) {
     throw new Error('ProductFactory#product must be implemented');
   }
 }

@@ -7,6 +7,7 @@ import FindProduct from '../../application/service/product/FindProduct';
 import SequentialIdentity from '../service/SequentialIdentity';
 import CreateOrUpdateProduct from '../../application/service/product/CreateOrUpdateProduct';
 import AddStock from '../../application/service/product/AddStock';
+import ProductMapper from "./ProductMapper";
 /**
  * @class ProductDependencyBuilder
  */
@@ -25,7 +26,9 @@ export default class ProductDependencyBuilder {
      * @returns {LocalStorageProductRepository}
      */
   static buildProductRepository() {
-    return new LocalStorageProductRepository();
+    return new LocalStorageProductRepository({
+      productMapper: ProductDependencyBuilder.buildProductMapper()
+    });
   }
 
     /**
@@ -71,4 +74,11 @@ export default class ProductDependencyBuilder {
       repository: ProductDependencyBuilder.buildProductRepository()
     });
   }
+
+  static buildProductMapper() {
+    return new ProductMapper({
+      productFactory: ProductDependencyBuilder.buildProductFactory()
+    });
+  }
+
 }
