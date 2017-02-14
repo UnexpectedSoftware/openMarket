@@ -2,6 +2,7 @@ import Rx from 'rx';
 import * as _ from 'lodash';
 import ProductRepository from '../../domain/product/ProductRepository';
 import RxLocalStorage from '../service/RxLocalStorage';
+import Product from "../../domain/product/Product";
 
 const localStorageKey = 'products';
 /**
@@ -9,6 +10,15 @@ const localStorageKey = 'products';
  * @implements {ProductRepository}
  */
 export default class LocalStorageProductRepository extends ProductRepository {
+
+  /**
+   *
+   * @param {ProductMapper} productMapper
+   */
+  constructor({ productMapper }) {
+    super();
+    this._productMapper = productMapper;
+  }
 
     /**
      *
@@ -24,7 +34,8 @@ export default class LocalStorageProductRepository extends ProductRepository {
             productFilter.limit
           )
         )
-      );
+      )
+      .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }));
   }
 
     /**
@@ -37,7 +48,8 @@ export default class LocalStorageProductRepository extends ProductRepository {
   findAllByName({ name, limit, offset }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
             .flatMap(products => Rx.Observable.from(products))
-            .filter(product => product._name === name)
+            .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+            .filter(product => product.name === name)
             ;
   }
     // TODO Make an abstract LocalStorageRepository with methods like this
@@ -91,7 +103,8 @@ export default class LocalStorageProductRepository extends ProductRepository {
   findById({ id }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
             .flatMap(products => Rx.Observable.from(products))
-            .filter(product => product._id === id)
+            .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+            .filter(product => product.id === id)
             ;
   }
   /**
@@ -102,7 +115,8 @@ export default class LocalStorageProductRepository extends ProductRepository {
   findByBarcode({ barcode }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
             .flatMap(products => Rx.Observable.from(products))
-            .filter(product => product._barcode === barcode)
+            .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+            .filter(product => product.barcode === barcode)
             ;
   }
 
