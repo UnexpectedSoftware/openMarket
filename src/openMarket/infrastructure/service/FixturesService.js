@@ -91,14 +91,22 @@ export default class FixturesService {
         name: 'Coca-Cola',
         description: '',
         price: 0.55,
-        stock: 100
+        basePrice: 0.30,
+        stock: 100,
+        stockMin: 10,
+        categoryId: "Fruta",
+        imageUrl: "http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg"
       }),
       this.productFactory.createWith({
         barcode: '0002',
         name: 'Coca-Cola Zero',
         description: '',
         price: 0.60,
-        stock: 1000
+        basePrice: 0.30,
+        stock: 1000,
+        stockMin: 10,
+        categoryId: "Fruta",
+        imageUrl: "http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg"
       })
     ]);
 

@@ -2,6 +2,7 @@ import Rx from 'rx';
 import * as _ from 'lodash';
 import ProductRepository from '../../domain/product/ProductRepository';
 import RxLocalStorage from '../service/RxLocalStorage';
+import Product from "../../domain/product/Product";
 
 const localStorageKey = 'products';
 /**
@@ -9,6 +10,15 @@ const localStorageKey = 'products';
  * @implements {ProductRepository}
  */
 export default class LocalStorageProductRepository extends ProductRepository {
+
+  /**
+   *
+   * @param {ProductMapper} productMapper
+   */
+  constructor({ productMapper }) {
+    super();
+    this._productMapper = productMapper;
+  }
 
     /**
      *
@@ -24,7 +34,8 @@ export default class LocalStorageProductRepository extends ProductRepository {
             productFilter.limit
           )
         )
-      );
+      )
+      .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }));
   }
 
     /**
@@ -37,6 +48,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
   findAllByName({ name, limit, offset }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
             .flatMap(products => Rx.Observable.from(products))
+            .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
             .filter(product => product.name === name)
             ;
   }
@@ -51,7 +63,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
             .map(arrayProducts => {
               const index = _.indexOf(
                 arrayProducts,
-                _.find(arrayProducts, { barcode: product.barcode })
+                _.find(arrayProducts, { _barcode: product.barcode })
               );
               if (index !== -1) {
                 arrayProducts.splice(index, 1, product);
@@ -71,6 +83,11 @@ export default class LocalStorageProductRepository extends ProductRepository {
             ;
   }
 
+  /**
+   *
+   * @param {Array} arrayProducts
+   * @returns {Observable.<null>}
+   */
   saveCollection({ arrayProducts }) {
     return RxLocalStorage.saveLocalStorage({
       localStorageKey,
@@ -78,28 +95,29 @@ export default class LocalStorageProductRepository extends ProductRepository {
     });
   }
 
+  /**
+   *
+   * @param {string} id
+   * @returns {Observable.<Product>}
+   */
   findById({ id }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
             .flatMap(products => Rx.Observable.from(products))
+            .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
             .filter(product => product.id === id)
             ;
   }
-
+  /**
+   *
+   * @param {string} barcode
+   * @returns {Observable.<Product>}
+   */
   findByBarcode({ barcode }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
             .flatMap(products => Rx.Observable.from(products))
+            .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
             .filter(product => product.barcode === barcode)
             ;
   }
-
-  addStock({ barcode, quantity }) {
-    return this.findByBarcode({ barcode })
-            .map(product => {
-              product.stock += quantity;
-              return product;
-            })
-            .flatMap(product => this.save({ product }));
-  }
-
 
 }
