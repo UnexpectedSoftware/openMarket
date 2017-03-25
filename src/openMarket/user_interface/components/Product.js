@@ -12,12 +12,13 @@ class Product extends Component {
     // Do something with the form values
     console.log(values);
   }
+
   render() {
     const { product } = this.props;
     return (
       <div>
         <p>Let's create a new product!</p>
-        <ProductForm onSubmit={this.handleSubmit} />
+        <ProductForm onSubmit={this.handleSubmit}/>
           <p>
             <Link to="/">
               <i className="fa fa-arrow-left fa-3x" />

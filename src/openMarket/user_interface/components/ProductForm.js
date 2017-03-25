@@ -1,23 +1,54 @@
 import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
 
+
 class ProductForm extends Component {
+
   render() {
-    const { handleSubmit } = this.props;
+    const { handleSubmit, categories } = this.props;
     return (
       <form onSubmit={handleSubmit}>
         <div>
-          <label htmlFor="firstName">First Name</label>
-          <Field name="firstName" component="input" type="text"/>
+          <label htmlFor="barcode">Barcode</label>
+          <Field name="barcode" component="input" type="text"/>
         </div>
         <div>
-          <label htmlFor="lastName">Last Name</label>
-          <Field name="lastName" component="input" type="text"/>
+          <label htmlFor="name">Name</label>
+          <Field name="name" component="input" type="text"/>
         </div>
         <div>
-          <label htmlFor="email">Email</label>
-          <Field name="email" component="input" type="email"/>
+          <label htmlFor="description">Description</label>
+          <Field name="description" component="textarea" type="text"/>
         </div>
+        <div>
+          <label htmlFor="price">Price</label>
+          <Field name="price" component="input" type="text"/>
+        </div>
+        <div>
+          <label htmlFor="basePrice">Base price</label>
+          <Field name="basePrice" component="input" type="text"/>
+        </div>
+        <div>
+          <label htmlFor="stock">Stock</label>
+          <Field name="stock" component="input" type="text"/>
+        </div>
+        <div>
+          <label htmlFor="stockMin">Stock Minimum</label>
+          <Field name="stockMin" component="input" type="text"/>
+        </div>
+        <div>
+          <label htmlFor="imageUrl">Image url</label>
+          <Field name="imageUrl" component="input" type="text"/>
+        </div>
+        <div>
+          <label htmlFor="categoryId">Category</label>
+          <Field name="categoryId" component="select">
+            <option></option>
+            <option value="42">Fruta</option>
+          </Field>
+
+        </div>
+
         <button type="submit">Submit</button>
       </form>
     );
