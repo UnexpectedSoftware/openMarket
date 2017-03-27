@@ -5,7 +5,7 @@ import { Field, reduxForm } from 'redux-form';
 class ProductForm extends Component {
 
   render() {
-    const { handleSubmit, categories } = this.props;
+    const { handleSubmit, categoriesList } = this.props;
     return (
       <form onSubmit={handleSubmit}>
         <div>
@@ -43,8 +43,10 @@ class ProductForm extends Component {
         <div>
           <label htmlFor="categoryId">Category</label>
           <Field name="categoryId" component="select">
-            <option></option>
-            <option value="42">Fruta</option>
+            <option value="">Select a category...</option>
+            {categoriesList.subscribe(categoriesArray => categoriesArray.map(categoryOption =>
+              <option value={categoryOption} key={categoryOption}>{categoryOption}</option>
+            ))}
           </Field>
 
         </div>
