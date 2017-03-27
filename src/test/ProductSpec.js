@@ -1,6 +1,6 @@
 import la from 'lazy-ass';
 import is from 'check-more-types';
-import Rx from 'rx';
+import Rx from 'rxjs/Rx';
 import openMarket from '../openMarket';
 import FixturesService from '../openMarket/infrastructure/service/FixturesService';
 
@@ -28,7 +28,7 @@ const observableAddStockProducts = openMarket.get('products_add_stock_use_case')
 
 const noop = () => {};
 const crash = (err) => { throw err; };  // rethrow
-Rx.config.longStackSupport = true;
+
 
 describe('Product list all use case', () => {
   beforeEach(function () {

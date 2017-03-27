@@ -1,6 +1,6 @@
 import la from 'lazy-ass';
 import is from 'check-more-types';
-import Rx from 'rx';
+import Rx from 'rxjs/Rx';
 import openMarket from '../openMarket';
 import FixturesService from '../openMarket/infrastructure/service/FixturesService';
 /**
@@ -29,7 +29,7 @@ const observableFindByIdCategory = openMarket.get('categories_find_by_id_use_cas
 
 const noop = () => {};
 const crash = (err) => { throw err; };  // rethrow
-Rx.config.longStackSupport = true;
+
 
 describe('Category find by id use case', () => {
   beforeEach(function () {

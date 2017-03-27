@@ -1,4 +1,4 @@
-import Rx from 'rx';
+import Rx from 'rxjs/Rx';
 import { LocalStorage } from 'node-localstorage';
 /**
  * @class
@@ -14,10 +14,10 @@ export default class RxLocalStorage {
       const localStorage = new LocalStorage('./scratch');
       const data = localStorage.getItem(localStorageKey);
       if (data === null) {
-        observer.onError(null);
+        observer.error(null);
       } else {
-        observer.onNext(JSON.parse(data));
-        observer.onCompleted();
+        observer.next(JSON.parse(data));
+        observer.complete();
       }
     });
   }
@@ -32,10 +32,10 @@ export default class RxLocalStorage {
       try {
         const localStorage = new LocalStorage('./scratch');
         localStorage.setItem(localStorageKey, JSON.stringify(value));
-        observer.onNext(null);
-        observer.onCompleted();
+        observer.next(null);
+        observer.complete();
       } catch (error) {
-        observer.onError(error);
+        observer.error(error);
       }
     });
   }
