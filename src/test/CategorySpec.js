@@ -102,17 +102,18 @@ describe('Category create use case', () => {
   it('should create a new campaign and then would be 13 campaigns', (done) => {
     let count = 0;
     const onNumber = () => { count += 1; };
-
     observableCreateCategory.createCategory({
       name: 'category test',
       imageUrl: 'http://www.google.es/caca'
     })
-            .flatMap(observableCategories.findAll())
-            .flatMap(arrayData => Rx.Observable.from(arrayData))
-            .subscribe(onNumber, noop, () => {
-              la(count === 13, `got ${count} campaigns`);
-              done();
-            });
+      .flatMap(data => observableCategories.findAll())
+
+      .flatMap(arrayData => Rx.Observable.from(arrayData))
+      .subscribe(onNumber, noop, () => {
+        la(count === 13, `got ${count} campaigns`);
+        done();
+      });
+
   });
 
   it('has no errors and complete', (done) => {
