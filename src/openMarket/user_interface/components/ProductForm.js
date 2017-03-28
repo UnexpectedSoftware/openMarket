@@ -44,9 +44,9 @@ class ProductForm extends Component {
           <label htmlFor="categoryId">Category</label>
           <Field name="categoryId" component="select">
             <option value="">Select a category...</option>
-            {categoriesList.subscribe(categoriesArray => categoriesArray.map(categoryOption =>
-              <option value={categoryOption} key={categoryOption}>{categoryOption}</option>
-            ))}
+            {categoriesList.map(category =>
+              <option value={category.name} key={category.id}>{category.name}</option>
+            )}
           </Field>
 
         </div>

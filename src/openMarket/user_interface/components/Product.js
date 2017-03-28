@@ -10,6 +10,11 @@ class Product extends Component {
     console.log(values);
   }
 
+  componentWillMount() {
+    const { fetchCategories } = this.props;
+    fetchCategories();
+  }
+
   render() {
     const { categories } = this.props;
     return (

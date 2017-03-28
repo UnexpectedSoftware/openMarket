@@ -1,9 +1,10 @@
 import { createStore, applyMiddleware, compose } from 'redux';
+import { createEpicMiddleware } from 'redux-observable';
 import thunk from 'redux-thunk';
 import { hashHistory } from 'react-router';
 import { routerMiddleware, push } from 'react-router-redux';
 import createLogger from 'redux-logger';
-import rootReducer from '../reducers';
+import {rootReducer,rootEpic} from '../reducers';
 
 import * as counterActions from '../actions/counter';
 import * as productActions from '../actions/product';
@@ -21,7 +22,7 @@ const logger = createLogger({
 });
 
 const router = routerMiddleware(hashHistory);
-
+const epicMiddleware = createEpicMiddleware(rootEpic);
 // If Redux DevTools Extension is installed use it, otherwise use Redux compose
 /* eslint-disable no-underscore-dangle */
 const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ ?
@@ -32,11 +33,18 @@ const composeEnhancers = window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ ?
   compose;
 /* eslint-enable no-underscore-dangle */
 const enhancer = composeEnhancers(
-  applyMiddleware(thunk, router, logger)
+  applyMiddleware(thunk, router, logger, epicMiddleware)
 );
 
+
+
 export default function configureStore(initialState?: counterStateType) {
-  const store = createStore(rootReducer, initialState, enhancer);
+  const store = createStore(
+    rootReducer,
+    initialState,
+    enhancer,
+    applyMiddleware(epicMiddleware)
+  );
 
   if (module.hot) {
     module.hot.accept('../reducers', () =>

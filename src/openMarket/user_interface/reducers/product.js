@@ -1,4 +1,4 @@
-import { FETCH_CATEGORIES } from '../actions/product';
+import { FETCH_CATEGORIES_FULFILLED } from '../actions/product';
 
 
 const initialState = {
@@ -8,11 +8,10 @@ const initialState = {
 export default function reducer(state = initialState, action) {
 
   switch (action.type) {
-    case FETCH_CATEGORIES:
-      let list = [...state.categories, action.categories]
+    case FETCH_CATEGORIES_FULFILLED:
       return {
         ...state,
-        list
+        categories: action.payload
       };
 
     default:
