@@ -4,7 +4,8 @@ import { createEpicMiddleware } from 'redux-observable';
 import thunk from 'redux-thunk';
 import { hashHistory } from 'react-router';
 import { routerMiddleware } from 'react-router-redux';
-import {rootReducer, rootEpic} from '../reducers';
+import {rootReducer} from '../reducers';
+import {rootEpic} from '../epics';
 import type { counterStateType } from '../reducers/counter';
 
 const epicMiddleware = createEpicMiddleware(rootEpic);

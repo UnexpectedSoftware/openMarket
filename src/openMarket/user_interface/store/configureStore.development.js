@@ -4,8 +4,8 @@ import thunk from 'redux-thunk';
 import { hashHistory } from 'react-router';
 import { routerMiddleware, push } from 'react-router-redux';
 import createLogger from 'redux-logger';
-import {rootReducer,rootEpic} from '../reducers';
-
+import {rootReducer} from '../reducers';
+import {rootEpic} from '../epics';
 import * as counterActions from '../actions/counter';
 import * as productActions from '../actions/product';
 import type { counterStateType } from '../reducers/counter';

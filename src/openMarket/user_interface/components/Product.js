@@ -7,7 +7,10 @@ class Product extends Component {
 
   handleSubmit = (values) => {
     // Do something with the form values
+    const { saveProduct } = this.props;
     console.log(values);
+    saveProduct(values);
+
   }
 
   componentWillMount() {

@@ -45,7 +45,7 @@ class ProductForm extends Component {
           <Field name="categoryId" component="select">
             <option value="">Select a category...</option>
             {categoriesList.map(category =>
-              <option value={category.name} key={category.id}>{category.name}</option>
+              <option value={category.id} key={category.id}>{category.name}</option>
             )}
           </Field>
 
