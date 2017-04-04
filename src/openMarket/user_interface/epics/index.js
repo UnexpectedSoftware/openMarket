@@ -1,7 +1,5 @@
 import { combineEpics } from 'redux-observable';
-import {fetchCategoriesEpic} from '../epics/category';
-import {saveProductEpic} from '../epics/product';
+import newProductEpic from '../product/new_product/epic';
 export const rootEpic = combineEpics(
-  fetchCategoriesEpic,
-  saveProductEpic
+  newProductEpic
 );

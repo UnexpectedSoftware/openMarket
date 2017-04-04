@@ -1,21 +1,21 @@
 // @flow
 import React, { Component } from 'react';
 import { Link } from 'react-router';
-import ProductForm from './ProductForm';
+import NewProductReduxForm from './ReduxForm';
 
-class Product extends Component {
+class Container extends Component {
 
   handleSubmit = (values) => {
     // Do something with the form values
-    const { saveProduct } = this.props;
+    const { newProductSave } = this.props;
     console.log(values);
-    saveProduct(values);
+    newProductSave(values);
 
   }
 
   componentWillMount() {
-    const { fetchCategories } = this.props;
-    fetchCategories();
+    const { newProductFetchCategories } = this.props;
+    newProductFetchCategories();
   }
 
   render() {
@@ -23,7 +23,7 @@ class Product extends Component {
     return (
       <div>
         <p>Let's create a new product!</p>
-        <ProductForm onSubmit={this.handleSubmit} categoriesList={categories}/>
+        <NewProductReduxForm onSubmit={this.handleSubmit} categoriesList={categories}/>
           <p>
             <Link to="/">
               <i className="fa fa-arrow-left fa-3x" />
@@ -35,4 +35,4 @@ class Product extends Component {
   }
 }
 
-export default Product;
+export default Container;

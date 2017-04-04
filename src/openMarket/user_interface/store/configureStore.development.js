@@ -7,7 +7,7 @@ import createLogger from 'redux-logger';
 import {rootReducer} from '../reducers';
 import {rootEpic} from '../epics';
 import * as counterActions from '../actions/counter';
-import * as productActions from '../actions/product';
+import * as productActions from '../product/new_product/action';
 import type { counterStateType } from '../reducers/counter';
 
 const actionCreators = {

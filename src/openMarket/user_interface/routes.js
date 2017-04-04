@@ -4,7 +4,7 @@ import { Route, IndexRoute } from 'react-router';
 import App from './containers/App';
 import HomePage from './containers/HomePage';
 import CounterPage from './containers/CounterPage';
-import ProductPage from './containers/ProductPage';
+import ProductPage from './product/new_product/ReduxConnector';
 
 
 export default (

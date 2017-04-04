@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
 
 
-class ProductForm extends Component {
+class ReduxForm extends Component {
 
   render() {
     const { handleSubmit, categoriesList } = this.props;
@@ -60,6 +60,6 @@ class ProductForm extends Component {
 // Decorate the form component
 export default reduxForm({
   form: 'new_product' // a unique name for this form
-})(ProductForm);
+})(ReduxForm);
 
 
