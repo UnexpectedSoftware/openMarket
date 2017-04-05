@@ -1,17 +1,28 @@
 import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
-
+import { validate } from './ReduxFormValidations';
 
 class ReduxForm extends Component {
 
   render() {
+
+    const renderField = props => (
+      <div>
+        <label>{props.placeholder}</label>
+        <div>
+          <input {...props}/>
+          {props.touched && props.error && <span>{props.error}</span>}
+        </div>
+      </div>
+    )
+
     const { handleSubmit, categoriesList } = this.props;
     return (
       <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="barcode">Barcode</label>
-          <Field name="barcode" component="input" type="text"/>
-        </div>
+
+        <Field name="barcode" component={renderField} type="text" placeholder="Barcode"/>
+
+
         <div>
           <label htmlFor="name">Name</label>
           <Field name="name" component="input" type="text"/>
@@ -20,10 +31,10 @@ class ReduxForm extends Component {
           <label htmlFor="description">Description</label>
           <Field name="description" component="textarea" type="text"/>
         </div>
-        <div>
-          <label htmlFor="price">Price</label>
-          <Field name="price" component="input" type="text"/>
-        </div>
+
+
+        <Field name="price" component={renderField} type="text" placeholder="Price"/>
+
         <div>
           <label htmlFor="basePrice">Base price</label>
           <Field name="basePrice" component="input" type="text"/>
@@ -57,9 +68,9 @@ class ReduxForm extends Component {
   }
 }
 
-// Decorate the form component
 export default reduxForm({
-  form: 'new_product' // a unique name for this form
+  form: 'new_product',
+  validate
 })(ReduxForm);
 
 

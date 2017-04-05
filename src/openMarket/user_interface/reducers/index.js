@@ -4,13 +4,13 @@ import { combineReducers } from 'redux';
 import { routerReducer as routing } from 'react-router-redux';
 import { reducer as formReducer } from 'redux-form'
 import counter from './counter';
-import product from '../product/new_product/reducer';
+import newProductReducer from '../product/new_product/reducer';
 
 
 
 export const rootReducer = combineReducers({
   counter,
-  product,
+  newProduct: newProductReducer,
   form: formReducer,
   routing
 });
