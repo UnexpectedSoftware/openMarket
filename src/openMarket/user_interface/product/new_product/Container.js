@@ -8,7 +8,6 @@ class Container extends Component {
   handleSubmit = (values) => {
     // Do something with the form values
     const { newProductSave } = this.props;
-    console.log(values);
     newProductSave(values);
 
   }

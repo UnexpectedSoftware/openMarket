@@ -1,22 +1,22 @@
 import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
-import { validate } from './ReduxFormValidations';
+import { validation } from './ReduxFormValidations';
+
+
+const renderField = props => (
+  <div>
+    <label>{props.placeholder}</label>
+    <div>
+      <input {...props.input}/>
+      {props.touched && props.error && <span>{props.error}</span>}
+    </div>
+  </div>
+);
 
 class ReduxForm extends Component {
 
   render() {
-
-    const renderField = props => (
-      <div>
-        <label>{props.placeholder}</label>
-        <div>
-          <input {...props}/>
-          {props.touched && props.error && <span>{props.error}</span>}
-        </div>
-      </div>
-    )
-
-    const { handleSubmit, categoriesList } = this.props;
+    const { error, handleSubmit, categoriesList, pristine, reset, submitting } = this.props;
     return (
       <form onSubmit={handleSubmit}>
 
@@ -70,7 +70,7 @@ class ReduxForm extends Component {
 
 export default reduxForm({
   form: 'new_product',
-  validate
+  validation
 })(ReduxForm);
 
 

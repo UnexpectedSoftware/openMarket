@@ -1,6 +1,6 @@
-export const validate = values => {
+export const validation = values => {
   const errors = {};
-
+  console.log("values:",values);
   if (!values.barcode) {
     errors.barcode = 'Required';
   } else if (values.barcode.length > 15) {
