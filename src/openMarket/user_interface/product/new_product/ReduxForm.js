@@ -1,56 +1,32 @@
 import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
-import { validation } from './ReduxFormValidations';
+import { required, maxLength15, number, minValue1 } from '../../validations/formValidations';
 
-
-const renderField = props => (
+const renderInput = field => (
   <div>
-    <label>{props.placeholder}</label>
-    <div>
-      <input {...props.input}/>
-      {props.touched && props.error && <span>{props.error}</span>}
-    </div>
+    <label htmlFor={field.placeholder}>{field.placeholder}</label>
+    <input {...field.input} type={field.type}/>
+    {field.meta.touched &&
+    field.meta.error &&
+    <span className="error">{field.meta.error}</span>}
   </div>
 );
 
 class ReduxForm extends Component {
 
   render() {
-    const { error, handleSubmit, categoriesList, pristine, reset, submitting } = this.props;
+    const { handleSubmit, categoriesList, submitting } = this.props;
     return (
       <form onSubmit={handleSubmit}>
 
-        <Field name="barcode" component={renderField} type="text" placeholder="Barcode"/>
-
-
-        <div>
-          <label htmlFor="name">Name</label>
-          <Field name="name" component="input" type="text"/>
-        </div>
-        <div>
-          <label htmlFor="description">Description</label>
-          <Field name="description" component="textarea" type="text"/>
-        </div>
-
-
-        <Field name="price" component={renderField} type="text" placeholder="Price"/>
-
-        <div>
-          <label htmlFor="basePrice">Base price</label>
-          <Field name="basePrice" component="input" type="text"/>
-        </div>
-        <div>
-          <label htmlFor="stock">Stock</label>
-          <Field name="stock" component="input" type="text"/>
-        </div>
-        <div>
-          <label htmlFor="stockMin">Stock Minimum</label>
-          <Field name="stockMin" component="input" type="text"/>
-        </div>
-        <div>
-          <label htmlFor="imageUrl">Image url</label>
-          <Field name="imageUrl" component="input" type="text"/>
-        </div>
+        <Field name="barcode" component={renderInput} type="text" placeholder="Barcode" validate={[required, maxLength15]}/>
+        <Field name="name" component={renderInput} type="text" placeholder="Name" validate={required}/>
+        <Field name="description" component={renderInput} type="textarea" placeholder="Description"/>
+        <Field name="price" component={renderInput} type="text" placeholder="Price" validate={[required, minValue1, number]}/>
+        <Field name="basePrice" component={renderInput} type="text" placeholder="Base Price" validate={[required, minValue1, number]}/>
+        <Field name="stock" component={renderInput} type="text" placeholder="Stock" validate={[required, minValue1, number]}/>
+        <Field name="stockMin" component={renderInput} type="text" placeholder="Stock Minimum" validate={[required, minValue1, number]}/>
+        <Field name="imageUrl" component={renderInput} type="text" placeholder="Image url"/>
         <div>
           <label htmlFor="categoryId">Category</label>
           <Field name="categoryId" component="select">
@@ -62,15 +38,14 @@ class ReduxForm extends Component {
 
         </div>
 
-        <button type="submit">Submit</button>
+        <button type="submit" disabled={submitting}>Submit</button>
       </form>
     );
   }
 }
 
 export default reduxForm({
-  form: 'new_product',
-  validation
+  form: 'new_product'
 })(ReduxForm);
 
 
