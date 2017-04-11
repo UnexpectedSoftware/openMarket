@@ -1,6 +1,6 @@
 import la from 'lazy-ass';
 import is from 'check-more-types';
-import Rx from 'rx';
+import Rx from 'rxjs/Rx';
 import openMarket from '../openMarket';
 import FixturesService from '../openMarket/infrastructure/service/FixturesService';
 /**
@@ -29,7 +29,7 @@ const observableFindByIdCategory = openMarket.get('categories_find_by_id_use_cas
 
 const noop = () => {};
 const crash = (err) => { throw err; };  // rethrow
-Rx.config.longStackSupport = true;
+
 
 describe('Category find by id use case', () => {
   beforeEach(function () {
@@ -102,17 +102,18 @@ describe('Category create use case', () => {
   it('should create a new campaign and then would be 13 campaigns', (done) => {
     let count = 0;
     const onNumber = () => { count += 1; };
-
     observableCreateCategory.createCategory({
       name: 'category test',
       imageUrl: 'http://www.google.es/caca'
     })
-            .flatMap(observableCategories.findAll())
-            .flatMap(arrayData => Rx.Observable.from(arrayData))
-            .subscribe(onNumber, noop, () => {
-              la(count === 13, `got ${count} campaigns`);
-              done();
-            });
+      .flatMap(data => observableCategories.findAll())
+
+      .flatMap(arrayData => Rx.Observable.from(arrayData))
+      .subscribe(onNumber, noop, () => {
+        la(count === 13, `got ${count} campaigns`);
+        done();
+      });
+
   });
 
   it('has no errors and complete', (done) => {

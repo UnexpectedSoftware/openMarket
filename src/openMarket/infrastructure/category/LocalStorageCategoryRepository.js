@@ -1,6 +1,6 @@
 import CategoryRepository from '../../domain/category/CategoryRepository';
 import RxLocalStorage from '../service/RxLocalStorage';
-import Rx from 'rx';
+import { Observable } from 'rxjs/Observable';
 
 const localStorageKey = 'categories';
 /**
@@ -36,7 +36,7 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
      */
   findById({ id }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
-            .flatMap(arrayData => Rx.Observable.from(arrayData))
+            .flatMap(arrayData => Observable.from(arrayData))
             .filter(category => category.id === id)
             ;
   }
