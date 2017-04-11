@@ -1,4 +1,4 @@
-import Rx from 'rx';
+import { Observable } from 'rxjs/Observable';
 import * as _ from 'lodash';
 import ProductRepository from '../../domain/product/ProductRepository';
 import RxLocalStorage from '../service/RxLocalStorage';
@@ -28,7 +28,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
   findAll({ productFilter }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
       .flatMap(products =>
-        Rx.Observable.from(
+        Observable.from(
           products.slice(
             productFilter.offset,
             productFilter.limit
@@ -47,7 +47,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
      */
   findAllByName({ name, limit, offset }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
-            .flatMap(products => Rx.Observable.from(products))
+            .flatMap(products => Observable.from(products))
             .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
             .filter(product => product.name === name)
             ;
@@ -102,7 +102,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
    */
   findById({ id }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
-            .flatMap(products => Rx.Observable.from(products))
+            .flatMap(products => Observable.from(products))
             .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
             .filter(product => product.id === id)
             ;
@@ -114,7 +114,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
    */
   findByBarcode({ barcode }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
-            .flatMap(products => Rx.Observable.from(products))
+            .flatMap(products => Observable.from(products))
             .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
             .filter(product => product.barcode === barcode)
             ;

@@ -1,6 +1,6 @@
 import la from 'lazy-ass';
 import is from 'check-more-types';
-import Rx from 'rx';
+import Rx from 'rxjs/Rx';
 import openMarket from '../openMarket';
 import FixturesService from '../openMarket/infrastructure/service/FixturesService';
 
@@ -28,7 +28,7 @@ const observableAddStockProducts = openMarket.get('products_add_stock_use_case')
 
 const noop = () => {};
 const crash = (err) => { throw err; };  // rethrow
-Rx.config.longStackSupport = true;
+
 
 describe('Product list all use case', () => {
   beforeEach(function () {
@@ -138,7 +138,7 @@ describe('Product create use case', () => {
     let count = 0;
     const onNumber = () => { count += 1; };
     observableCreateProducts.createOrUpdate(productDTO)
-            .flatMap(observableFindAllProducts.findAll({ limit: 10, offset: 0 }))
+            .flatMap(data => observableFindAllProducts.findAll({ limit: 10, offset: 0 }))
             .subscribe(onNumber, noop, () => {
               la(count === 3, `got ${count} products`);
               done();
@@ -149,9 +149,9 @@ describe('Product create use case', () => {
     let count = 0;
     const onData = (product) => {
       count += 1;
-      if (product.barcode == productDTONew.barcode) {
-        la(product.name == productDTONew.name, 'names are not the same');
-        la(product.description == productDTONew.description, 'descriptions are not the same');
+      if (product.barcode === productDTONew.barcode) {
+        la(product.name === productDTONew.name, 'names are not the same');
+        la(product.description === productDTONew.description, 'descriptions are not the same');
       }
     };
     const productDTONew = {
@@ -164,7 +164,7 @@ describe('Product create use case', () => {
       categoryId: 2
     };
     observableCreateProducts.createOrUpdate(productDTONew)
-            .flatMap(observableFindAllProducts.findAll({ limit: 10, offset: 0 }))
+            .flatMap(data => observableFindAllProducts.findAll({ limit: 10, offset: 0 }))
             .subscribe(onData, noop, () => {
               la(count === 2, `got ${count} products`);
               done();
@@ -180,14 +180,14 @@ describe('Product add stock use case', () => {
 
   it('should update an existing product with new stock quantity added', (done) => {
     const onData = (product) => {
-      la(product.stock == 1500, 'Stock is not added correctly');
+      la(product.stock === 1500, 'Stock is not added correctly');
     };
 
     observableAddStockProducts.addStock({
       barcode: '0002',
       quantity: 500
     })
-        .flatMap(observableFindProducts.findProductByBarcode({ barcode: '0002' }))
+        .flatMap(data => observableFindProducts.findProductByBarcode({ barcode: '0002' }))
         .subscribe(onData, noop, done());
   });
 });
