@@ -1,60 +1,46 @@
 // @flow
 import React, { Component } from 'react';
 import { Link } from 'react-router';
-import ReactTable from 'react-table'
-import 'react-table/react-table.css'
-
-const data = [{
-  name: 'Tanner Linsley',
-  age: 26,
-  friend: {
-    name: 'Jason Maurer',
-    age: 23,
-  }
-},
-  {
-    name: 'Tanner Linsley',
-    age: 26,
-    friend: {
-      name: 'Jason Maurer',
-      age: 23,
-    }
-  },
-  {
-    name: 'Tanner Linsley',
-    age: 26,
-    friend: {
-      name: 'Jason Maurer',
-      age: 23,
-    }
-  },
-  {
-    name: 'Tanner Linsley',
-    age: 26,
-    friend: {
-      name: 'Jason Maurer',
-      age: 23,
-    }
-  }
-
-
-];
+import ReactTable from 'react-table';
 
 const columns = [{
+  header: 'Barcode',
+  accessor: 'barcode' // String-based value accessors!
+},
+{
   header: 'Name',
-  accessor: 'name' // String-based value accessors!
-}, {
-  header: 'Age',
-  accessor: 'age',
-  render: props => <span className='number'>{props.value}</span> // Custom cell components!
-}, {
-  id: 'friendName', // Required because our accessor is not a string
-  header: 'Friend Name',
-  accessor: d => d.friend.name // Custom value accessors!
-}, {
-  header: props => <span>Friend Age</span>, // Custom header components!
-  accessor: 'friend.age'
-}];
+  accessor: 'name'
+},
+{
+  header: 'description',
+  accessor: 'description'
+},
+{
+  header: 'Price',
+  accessor: 'price'
+},
+  {
+    header: 'Base Price',
+    accessor: 'basePrice'
+  },
+
+  {
+    header: 'Stock',
+    accessor: 'stock'
+  },
+  {
+    header: 'Stock minimum',
+    accessor: 'stockMin'
+  },
+  {
+    header: 'Category',
+    accessor: 'categoryId'
+  },
+  {
+    header: 'Status',
+    accessor: 'status'
+  }
+];
 
 class Container extends Component {
 
@@ -75,7 +61,7 @@ class Container extends Component {
         </p>
 
         <ReactTable
-          data={data}
+          data={products}
           columns={columns}
         />
 

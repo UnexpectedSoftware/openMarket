@@ -23,7 +23,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
     /**
      *
      * @param {ProductFilter} productFilter
-     * @returns {Observable<Product>}
+     * @returns {Observable<Array<Product>>}
      */
   findAll({ productFilter }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
@@ -35,7 +35,8 @@ export default class LocalStorageProductRepository extends ProductRepository {
           )
         )
       )
-      .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }));
+      .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .toArray();
   }
 
     /**
