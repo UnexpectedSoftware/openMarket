@@ -1,4 +1,3 @@
-import {reset} from 'redux-form';
 import OpenMarket from "../../../index";
 import * as Rx from "rxjs";
 import * as newProductActions from "./action";

@@ -2,14 +2,26 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router';
 import ReactTable from 'react-table';
+import * as Rx from "rxjs";
+
+
+let filterSubject$ = new Rx.Subject();
+filterSubject$.subscribe(filter => console.log(filter));
+
+const filterAndSorting = (state, instance) => {
+  filterSubject$.next(state.filtering);
+};
 
 const columns = [{
   header: 'Barcode',
-  accessor: 'barcode' // String-based value accessors!
+  accessor: 'barcode',
+  hideFilter: true
+
 },
 {
   header: 'Name',
-  accessor: 'name'
+  accessor: 'name',
+  filterMethod: (filter, row) => (row[filter.id].includes(filter.value))
 },
 {
   header: 'description',
@@ -63,6 +75,9 @@ class Container extends Component {
         <ReactTable
           data={products}
           columns={columns}
+          showFilters={true}
+          manual={true}
+        onChange={filterAndSorting}
         />
 
 
