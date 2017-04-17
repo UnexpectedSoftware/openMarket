@@ -4,14 +4,6 @@ import { Link } from 'react-router';
 import ReactTable from 'react-table';
 import * as Rx from "rxjs";
 
-
-let filterSubject$ = new Rx.Subject();
-filterSubject$.subscribe(filter => console.log(filter));
-
-const filterAndSorting = (state, instance) => {
-  filterSubject$.next(state.filtering);
-};
-
 const columns = [{
   header: 'Barcode',
   accessor: 'barcode',
@@ -53,12 +45,23 @@ const columns = [{
     accessor: 'status'
   }
 ];
+const filterSubject$ = new Rx.Subject();
 
 class Container extends Component {
 
+  filterAndSorting(state, instance){
+    filterSubject$.next(state.filtering);
+  };
+
   componentWillMount() {
-    const { listProductFetch } = this.props;
+    const { listProductFetch, listProductFetchWithFilters } = this.props;
     listProductFetch();
+
+    filterSubject$
+      .debounceTime(300)
+      .filter(filter => filter[0]!== undefined)
+      .map(filter => listProductFetchWithFilters(filter[0].value))
+      .subscribe();
   }
 
   render() {
@@ -77,7 +80,7 @@ class Container extends Component {
           columns={columns}
           showFilters={true}
           manual={true}
-        onChange={filterAndSorting}
+        onChange={this.filterAndSorting}
         />
 
 
