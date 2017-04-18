@@ -8,7 +8,6 @@ const columns = [{
   header: 'Barcode',
   accessor: 'barcode',
   hideFilter: true
-
 },
 {
   header: 'Name',
@@ -16,33 +15,25 @@ const columns = [{
   filterMethod: (filter, row) => (row[filter.id].includes(filter.value))
 },
 {
-  header: 'description',
-  accessor: 'description'
-},
-{
   header: 'Price',
-  accessor: 'price'
+  accessor: 'price',
+  hideFilter: true
 },
-  {
-    header: 'Base Price',
-    accessor: 'basePrice'
-  },
 
   {
     header: 'Stock',
-    accessor: 'stock'
-  },
-  {
-    header: 'Stock minimum',
-    accessor: 'stockMin'
+    accessor: 'stock',
+    hideFilter: true
   },
   {
     header: 'Category',
-    accessor: 'categoryId'
+    accessor: 'categoryId',
+    hideFilter: true
   },
   {
     header: 'Status',
-    accessor: 'status'
+    accessor: 'status',
+    hideFilter: true
   }
 ];
 const filterSubject$ = new Rx.Subject();
@@ -55,12 +46,13 @@ class Container extends Component {
 
   componentWillMount() {
     const { listProductFetch, listProductFetchWithFilters } = this.props;
-    listProductFetch();
 
     filterSubject$
       .debounceTime(300)
-      .filter(filter => filter[0]!== undefined)
-      .map(filter => listProductFetchWithFilters(filter[0].value))
+      .flatMap(filter => Rx.Observable.from(filter)
+        .map(filter => listProductFetchWithFilters(filter.value))
+        .defaultIfEmpty(Rx.Observable.of(listProductFetch()))
+      )
       .subscribe();
   }
 
