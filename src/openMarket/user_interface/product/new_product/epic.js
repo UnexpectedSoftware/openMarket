@@ -1,6 +1,7 @@
 import OpenMarket from "../../../index";
 import * as Rx from "rxjs";
 import * as newProductActions from "./action";
+import {reset} from 'redux-form';
 
 const saveProductEpic = action$ =>
 
@@ -21,8 +22,10 @@ const saveProductEpic = action$ =>
     )
     .map(saved => newProductActions.newProductSaved());
 
-
-
+const savedProductEpic = action$ =>
+  action$.ofType(newProductActions.NEW_PRODUCT_SAVED)
+    .map(action => reset('new_product'))
+    .mergeMap(resetAction => Rx.Observable.of(resetAction, newProductActions.newProductFetchCategories()));
 
 const fetchCategoriesEpic = action$ =>
   action$.ofType(newProductActions.NEW_PRODUCT_FETCH_CATEGORIES)
@@ -32,5 +35,6 @@ const fetchCategoriesEpic = action$ =>
 export default action$ =>
   Rx.Observable.merge(
     saveProductEpic(action$),
+    savedProductEpic(action$),
     fetchCategoriesEpic(action$)
   );
