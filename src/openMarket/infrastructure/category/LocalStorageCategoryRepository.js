@@ -55,11 +55,11 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
     });
 
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
-            .map(categoryArray => {
-              categoryArray.push(category);
-              return categoryArray;
-            })
-            .flatMap(categoryArray => RxLocalStorage.saveLocalStorage({ localStorageKey, value: categoryArray }));
+        .map(categoryArray => {
+          categoryArray.push(category);
+          return categoryArray;
+        })
+        .flatMap(categoryArray => RxLocalStorage.saveLocalStorage({ localStorageKey, value: categoryArray }));
   }
 
     /**

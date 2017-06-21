@@ -14,6 +14,7 @@ export default class Home extends Component {
             <li><Link to="/counter">to Counter</Link></li>
             <li><Link to="/create_product">new Product!</Link></li>
             <li><Link to="/list_products">List Products!</Link></li>
+            <li><Link to="/create_category">new Category!</Link></li>
           </ul>
         </div>
       </div>
