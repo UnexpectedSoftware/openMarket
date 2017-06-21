@@ -32,11 +32,14 @@ export default class FixturesService {
   }
 
   load() {
+
+    const frutaCategory = this.categoryFactory.createWith({
+      name: 'Fruta',
+      imageUrl: 'http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg'
+    });
+
     const categories = Array.from([
-      this.categoryFactory.createWith({
-        name: 'Fruta',
-        imageUrl: 'http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg'
-      }),
+      frutaCategory,
       this.categoryFactory.createWith({
         name: 'Conservas',
         imageUrl: 'http://estaticos.mujeresreales.es/rcs/articles/2221/imagenes//CP_02-04-03_S491_opt.jpg'
@@ -94,7 +97,7 @@ export default class FixturesService {
         basePrice: 0.30,
         stock: 100,
         stockMin: 10,
-        categoryId: "Fruta",
+        categoryId: frutaCategory.id,
         imageUrl: "http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg"
       }),
       this.productFactory.createWith({
@@ -105,7 +108,40 @@ export default class FixturesService {
         basePrice: 0.30,
         stock: 1000,
         stockMin: 10,
-        categoryId: "Fruta",
+        categoryId: frutaCategory.id,
+        imageUrl: "http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg"
+      }),
+      this.productFactory.createWith({
+        barcode: '0003',
+        name: 'Coca-Cola Zero sin cafeina',
+        description: '',
+        price: 0.60,
+        basePrice: 0.30,
+        stock: 1000,
+        stockMin: 10,
+        categoryId: frutaCategory.id,
+        imageUrl: "http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg"
+      }),
+      this.productFactory.createWith({
+        barcode: '0004',
+        name: 'Coca-Cola Zero zero',
+        description: '',
+        price: 0.60,
+        basePrice: 0.30,
+        stock: 1000,
+        stockMin: 10,
+        categoryId: frutaCategory.id,
+        imageUrl: "http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg"
+      }),
+      this.productFactory.createWith({
+        barcode: '0005',
+        name: 'Coca-Cola Zero 42',
+        description: '',
+        price: 0.60,
+        basePrice: 0.30,
+        stock: 1000,
+        stockMin: 10,
+        categoryId: frutaCategory.id,
         imageUrl: "http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg"
       })
     ]);

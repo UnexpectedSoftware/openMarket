@@ -9,7 +9,6 @@ class Container extends Component {
     // Do something with the form values
     const { newProductSave } = this.props;
     newProductSave(values);
-
   }
 
   componentWillMount() {
