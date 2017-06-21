@@ -27,7 +27,7 @@ export default class ListAllProducts {
      *
      * @param {number} limit
      * @param {number} offset
-     * @returns {Observable.<Array.<Category>>}
+     * @returns {Observable.<Array.<Product>>}
      */
   findAll({ limit, offset }) {
     return this._repository.findAll({

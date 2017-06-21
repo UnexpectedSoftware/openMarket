@@ -21,6 +21,7 @@ export default validate(merge(baseConfig, {
     'babel-polyfill',
     './src/openMarket/user_interface',
     './src/openMarket/index',
+    './node_modules/react-table'
   ],
 
   output: {

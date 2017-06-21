@@ -25,7 +25,7 @@ export default validate(merge(baseConfig, {
     loaders: [
       // Extract all .global.css to style.css as is
       {
-        test: /\.global\.css$/,
+        test: /\.css$/,
         loader: ExtractTextPlugin.extract(
           'style-loader',
           'css-loader'

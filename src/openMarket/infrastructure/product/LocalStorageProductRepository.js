@@ -23,7 +23,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
     /**
      *
      * @param {ProductFilter} productFilter
-     * @returns {Observable<Product>}
+     * @returns {Observable<Array<Product>>}
      */
   findAll({ productFilter }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
@@ -35,7 +35,8 @@ export default class LocalStorageProductRepository extends ProductRepository {
           )
         )
       )
-      .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }));
+      .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .toArray();
   }
 
     /**
@@ -43,13 +44,14 @@ export default class LocalStorageProductRepository extends ProductRepository {
      * @param {string} name
      * @param {number} limit
      * @param {number} offset
-     * @returns {Observable.<Product>}
+     * @returns {Observable.<Array<Product>>}
      */
   findAllByName({ name, limit, offset }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
             .flatMap(products => Observable.from(products))
             .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
-            .filter(product => product.name === name)
+            .filter(product => product.name.includes(name))
+            .toArray()
             ;
   }
     // TODO Make an abstract LocalStorageRepository with methods like this
