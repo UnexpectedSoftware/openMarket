@@ -38,7 +38,7 @@ class ReduxForm extends Component {
 
         </div>
 
-        <button type="submit" disabled={submitting}>Submit</button>
+        <button type="submit" disabled={submitting}>Save</button>
       </form>
     );
   }

@@ -2,7 +2,7 @@ import { Application } from 'spectron';
 import { expect } from 'chai';
 import electronPath from 'electron';
 import path from 'path';
-import homeStyles from '../../openMarket/user_interface/components/Home.css';
+import homeStyles from '../../openMarket/user_interface/home/Home.css';
 import counterStyles from '../../openMarket/user_interface/components/Counter.css';
 
 const delay = time => new Promise(resolve => setTimeout(resolve, time));
