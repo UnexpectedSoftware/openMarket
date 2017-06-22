@@ -44,15 +44,6 @@ describe('Product list all use case', () => {
     observableFindAllProducts.findAll({ limit: 10, offset: 0 }).subscribe(noop, noop, done);
   });
 
-  it('should return 2 products with limit 10 and offset 0', (done) => {
-    let count = 0;
-    const onNumber = () => { count += 1; };
-    observableFindAllProducts.findAll({ limit: 10, offset: 0 }).subscribe(onNumber, noop, () => {
-      la(count === 2, `got ${count} products`);
-      done();
-    });
-  });
-
   it('should return 1 product with limit 1 and offset 0', (done) => {
     let count = 0;
     const onNumber = () => { count += 1; };
@@ -134,13 +125,13 @@ describe('Product create use case', () => {
     categoryId: 2
   };
 
-  it('should create a new product and then would be 3 products', (done) => {
+  it('should create a new product', (done) => {
     let count = 0;
     const onNumber = () => { count += 1; };
     observableCreateProducts.createOrUpdate(productDTO)
-            .flatMap(data => observableFindAllProducts.findAll({ limit: 10, offset: 0 }))
+            .flatMap(data => observableFindProducts.findProductByBarcode({barcode: productDTO.barcode}))
             .subscribe(onNumber, noop, () => {
-              la(count === 3, `got ${count} products`);
+              la(count === 1, `got ${count} products`);
               done();
             });
   });
@@ -164,9 +155,9 @@ describe('Product create use case', () => {
       categoryId: 2
     };
     observableCreateProducts.createOrUpdate(productDTONew)
-            .flatMap(data => observableFindAllProducts.findAll({ limit: 10, offset: 0 }))
+            .flatMap(data => observableFindProducts.findProductByBarcode({barcode: productDTONew.barcode}))
             .subscribe(onData, noop, () => {
-              la(count === 2, `got ${count} products`);
+              la(count === 1, `got ${count} products`);
               done();
             });
   });
