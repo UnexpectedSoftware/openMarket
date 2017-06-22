@@ -16,7 +16,7 @@ class Counter extends Component {
     const { increment, incrementIfOdd, incrementAsync, decrement, counter } = this.props;
     return (
       <div>
-        <div className={styles.backButton}>
+        <div className={"backButton"}>
           <Link to="/">
             <i className="fa fa-arrow-left fa-3x" />
           </Link>
@@ -25,14 +25,14 @@ class Counter extends Component {
           {counter}
         </div>
         <div className={styles.btnGroup}>
-          <button className={styles.btn} onClick={increment}>
+          <button className="btn" onClick={increment}>
             <i className="fa fa-plus" />
           </button>
-          <button className={styles.btn} onClick={decrement}>
+          <button className="btn" onClick={decrement}>
             <i className="fa fa-minus" />
           </button>
-          <button className={styles.btn} onClick={incrementIfOdd}>odd</button>
-          <button className={styles.btn} onClick={() => incrementAsync()}>async</button>
+          <button className="btn" onClick={incrementIfOdd}>odd</button>
+          <button className="btn" onClick={() => incrementAsync()}>async</button>
         </div>
       </div>
     );

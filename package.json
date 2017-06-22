@@ -9,7 +9,7 @@
     "test-all": "npm run lint && npm run flow && npm run test && npm run build",
     "test:domain": "./node_modules/.bin/mocha src/test --compilers js:babel-core/register",
     "test-watch": "npm test -- --watch",
-    "test-e2e": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha --retries 2 --compilers js:babel-register --require ./src/test/user_interface/setup.js ./src/test/user_interface/e2e.js",
+    "test-e2e": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha --retries 2 --compilers js:babel-register --require ./src/test/user_interface/setup.js src/test/user_interface/e2e.js",
     "lint": "eslint --cache --format=node_modules/eslint-formatter-pretty .",
     "lint-fix": "npm run lint -- --fix",
     "hot-server": "cross-env NODE_ENV=development node --max_old_space_size=2096 -r babel-register src/openMarket/infrastructure/configuration/server.js",
