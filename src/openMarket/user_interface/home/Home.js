@@ -8,10 +8,10 @@ export default class Home extends Component {
   render() {
     return (
       <div>
-        <div className={styles.container}>
+        <div className={"container"}>
           <h2>Home</h2>
           <ul>
-            <li><Link to="/counter">to Counter</Link></li>
+            <li><Link to="/counter" className={"counter"}>to Counter</Link></li>
             <li><Link to="/create_product">new Product!</Link></li>
             <li><Link to="/list_products">List Products!</Link></li>
             <li><Link to="/create_category">new Category!</Link></li>

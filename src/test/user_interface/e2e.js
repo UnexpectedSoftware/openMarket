@@ -24,10 +24,11 @@ describe('main window', function spec() {
     }
   });
 
-  const findCounter = () => this.app.client.element(`.${counterStyles.counter}`);
+  const findCounter = () => this.app.client.element('.counter');
 
   const findButtons = async () => {
-    const { value } = await this.app.client.elements(`.${counterStyles.btn}`);
+    const { value } = await this.app.client.elements('button.btn');
+    console.log(value);
     return value.map(btn => btn.ELEMENT);
   };
 
@@ -55,7 +56,7 @@ describe('main window', function spec() {
   it('should to Counter with click "to Counter" link', async () => {
     const { client } = this.app;
 
-    await client.click(`.${homeStyles.container} > a`);
+    await client.click('a.counter');
     expect(await findCounter().getText()).to.equal('0');
   });
 
@@ -104,12 +105,9 @@ describe('main window', function spec() {
 
   it('should back to home if back button clicked', async () => {
     const { client } = this.app;
-    await client.element(
-      `.${counterStyles.backButton} > a`
-    ).click();
-
+    await client.click('div.backButton a');
     expect(
-      await client.isExisting(`.${homeStyles.container}`)
+      await client.isExisting('div.container')
     ).to.be.true;
   });
 });
