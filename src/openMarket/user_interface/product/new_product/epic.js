@@ -25,7 +25,7 @@ const saveProductEpic = action$ =>
 const savedProductEpic = action$ =>
   action$.ofType(newProductActions.NEW_PRODUCT_SAVED)
     .map(action => reset('new_product'))
-    .mergeMap(resetAction => Rx.Observable.of(resetAction, newPro+ductActions.newProductFetchCategories()));
+    .mergeMap(resetAction => Rx.Observable.of(resetAction, newProductActions.newProductFetchCategories()));
 
 const fetchCategoriesEpic = action$ =>
   action$.ofType(newProductActions.NEW_PRODUCT_FETCH_CATEGORIES)

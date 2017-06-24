@@ -1,5 +1,4 @@
 // @flow
-import type { counterStateType } from '../../reducers/counter';
 
 
 export const NEW_PRODUCT_FETCH_CATEGORIES = 'NEW_PRODUCT_FETCH_CATEGORIES';
