@@ -106,6 +106,7 @@ describe('main window', function spec() {
   it('should back to home if back button clicked', async () => {
     const { client } = this.app;
     await client.click('div.backButton a');
+    await delay(1000);
     expect(
       await client.isExisting('div.container')
     ).to.be.true;
