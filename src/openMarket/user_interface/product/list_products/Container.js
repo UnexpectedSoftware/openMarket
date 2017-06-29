@@ -36,18 +36,18 @@ const columns = [{
     hideFilter: true
   }
 ];
-const filterSubject$ = new Rx.Subject();
+
 
 class Container extends Component {
 
   filterAndSorting(state, instance){
-    filterSubject$.next(state.filtering);
+    this.filterSubject$.next(state.filtering);
   };
 
   componentWillMount() {
     const { listProductFetch, listProductFetchWithFilters } = this.props;
-
-    filterSubject$
+    this.filterSubject$ = new Rx.Subject();
+    this.filterSubject$
       .debounceTime(300)
       .flatMap(filter => Rx.Observable.from(filter)
         .map(filter => listProductFetchWithFilters(filter.value))
@@ -72,7 +72,7 @@ class Container extends Component {
           columns={columns}
           showFilters={true}
           manual={true}
-        onChange={this.filterAndSorting}
+        onChange={this.filterAndSorting.bind(this)}
         />
 
 
