@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import newOrderReducer from '../../../openMarket/user_interface/order/new_order/reducer';
-import { NEW_ORDER_PRODUCT_FETCH, NEW_ORDER_PRODUCT_FETCHED } from '../../../openMarket/user_interface/order/new_order/action';
+import newOrderReducer from '../../../../openMarket/user_interface/order/new_order/reducer';
+import { NEW_ORDER_PRODUCT_FETCH, NEW_ORDER_PRODUCT_FETCHED } from '../../../../openMarket/user_interface/order/new_order/action';
 
 describe('reducers', () => {
   describe('newOrder', () => {
