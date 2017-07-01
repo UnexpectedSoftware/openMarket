@@ -1,4 +1,4 @@
-export const initialState = () => {
+export const state = () => {
   return {
     order: {
       lines: [],
@@ -17,15 +17,16 @@ export const addProduct = ({ lines, product }) => {
   lines.push({
     barcode: product.barcode,
     name: product.name,
-    quantity: productQuantity,
-    price: product.price
+    price: product.price,
+    quantity: productQuantity
   });
 
-  let state = initialState();
-  state.order.lines = lines;
-  state.order.total = calculateTotal({lines});
-
-  return state;
+  return {
+    order: {
+      lines,
+      total: calculateTotal({lines})
+    }
+  };
 };
 
 const calculateTotal = ({lines}) => {

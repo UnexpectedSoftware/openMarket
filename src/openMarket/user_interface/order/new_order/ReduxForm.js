@@ -20,13 +20,13 @@ const columns = [
     hideFilter: true
   },
   {
-    header: 'Quantity',
-    accessor: 'quantity',
+    header: 'Price',
+    accessor: 'price',
     hideFilter: true
   },
   {
-    header: 'Price',
-    accessor: 'price',
+    header: 'Quantity',
+    accessor: 'quantity',
     hideFilter: true
   }
 ];
