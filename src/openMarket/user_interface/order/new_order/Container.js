@@ -26,12 +26,12 @@ class Container extends Component {
   }
 
   render() {
-    const { order } = this.props;
+    const { order, newOrderProductQuantityChange } = this.props;
 
     return (
       <div>
         <p>Let's create a new order!</p>
-        <NewOrderReduxForm onSubmit={this.handleSubmit} order={order} findProduct={this.handleKeyPress.bind(this)}/>
+        <NewOrderReduxForm onQuantityChange={newOrderProductQuantityChange} onSubmit={this.handleSubmit} order={order} findProduct={this.handleKeyPress.bind(this)}/>
           <p>
             <Link to="/">
               <i className="fa fa-arrow-left fa-3x" />

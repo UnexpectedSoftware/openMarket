@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
-import { required, maxLength15, number, minValue1 } from '../../validations/formValidations';
 import ReactTable from 'react-table';
+import * as Rx from "rxjs";
 
 const renderInput = field => (
   <div>
@@ -18,10 +18,13 @@ class ReduxForm extends Component {
   constructor(props,context) {
     super(props, context);
     this.renderEditable = this.renderEditable.bind(this);
+    this.changeQuantity = this.changeQuantity.bind(this);
+    this.subjectQuantity$ = new Rx.Subject();
     this.columns = [
       {
         Header: 'Barcode',
-        accessor: 'barcode'
+        accessor: 'barcode',
+        show: false
       },
       {
         Header: 'Name',
@@ -34,18 +37,27 @@ class ReduxForm extends Component {
       {
         Header: 'Quantity',
         accessor: 'quantity',
-        Cell: props => <span className='number'>{props.value}</span>
+        Cell: this.renderEditable
       }
     ];
   }
 
-  renderEditable (cellInfo) {
-    return (<div style={{ backgroundColor: '#fafafa' }} contentEditable onBlur={(e) => {
-      console.log(e.target.textContent);
-    }}>aaa</div>)
+  renderEditable (props) {
+    return (<input type="text" onChange={(e) => this.changeQuantity(e.target.value,props.row.barcode)} value={props.value} />);
   }
 
+  changeQuantity(quantity,barcode){
+    console.log(quantity,barcode);
+    this.subjectQuantity$.next({quantityChanged: quantity, barcode: barcode});
+  }
 
+  componentWillMount() {
+    const { onQuantityChange } = this.props;
+    this.subjectQuantity$
+      .map(quantityChanged => onQuantityChange(quantityChanged))
+      .subscribe();
+
+  }
 
   render() {
     const { handleSubmit, order, submitting, findProduct } = this.props;

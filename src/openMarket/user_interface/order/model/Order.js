@@ -12,7 +12,7 @@ export const addProduct = ({ lines, product }) => {
   let productQuantity = 1;
   if (undefined !== repeatedProduct) {
     lines = lines.filter(currentProduct => currentProduct.barcode !== product.barcode);
-    productQuantity = repeatedProduct.quantity +1;
+    productQuantity = Number.parseInt(repeatedProduct.quantity) +1;
   }
   lines.push({
     barcode: product.barcode,
@@ -29,9 +29,25 @@ export const addProduct = ({ lines, product }) => {
   };
 };
 
+export const updateQuantity = ({lines, barcode, quantity}) => {
+  let newLines = lines.map(currentProduct => {
+    if(!isNaN(quantity) && currentProduct.barcode === barcode ) {
+      currentProduct.quantity = quantity;
+    }
+    return currentProduct;
+  });
+  return {
+    order: {
+      lines: newLines,
+      total: calculateTotal({lines:newLines})
+    }
+  };
+
+}
+
 const calculateTotal = ({lines}) => {
   let totalOrder = 0.0;
-  lines.forEach(product => totalOrder += Math.round(product.quantity*product.price*100)/100);
+  lines.forEach(product => totalOrder += Math.round(Number.parseInt(product.quantity)*product.price*100)/100);
   return totalOrder;
 }
 
