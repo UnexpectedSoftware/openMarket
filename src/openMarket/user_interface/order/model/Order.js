@@ -47,8 +47,8 @@ export const updateQuantity = ({lines, barcode, quantity}) => {
 
 const calculateTotal = ({lines}) => {
   let totalOrder = 0.0;
-  lines.forEach(product => totalOrder += Math.round(Number.parseInt(product.quantity)*product.price*100)/100);
-  return totalOrder;
+  lines.forEach(product => totalOrder += Number.parseInt(product.quantity)*product.price);
+  return parseFloat(totalOrder.toFixed(2));
 }
 
 

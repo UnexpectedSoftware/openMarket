@@ -75,7 +75,7 @@ class ReduxForm extends Component {
           showPagination={false}
           showPageSizeOptions={false}
         />
-        <h1>{order.total}</h1>
+        <h1>{order.total} €</h1>
 
         <button type="submit" disabled={submitting}>Save</button>
       </form>

@@ -141,6 +141,84 @@ describe('reducers', () => {
     });
 
 
+    it('should handle NEW_ORDER_PRODUCT_QUANTITY_CHANGE with quantity 6 and get a total with 2 decimals', () => {
+      const givenQuantityChange = {
+        barcode: '0001',
+        quantityChanged: 6,
+      };
+
+      const giveInitialState = {
+        order: {
+          lines: [
+            {
+              barcode: '0001',
+              name: 'Ninja',
+              price: 0.55,
+              quantity: 1
+            },
+            {
+              barcode: '0002',
+              name: 'Ninja2',
+              price: 0.6,
+              quantity: 1
+            },
+            {
+              barcode: '0003',
+              name: 'Ninja3',
+              price: 0.6,
+              quantity: 2
+            },
+            {
+              barcode: '0004',
+              name: 'Ninja4',
+              price: 0.6,
+              quantity: 1
+            }
+
+          ],
+          total: 2.94
+        }
+      };
+
+      const expectedState = {
+        order: {
+          lines: [
+            {
+              barcode: '0001',
+              name: 'Ninja',
+              price: 0.55,
+              quantity: 6
+            },
+            {
+              barcode: '0002',
+              name: 'Ninja2',
+              price: 0.6,
+              quantity: 1
+            },
+            {
+              barcode: '0003',
+              name: 'Ninja3',
+              price: 0.6,
+              quantity: 2
+            },
+            {
+              barcode: '0004',
+              name: 'Ninja4',
+              price: 0.6,
+              quantity: 1
+            }
+
+          ],
+          total: 5.7
+        }
+      };
+      expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_QUANTITY_CHANGE, payload: givenQuantityChange }))
+        .to.deep.equal(expectedState);
+    });
+
+
+
+
 
   });
 });
