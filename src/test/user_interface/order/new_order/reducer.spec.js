@@ -28,7 +28,8 @@ describe('reducers', () => {
             barcode: '0001',
             name: 'Ninja',
             price: 9.99,
-            quantity: 1
+            quantity: 1,
+            subtotal: 9.99
           }],
         total: 9.99
         }
@@ -52,9 +53,10 @@ describe('reducers', () => {
             barcode: '0001',
             name: 'Ninja',
             price: 9.99,
-            quantity: 1
+            quantity: 1,
+            subtotal: 9.99
           }],
-          total: 0.0
+          total: 9.99
         }
       };
 
@@ -64,7 +66,8 @@ describe('reducers', () => {
             barcode: '0001',
             name: 'Ninja',
             price: 9.99,
-            quantity: 2
+            quantity: 2,
+            subtotal: 19.98
           }],
           total: 19.98
         }
@@ -85,7 +88,8 @@ describe('reducers', () => {
             barcode: '0001',
             name: 'Ninja',
             price: 9.99,
-            quantity: 1
+            quantity: 1,
+            subtotal: 9.99
           }],
           total: 9.99
         }
@@ -97,7 +101,8 @@ describe('reducers', () => {
             barcode: '0001',
             name: 'Ninja',
             price: 9.99,
-            quantity: 5
+            quantity: 5,
+            subtotal: 49.95
           }],
           total: 49.95
         }
@@ -119,7 +124,8 @@ describe('reducers', () => {
             barcode: '0001',
             name: 'Ninja',
             price: 9.99,
-            quantity: 1
+            quantity: 1,
+            subtotal: 9.99
           }],
           total: 9.99
         }
@@ -131,7 +137,8 @@ describe('reducers', () => {
             barcode: '0001',
             name: 'Ninja',
             price: 9.99,
-            quantity: 1
+            quantity: 1,
+            subtotal: 9.99
           }],
           total: 9.99
         }
@@ -154,25 +161,29 @@ describe('reducers', () => {
               barcode: '0001',
               name: 'Ninja',
               price: 0.55,
-              quantity: 1
+              quantity: 1,
+              subtotal: 0.55
             },
             {
               barcode: '0002',
               name: 'Ninja2',
               price: 0.6,
-              quantity: 1
+              quantity: 1,
+              subtotal: 0.6
             },
             {
               barcode: '0003',
               name: 'Ninja3',
               price: 0.6,
-              quantity: 2
+              quantity: 2,
+              subtotal: 1.2
             },
             {
               barcode: '0004',
               name: 'Ninja4',
               price: 0.6,
-              quantity: 1
+              quantity: 1,
+              subtotal: 0.6
             }
 
           ],
@@ -187,25 +198,29 @@ describe('reducers', () => {
               barcode: '0001',
               name: 'Ninja',
               price: 0.55,
-              quantity: 6
+              quantity: 6,
+              subtotal: 3.3
             },
             {
               barcode: '0002',
               name: 'Ninja2',
               price: 0.6,
-              quantity: 1
+              quantity: 1,
+              subtotal: 0.6
             },
             {
               barcode: '0003',
               name: 'Ninja3',
               price: 0.6,
-              quantity: 2
+              quantity: 2,
+              subtotal: 1.2
             },
             {
               barcode: '0004',
               name: 'Ninja4',
               price: 0.6,
-              quantity: 1
+              quantity: 1,
+              subtotal: 0.6
             }
 
           ],

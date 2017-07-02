@@ -38,6 +38,10 @@ class ReduxForm extends Component {
         Header: 'Quantity',
         accessor: 'quantity',
         Cell: this.renderEditable
+      },
+      {
+        Header: 'Subtotal',
+        accessor: 'subtotal'
       }
     ];
   }
