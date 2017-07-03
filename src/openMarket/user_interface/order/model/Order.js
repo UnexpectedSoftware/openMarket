@@ -47,6 +47,18 @@ export const updateQuantity = ({lines, barcode, quantity}) => {
 
 }
 
+export const removeProduct = ({lines, barcode}) =>{
+  let newLines = lines.filter(product => product.barcode!==barcode);
+  return {
+    order: {
+      lines: newLines,
+      total: calculateTotal({lines:newLines})
+    }
+  };
+}
+
+
+
 const calculateTotal = ({lines}) => {
   let totalOrder = 0.0;
   lines.forEach(product => totalOrder += Number.parseInt(product.quantity)*product.price);

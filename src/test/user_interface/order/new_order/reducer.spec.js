@@ -1,6 +1,10 @@
 import { expect } from 'chai';
 import newOrderReducer from '../../../../openMarket/user_interface/order/new_order/reducer';
-import { NEW_ORDER_PRODUCT_FETCH, NEW_ORDER_PRODUCT_FETCHED, NEW_ORDER_PRODUCT_QUANTITY_CHANGE } from '../../../../openMarket/user_interface/order/new_order/action';
+import {
+  NEW_ORDER_PRODUCT_DELETED,
+  NEW_ORDER_PRODUCT_FETCHED,
+  NEW_ORDER_PRODUCT_QUANTITY_CHANGE
+} from '../../../../openMarket/user_interface/order/new_order/action';
 
 describe('reducers', () => {
   describe('newOrder', () => {
@@ -232,7 +236,49 @@ describe('reducers', () => {
     });
 
 
+    it('should handle NEW_ORDER_PRODUCT_DELETED with an order with some products on it', () => {
+      const givenActionWithBarcode = '0001';
 
+
+      const giveInitialState = {
+        order: {
+          lines: [
+            {
+              barcode: '0001',
+              name: 'Ninja',
+              price: 0.55,
+              quantity: 1,
+              subtotal: 0.55
+            },
+            {
+              barcode: '0002',
+              name: 'Ninja2',
+              price: 0.6,
+              quantity: 1,
+              subtotal: 0.6
+            }
+          ],
+          total: 1.15
+        }
+      };
+
+      const expectedState = {
+        order: {
+          lines: [
+            {
+              barcode: '0002',
+              name: 'Ninja2',
+              price: 0.6,
+              quantity: 1,
+              subtotal: 0.6
+            }
+          ],
+          total: 0.6
+        }
+      };
+      expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_DELETED, barcode: givenActionWithBarcode }))
+        .to.deep.equal(expectedState);
+    });
 
 
   });

@@ -1,5 +1,5 @@
-import {NEW_ORDER_PRODUCT_FETCHED, NEW_ORDER_PRODUCT_QUANTITY_CHANGE} from './action';
-import {state,addProduct, updateQuantity} from '../model/Order';
+import {NEW_ORDER_PRODUCT_FETCHED, NEW_ORDER_PRODUCT_QUANTITY_CHANGE, NEW_ORDER_PRODUCT_DELETED} from './action';
+import {state,addProduct, updateQuantity, removeProduct} from '../model/Order';
 
 const initialState = state();
 
@@ -20,6 +20,13 @@ export default function reducer(state = initialState, action) {
          quantity: action.payload.quantityChanged,
          lines: [...state.order.lines]
        });
+
+    case NEW_ORDER_PRODUCT_DELETED:
+      return removeProduct(
+        {
+          lines: [...state.order.lines],
+          barcode: action.barcode
+        });
 
     default:
       return state;

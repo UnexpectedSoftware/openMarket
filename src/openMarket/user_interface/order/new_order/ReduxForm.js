@@ -18,6 +18,7 @@ class ReduxForm extends Component {
   constructor(props,context) {
     super(props, context);
     this.renderEditable = this.renderEditable.bind(this);
+    this.renderDeleteRow = this.renderDeleteRow.bind(this);
     this.changeQuantity = this.changeQuantity.bind(this);
     this.subjectQuantity$ = new Rx.Subject();
     this.columns = [
@@ -42,8 +43,18 @@ class ReduxForm extends Component {
       {
         Header: 'Subtotal',
         accessor: 'subtotal'
+      },
+      {
+        Header: 'Actions',
+        accessor: 'actions',
+        Cell: this.renderDeleteRow
       }
     ];
+  }
+
+  renderDeleteRow (data) {
+    const { onDeleteProduct } = this.props;
+    return (<a onClick={(e) => onDeleteProduct(data.row.barcode)}>Delete</a>);
   }
 
   renderEditable (props) {
@@ -51,7 +62,6 @@ class ReduxForm extends Component {
   }
 
   changeQuantity(quantity,barcode){
-    console.log(quantity,barcode);
     this.subjectQuantity$.next({quantityChanged: quantity, barcode: barcode});
   }
 
