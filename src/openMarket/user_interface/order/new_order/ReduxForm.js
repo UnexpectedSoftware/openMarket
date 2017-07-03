@@ -77,7 +77,7 @@ class ReduxForm extends Component {
     const { handleSubmit, order, submitting, findProduct } = this.props;
 
     return (
-      <form onSubmit={handleSubmit}>
+      <form>
 
         <Field name="barcode" component={renderInput} onkeypress={findProduct} type="text" placeholder="Barcode"/>
 
@@ -91,7 +91,7 @@ class ReduxForm extends Component {
         />
         <h1>{order.total} €</h1>
 
-        <button type="submit" disabled={submitting}>Save</button>
+        <a onClick={handleSubmit} disabled={submitting}>Save</a>
       </form>
     );
   }

@@ -7,8 +7,8 @@ import * as Rx from "rxjs";
 class Container extends Component {
 
   handleSubmit = (values) => {
-    const { newOrderSave } = this.props;
-    newOrderSave(values);
+    const { newOrderSave , order } = this.props;
+    newOrderSave(order);
   }
 
   handleKeyPress = (e) => {
