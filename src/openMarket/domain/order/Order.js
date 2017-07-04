@@ -46,7 +46,7 @@ export default class Order {
 
 
   getTotalAmount() {
-    return 0;
+    return this._lines.reduce((acc, element) => acc + (element.price * element.quantity) ,0);
   }
 
 }
