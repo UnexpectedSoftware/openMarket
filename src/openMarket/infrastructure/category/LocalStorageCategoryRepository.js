@@ -1,12 +1,13 @@
-import CategoryRepository from '../../domain/category/CategoryRepository';
-import RxLocalStorage from '../service/RxLocalStorage';
-import { Observable } from 'rxjs/Observable';
-
-const localStorageKey = 'categories';
 /**
  * @class LocalStorageCategoryRepository
  * @implements {CategoryRepository}
  */
+import CategoryRepository from '../../domain/category/CategoryRepository';
+import RxLocalStorage from '../service/RxLocalStorage';
+import { Observable } from 'rxjs/Observable';
+import * as Rx from "rxjs";
+
+const localStorageKey = 'categories';
 export default class LocalStorageCategoryRepository extends CategoryRepository {
 
     /**
@@ -55,6 +56,7 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
     });
 
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
+        .catch(Rx.Observable.of([]))
         .map(categoryArray => {
           categoryArray.push(category);
           return categoryArray;
@@ -80,6 +82,7 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
      */
   update({ id, name, imageUrl }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
+            .catch(e => Rx.Observable.of([]))
             .map(categoryArray => {
               const optionalIndex = categoryArray.findIndex((category, index, array) => (category.id == id));
               if (optionalIndex != -1) {

@@ -12,7 +12,10 @@ const newOrderProductFetch = action$ =>
 
 const newOrderSave = action$ =>
   action$.ofType(newOrderActions.NEW_ORDER_SAVE)
-    .flatMap(action => OpenMarket.get("orders_create_use_case").createOrder({lines:action.order.lines}))
+    .flatMap(action => Rx.Observable.from(action.order.lines)
+      .map(line => ({name: line.name, price: line.price, quantity: line.quantity}))
+      .toArray())
+    .flatMap(lines => OpenMarket.get("orders_create_use_case").createOrder({lines:lines}))
     .map(savedOrder => newOrderActions.newOrderSaved())
     .mergeMap(action => Rx.Observable.of(reset('new_order'),action));
 

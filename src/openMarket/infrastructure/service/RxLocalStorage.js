@@ -13,8 +13,9 @@ export default class RxLocalStorage {
     return Rx.Observable.create(observer => {
       const localStorage = new LocalStorage('./scratch');
       const data = localStorage.getItem(localStorageKey);
-      if (data === null) {
-        observer.error(null);
+      if(localStorageKey === 'orders') console.log("LOCAL NULL:", data === "");
+      if ("" === data) {
+        observer.error("");
       } else {
         observer.next(JSON.parse(data));
         observer.complete();
