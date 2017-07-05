@@ -3,16 +3,6 @@ import { Field, reduxForm } from 'redux-form';
 import ReactTable from 'react-table';
 import * as Rx from "rxjs";
 
-const renderInput = field => (
-  <div>
-    <label htmlFor={field.placeholder}>{field.placeholder}</label>
-    <input {...field.input} type={field.type} onKeyPress={field.onkeypress}/>
-    {field.meta.touched &&
-    field.meta.error &&
-    <span className="error">{field.meta.error}</span>}
-  </div>
-);
-
 class ReduxForm extends Component {
 
   constructor(props,context) {
@@ -20,6 +10,9 @@ class ReduxForm extends Component {
     this.renderEditable = this.renderEditable.bind(this);
     this.renderDeleteRow = this.renderDeleteRow.bind(this);
     this.changeQuantity = this.changeQuantity.bind(this);
+    this.renderInput = this.renderInput.bind(this);
+    this.setFocusOnBarcode = this.setFocusOnBarcode.bind(this);
+    this.saveOrder = this.saveOrder.bind(this);
     this.subjectQuantity$ = new Rx.Subject();
     this.columns = [
       {
@@ -61,8 +54,18 @@ class ReduxForm extends Component {
     return (<input type="text" onChange={(e) => this.changeQuantity(e.target.value,props.row.barcode)} value={props.value} />);
   }
 
+  setFocusOnBarcode () {
+    this.barcodeInput.focus();
+  }
+
   changeQuantity(quantity,barcode){
     this.subjectQuantity$.next({quantityChanged: quantity, barcode: barcode});
+  }
+
+  saveOrder(e){
+    const { handleSubmit} = this.props;
+    handleSubmit(e);
+    this.setFocusOnBarcode();
   }
 
   componentWillMount() {
@@ -70,16 +73,29 @@ class ReduxForm extends Component {
     this.subjectQuantity$
       .map(quantityChanged => onQuantityChange(quantityChanged))
       .subscribe();
-
   }
 
+  componentDidMount() {
+    this.setFocusOnBarcode();
+  }
+
+  renderInput = field => (
+    <div>
+      <label htmlFor={field.placeholder}>{field.placeholder}</label>
+      <input ref={(input) => this.barcodeInput = input} {...field.input} type={field.type} onKeyPress={field.onkeypress}/>
+      {field.meta.touched &&
+      field.meta.error &&
+      <span className="error">{field.meta.error}</span>}
+    </div>
+  );
+
   render() {
-    const { handleSubmit, order, submitting, findProduct } = this.props;
+    const { order, submitting, findProduct } = this.props;
 
     return (
       <form>
 
-        <Field name="barcode" component={renderInput} onkeypress={findProduct} type="text" placeholder="Barcode"/>
+        <Field name="barcode" component={this.renderInput} onkeypress={findProduct} type="text" placeholder="Barcode"/>
 
         <ReactTable
           data={order.lines}
@@ -91,7 +107,7 @@ class ReduxForm extends Component {
         />
         <h1>{order.total} €</h1>
 
-        <a onClick={handleSubmit} disabled={submitting}>Save</a>
+        <a onClick={this.saveOrder} disabled={submitting}>Save</a>
       </form>
     );
   }
