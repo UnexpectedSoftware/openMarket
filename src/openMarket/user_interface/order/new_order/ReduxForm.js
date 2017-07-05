@@ -14,6 +14,7 @@ class ReduxForm extends Component {
     this.setFocusOnBarcode = this.setFocusOnBarcode.bind(this);
     this.saveOrder = this.saveOrder.bind(this);
     this.subjectQuantity$ = new Rx.Subject();
+    this.moneySymbol = "€";
     this.columns = [
       {
         Header: 'Barcode',
@@ -26,7 +27,8 @@ class ReduxForm extends Component {
       },
       {
         Header: 'Price',
-        accessor: 'price'
+        accessor: 'price',
+        Cell: (data) => data.value +" "+this.moneySymbol
       },
       {
         Header: 'Quantity',
@@ -35,7 +37,8 @@ class ReduxForm extends Component {
       },
       {
         Header: 'Subtotal',
-        accessor: 'subtotal'
+        accessor: 'subtotal',
+        Cell: (data) => data.value +" "+this.moneySymbol
       },
       {
         Header: 'Actions',
@@ -105,7 +108,7 @@ class ReduxForm extends Component {
           showPagination={false}
           showPageSizeOptions={false}
         />
-        <h1>{order.total} €</h1>
+        <h1>{order.total+" "+this.moneySymbol} </h1>
 
         <a onClick={this.saveOrder} disabled={submitting}>Save</a>
       </form>
