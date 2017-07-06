@@ -15,7 +15,13 @@ export default class LocalStorageOrderRepository extends OrderRepository {
   }
 
   findAll({limit, offset}) {
-    return null;
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
+      .catch(e => Rx.Observable.of([]))
+      .flatMap(ordersArray => Rx.Observable.from(
+        ordersArray.slice(offset, limit)
+      ))
+      .map(order => ({id:order._id,createdAt:order._createdAt,total:order._total }))
+      .toArray()
   }
 
   update({id, lines}) {

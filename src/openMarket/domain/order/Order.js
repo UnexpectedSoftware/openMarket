@@ -44,6 +44,9 @@ export default class Order {
   }
 
 
+  get total() {
+    return this._total;
+  }
 
   getTotalAmount() {
     return this._lines.reduce((acc, element) => acc + (element.price * element.quantity) ,0);
