@@ -1,14 +1,15 @@
+/**
+ * @class LocalStorageProductRepository
+ * @implements {ProductRepository}
+ */
 import { Observable } from 'rxjs/Observable';
 import * as _ from 'lodash';
 import ProductRepository from '../../domain/product/ProductRepository';
 import RxLocalStorage from '../service/RxLocalStorage';
 import Product from "../../domain/product/Product";
+import * as Rx from "rxjs";
 
 const localStorageKey = 'products';
-/**
- * @class LocalStorageProductRepository
- * @implements {ProductRepository}
- */
 export default class LocalStorageProductRepository extends ProductRepository {
 
   /**
@@ -62,6 +63,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
      */
   save({ product }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey })
+      .catch(e => Rx.Observable.of([]))
             .map(arrayProducts => {
               const index = _.indexOf(
                 arrayProducts,

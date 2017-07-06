@@ -5,7 +5,7 @@
   "description": "Desktop application to administrate a generic market with stocks, products, categories etc...",
   "main": "main.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha --retries 2 --compilers js:babel-register --recursive --require ./src/test/user_interface/setup.js src/test/user_interface/**/*.spec.js",
+    "test": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha --recursive --retries 2 --compilers js:babel-register --require ./src/test/user_interface/setup.js \"src/test/user_interface/**/*.spec.js\"",
     "test-all": "npm run lint && npm run flow && npm run test && npm run build",
     "test:domain": "./node_modules/.bin/mocha src/test --compilers js:babel-core/register",
     "test-watch": "npm test -- --watch",
@@ -168,7 +168,7 @@
     "react-redux": "^5.0.2",
     "react-router": "^3.0.2",
     "react-router-redux": "^4.0.7",
-    "react-table": "^5.5.0",
+    "react-table": "^6.4.0",
     "redux": "^3.6.0",
     "redux-form": "^6.5.0",
     "redux-observable": "^0.14.1",
