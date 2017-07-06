@@ -5,37 +5,57 @@ export default class Order {
 
   /**
    * @param {IdGenerator} idGenerator
-   * @param {Array.<OrderLine>} lines
+   * @param {Array.<Line>} lines
    */
-  contructor({ idGenerator, lines }) {
-        /**
-         * @type {String}
-         * */
-    this.id = idGenerator.generate();
+  constructor({ idGenerator, lines }) {
+  /**
+   * @type {String}
+   * */
+    this._id = idGenerator.generate();
 
-        /**
-         * @type {Date}
-         * */
-    this.createdAt = new Date().toLocaleString('es-ES');
+  /**
+   * @type {Date}
+   * */
+    this._createdAt = new Date().toLocaleString('es-ES');
     /**
-     * @type {number}
+     *
+     * @type {Array.<Line>}
+     * @private
      */
-    this.total = this.getTotalAmount();
+    this._lines = lines;
+
+  /**
+   * @type {number}
+   */
+    this._total = this.getTotalAmount();
   }
 
 
-  getTotalAmount() {
+  get id() {
+    return this._id;
+  }
 
+  get createdAt() {
+    return this._createdAt;
+  }
+
+  get lines() {
+    return this._lines;
+  }
+
+
+
+  getTotalAmount() {
+    return this._lines.reduce((acc, element) => acc + (element.price * element.quantity) ,0);
   }
 
 }
 
-class OrderLine {
+class Line {
 
-  constructor({ productName, productDescription, productQuantity, productPrice }) {
-    this.productName = productName;
-    this.productDescription = productDescription;
-    this.productQuantity = productQuantity;
-    this.productPrice = productPrice;
+  constructor({ productName, productQuantity, productPrice }) {
+    this._productName = productName;
+    this._productQuantity = productQuantity;
+    this._productPrice = productPrice;
   }
 }

@@ -1,10 +1,11 @@
-import CategoryDependencyBuilder from './infrastructure/category/CategoryDependencyBuilder';
-import ProductDependencyBuilder from './infrastructure/product/ProductDependencyBuilder';
-import FixturesService from './infrastructure/service/FixturesService';
-
 /**
  * @class OpenMarket
  */
+import CategoryDependencyBuilder from './infrastructure/category/CategoryDependencyBuilder';
+import ProductDependencyBuilder from './infrastructure/product/ProductDependencyBuilder';
+import FixturesService from './infrastructure/service/FixturesService';
+import OrderDependencyBuilder from "./infrastructure/order/OrderDependencyBuilder";
+
 class OpenMarket {
 
     /**
@@ -31,6 +32,7 @@ class OpenMarket {
     this.deps.set('products_find_use_case', ProductDependencyBuilder.buildFindProductsUseCase());
     this.deps.set('products_create_or_update_use_case', ProductDependencyBuilder.buildCreateProduct());
     this.deps.set('products_add_stock_use_case', ProductDependencyBuilder.buildAddStockProduct());
+    this.deps.set('orders_create_use_case', OrderDependencyBuilder.buildCreateOrderUseCase());
   }
 
     /**

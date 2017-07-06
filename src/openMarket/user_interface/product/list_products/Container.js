@@ -4,56 +4,61 @@ import { Link } from 'react-router';
 import ReactTable from 'react-table';
 import * as Rx from "rxjs";
 
-const columns = [{
-  header: 'Barcode',
-  accessor: 'barcode',
-  hideFilter: true
-},
-{
-  header: 'Name',
-  accessor: 'name',
-  filterMethod: (filter, row) => (row[filter.id].includes(filter.value))
-},
-{
-  header: 'Price',
-  accessor: 'price',
-  hideFilter: true
-},
-
-  {
-    header: 'Stock',
-    accessor: 'stock',
-    hideFilter: true
-  },
-  {
-    header: 'Category',
-    accessor: 'categoryId',
-    hideFilter: true
-  },
-  {
-    header: 'Status',
-    accessor: 'status',
-    hideFilter: true
-  }
-];
-const filterSubject$ = new Rx.Subject();
-
 class Container extends Component {
 
-  filterAndSorting(state, instance){
-    filterSubject$.next(state.filtering);
+  constructor(props,context) {
+    super(props, context);
+    this.filteredChange = this.filteredChange.bind(this);
+    this.filterSubject$ = new Rx.Subject();
+    this.columns = [{
+      Header: 'Barcode',
+      accessor: 'barcode',
+      filterable: false
+    },
+      {
+        Header: 'Name',
+        accessor: 'name',
+        filterMethod: (filter, row) => (row[filter.id].includes(filter.value))
+      },
+      {
+        Header: 'Price',
+        accessor: 'price',
+        filterable: false
+      },
+
+      {
+        Header: 'Stock',
+        accessor: 'stock',
+        filterable: false
+      },
+      {
+        Header: 'Category',
+        accessor: 'categoryId',
+        filterable: false
+      },
+      {
+        Header: 'Status',
+        accessor: 'status',
+        filterable: false
+      }
+    ];
+  }
+
+  filteredChange(column, value){
+    this.filterSubject$.next(column);
   };
 
   componentWillMount() {
     const { listProductFetch, listProductFetchWithFilters } = this.props;
-
-    filterSubject$
+    this.filterSubject$
+      .startWith(Rx.Observable.from([]))
       .debounceTime(300)
       .flatMap(filter => Rx.Observable.from(filter)
         .map(filter => listProductFetchWithFilters(filter.value))
         .defaultIfEmpty(Rx.Observable.of(listProductFetch()))
       )
       .subscribe();
+
   }
 
   render() {
@@ -69,10 +74,10 @@ class Container extends Component {
 
         <ReactTable
           data={products}
-          columns={columns}
-          showFilters={true}
-          manual={true}
-        onChange={this.filterAndSorting}
+          columns={this.columns}
+          filterable
+          manual
+          onFilteredChange={this.filteredChange}
         />
 
 

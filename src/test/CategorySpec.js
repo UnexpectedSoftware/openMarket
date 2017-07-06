@@ -65,7 +65,7 @@ describe('Category list all use case', () => {
     this.fixturesService.load();
   });
 
-  it('should return an Observable of campaigns', () => {
+  it('should return an Observable of categories', () => {
     la(is.fn(observableCategories.findAll().subscribe), 'has subscribe method');
   });
 
@@ -73,14 +73,14 @@ describe('Category list all use case', () => {
     observableCategories.findAll().subscribe(noop, noop, done);
   });
 
-  it('should return 12 campaigns', (done) => {
+  it('should return 12 categories', (done) => {
     let count = 0;
     const onNumber = () => { count += 1; };
     observableCategories
             .findAll()
             .flatMap(arrayData => Rx.Observable.from(arrayData))
             .subscribe(onNumber, noop, () => {
-              la(count === 12, `got ${count} campaigns`);
+              la(count === 12, `got ${count} categories`);
               done();
             });
   });
@@ -99,7 +99,7 @@ describe('Category create use case', () => {
     this.fixturesService.load();
   });
 
-  it('should create a new campaign and then would be 13 campaigns', (done) => {
+  it('should create a new category and then would be 13 categories', (done) => {
     let count = 0;
     const onNumber = () => { count += 1; };
     observableCreateCategory.createCategory({
@@ -107,10 +107,9 @@ describe('Category create use case', () => {
       imageUrl: 'http://www.google.es/caca'
     })
       .flatMap(data => observableCategories.findAll())
-
       .flatMap(arrayData => Rx.Observable.from(arrayData))
       .subscribe(onNumber, noop, () => {
-        la(count === 13, `got ${count} campaigns`);
+        la(count === 13, `got ${count} categories`);
         done();
       });
 
