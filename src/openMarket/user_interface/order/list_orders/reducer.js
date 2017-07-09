@@ -1,9 +1,7 @@
 import {LIST_ORDER_FETCHED} from './action';
+import {state, calculateTotal} from './ListOrdersModel';
 
-
-const initialState = {
-  orders: []
-};
+const initialState = state();
 
 export default function reducer(state = initialState, action) {
 
@@ -11,7 +9,8 @@ export default function reducer(state = initialState, action) {
     case LIST_ORDER_FETCHED:
       return {
         ...state,
-        orders: action.payload
+        orders: action.payload,
+        total: calculateTotal({orders: action.payload})
       };
 
     default:

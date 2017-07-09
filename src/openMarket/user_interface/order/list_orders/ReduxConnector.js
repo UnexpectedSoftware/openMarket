@@ -5,7 +5,7 @@ import * as ListOrderActions from './action';
 
 function mapStateToProps(state) {
   return {
-    orders: state.listOrder.orders
+    orders: state.listOrder
   };
 }
 
