@@ -19,7 +19,7 @@ class Container extends Component {
       {
         Header: 'Created At',
         accessor: 'createdAt',
-        Cell: (data) => moment(data.value).format("DD-MM-YYYY HH:mm:ss")
+        Cell: (data) => moment(data.value,"DD/MM/YYYY HH:mm:ss").format("DD-MM-YYYY HH:mm:ss")
       },
       {
         Header: 'Total',
