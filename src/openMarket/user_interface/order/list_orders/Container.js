@@ -10,6 +10,8 @@ class Container extends Component {
   constructor(props,context) {
     super(props, context);
     this.fetchData = this.fetchData.bind(this);
+    this.handleStartDateChanged = this.handleStartDateChanged.bind(this);
+    this.handleEndDateChanged = this.handleEndDateChanged.bind(this);
     this.moneySymbol = "€";
     this.columns = [
       {
@@ -40,6 +42,17 @@ class Container extends Component {
 
   }
 
+  handleStartDateChanged(data){
+    const { listOrderFiltersStartDateChanged } = this.props;
+    listOrderFiltersStartDateChanged(data);
+  }
+
+  handleEndDateChanged(data){
+    const { listOrderFiltersEndDateChanged } = this.props;
+    listOrderFiltersEndDateChanged(data);
+  }
+
+
   render() {
     const { orders } = this.props;
     return (
@@ -54,14 +67,16 @@ class Container extends Component {
           <label htmlFor="startDate">Start Date</label>
           <DatePicker
             selected={orders.filters.startDate}
-            onChange={this.handleChange}
+            onChange={this.handleStartDateChanged}
+            locale="es"
           />
         </div>
         <div>
           <label htmlFor="endDate">End Date</label>
           <DatePicker
             selected={orders.filters.endDate}
-            onChange={this.handleChange}
+            onChange={this.handleEndDateChanged}
+            locale="es"
           />
         </div>
 

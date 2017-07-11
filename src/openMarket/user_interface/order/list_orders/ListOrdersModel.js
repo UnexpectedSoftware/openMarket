@@ -5,7 +5,9 @@ export const state = () => {
     orders: [],
     filters: {
       startDate: moment(),
-      endDate: moment()
+      endDate: moment(),
+      offset: 0,
+      limit: 10
     },
     total: 0.0
   }
