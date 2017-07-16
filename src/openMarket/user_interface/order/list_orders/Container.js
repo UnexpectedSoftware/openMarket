@@ -12,6 +12,7 @@ class Container extends Component {
     this.fetchData = this.fetchData.bind(this);
     this.handleStartDateChanged = this.handleStartDateChanged.bind(this);
     this.handleEndDateChanged = this.handleEndDateChanged.bind(this);
+    this.handleFilterByDates  = this.handleFilterByDates.bind(this);
     this.moneySymbol = "€";
     this.columns = [
       {
@@ -21,7 +22,7 @@ class Container extends Component {
       {
         Header: 'Created At',
         accessor: 'createdAt',
-        Cell: (data) => moment(data.value,"DD/MM/YYYY HH:mm:ss").format("DD-MM-YYYY HH:mm:ss")
+        Cell: (data) => moment(data.value,"DD/MM/YYYY HH:mm:ss").format("DD/MM/YYYY HH:mm:ss")
       },
       {
         Header: 'Total',
@@ -33,10 +34,12 @@ class Container extends Component {
 
   fetchData (state, instance) {
     //this.setState({loading: true})
-    const { listOrderFetchWithFilters } = this.props;
+    const { listOrderFetchWithFilters, orders } = this.props;
     listOrderFetchWithFilters({
       limit: state.pageSize,
-      offset: (state.page * state.pageSize)
+      offset: (state.page * state.pageSize),
+      startDate: orders.filters.startDate,
+      endDate: orders.filters.endDate
     });
     //state.sorted, state.filtered
 
@@ -50,6 +53,16 @@ class Container extends Component {
   handleEndDateChanged(data){
     const { listOrderFiltersEndDateChanged } = this.props;
     listOrderFiltersEndDateChanged(data);
+  }
+
+  handleFilterByDates(event){
+    const { listOrderFetchWithFilters, orders } = this.props;
+    listOrderFetchWithFilters({
+      limit: orders.filters.limit,
+      offset: orders.filters.offset,
+      startDate: orders.filters.startDate,
+      endDate: orders.filters.endDate
+    });
   }
 
 
@@ -79,6 +92,7 @@ class Container extends Component {
             locale="es"
           />
         </div>
+        <button onClick={this.handleFilterByDates}>Filter</button>
 
         <ReactTable
           data={orders.orders}

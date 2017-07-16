@@ -1,8 +1,9 @@
-import CategoryDependencyBuilder from '../category/CategoryDependencyBuilder';
-import ProductDependencyBuilder from '../product/ProductDependencyBuilder';
 /**
  * @class FixturesService
  */
+import CategoryDependencyBuilder from '../category/CategoryDependencyBuilder';
+import ProductDependencyBuilder from '../product/ProductDependencyBuilder';
+import OrderDependencyBuilder from "../order/OrderDependencyBuilder";
 export default class FixturesService {
 
     /**
@@ -29,6 +30,11 @@ export default class FixturesService {
          * @type {ProductFactoryImpl}
          */
     this.productFactory = ProductDependencyBuilder.buildProductFactoryTest();
+
+      /**
+       * @type {CreateOrder}
+       */
+    this.createOrderUseCase = OrderDependencyBuilder.buildCreateOrderUseCase();
   }
 
   load() {
@@ -147,7 +153,21 @@ export default class FixturesService {
     ]);
 
     this.productRepository.saveCollection({ arrayProducts: products }).subscribe();
+
   }
+
+  loadOrders() {
+    const lines = [{
+      name: "Coca-Cola",
+      price: 0.55,
+      quantity:1}];
+    this.createOrderUseCase.createOrder({
+      lines: lines
+    }).subscribe();
+  }
+
+
+
 
 
 }

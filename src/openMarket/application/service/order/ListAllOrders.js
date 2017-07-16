@@ -4,8 +4,8 @@ export default class ListAllOrders {
     this._repository = repository;
   }
 
-  findAll({ limit, offset }) {
-    return this._repository.findAll({ limit, offset});
+  findAllByDates({ limit, offset, startDate, endDate }) {
+    return this._repository.findAllByDates({ limit, offset, startDate, endDate});
   }
 
 }

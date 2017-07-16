@@ -1,6 +1,7 @@
 /**
  * @class Order
  */
+import moment from "moment";
 export default class Order {
 
   /**
@@ -16,7 +17,7 @@ export default class Order {
   /**
    * @type {Date}
    * */
-    this._createdAt = new Date().toLocaleString('es-ES');
+    this._createdAt = moment().format("DD/MM/YYYY HH:mm:ss");
     /**
      *
      * @type {Array.<Line>}
