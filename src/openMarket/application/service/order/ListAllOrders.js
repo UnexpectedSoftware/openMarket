@@ -8,4 +8,8 @@ export default class ListAllOrders {
     return this._repository.findAllByDates({ limit, offset, startDate, endDate});
   }
 
+  countByDates({ startDate, endDate }){
+    return this._repository.countByDates({startDate, endDate});
+  }
+
 }

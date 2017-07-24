@@ -2,6 +2,8 @@
  * @class FixturesService
  */
 import RxLocalStorage from "../service/RxLocalStorage";
+import {CATEGORIES_KEY, PRODUCTS_KEY, ORDERS_KEY} from "../service/LocalStorageKeys";
+
 export default class FixturesService {
 
   load() {
@@ -25,7 +27,7 @@ export default class FixturesService {
       {"id":"d548cbcd-2d9a-412d-a4c1-80af6cd8dc1a","name":"Conservas","imageUrl":"http://estaticos.mujeresreales.es/rcs/articles/2221/imagenes//CP_02-04-03_S491_opt.jpg","products":[]},
       {"id":"c6c3ece3-79c0-4d2c-9256-89571906a0e8","name":"Vinos","imageUrl":"http://www.escuelaespanolalicante.com/wp-content/uploads/2016/02/copasvinos.jpg","products":[]}
       ];
-    RxLocalStorage.saveLocalStorage({localStorageKey: 'categories',value:data})
+    RxLocalStorage.saveLocalStorage({localStorageKey: CATEGORIES_KEY, value:data})
       .subscribe();
   }
 
@@ -37,7 +39,7 @@ export default class FixturesService {
       {"_id":"Seq-3","_barcode":"0004","_name":"Coca-Cola Zero zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
       {"_id":"Seq-4","_barcode":"0005","_name":"Coca-Cola Zero 42","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"}
       ];
-    RxLocalStorage.saveLocalStorage({localStorageKey: 'products',value:data})
+    RxLocalStorage.saveLocalStorage({localStorageKey: PRODUCTS_KEY, value:data})
       .subscribe();
   }
 
@@ -50,9 +52,44 @@ export default class FixturesService {
       {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf05","_createdAt":"16/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
       {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf06","_createdAt":"12/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
       {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf07","_createdAt":"14/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf01","_createdAt":"01/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf02","_createdAt":"02/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf03","_createdAt":"15/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf04","_createdAt":"10/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf05","_createdAt":"16/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf06","_createdAt":"12/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf07","_createdAt":"14/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf01","_createdAt":"01/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf02","_createdAt":"02/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf03","_createdAt":"15/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf04","_createdAt":"10/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf05","_createdAt":"16/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf06","_createdAt":"12/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf07","_createdAt":"14/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf01","_createdAt":"01/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf02","_createdAt":"02/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf03","_createdAt":"15/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf04","_createdAt":"10/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf05","_createdAt":"16/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf06","_createdAt":"12/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf07","_createdAt":"14/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf01","_createdAt":"01/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf02","_createdAt":"02/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf03","_createdAt":"15/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf04","_createdAt":"10/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf05","_createdAt":"16/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf06","_createdAt":"12/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf07","_createdAt":"14/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf01","_createdAt":"01/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf02","_createdAt":"02/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf03","_createdAt":"15/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf04","_createdAt":"10/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf05","_createdAt":"16/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf06","_createdAt":"12/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf07","_createdAt":"14/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
       {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf08","_createdAt":"16/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
       ];
-    RxLocalStorage.saveLocalStorage({localStorageKey: 'orders',value:data})
+    RxLocalStorage.saveLocalStorage({localStorageKey: ORDERS_KEY, value:data})
       .subscribe();
   }
 

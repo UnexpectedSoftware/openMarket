@@ -23,7 +23,15 @@ export default class LocalStorageOrderRepository extends OrderRepository {
       .filter(order => moment(order._createdAt,"DD/MM/YYYY HH:mm:ss").isBetween(startDate, endDate, null, '[]'))
       .map(order => ({id:order._id,createdAt:order._createdAt,total:order._total }))
       .toArray()
-      .map(ordersArray => ordersArray.slice(offset, limit))
+      .map(ordersArray => ordersArray.slice(offset, offset + limit))
+  }
+
+  countByDates({ startDate, endDate }){
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
+      .catch(e => Rx.Observable.of([]))
+      .flatMap(ordersArray => Rx.Observable.from(ordersArray))
+      .filter(order => moment(order._createdAt,"DD/MM/YYYY HH:mm:ss").isBetween(startDate, endDate, null, '[]'))
+      .count();
   }
 
   update({id, lines}) {

@@ -114,4 +114,25 @@ describe('Order find use case by dates', () => {
       });
 
   });
+
+  it('should find one order with given limit and offset', (done) => {
+
+    const givenStartDate = moment('01/07/2017 17:53:04','DD/MM/YYYY HH:mm:ss');
+    const givenEndDate = moment('31/07/2017 17:53:04','DD/MM/YYYY HH:mm:ss');
+    let count = 0;
+    const onNumber = (data) => { count = data.length; };
+    observableFindOrders.findAllByDates({
+      startDate: givenStartDate,
+      endDate: givenEndDate,
+      limit: 1,
+      offset: 1
+    })
+      .subscribe(onNumber, noop, () => {
+        la(count === 1, `got ${count} orders`);
+        done();
+      });
+
+  });
+
+
 });
