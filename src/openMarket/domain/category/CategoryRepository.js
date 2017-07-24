@@ -26,14 +26,6 @@ export default class CategoryRepository {
 
     /**
      *
-     * @param {Array<Category>} data
-     */
-  saveCollection({ data }) {
-    throw new Error('CategoryRepository#category must be implemented');
-  }
-
-    /**
-     *
      * @param {string} id
      * @param {string} name
      * @param {string} imageUrl

@@ -1,5 +1,6 @@
 import OrderRepository from "../../domain/order/OrderRepository";
 import RxLocalStorage from "../service/RxLocalStorage";
+import {ORDERS_KEY} from '../service/LocalStorageKeys';
 import * as Rx from "rxjs";
 import moment from "moment";
 
@@ -7,7 +8,7 @@ export default class LocalStorageOrderRepository extends OrderRepository {
 
   constructor({orderFactory}){
     super();
-    this._localStorageKey = 'orders';
+    this._localStorageKey = ORDERS_KEY;
     this._orderFactory = orderFactory;
   }
 
@@ -16,7 +17,6 @@ export default class LocalStorageOrderRepository extends OrderRepository {
   }
 
   findAllByDates({limit, offset, startDate, endDate}) {
-    console.log("dates:",startDate,endDate);
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .catch(e => Rx.Observable.of([]))
       .flatMap(ordersArray => Rx.Observable.from(ordersArray))

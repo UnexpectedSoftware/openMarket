@@ -4,6 +4,7 @@ import {Link} from "react-router";
 import ReactTable from "react-table";
 import DatePicker from 'react-datepicker';
 import moment from "moment";
+import { defaultLimit } from './ListOrdersModel';
 
 class Container extends Component {
 
@@ -98,7 +99,7 @@ class Container extends Component {
           data={orders.orders}
           columns={this.columns}
           manual
-          defaultPageSize={20}
+          defaultPageSize={defaultLimit}
           onFetchData={this.fetchData}
         />
 

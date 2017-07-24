@@ -1,13 +1,16 @@
 import moment from "moment";
 
+export const defaultLimit = 20;
+export const defaultOffset = 0;
+
 export const state = () => {
   return {
     orders: [],
     filters: {
       startDate: moment().startOf("month"),
       endDate: moment(),
-      offset: 0,
-      limit: 10
+      offset: defaultOffset,
+      limit: defaultLimit
     },
     total: 0.0
   }
