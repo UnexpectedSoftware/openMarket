@@ -100,7 +100,7 @@ class Container extends Component {
           columns={this.columns}
           manual
           defaultPageSize={defaultLimit}
-          pages={60/defaultLimit}
+          pages={orders.total_pages}
           onFetchData={this.fetchData}
         />
 

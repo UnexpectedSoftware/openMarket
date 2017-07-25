@@ -9,8 +9,9 @@ export default function reducer(state = initialState, action) {
     case LIST_ORDER_FETCHED:
       return {
         ...state,
-        orders: action.payload,
-        total: calculateTotal({orders: action.payload})
+        orders: action.payload.orders,
+        total_pages: Math.ceil(action.payload.total/state.filters.limit),
+        total: action.payload.amount
       };
 
     case LIST_ORDER_FILTERS_START_DATE_CHANGED:

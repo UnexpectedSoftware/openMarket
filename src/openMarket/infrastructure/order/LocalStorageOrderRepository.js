@@ -34,6 +34,15 @@ export default class LocalStorageOrderRepository extends OrderRepository {
       .count();
   }
 
+  calculateTotalAmount({startDate, endDate}){
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
+      .catch(e => Rx.Observable.of([]))
+      .flatMap(ordersArray => Rx.Observable.from(ordersArray))
+      .filter(order => moment(order._createdAt,"DD/MM/YYYY HH:mm:ss").isBetween(startDate, endDate, null, '[]'))
+      .reduce((acc, order) => acc + order._total,0);
+  }
+
+
   update({id, lines}) {
     return null;
   }

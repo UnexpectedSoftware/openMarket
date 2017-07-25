@@ -86,7 +86,7 @@ export default class FixturesService {
       {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf04","_createdAt":"10/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
       {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf05","_createdAt":"16/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
       {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf06","_createdAt":"12/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
-      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf07","_createdAt":"14/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf03","_createdAt":"15/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
       {"_id":"0f10e99f-bf87-441d-a611-f88eef67cf08","_createdAt":"16/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
       ];
     RxLocalStorage.saveLocalStorage({localStorageKey: ORDERS_KEY, value:data})

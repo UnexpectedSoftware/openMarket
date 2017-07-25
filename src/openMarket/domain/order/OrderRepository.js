@@ -26,6 +26,10 @@ export default class OrderRepository {
     throw new Error('OrderRepository#order must be implemented');
   }
 
+  calculateTotalAmount({startDate, endDate}){
+    throw new Error('OrderRepository#order must be implemented');
+  }
+
   /**
    *
    * @param {string} id

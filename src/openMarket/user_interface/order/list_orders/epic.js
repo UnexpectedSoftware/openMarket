@@ -12,14 +12,19 @@ const listOrderFetchWithFilters = action$ =>
           startDate: action.filters.startDate,
           endDate: action.filters.endDate
         }),
-      OpenMarket.get("orders_list_all_use_case")
+      OpenMarket.get("orders_statistics_use_case")
         .countByDates({
           startDate: action.filters.startDate,
           endDate: action.filters.endDate
         }),
-      (orders, total) => ({ orders: orders, total:total })
+      OpenMarket.get("orders_statistics_use_case")
+        .calculateTotalAmount({
+          startDate: action.filters.startDate,
+          endDate: action.filters.endDate
+        }),
+      (orders, total, amount) => ({ orders: orders, total:total, amount: amount })
     ))
-    .map(data => listOrderActions.listOrderFetched(data.orders));
+    .map(data => listOrderActions.listOrderFetched(data));
 
 export default action$ =>
   Rx.Observable.merge(
