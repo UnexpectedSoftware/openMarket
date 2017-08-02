@@ -6,8 +6,8 @@ export const state = () => {
   return {
     orders: [],
     filters: {
-      startDate: moment().startOf("month"),
-      endDate: moment(),
+      startDate: moment().startOf("month").startOf("day"),
+      endDate: moment().endOf("day"),
       offset: defaultOffset,
       limit: defaultLimit
     },

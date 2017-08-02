@@ -23,7 +23,16 @@ export default class LocalStorageOrderRepository extends OrderRepository {
       .filter(order => moment(order._createdAt,"DD/MM/YYYY HH:mm:ss").isBetween(startDate, endDate, null, '[]'))
       .map(order => ({id:order._id,createdAt:order._createdAt,total:order._total }))
       .toArray()
+      .map(ordersArray => ordersArray.sort((a, b) => {
+        if(moment(a.createdAt,"DD/MM/YYYY HH:mm:ss").isBefore(moment(b.createdAt,"DD/MM/YYYY HH:mm:ss"))){
+          return -1;
+        }else if (moment(a.createdAt,"DD/MM/YYYY HH:mm:ss").isAfter(moment(b.createdAt,"DD/MM/YYYY HH:mm:ss"))){
+          return 1;
+        }
+        return 0;
+      }))
       .map(ordersArray => ordersArray.slice(offset, offset + limit))
+
   }
 
   countByDates({ startDate, endDate }){

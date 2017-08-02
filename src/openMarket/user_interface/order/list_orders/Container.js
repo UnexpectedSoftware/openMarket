@@ -47,11 +47,13 @@ class Container extends Component {
 
   handleStartDateChanged(data){
     const { listOrderFiltersStartDateChanged } = this.props;
+    data.startOf('day');
     listOrderFiltersStartDateChanged(data);
   }
 
   handleEndDateChanged(data){
     const { listOrderFiltersEndDateChanged } = this.props;
+    data.endOf('day');
     listOrderFiltersEndDateChanged(data);
   }
 
