@@ -10,7 +10,7 @@ class Container extends Component {
 
   constructor(props,context) {
     super(props, context);
-    this.fetchData = this.fetchData.bind(this);
+    this.handlePageChanged = this.handlePageChanged.bind(this);
     this.handleStartDateChanged = this.handleStartDateChanged.bind(this);
     this.handleEndDateChanged = this.handleEndDateChanged.bind(this);
     this.handleFilterByDates  = this.handleFilterByDates.bind(this);
@@ -33,16 +33,15 @@ class Container extends Component {
     ];
   }
 
-  fetchData (state, instance) {
-    //this.setState({loading: true})
+  handlePageChanged (pageIndex) {
     const { listOrderFetchWithFilters, orders } = this.props;
     listOrderFetchWithFilters({
-      limit: state.pageSize,
-      offset: (state.page * state.pageSize),
+      limit: orders.filters.limit,
+      offset: (pageIndex * orders.filters.limit),
       startDate: orders.filters.startDate,
-      endDate: orders.filters.endDate
+      endDate: orders.filters.endDate,
+      page: pageIndex
     });
-    //state.sorted, state.filtered
 
   }
 
@@ -62,7 +61,8 @@ class Container extends Component {
       limit: orders.filters.limit,
       offset: orders.filters.offset,
       startDate: orders.filters.startDate,
-      endDate: orders.filters.endDate
+      endDate: orders.filters.endDate,
+      page: 0
     });
   }
 
@@ -100,8 +100,9 @@ class Container extends Component {
           columns={this.columns}
           manual
           defaultPageSize={defaultLimit}
+          page={orders.current_page}
           pages={orders.total_pages}
-          onFetchData={this.fetchData}
+          onPageChange={this.handlePageChanged}
         />
 
         <h2>{orders.total} €</h2>

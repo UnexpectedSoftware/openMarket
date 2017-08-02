@@ -109,7 +109,7 @@
     "babel-register": "^6.22.0",
     "babili-webpack-plugin": "^0.0.9",
     "boiler-room-custodian": "^0.6.1",
-    "chai": "^3.5.0",
+    "chai": "^4.1.0",
     "check-more-types": "^2.21.0",
     "concurrently": "^3.1.0",
     "cross-env": "^3.1.4",

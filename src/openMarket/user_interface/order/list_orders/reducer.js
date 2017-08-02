@@ -11,6 +11,7 @@ export default function reducer(state = initialState, action) {
         ...state,
         orders: action.payload.orders,
         total_pages: Math.ceil(action.payload.total/state.filters.limit),
+        current_page: action.payload.page,
         total: action.payload.amount
       };
 

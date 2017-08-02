@@ -22,7 +22,7 @@ const listOrderFetchWithFilters = action$ =>
           startDate: action.filters.startDate,
           endDate: action.filters.endDate
         }),
-      (orders, total, amount) => ({ orders: orders, total:total, amount: amount })
+      (orders, total, amount) => ({ orders: orders, total:total, amount: amount, page:action.filters.page })
     ))
     .map(data => listOrderActions.listOrderFetched(data));
 

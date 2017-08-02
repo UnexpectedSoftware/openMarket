@@ -1,7 +1,6 @@
-import moment from "moment";
-
 export const defaultLimit = 20;
 export const defaultOffset = 0;
+import moment from "moment";
 
 export const state = () => {
   return {
@@ -12,6 +11,8 @@ export const state = () => {
       offset: defaultOffset,
       limit: defaultLimit
     },
+    total_pages: 0,
+    current_page: 0,
     total: 0.0
   }
 };
