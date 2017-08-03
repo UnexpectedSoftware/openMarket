@@ -1,8 +1,8 @@
 import la from 'lazy-ass';
 import is from 'check-more-types';
-import Rx from 'rxjs/Rx';
 import openMarket from '../openMarket';
-import FixturesService from '../openMarket/infrastructure/service/FixturesService';
+import RxLocalStorage from "../openMarket/infrastructure/service/RxLocalStorage";
+import {PRODUCTS_KEY} from "../openMarket/infrastructure/service/LocalStorageKeys";
 
 /**
  *
@@ -29,12 +29,18 @@ const observableAddStockProducts = openMarket.get('products_add_stock_use_case')
 const noop = () => {};
 const crash = (err) => { throw err; };  // rethrow
 
-
+beforeEach(function () {
+  const data = [
+    {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
+    {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
+    {"_id":"Seq-2","_barcode":"0003","_name":"Coca-Cola Zero sin cafeina","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
+    {"_id":"Seq-3","_barcode":"0004","_name":"Coca-Cola Zero zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
+    {"_id":"Seq-4","_barcode":"0005","_name":"Coca-Cola Zero 42","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"}
+  ];
+  RxLocalStorage.saveLocalStorage({localStorageKey: PRODUCTS_KEY, value:data})
+    .subscribe();
+});
 describe('Product list all use case', () => {
-  beforeEach(function () {
-    this.fixturesService = new FixturesService();
-    this.fixturesService.load();
-  });
 
   it('should return an Observable of products', () => {
     la(is.fn(observableFindAllProducts.findAll({ limit: 10, offset: 0 }).subscribe), 'has subscribe method');
@@ -70,10 +76,6 @@ describe('Product list all use case', () => {
 });
 
 describe('Product Find by barcode use case', () => {
-  beforeEach(function () {
-    this.fixturesService = new FixturesService();
-    this.fixturesService.load();
-  });
 
   it('should return an Observable of products', () => {
     la(is.fn(observableFindProducts.findProductByBarcode({ barcode: '0001' }).subscribe), 'has subscribe method');
@@ -90,10 +92,6 @@ describe('Product Find by barcode use case', () => {
 });
 
 describe('Product Find by ID use case', () => {
-  beforeEach(function () {
-    this.fixturesService = new FixturesService();
-    this.fixturesService.load();
-  });
 
   it('should return an Observable of products', () => {
     la(is.fn(observableFindProducts.findProductById({ id: '0' }).subscribe), 'has subscribe method');
@@ -111,10 +109,7 @@ describe('Product Find by ID use case', () => {
 
 
 describe('Product create use case', () => {
-  beforeEach(function () {
-    this.fixturesService = new FixturesService();
-    this.fixturesService.load();
-  });
+
   const productDTO = {
     barcode: '00124',
     name: 'Caca de vaca',
@@ -164,10 +159,6 @@ describe('Product create use case', () => {
 });
 
 describe('Product add stock use case', () => {
-  beforeEach(function () {
-    this.fixturesService = new FixturesService();
-    this.fixturesService.load();
-  });
 
   it('should update an existing product with new stock quantity added', (done) => {
     const onData = (product) => {

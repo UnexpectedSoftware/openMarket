@@ -6,6 +6,8 @@ import { Observable } from 'rxjs/Observable';
 import * as _ from 'lodash';
 import ProductRepository from '../../domain/product/ProductRepository';
 import RxLocalStorage from '../service/RxLocalStorage';
+import {PRODUCTS_KEY} from '../service/LocalStorageKeys';
+
 import Product from "../../domain/product/Product";
 import * as Rx from "rxjs";
 
@@ -18,6 +20,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
    */
   constructor({ productMapper }) {
     super();
+    this._localStorageKey = PRODUCTS_KEY;
     this._productMapper = productMapper;
   }
 
@@ -27,7 +30,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
      * @returns {Observable<Array<Product>>}
      */
   findAll({ productFilter }) {
-    return RxLocalStorage.loadLocalStorage({ localStorageKey })
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .flatMap(products =>
         Observable.from(
           products.slice(
@@ -48,7 +51,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
      * @returns {Observable.<Array<Product>>}
      */
   findAllByName({ name, limit, offset }) {
-    return RxLocalStorage.loadLocalStorage({ localStorageKey })
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
             .flatMap(products => Observable.from(products))
             .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
             .filter(product => product.name.includes(name))
@@ -62,7 +65,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
      * @returns {Observable.<null>}
      */
   save({ product }) {
-    return RxLocalStorage.loadLocalStorage({ localStorageKey })
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .catch(e => Rx.Observable.of([]))
             .map(arrayProducts => {
               const index = _.indexOf(
@@ -78,7 +81,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
             })
             .flatMap(arrayProducts =>
               RxLocalStorage.saveLocalStorage(
-                { localStorageKey,
+                { localStorageKey: this._localStorageKey,
                   value: arrayProducts
                 }
                 )
@@ -89,23 +92,11 @@ export default class LocalStorageProductRepository extends ProductRepository {
 
   /**
    *
-   * @param {Array} arrayProducts
-   * @returns {Observable.<null>}
-   */
-  saveCollection({ arrayProducts }) {
-    return RxLocalStorage.saveLocalStorage({
-      localStorageKey,
-      value: arrayProducts
-    });
-  }
-
-  /**
-   *
    * @param {string} id
    * @returns {Observable.<Product>}
    */
   findById({ id }) {
-    return RxLocalStorage.loadLocalStorage({ localStorageKey })
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
             .flatMap(products => Observable.from(products))
             .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
             .filter(product => product.id === id)
@@ -117,7 +108,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
    * @returns {Observable.<Product>}
    */
   findByBarcode({ barcode }) {
-    return RxLocalStorage.loadLocalStorage({ localStorageKey })
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
             .flatMap(products => Observable.from(products))
             .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
             .filter(product => product.barcode === barcode)

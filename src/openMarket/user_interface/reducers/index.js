@@ -6,6 +6,7 @@ import { reducer as formReducer } from 'redux-form'
 import counter from './counter';
 import newProductReducer from '../product/new_product/reducer';
 import listProductReducer from '../product/list_products/reducer';
+import listOrderReducer from '../order/list_orders/reducer';
 import newOrderReducer from '../order/new_order/reducer';
 
 
@@ -14,6 +15,7 @@ export const rootReducer = combineReducers({
   newProduct: newProductReducer,
   listProduct: listProductReducer,
   newOrder: newOrderReducer,
+  listOrder: listOrderReducer,
   form: formReducer,
   routing
 });

@@ -33,15 +33,6 @@ export default class ProductRepository {
 
     /**
      *
-     * @param {Array} arrayProducts
-     * @returns {Observable<null>}
-     */
-  saveCollection({ arrayProducts }) {
-    throw new Error('ProductRepository#product must be implemented');
-  }
-
-    /**
-     *
      * @param {string} id
      * @returns {Observable.<Product>}
      */

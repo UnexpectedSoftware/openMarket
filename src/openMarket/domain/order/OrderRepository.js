@@ -13,10 +13,20 @@ export default class OrderRepository {
 
   /**
    *
-   * @param {number} limit
-   * @param {number} offset
+   * @param limit
+   * @param offset
+   * @param startDate
+   * @param endDate
    */
-  findAll({ limit, offset }) {
+  findAllByDates({ limit, offset, startDate, endDate }) {
+    throw new Error('OrderRepository#order must be implemented');
+  }
+
+  countByDates({ startDate, endDate }){
+    throw new Error('OrderRepository#order must be implemented');
+  }
+
+  calculateTotalAmount({startDate, endDate}){
     throw new Error('OrderRepository#order must be implemented');
   }
 

@@ -4,10 +4,11 @@
  */
 import CategoryRepository from '../../domain/category/CategoryRepository';
 import RxLocalStorage from '../service/RxLocalStorage';
+import {CATEGORIES_KEY} from '../service/LocalStorageKeys';
 import { Observable } from 'rxjs/Observable';
 import * as Rx from "rxjs";
 
-const localStorageKey = 'categories';
+
 export default class LocalStorageCategoryRepository extends CategoryRepository {
 
     /**
@@ -16,6 +17,7 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
      */
   constructor({ categoryFactory }) {
     super();
+    this._localStorageKey = CATEGORIES_KEY;
         /**
          * @member LocalStorageCategoryRepository#categoryFactory
          */
@@ -27,7 +29,7 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
      * @returns {Observable.<Array<Category>>}
      */
   findAll() {
-    return RxLocalStorage.loadLocalStorage({ localStorageKey });
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey });
   }
 
     /**
@@ -36,7 +38,7 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
      * @returns {Observable.<Category>}
      */
   findById({ id }) {
-    return RxLocalStorage.loadLocalStorage({ localStorageKey })
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
             .flatMap(arrayData => Observable.from(arrayData))
             .filter(category => category.id === id)
             ;
@@ -55,22 +57,13 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
       imageUrl
     });
 
-    return RxLocalStorage.loadLocalStorage({ localStorageKey })
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
         .catch(Rx.Observable.of([]))
         .map(categoryArray => {
           categoryArray.push(category);
           return categoryArray;
         })
-        .flatMap(categoryArray => RxLocalStorage.saveLocalStorage({ localStorageKey, value: categoryArray }));
-  }
-
-    /**
-     *
-     * @param {Array<Category>} data
-     * @returns {Observable<null>}
-     */
-  saveCollection({ data }) {
-    return RxLocalStorage.saveLocalStorage({ localStorageKey, value: data });
+        .flatMap(categoryArray => RxLocalStorage.saveLocalStorage({ localStorageKey: this._localStorageKey, value: categoryArray }));
   }
 
     /**
@@ -81,11 +74,11 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
      * @returns {Observable<null>}
      */
   update({ id, name, imageUrl }) {
-    return RxLocalStorage.loadLocalStorage({ localStorageKey })
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
             .catch(e => Rx.Observable.of([]))
             .map(categoryArray => {
-              const optionalIndex = categoryArray.findIndex((category, index, array) => (category.id == id));
-              if (optionalIndex != -1) {
+              const optionalIndex = categoryArray.findIndex((category, index, array) => (category.id === id));
+              if (optionalIndex !== -1) {
                 categoryArray[optionalIndex].name = name;
                 categoryArray[optionalIndex].imageUrl = imageUrl;
               } else {
@@ -93,7 +86,7 @@ export default class LocalStorageCategoryRepository extends CategoryRepository {
               }
               return categoryArray;
             })
-            .flatMap(categoryArray => RxLocalStorage.saveLocalStorage({ localStorageKey, value: categoryArray }));
+            .flatMap(categoryArray => RxLocalStorage.saveLocalStorage({ localStorageKey: this._localStorageKey, value: categoryArray }));
   }
 
 }

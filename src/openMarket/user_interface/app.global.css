@@ -1,5 +1,6 @@
 @import "../../../node_modules/font-awesome/css/font-awesome.css";
 @import "../../../node_modules/react-table/react-table.css";
+@import '../../../node_modules/react-datepicker/dist/react-datepicker.css';
 body {
   position: relative;
   color: white;
