@@ -1,5 +1,5 @@
 import {LIST_ORDER_FETCHED, LIST_ORDER_FILTERS_START_DATE_CHANGED, LIST_ORDER_FILTERS_END_DATE_CHANGED} from './action';
-import {state, calculateTotal} from './ListOrdersModel';
+import {state, calculateTotal} from './model';
 
 const initialState = state();
 

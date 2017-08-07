@@ -10,6 +10,7 @@ class Container extends Component {
     super(props, context);
     this.filteredChange = this.filteredChange.bind(this);
     this.filterSubject$ = new Rx.Subject();
+    this.handlePageChanged = this.handlePageChanged.bind(this);
     this.columns = [{
       Header: 'Barcode',
       accessor: 'barcode',
@@ -48,14 +49,33 @@ class Container extends Component {
     this.filterSubject$.next(column);
   };
 
+  handlePageChanged (pageIndex) {
+    const { listProductFetch, products } = this.props;
+    listProductFetch({
+      limit: products.filters.limit,
+      offset: (pageIndex * products.filters.limit),
+      page: pageIndex
+    });
+
+  }
+
   componentWillMount() {
-    const { listProductFetch, listProductFetchWithFilters } = this.props;
+    const { listProductFetch, listProductFetchWithFilters, products } = this.props;
+    console.log(products);
     this.filterSubject$
       .startWith(Rx.Observable.from([]))
       .debounceTime(300)
       .flatMap(filter => Rx.Observable.from(filter)
-        .map(filter => listProductFetchWithFilters(filter.value))
-        .defaultIfEmpty(Rx.Observable.of(listProductFetch()))
+        .map(filter => listProductFetchWithFilters({
+          name: filter.value,
+          limit: products.filters.limit,
+          offset: products.filters.offset
+        }))
+        .defaultIfEmpty(Rx.Observable.of(listProductFetch({
+          limit: products.filters.limit,
+          offset: products.filters.offset,
+          page: products.current_page
+        })))
       )
       .subscribe();
 
@@ -73,11 +93,15 @@ class Container extends Component {
         </p>
 
         <ReactTable
-          data={products}
+          data={products.products}
           columns={this.columns}
           filterable
           manual
           onFilteredChange={this.filteredChange}
+          defaultPageSize={products.filters.limit}
+          page={products.current_page}
+          pages={products.total_pages}
+          onPageChange={this.handlePageChanged}
         />
 
 

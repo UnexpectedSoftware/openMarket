@@ -35,7 +35,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
         Observable.from(
           products.slice(
             productFilter.offset,
-            productFilter.limit
+            productFilter.offset + productFilter.limit
           )
         )
       )
@@ -114,5 +114,14 @@ export default class LocalStorageProductRepository extends ProductRepository {
             .filter(product => product.barcode === barcode)
             ;
   }
+
+  countProducts(){
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
+      .flatMap(products => Observable.from(products))
+      .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .count()
+  }
+
+
 
 }

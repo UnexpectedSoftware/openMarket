@@ -1,9 +1,7 @@
 import {LIST_PRODUCT_FETCHED} from './action';
+import {state} from './model';
 
-
-const initialState = {
-  products: []
-};
+const initialState = state();
 
 export default function reducer(state = initialState, action) {
 
@@ -11,7 +9,9 @@ export default function reducer(state = initialState, action) {
     case LIST_PRODUCT_FETCHED:
       return {
         ...state,
-        products: action.payload
+        products: action.payload.products,
+        total_pages: Math.ceil(action.payload.total/state.filters.limit),
+        current_page:  action.payload.page
       };
 
     default:

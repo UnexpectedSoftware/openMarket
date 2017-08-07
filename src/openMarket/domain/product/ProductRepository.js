@@ -48,4 +48,11 @@ export default class ProductRepository {
   findByBarcode({ barcode }) {
     throw new Error('ProductRepository#product must be implemented');
   }
+
+  /**
+   * @returns {Observable<number>}
+   */
+  countProducts(){
+    throw new Error('ProductRepository#product must be implemented');
+  }
 }

@@ -26,6 +26,8 @@ const observableCreateProducts = openMarket.get('products_create_or_update_use_c
  */
 const observableAddStockProducts = openMarket.get('products_add_stock_use_case');
 
+const observableProductsStatistics = openMarket.get('products_statistics_use_case');
+
 const noop = () => {};
 const crash = (err) => { throw err; };  // rethrow
 
@@ -173,3 +175,18 @@ describe('Product add stock use case', () => {
         .subscribe(onData, noop, done());
   });
 });
+
+describe('Product statistics use case', () => {
+
+  it('should return the count of all products in data base', (done) => {
+    const onData = (total) => {
+      la(total === 5, 'Is not counting right!');
+    };
+
+    observableProductsStatistics.countProducts().subscribe(onData, noop, done());
+  });
+});
+
+
+
+
