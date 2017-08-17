@@ -10,5 +10,13 @@ export default class ProductStatistics {
     return this._repository.countProducts();
   }
 
+  countProductsByName(){
+    return this._repository.countProductsByName();
+  }
+
+  countProductsWithLowStock(){
+    return this._repository.countProductsWithLowStock();
+  }
+
 
 }

@@ -5,7 +5,6 @@ export const state = () => {
   return {
     products: [],
     filters: {
-      name: '',
       offset: defaultOffset,
       limit: defaultLimit
     },
