@@ -22,6 +22,10 @@ export default class ProductRepository {
     throw new Error('ProductRepository#product must be implemented');
   }
 
+  findAllWithLowStock({  limit, offset }){
+    throw new Error('ProductRepository#product must be implemented');
+  }
+
     /**
      *
      * @param {Product} product
@@ -46,6 +50,21 @@ export default class ProductRepository {
      * @returns {Observable<Product>}
      */
   findByBarcode({ barcode }) {
+    throw new Error('ProductRepository#product must be implemented');
+  }
+
+  /**
+   * @returns {Observable<number>}
+   */
+  countProducts(){
+    throw new Error('ProductRepository#product must be implemented');
+  }
+
+  countProductsByName(){
+    throw new Error('ProductRepository#product must be implemented');
+  }
+
+  countProductsWithLowStock(){
     throw new Error('ProductRepository#product must be implemented');
   }
 }

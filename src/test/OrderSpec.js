@@ -1,8 +1,9 @@
 import la from 'lazy-ass';
 import openMarket from '../openMarket';
 import moment from "moment";
+import { expect } from 'chai';
 import RxLocalStorage from "../openMarket/infrastructure/service/RxLocalStorage";
-import {ORDERS_KEY} from "../openMarket/infrastructure/service/LocalStorageKeys";
+import {ORDERS_KEY, PRODUCTS_KEY} from "../openMarket/infrastructure/service/LocalStorageKeys";
 
 /**
  * Howto
@@ -14,7 +15,11 @@ import {ORDERS_KEY} from "../openMarket/infrastructure/service/LocalStorageKeys"
  */
 const observableCreateOrder = openMarket.get('orders_create_use_case');
 const observableFindOrders = openMarket.get('orders_list_all_use_case');
-
+/**
+ *
+ * @type {FindProduct}
+ */
+const observableFindProducts = openMarket.get('products_find_use_case');
 
 const noop = () => {};
 const crash = (err) => { throw err; };  // rethrow
@@ -23,37 +28,56 @@ afterEach(function () {
   RxLocalStorage.saveLocalStorage({
     localStorageKey: ORDERS_KEY,
     value: []
-  }).subscribe();
+  }).flatMap(saved => RxLocalStorage.saveLocalStorage({
+    localStorageKey: PRODUCTS_KEY,
+    value: []
+  })
+  ).subscribe();
+
+
 });
 
 describe('Order create use case', () => {
 
   beforeEach(function () {
-    const data = [
+    const orderData = [
       {"_id":"01","_createdAt":"01/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
     ];
+    const productData = [
+      {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
+      {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"}
+    ];
+
     RxLocalStorage.saveLocalStorage({
       localStorageKey: ORDERS_KEY,
-      value: data
-    }).subscribe();
+      value: orderData
+    }).flatMap(saved =>
+      RxLocalStorage.saveLocalStorage({
+        localStorageKey: PRODUCTS_KEY,
+        value: productData
+      })
+    ).subscribe();
   });
 
   it('should create a new order and then would be 2 Orders on DB', (done) => {
     const lines = [{
+      barcode: "0001",
       name: "Coca-Cola",
       price: 0.55,
-      quantity:1}];
+      quantity:5}];
     observableCreateOrder.createOrder({
       lines: lines
     })
-      .subscribe(noop, noop, () => {
+      .flatMap(saved => observableFindProducts.findProductByBarcode({ barcode: '0001' }))
+      .subscribe((product) => {
+        expect(product.stock).to.equal(95);
         done();
-      });
-
+      },crash, noop);
   });
 
   it('has no errors and complete', (done) => {
     const lines = [{
+      barcode: "0001",
       name: "Coca-Cola",
       price: 0.55,
       quantity:1}];

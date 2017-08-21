@@ -4,7 +4,7 @@ import {Link} from "react-router";
 import ReactTable from "react-table";
 import DatePicker from 'react-datepicker';
 import moment from "moment";
-import { defaultLimit } from './ListOrdersModel';
+import { defaultLimit } from './model';
 
 class Container extends Component {
 
@@ -66,6 +66,10 @@ class Container extends Component {
       endDate: orders.filters.endDate,
       page: 0
     });
+  }
+
+  componentWillMount(){
+    this.handleFilterByDates(null);
   }
 
 

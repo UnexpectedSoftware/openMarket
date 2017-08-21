@@ -148,6 +148,7 @@ export default class Product {
      */
   addStock({ quantity }) {
     this._stock += quantity;
+    return this;
   }
 
     /**
@@ -156,6 +157,7 @@ export default class Product {
      */
   subtractStock({ quantity }) {
     this._stock -= quantity;
+    return this;
   }
 
 
