@@ -26,6 +26,8 @@ const observableCreateProducts = openMarket.get('products_create_or_update_use_c
  */
 const observableAddStockProducts = openMarket.get('products_add_stock_use_case');
 
+const observableProductsStatistics = openMarket.get('products_statistics_use_case');
+
 const noop = () => {};
 const crash = (err) => { throw err; };  // rethrow
 
@@ -34,8 +36,8 @@ beforeEach(function () {
     {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
     {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
     {"_id":"Seq-2","_barcode":"0003","_name":"Coca-Cola Zero sin cafeina","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
-    {"_id":"Seq-3","_barcode":"0004","_name":"Coca-Cola Zero zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
-    {"_id":"Seq-4","_barcode":"0005","_name":"Coca-Cola Zero 42","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"}
+    {"_id":"Seq-3","_barcode":"0004","_name":"Coca-Cola Zero zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":9,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
+    {"_id":"Seq-4","_barcode":"0005","_name":"Coca-Cola Zero 42","_description":"","_price":0.6,"_basePrice":0.3,"_stock":10,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"}
   ];
   RxLocalStorage.saveLocalStorage({localStorageKey: PRODUCTS_KEY, value:data})
     .subscribe();
@@ -74,6 +76,42 @@ describe('Product list all use case', () => {
     observableFindAllProducts.findAll({ limit: 10, offset: 0 }).subscribe(noop, crash, done);
   });
 });
+
+describe('Product list all with low stock use case', () => {
+
+  it('should return an Observable of products', () => {
+    la(is.fn(observableFindAllProducts.findAllWithLowStock({ limit: 10, offset: 0 }).subscribe), 'has subscribe method');
+  });
+
+  it('should finish well with limit 10 and offset 0', (done) => {
+    observableFindAllProducts.findAllWithLowStock({ limit: 10, offset: 0 }).subscribe(noop, noop, done);
+  });
+
+  it('should return 1 product with limit 1 and offset 0', (done) => {
+    let count = 0;
+    const onNumber = (data) => { count = data.length; };
+    observableFindAllProducts.findAllWithLowStock({ limit: 1, offset: 0 }).subscribe(onNumber, noop, () => {
+      la(count === 1, `got ${count} products`);
+      done();
+    });
+  });
+
+  it('should return 2 products with low stock', (done) => {
+    let count = 0;
+    const onNumber = (data) => { count = data.length; };
+    observableFindAllProducts.findAllWithLowStock({ limit: 10, offset: 0 }).subscribe(onNumber, noop, () => {
+      la(count === 2, `got ${count} products`);
+      done();
+    });
+  });
+
+
+  it('has no errors', (done) => {
+    observableFindAllProducts.findAllWithLowStock({ limit: 10, offset: 0 }).subscribe(noop, crash, done);
+  });
+});
+
+
 
 describe('Product Find by barcode use case', () => {
 
@@ -173,3 +211,28 @@ describe('Product add stock use case', () => {
         .subscribe(onData, noop, done());
   });
 });
+
+describe('Product statistics use case', () => {
+
+  it('should return the count of all products in data base', (done) => {
+    const onData = (total) => {
+      la(total === 5, 'Is not counting right!');
+    };
+
+    observableProductsStatistics.countProducts().subscribe(onData, noop, done());
+  });
+
+  it('should return the count of all products with stock lower than stockMin', (done) => {
+    const onData = (total) => {
+      la(total === 2, 'Is not counting right!');
+    };
+
+    observableProductsStatistics.countProductsWithLowStock().subscribe(onData, noop, done());
+  });
+
+
+});
+
+
+
+

@@ -35,7 +35,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
         Observable.from(
           products.slice(
             productFilter.offset,
-            productFilter.limit
+            productFilter.offset + productFilter.limit
           )
         )
       )
@@ -56,8 +56,25 @@ export default class LocalStorageProductRepository extends ProductRepository {
             .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
             .filter(product => product.name.includes(name))
             .toArray()
-            ;
+            .map(products => products.slice(
+              offset,
+              offset + limit
+            ));
   }
+
+
+  findAllWithLowStock({ limit, offset }){
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
+      .flatMap(products => Observable.from(products))
+      .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .filter(product => product.stock <= product.stockMin)
+      .toArray()
+      .map(products => products.slice(
+        offset,
+        offset + limit
+      ));
+  }
+
     // TODO Make an abstract LocalStorageRepository with methods like this
     /**
      *
@@ -85,9 +102,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
                   value: arrayProducts
                 }
                 )
-            )
-
-            ;
+            );
   }
 
   /**
@@ -99,8 +114,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
             .flatMap(products => Observable.from(products))
             .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
-            .filter(product => product.id === id)
-            ;
+            .filter(product => product.id === id);
   }
   /**
    *
@@ -111,8 +125,32 @@ export default class LocalStorageProductRepository extends ProductRepository {
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
             .flatMap(products => Observable.from(products))
             .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
-            .filter(product => product.barcode === barcode)
-            ;
+            .filter(product => product.barcode === barcode);
   }
+
+  countProducts(){
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
+      .flatMap(products => Observable.from(products))
+      .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .count();
+  }
+
+  countProductsByName(){
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
+      .flatMap(products => Observable.from(products))
+      .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .filter(product => product.name.includes(name))
+      .count();
+  }
+
+
+  countProductsWithLowStock(){
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
+      .flatMap(products => Observable.from(products))
+      .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .filter(product => product.stock <= product.stockMin)
+      .count();
+  }
+
 
 }

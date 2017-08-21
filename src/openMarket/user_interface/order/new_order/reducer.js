@@ -1,5 +1,5 @@
 import {NEW_ORDER_PRODUCT_FETCHED, NEW_ORDER_PRODUCT_QUANTITY_CHANGE, NEW_ORDER_PRODUCT_DELETED, NEW_ORDER_SAVED} from './action';
-import {state,addProduct, updateQuantity, removeProduct} from '../model/Order';
+import {state,addProduct, updateQuantity, removeProduct} from './model';
 
 const initialState = state();
 
