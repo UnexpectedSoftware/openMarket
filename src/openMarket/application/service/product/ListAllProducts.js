@@ -53,5 +53,12 @@ export default class ListAllProducts {
     });
   }
 
+  findAllWithLowStock({ limit, offset }){
+    return this._repository.findAllWithLowStock({
+        limit,
+        offset
+    });
+  }
+
 
 }

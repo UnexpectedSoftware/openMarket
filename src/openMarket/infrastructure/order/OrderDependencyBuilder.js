@@ -4,6 +4,7 @@ import OrderFactoryImpl from "./OrderFactoryImpl";
 import UUIDGenerator from "../UUIDGenerator";
 import ListAllOrders from "../../application/service/order/ListAllOrders";
 import OrdersStatistics from "../../application/service/order/OrdersStatistics";
+import ProductDependencyBuilder from "../product/ProductDependencyBuilder";
 export default class OrderDependencyBuilder {
 
   static buildOrderRepository() {
@@ -13,7 +14,10 @@ export default class OrderDependencyBuilder {
   }
 
   static buildCreateOrderUseCase() {
-    return new CreateOrder({repository: OrderDependencyBuilder.buildOrderRepository()});
+    return new CreateOrder({
+        orderRepository: OrderDependencyBuilder.buildOrderRepository(),
+        productRepository: ProductDependencyBuilder.buildProductRepository()
+    });
   }
 
   static buildOrderFactory() {

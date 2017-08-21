@@ -8,6 +8,7 @@ import SequentialIdentity from '../service/SequentialIdentity';
 import CreateOrUpdateProduct from '../../application/service/product/CreateOrUpdateProduct';
 import AddStock from '../../application/service/product/AddStock';
 import ProductMapper from "./ProductMapper";
+import ProductStatistics from "../../application/service/product/ProductStatistics";
 /**
  * @class ProductDependencyBuilder
  */
@@ -41,6 +42,14 @@ export default class ProductDependencyBuilder {
       productFilterFactory: ProductDependencyBuilder.buildProductFilterFactory()
     });
   }
+
+  static buildProductStatisticsUseCase(){
+    return new ProductStatistics({
+      repository: ProductDependencyBuilder.buildProductRepository()
+    });
+  }
+
+
     // TODO Refactor ProductFactory
     /**
      *

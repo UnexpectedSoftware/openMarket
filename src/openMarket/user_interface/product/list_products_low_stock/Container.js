@@ -2,14 +2,12 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router';
 import ReactTable from 'react-table';
-import * as Rx from "rxjs";
 
 class Container extends Component {
 
   constructor(props,context) {
     super(props, context);
-    this.filteredChange = this.filteredChange.bind(this);
-    this.filterSubject$ = new Rx.Subject();
+    this.handlePageChanged = this.handlePageChanged.bind(this);
     this.columns = [{
       Header: 'Barcode',
       accessor: 'barcode',
@@ -44,28 +42,29 @@ class Container extends Component {
     ];
   }
 
-  filteredChange(column, value){
-    this.filterSubject$.next(column);
-  };
+  handlePageChanged (pageIndex) {
+    const { listProductPageChanged, products } = this.props;
+    listProductPageChanged({
+      page: pageIndex,
+      limit: products.filters.limit,
+      offset: (pageIndex * products.filters.limit)
+    });
+
+  }
 
   componentWillMount() {
-    const { listProductFetch, listProductFetchWithFilters } = this.props;
-    this.filterSubject$
-      .startWith(Rx.Observable.from([]))
-      .debounceTime(300)
-      .flatMap(filter => Rx.Observable.from(filter)
-        .map(filter => listProductFetchWithFilters(filter.value))
-        .defaultIfEmpty(Rx.Observable.of(listProductFetch()))
-      )
-      .subscribe();
-
+    const { listProductPageLoaded, products } = this.props;
+    listProductPageLoaded({
+      limit: products.filters.limit,
+      offset: products.filters.offset,
+      page: products.current_page
+    })
   }
 
   render() {
     const { products } = this.props;
     return (
       <div>
-
         <p>
           <Link to="/">
             <i className="fa fa-arrow-left fa-3x" />
@@ -73,15 +72,14 @@ class Container extends Component {
         </p>
 
         <ReactTable
-          data={products}
+          data={products.products}
           columns={this.columns}
-          filterable
           manual
-          onFilteredChange={this.filteredChange}
+          defaultPageSize={products.filters.limit}
+          page={products.current_page}
+          pages={products.total_pages}
+          onPageChange={this.handlePageChanged}
         />
-
-
-
       </div>
     );
   }
