@@ -38,3 +38,15 @@ a:hover {
   text-decoration: none;
   cursor: pointer;
 }
+
+div.dialog-modal {
+  display:block;
+  position:absolute;
+  width: 600px;
+  height: 300px;
+  background:red;
+  top: 30%;
+  left: 20%;
+  z-index: 100;
+
+}

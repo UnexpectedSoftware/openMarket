@@ -5,9 +5,11 @@ import {reset} from 'redux-form';
 
 const newOrderProductFetch = action$ =>
   action$.ofType(newOrderActions.NEW_ORDER_PRODUCT_FETCH)
-    .flatMap(action => OpenMarket.get("products_find_use_case").findProductByBarcode({barcode: action.barcode}))
-    .map(product => newOrderActions.newOrderProductFetched(product))
-    .mergeMap(action => Rx.Observable.of(reset('new_order'),action));
+    .flatMap(action => OpenMarket.get("products_find_use_case").findProductByBarcode({barcode: action.barcode})
+      .map(product => newOrderActions.newOrderProductFetched(product))
+      .defaultIfEmpty(newOrderActions.newOrderProductNotFound({ message:`Product with barcode ${action.barcode} not found!` }))
+      .mergeMap(action => Rx.Observable.of(reset('new_order'),action))
+    );
 
 
 const newOrderSave = action$ =>

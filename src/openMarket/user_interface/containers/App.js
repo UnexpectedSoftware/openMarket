@@ -1,5 +1,6 @@
 // @flow
 import React, { Component } from 'react';
+import Dialog from '../dialog/ReduxConnector';
 
 export default class App extends Component {
   props: {
@@ -10,6 +11,7 @@ export default class App extends Component {
     return (
       <div>
         {this.props.children}
+        <Dialog/>
       </div>
     );
   }
