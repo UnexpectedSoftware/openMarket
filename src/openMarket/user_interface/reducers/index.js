@@ -8,6 +8,7 @@ import newProductReducer from '../product/new_product/reducer';
 import listProductLowStockReducer from '../product/list_products_low_stock/reducer';
 import listOrderReducer from '../order/list_orders/reducer';
 import newOrderReducer from '../order/new_order/reducer';
+import dialogReducer from '../dialog/reducer';
 
 
 export const rootReducer = combineReducers({
@@ -16,6 +17,7 @@ export const rootReducer = combineReducers({
   listProductLowStock: listProductLowStockReducer,
   newOrder: newOrderReducer,
   listOrder: listOrderReducer,
+  dialog: dialogReducer,
   form: formReducer,
   routing
 });
