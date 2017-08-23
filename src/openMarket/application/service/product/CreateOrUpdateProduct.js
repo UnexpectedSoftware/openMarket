@@ -32,7 +32,7 @@ export default class CreateOrUpdateProduct {
    * @param {number} basePrice
    * @param {number} stock
    * @param {number} stockMin
-   * @param {weighted} weighted
+   * @param {boolean} weighted
    * @param {string} categoryId
    * @returns {Observable.<null>}
    */
