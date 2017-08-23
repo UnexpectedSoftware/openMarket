@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router';
 import NewOrderReduxForm from './ReduxForm';
+import WeightedDialog from '../weighted_dialog/ReduxConnector';
 import * as Rx from "rxjs";
 
 class Container extends Component {
@@ -26,7 +27,7 @@ class Container extends Component {
   }
 
   render() {
-    const { order, newOrderProductQuantityChange, newOrderProductDeleted } = this.props;
+    const { order, newOrderProductQuantityChange, newOrderProductDeleted, newOrderProductFetched } = this.props;
 
     return (
       <div>
@@ -43,7 +44,9 @@ class Container extends Component {
               <i className="fa fa-arrow-left fa-3x" />
             </Link>
           </p>
-
+          <WeightedDialog
+            productFetched={newOrderProductFetched}
+          />
       </div>
     );
   }

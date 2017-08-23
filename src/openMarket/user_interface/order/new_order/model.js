@@ -7,12 +7,12 @@ export const state = () => {
   };
 };
 
-export const addProduct = ({ lines, product }) => {
+export const addProduct = ({ lines, product, quantity }) => {
   let repeatedProduct = lines.find(currentProduct => currentProduct.barcode === product.barcode);
-  let productQuantity = 1;
+  let productQuantity = quantity;
   if (undefined !== repeatedProduct) {
     lines = lines.filter(currentProduct => currentProduct.barcode !== product.barcode);
-    productQuantity = Number.parseInt(repeatedProduct.quantity) +1;
+    productQuantity = parseFloat(repeatedProduct.quantity) + parseFloat(quantity);
   }
   lines.push({
     barcode: product.barcode,
