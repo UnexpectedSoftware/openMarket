@@ -9,6 +9,7 @@ import listProductLowStockReducer from '../product/list_products_low_stock/reduc
 import listOrderReducer from '../order/list_orders/reducer';
 import newOrderReducer from '../order/new_order/reducer';
 import dialogReducer from '../dialog/reducer';
+import weightedDialogReducer from '../order/weighted_dialog/reducer';
 
 
 export const rootReducer = combineReducers({
@@ -18,6 +19,7 @@ export const rootReducer = combineReducers({
   newOrder: newOrderReducer,
   listOrder: listOrderReducer,
   dialog: dialogReducer,
+  weightedDialog: weightedDialogReducer,
   form: formReducer,
   routing
 });

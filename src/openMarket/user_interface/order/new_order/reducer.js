@@ -10,7 +10,8 @@ export default function reducer(state = initialState, action) {
       return addProduct(
         {
           lines: [...state.order.lines],
-          product: action.payload
+          product: action.payload.product,
+          quantity: action.payload.quantity
         });
 
     case NEW_ORDER_PRODUCT_QUANTITY_CHANGE:

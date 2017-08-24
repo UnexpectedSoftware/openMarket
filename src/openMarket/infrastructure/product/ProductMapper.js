@@ -19,7 +19,7 @@ export default class ProductMapper {
       stock: jsonProduct._stock,
       stockMin: jsonProduct._stockMin,
       categoryId: jsonProduct._categoryId,
-      imageUrl: jsonProduct._imageUrl,
+      weighted: jsonProduct._weighted,
       status: jsonProduct._status
     })
   }
