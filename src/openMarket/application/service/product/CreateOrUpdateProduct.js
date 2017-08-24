@@ -32,11 +32,11 @@ export default class CreateOrUpdateProduct {
    * @param {number} basePrice
    * @param {number} stock
    * @param {number} stockMin
-   * @param {imageUrl} imageUrl
+   * @param {boolean} weighted
    * @param {string} categoryId
    * @returns {Observable.<null>}
    */
-  createOrUpdate({ id, barcode, name, description, price, basePrice, stock, stockMin, imageUrl, categoryId, status }) {
+  createOrUpdate({ id, barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status }) {
     const product = this._productFactory.createWith({
       barcode,
       name,
@@ -45,7 +45,7 @@ export default class CreateOrUpdateProduct {
       basePrice,
       stock,
       stockMin,
-      imageUrl,
+      weighted,
       categoryId
     });
     return this._repository.save({ product });

@@ -15,7 +15,7 @@ const saveProductEpic = action$ =>
       basePrice: action.product.basePrice,
       stock: action.product.stock,
       stockMin: action.product.stockMin,
-      imageUrl: action.product.imageUrl,
+      weighted: action.product.weighted,
       categoryId: action.product.categoryId,
       status: action.product.status
     })

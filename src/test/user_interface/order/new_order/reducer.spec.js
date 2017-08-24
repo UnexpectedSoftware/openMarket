@@ -19,11 +19,17 @@ describe('reducers', () => {
     });
 
     it('should handle NEW_ORDER_PRODUCT_FETCHED with initial state', () => {
+
       const givenProduct = {
         barcode: '0001',
         name: 'Ninja',
         quantity: 1,
         price: 9.99
+      };
+
+      const givenPayload = {
+        product: givenProduct,
+        quantity: 1
       };
 
       const expectedState = {
@@ -38,7 +44,7 @@ describe('reducers', () => {
         total: 9.99
         }
       };
-      expect(newOrderReducer(undefined, { type: NEW_ORDER_PRODUCT_FETCHED, payload: givenProduct }))
+      expect(newOrderReducer(undefined, { type: NEW_ORDER_PRODUCT_FETCHED, payload: givenPayload }))
         .to.deep.equal(expectedState);
     });
 
@@ -49,6 +55,11 @@ describe('reducers', () => {
         name: 'Ninja',
         quantity: 1,
         price: 9.99
+      };
+
+      const givenPayload = {
+        product: givenProduct,
+        quantity: 1
       };
 
       const giveInitialState = {
@@ -76,7 +87,7 @@ describe('reducers', () => {
           total: 19.98
         }
       };
-      expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_FETCHED, payload: givenProduct }))
+      expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_FETCHED, payload: givenPayload }))
         .to.deep.equal(expectedState);
     });
 
@@ -234,6 +245,94 @@ describe('reducers', () => {
       expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_QUANTITY_CHANGE, payload: givenQuantityChange }))
         .to.deep.equal(expectedState);
     });
+
+
+
+    it('should handle NEW_ORDER_PRODUCT_QUANTITY_CHANGE with quantity 0.6 and get a total with 2 decimals', () => {
+      const givenQuantityChange = {
+        barcode: '0001',
+        quantityChanged: 0.6,
+      };
+
+      const giveInitialState = {
+        order: {
+          lines: [
+            {
+              barcode: '0001',
+              name: 'Ninja',
+              price: 0.55,
+              quantity: 1,
+              subtotal: 0.55
+            },
+            {
+              barcode: '0002',
+              name: 'Ninja2',
+              price: 0.6,
+              quantity: 1,
+              subtotal: 0.6
+            },
+            {
+              barcode: '0003',
+              name: 'Ninja3',
+              price: 0.6,
+              quantity: 2,
+              subtotal: 1.2
+            },
+            {
+              barcode: '0004',
+              name: 'Ninja4',
+              price: 0.6,
+              quantity: 1,
+              subtotal: 0.6
+            }
+
+          ],
+          total: 2.94
+        }
+      };
+
+      const expectedState = {
+        order: {
+          lines: [
+            {
+              barcode: '0001',
+              name: 'Ninja',
+              price: 0.55,
+              quantity: 0.6,
+              subtotal: 0.33
+            },
+            {
+              barcode: '0002',
+              name: 'Ninja2',
+              price: 0.6,
+              quantity: 1,
+              subtotal: 0.6
+            },
+            {
+              barcode: '0003',
+              name: 'Ninja3',
+              price: 0.6,
+              quantity: 2,
+              subtotal: 1.2
+            },
+            {
+              barcode: '0004',
+              name: 'Ninja4',
+              price: 0.6,
+              quantity: 1,
+              subtotal: 0.6
+            }
+
+          ],
+          total: 2.73
+        }
+      };
+      expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_QUANTITY_CHANGE, payload: givenQuantityChange }))
+        .to.deep.equal(expectedState);
+    });
+
+
+
 
 
     it('should handle NEW_ORDER_PRODUCT_DELETED with an order with some products on it', () => {

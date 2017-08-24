@@ -16,7 +16,7 @@ export default class ProductFactory {
    * @param {string} categoryId
    * @returns {Product}
    */
-  createWith({ barcode, name, description, price, basePrice, stock, stockMin, imageUrl, categoryId }) {
+  createWith({ barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId }) {
     throw new Error('ProductFactory#product must be implemented');
   }
   /**
@@ -33,7 +33,7 @@ export default class ProductFactory {
    * @param {string} status
    * @returns {Product}
    */
-  createWithId({ id, barcode, name, description, price, basePrice, stock, stockMin, imageUrl, categoryId, status }) {
+  createWithId({ id, barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status }) {
     throw new Error('ProductFactory#product must be implemented');
   }
 }

@@ -7,3 +7,6 @@ const minValue = min => value =>
   value && value < min ? `Must be at least ${min}` : undefined
 export const minValue1 = minValue(1)
 
+const greaterThan = greater => value => value && value <= greater ? `Must be greater than ${greater}` : undefined
+export const greaterThan0 = greaterThan(0);
+

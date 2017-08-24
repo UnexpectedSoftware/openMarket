@@ -50,7 +50,7 @@ class ReduxForm extends Component {
 
   renderDeleteRow (data) {
     const { onDeleteProduct } = this.props;
-    return (<a onClick={(e) => onDeleteProduct(data.row.barcode)}>Delete</a>);
+    return (<a onClick={(e) => {onDeleteProduct(data.row.barcode);this.setFocusOnBarcode();}}>Delete</a>);
   }
 
   renderEditable (props) {
@@ -82,6 +82,7 @@ class ReduxForm extends Component {
     this.setFocusOnBarcode();
   }
 
+
   renderInput = field => (
     <div>
       <label htmlFor={field.placeholder}>{field.placeholder}</label>
@@ -93,10 +94,10 @@ class ReduxForm extends Component {
   );
 
   render() {
-    const { order, submitting, findProduct } = this.props;
+    const { order, findProduct } = this.props;
 
     return (
-      <form>
+      <form onKeyPress={event => {if (event.which === 13 /* Enter */) { event.preventDefault();}}}>
 
         <Field name="barcode" component={this.renderInput} onkeypress={findProduct} type="text" placeholder="Barcode"/>
 
@@ -110,7 +111,7 @@ class ReduxForm extends Component {
         />
         <h1>{order.total+" "+this.moneySymbol} </h1>
 
-        <a onClick={this.saveOrder} disabled={submitting}>Save</a>
+        <a onClick={this.saveOrder}>Save</a>
       </form>
     );
   }

@@ -1,4 +1,5 @@
 import * as newOrderActions from "./action";
+import * as weightedDialogActions from "../weighted_dialog/action";
 import OpenMarket from "../../../index";
 import * as Rx from "rxjs";
 import {reset} from 'redux-form';
@@ -6,7 +7,7 @@ import {reset} from 'redux-form';
 const newOrderProductFetch = action$ =>
   action$.ofType(newOrderActions.NEW_ORDER_PRODUCT_FETCH)
     .flatMap(action => OpenMarket.get("products_find_use_case").findProductByBarcode({barcode: action.barcode})
-      .map(product => newOrderActions.newOrderProductFetched(product))
+      .map(product => !product.isWeighted ? newOrderActions.newOrderProductFetched({product:product,quantity:1}): weightedDialogActions.showWeightedDialog(product))
       .defaultIfEmpty(newOrderActions.newOrderProductNotFound({ message:`Product with barcode ${action.barcode} not found!` }))
       .mergeMap(action => Rx.Observable.of(reset('new_order'),action))
     );
@@ -22,10 +23,17 @@ const newOrderSave = action$ =>
     .mergeMap(action => Rx.Observable.of(reset('new_order'),action));
 
 
+const weightedDialogEpic = action$ =>
+  action$.ofType(weightedDialogActions.HIDE_WEIGHTED_DIALOG)
+    .map(action => newOrderActions.newOrderProductFetched({product:action.payload.product,quantity:action.payload.quantity}))
+    .mergeMap(action => Rx.Observable.of(reset('new_order'),action))
+
+
 
 export default action$ =>
   Rx.Observable.merge(
     newOrderProductFetch(action$),
-    newOrderSave(action$)
+    newOrderSave(action$),
+    weightedDialogEpic(action$)
   );
 
