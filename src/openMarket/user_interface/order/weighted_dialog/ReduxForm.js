@@ -29,7 +29,7 @@ class ReduxForm extends Component {
   renderInput = field => (
     <div>
       <label htmlFor={field.placeholder}>{field.placeholder}</label>
-      <input ref={(input) => this.quantityInput = input} {...field.input} type={field.type}/>
+      <input ref={(input) => this.quantityInput = input} {...field.input} type={field.type} onKeyPress={field.onkeypress}/>
       {field.meta.touched &&
       field.meta.error &&
       <span className="error">{field.meta.error}</span>}
@@ -38,7 +38,7 @@ class ReduxForm extends Component {
 
   render() {
     return (
-      <form>
+      <form onKeyPress={event => {if (event.which === 13 /* Enter */) { event.preventDefault();}}}>
         <Field name="quantity" component={this.renderInput} type="text" placeholder="Quantity" validate={[required, greaterThan0, number]}/>
         <a onClick={this.save}>Save</a>
       </form>

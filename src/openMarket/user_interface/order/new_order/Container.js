@@ -44,9 +44,7 @@ class Container extends Component {
               <i className="fa fa-arrow-left fa-3x" />
             </Link>
           </p>
-          <WeightedDialog
-            productFetched={newOrderProductFetched}
-          />
+          <WeightedDialog/>
       </div>
     );
   }

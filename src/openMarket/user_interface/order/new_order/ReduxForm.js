@@ -97,7 +97,7 @@ class ReduxForm extends Component {
     const { order, findProduct } = this.props;
 
     return (
-      <form>
+      <form onKeyPress={event => {if (event.which === 13 /* Enter */) { event.preventDefault();}}}>
 
         <Field name="barcode" component={this.renderInput} onkeypress={findProduct} type="text" placeholder="Barcode"/>
 
