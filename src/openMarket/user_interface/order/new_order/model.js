@@ -7,12 +7,12 @@ export const state = () => {
   };
 };
 
-export const addProduct = ({ lines, product }) => {
+export const addProduct = ({ lines, product, quantity }) => {
   let repeatedProduct = lines.find(currentProduct => currentProduct.barcode === product.barcode);
-  let productQuantity = 1;
+  let productQuantity = quantity;
   if (undefined !== repeatedProduct) {
     lines = lines.filter(currentProduct => currentProduct.barcode !== product.barcode);
-    productQuantity = Number.parseInt(repeatedProduct.quantity) +1;
+    productQuantity = parseFloat(repeatedProduct.quantity) + parseFloat(quantity);
   }
   lines.push({
     barcode: product.barcode,
@@ -61,7 +61,7 @@ export const removeProduct = ({lines, barcode}) =>{
 
 const calculateTotal = ({lines}) => {
   let totalOrder = 0.0;
-  lines.forEach(product => totalOrder += Number.parseInt(product.quantity)*product.price);
+  lines.forEach(product => totalOrder += parseFloat(product.quantity) * product.price);
   return parseFloat(totalOrder.toFixed(2));
 }
 
