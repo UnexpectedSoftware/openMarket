@@ -1,4 +1,4 @@
-import {EDIT_PRODUCT_FETCHED, NEW_PRODUCT_FETCHED_CATEGORIES, NEW_PRODUCT_SAVED} from './action';
+import {EDIT_PRODUCT_FETCHED, NEW_PRODUCT_FETCHED_CATEGORIES, NEW_PRODUCT_SAVED, PRODUCT_CLOSE} from './action';
 
 
 const initialState = {
@@ -22,6 +22,9 @@ export default function reducer(state = initialState, action) {
       }
 
     case NEW_PRODUCT_SAVED:
+      return initialState;
+
+    case PRODUCT_CLOSE:
       return initialState;
 
     default:

@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import { Link } from 'react-router';
 import NewProductReduxForm from './ReduxForm';
 
+
 class Container extends Component {
 
   handleSubmit = (values) => {
@@ -14,6 +15,11 @@ class Container extends Component {
   componentWillMount() {
     const { newProductFetchCategories } = this.props;
     newProductFetchCategories();
+  }
+
+  componentWillUnmount() {
+    const { productClose } = this.props;
+    productClose();
   }
 
   loadProduct = () => {

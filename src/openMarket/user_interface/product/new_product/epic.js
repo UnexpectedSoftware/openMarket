@@ -1,7 +1,7 @@
 import OpenMarket from "../../../index";
 import * as Rx from "rxjs";
 import * as newProductActions from "./action";
-import {reset} from 'redux-form';
+import {reset, destroy} from 'redux-form';
 
 const saveProductEpic = action$ =>
 
@@ -46,7 +46,6 @@ const fetchProductEpic = action$ =>
       weighted: product.isWeighted,
       categoryId: product.categoryId
     }));
-
 
 export default action$ =>
   Rx.Observable.merge(
