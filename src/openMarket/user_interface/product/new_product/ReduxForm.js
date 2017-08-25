@@ -15,11 +15,14 @@ const renderInput = field => (
 class ReduxForm extends Component {
 
   render() {
-    const { handleSubmit, categoriesList, submitting } = this.props;
+    const { handleSubmit, categoriesList, submitting, edition, loadProduct } = this.props;
     return (
       <form onSubmit={handleSubmit}>
 
         <Field name="barcode" component={renderInput} type="text" placeholder="Barcode" validate={[required, maxLength15]}/>
+        { edition &&
+          <input type="button" value="loadProduct" onClick={loadProduct}/>
+        }
         <Field name="name" component={renderInput} type="text" placeholder="Name" validate={required}/>
         <Field name="description" component={renderInput} type="textarea" placeholder="Description"/>
         <Field name="price" component={renderInput} type="text" placeholder="Price" validate={[required, greaterThan0, number]}/>
@@ -45,7 +48,8 @@ class ReduxForm extends Component {
 }
 
 export default reduxForm({
-  form: 'new_product'
+  form: 'new_product',
+  enableReinitialize : true
 })(ReduxForm);
 
 

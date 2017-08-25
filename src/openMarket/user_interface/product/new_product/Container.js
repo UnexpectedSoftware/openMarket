@@ -16,12 +16,17 @@ class Container extends Component {
     newProductFetchCategories();
   }
 
+  loadProduct = () => {
+    const { editProductFetch, barcode } = this.props;
+    editProductFetch(barcode);
+  }
+
   render() {
-    const { categories } = this.props;
+    const { categories, edit, initialValues } = this.props;
     return (
       <div>
-        <p>Let's create a new product!</p>
-        <NewProductReduxForm onSubmit={this.handleSubmit} categoriesList={categories}/>
+        <p>Let's {edit ? 'edit a':'create a new'} product!</p>
+        <NewProductReduxForm edition={edit} loadProduct={this.loadProduct} onSubmit={this.handleSubmit} categoriesList={categories} initialValues={initialValues}/>
           <p>
             <Link to="/">
               <i className="fa fa-arrow-left fa-3x" />

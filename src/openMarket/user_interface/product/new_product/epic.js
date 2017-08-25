@@ -32,9 +32,26 @@ const fetchCategoriesEpic = action$ =>
     .flatMap(action => OpenMarket.get("categories_list_all_use_case").findAll())
     .map(categories => newProductActions.newProductFetchedCategories(categories));
 
+const fetchProductEpic = action$ =>
+  action$.ofType(newProductActions.EDIT_PRODUCT_FETCH)
+    .flatMap(action => OpenMarket.get("products_find_use_case").findProductByBarcode({barcode: action.payload}))
+    .map(product => newProductActions.editProductFetched({
+      barcode: product.barcode,
+      name: product.name,
+      description: product.description,
+      price: product.price,
+      basePrice: product.basePrice,
+      stock: product.stock,
+      stockMin: product.stockMin,
+      weighted: product.isWeighted,
+      categoryId: product.categoryId
+    }));
+
+
 export default action$ =>
   Rx.Observable.merge(
     saveProductEpic(action$),
     savedProductEpic(action$),
-    fetchCategoriesEpic(action$)
+    fetchCategoriesEpic(action$),
+    fetchProductEpic(action$)
   );
