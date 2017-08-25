@@ -31,7 +31,7 @@ class ReduxForm extends Component {
   }
 
   renderFormDetails = () => {
-    const { edition, categoriesList, submitting, showUpdateFields } = this.props;
+    const { edition, categoriesList, statusesList, submitting, showUpdateFields } = this.props;
     if(!edition || (edition &&  showUpdateFields)) return (
       <div>
         <Field name="name" component={this.renderInput} type="text" placeholder="Name" validate={required}/>
@@ -49,7 +49,14 @@ class ReduxForm extends Component {
             <option value={category.id} key={category.id}>{category.name}</option>
           )}
         </Field>
-
+            {edition &&
+            <Field name="status" component="select">
+              <option value="">Select an status...</option>
+              {statusesList.map(status =>
+                <option value={status.key} key={status.key}>{status.name}</option>
+              )}
+            </Field>
+            }
         </div>
 
         <button type="submit" disabled={submitting}>Save</button>

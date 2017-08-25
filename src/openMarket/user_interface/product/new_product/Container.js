@@ -3,7 +3,6 @@ import React, { Component } from 'react';
 import { Link } from 'react-router';
 import NewProductReduxForm from './ReduxForm';
 
-
 class Container extends Component {
 
   handleSubmit = (values) => {
@@ -28,7 +27,7 @@ class Container extends Component {
   }
 
   render() {
-    const { categories, edit, initialValues, showUpdateFields } = this.props;
+    const { categories, edit, initialValues, showUpdateFields, statuses } = this.props;
     return (
       <div>
         <p>Let's {edit ? 'edit a':'create a new'} product!</p>
@@ -39,6 +38,7 @@ class Container extends Component {
           onSubmit={this.handleSubmit}
           categoriesList={categories}
           initialValues={initialValues}
+          statusesList={statuses}
         />
           <p>
             <Link to="/">
