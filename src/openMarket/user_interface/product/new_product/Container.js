@@ -28,11 +28,18 @@ class Container extends Component {
   }
 
   render() {
-    const { categories, edit, initialValues } = this.props;
+    const { categories, edit, initialValues, showUpdateFields } = this.props;
     return (
       <div>
         <p>Let's {edit ? 'edit a':'create a new'} product!</p>
-        <NewProductReduxForm edition={edit} loadProduct={this.loadProduct} onSubmit={this.handleSubmit} categoriesList={categories} initialValues={initialValues}/>
+        <NewProductReduxForm
+          edition={edit}
+          showUpdateFields={showUpdateFields}
+          loadProduct={this.loadProduct}
+          onSubmit={this.handleSubmit}
+          categoriesList={categories}
+          initialValues={initialValues}
+        />
           <p>
             <Link to="/">
               <i className="fa fa-arrow-left fa-3x" />

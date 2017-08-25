@@ -3,7 +3,8 @@ import {EDIT_PRODUCT_FETCHED, NEW_PRODUCT_FETCHED_CATEGORIES, NEW_PRODUCT_SAVED,
 
 const initialState = {
   categories: [],
-  initialValues: {}
+  initialValues: {},
+  showUpdateFields: false
 };
 
 export default function reducer(state = initialState, action) {
@@ -18,7 +19,8 @@ export default function reducer(state = initialState, action) {
     case EDIT_PRODUCT_FETCHED:
       return {
         ...state,
-        initialValues:action.payload
+        initialValues:action.payload,
+        showUpdateFields:true
       }
 
     case NEW_PRODUCT_SAVED:

@@ -11,7 +11,8 @@ function mapStateToProps(state, ownProps) {
     categories: state.newProduct.categories,
     edit: ownProps.location.pathname.includes("edit_product"),
     initialValues: state.newProduct.initialValues,
-    barcode: selector(state, 'barcode')
+    barcode: selector(state, 'barcode'),
+    showUpdateFields: state.newProduct.showUpdateFields
   };
 }
 
