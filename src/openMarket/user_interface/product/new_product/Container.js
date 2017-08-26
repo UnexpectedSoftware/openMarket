@@ -7,13 +7,13 @@ class Container extends Component {
 
   handleSubmit = (values) => {
     // Do something with the form values
-    const { newProductSave } = this.props;
-    newProductSave(values);
+    const { newProductSave, initialValues } = this.props;
+    newProductSave({...values,id:initialValues.id});
   }
 
   componentWillMount() {
-    const { newProductFetchCategories } = this.props;
-    newProductFetchCategories();
+    const { productPageLoaded } = this.props;
+    productPageLoaded();
   }
 
   componentWillUnmount() {

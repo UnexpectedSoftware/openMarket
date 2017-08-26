@@ -60,5 +60,8 @@ export default class ListAllProducts {
     });
   }
 
+  findAllStatuses(){
+    return this._repository.findAllStatuses();
+  }
 
 }

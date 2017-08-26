@@ -10,6 +10,7 @@ import {PRODUCTS_KEY} from '../service/LocalStorageKeys';
 
 import Product from "../../domain/product/Product";
 import * as Rx from "rxjs";
+import ProductStatus from "../../domain/product/ProductStatus";
 
 const localStorageKey = 'products';
 export default class LocalStorageProductRepository extends ProductRepository {
@@ -127,6 +128,15 @@ export default class LocalStorageProductRepository extends ProductRepository {
             .map(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
             .filter(product => product.barcode === barcode);
   }
+
+  findAllStatuses(){
+    let statuses = [];
+    for (var [key, value] of Object.entries(ProductStatus)) {
+      statuses.push({key:key,value:value});
+    }
+    return Rx.Observable.of(statuses);
+  }
+
 
   countProducts(){
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })

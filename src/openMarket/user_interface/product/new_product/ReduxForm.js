@@ -53,7 +53,7 @@ class ReduxForm extends Component {
             <Field name="status" component="select">
               <option value="">Select an status...</option>
               {statusesList.map(status =>
-                <option value={status.key} key={status.key}>{status.name}</option>
+                <option value={status.key} key={status.key}>{status.value}</option>
               )}
             </Field>
             }
@@ -67,7 +67,7 @@ class ReduxForm extends Component {
   render() {
     const { handleSubmit } = this.props;
     return (
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} onKeyPress={event => {if (event.which === 13 /* Enter */) { event.preventDefault();}}}>
         <Field name="barcode" component={this.renderBarcode} type="text" placeholder="Barcode" validate={[required, maxLength15]}/>
         {this.renderFormDetails()}
       </form>
