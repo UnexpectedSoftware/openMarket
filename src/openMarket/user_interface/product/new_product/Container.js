@@ -7,21 +7,39 @@ class Container extends Component {
 
   handleSubmit = (values) => {
     // Do something with the form values
-    const { newProductSave } = this.props;
-    newProductSave(values);
+    const { newProductSave, initialValues } = this.props;
+    newProductSave({...values,id:initialValues.id});
   }
 
   componentWillMount() {
-    const { newProductFetchCategories } = this.props;
-    newProductFetchCategories();
+    const { productPageLoaded } = this.props;
+    productPageLoaded();
+  }
+
+  componentWillUnmount() {
+    const { productClose } = this.props;
+    productClose();
+  }
+
+  loadProduct = () => {
+    const { editProductFetch, barcode } = this.props;
+    editProductFetch(barcode);
   }
 
   render() {
-    const { categories } = this.props;
+    const { categories, edit, initialValues, showUpdateFields, statuses } = this.props;
     return (
       <div>
-        <p>Let's create a new product!</p>
-        <NewProductReduxForm onSubmit={this.handleSubmit} categoriesList={categories}/>
+        <p>Let's {edit ? 'edit a':'create a new'} product!</p>
+        <NewProductReduxForm
+          edition={edit}
+          showUpdateFields={showUpdateFields}
+          loadProduct={this.loadProduct}
+          onSubmit={this.handleSubmit}
+          categoriesList={categories}
+          initialValues={initialValues}
+          statusesList={statuses}
+        />
           <p>
             <Link to="/">
               <i className="fa fa-arrow-left fa-3x" />
