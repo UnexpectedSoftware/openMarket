@@ -37,17 +37,35 @@ export default class CreateOrUpdateProduct {
    * @returns {Observable.<null>}
    */
   createOrUpdate({ id, barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status }) {
-    const product = this._productFactory.createWith({
-      barcode,
-      name,
-      description,
-      price,
-      basePrice,
-      stock,
-      stockMin,
-      weighted,
-      categoryId
-    });
+    let product = {};
+    console.log("LOGID:",id);
+    if(undefined === id) {
+      product = this._productFactory.createWith({
+        barcode,
+        name,
+        description,
+        price,
+        basePrice,
+        stock,
+        stockMin,
+        weighted,
+        categoryId,
+      });
+    }else{
+      product = this._productFactory.createWithId({
+        id,
+        barcode,
+        name,
+        description,
+        price,
+        basePrice,
+        stock,
+        stockMin,
+        weighted,
+        categoryId,
+        status
+      });
+    }
     return this._repository.save({ product });
   }
 }
