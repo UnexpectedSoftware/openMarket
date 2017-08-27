@@ -79,6 +79,7 @@ class Container extends Component {
           page={products.current_page}
           pages={products.total_pages}
           onPageChange={this.handlePageChanged}
+          showPageSizeOptions={false}
         />
       </div>
     );
