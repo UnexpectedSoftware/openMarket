@@ -109,6 +109,7 @@ class Container extends Component {
           page={orders.current_page}
           pages={orders.total_pages}
           onPageChange={this.handlePageChanged}
+          showPageSizeOptions={false}
         />
 
         <h2>{orders.total} €</h2>
