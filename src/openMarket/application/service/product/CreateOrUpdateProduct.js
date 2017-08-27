@@ -38,7 +38,6 @@ export default class CreateOrUpdateProduct {
    */
   createOrUpdate({ id, barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status }) {
     let product = {};
-    console.log("LOGID:",id);
     if(undefined === id) {
       product = this._productFactory.createWith({
         barcode,
