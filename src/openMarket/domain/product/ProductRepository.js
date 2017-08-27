@@ -53,6 +53,10 @@ export default class ProductRepository {
     throw new Error('ProductRepository#product must be implemented');
   }
 
+  findAllStatuses(){
+    throw new Error('ProductRepository#product must be implemented');
+  }
+
   /**
    * @returns {Observable<number>}
    */

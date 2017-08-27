@@ -33,11 +33,11 @@ const crash = (err) => { throw err; };  // rethrow
 
 beforeEach(function () {
   const data = [
-    {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
-    {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
-    {"_id":"Seq-2","_barcode":"0003","_name":"Coca-Cola Zero sin cafeina","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
-    {"_id":"Seq-3","_barcode":"0004","_name":"Coca-Cola Zero zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":9,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
-    {"_id":"Seq-4","_barcode":"0005","_name":"Coca-Cola Zero 42","_description":"","_price":0.6,"_basePrice":0.3,"_stock":10,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"}
+    {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"},
+    {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"},
+    {"_id":"Seq-2","_barcode":"0003","_name":"Coca-Cola Zero sin cafeina","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"},
+    {"_id":"Seq-3","_barcode":"0004","_name":"Coca-Cola Zero zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":9,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"},
+    {"_id":"Seq-4","_barcode":"0005","_name":"Coca-Cola Zero 42","_description":"","_price":0.6,"_basePrice":0.3,"_stock":10,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"}
   ];
   RxLocalStorage.saveLocalStorage({localStorageKey: PRODUCTS_KEY, value:data})
     .subscribe();
@@ -154,7 +154,6 @@ describe('Product create use case', () => {
     description: 'Niiiiiiiiiiiii',
     price: 99,
     stock: 200,
-    imageUrl: 'http://www.nopuedocreer.com/noticias/wp-content/images/2010/05/vaca.jpg',
     categoryId: 2
   };
 
@@ -176,23 +175,29 @@ describe('Product create use case', () => {
       if (product.barcode === productDTONew.barcode) {
         la(product.name === productDTONew.name, 'names are not the same');
         la(product.description === productDTONew.description, 'descriptions are not the same');
+        la(product.price === productDTONew.price, 'prices are not the same');
+        la(product.stock === productDTONew.stock, 'stocks are not the same');
+        la(product.categoryId === productDTONew.categoryId, 'categoryId are not the same');
+        la(product.status === productDTONew.status, 'statuses are not the same');
       }
     };
     const productDTONew = {
+      id: 'lala',
       barcode: '0001',
       name: 'Updated Name',
       description: 'Updated Description',
       price: 100,
       stock: 100,
-      imageUrl: 'http://www.nopuedocreer.com/noticias/wp-content/images/2010/05/vaca.jpg',
-      categoryId: 2
+      categoryId: 2,
+      status: "DISABLED"
+
     };
     observableCreateProducts.createOrUpdate(productDTONew)
-            .flatMap(data => observableFindProducts.findProductByBarcode({barcode: productDTONew.barcode}))
-            .subscribe(onData, noop, () => {
-              la(count === 1, `got ${count} products`);
-              done();
-            });
+      .flatMap(data => observableFindProducts.findProductByBarcode({barcode: productDTONew.barcode}))
+      .subscribe(onData, noop, () => {
+        la(count === 1, `got ${count} products`);
+        done();
+      });
   });
 });
 
