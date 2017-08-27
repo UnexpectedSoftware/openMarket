@@ -37,7 +37,7 @@ beforeEach(function () {
     {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"},
     {"_id":"Seq-2","_barcode":"0003","_name":"Coca-Cola Zero sin cafeina","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"},
     {"_id":"Seq-3","_barcode":"0004","_name":"Coca-Cola Zero zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":9,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"},
-    {"_id":"Seq-4","_barcode":"0005","_name":"Coca-Cola Zero 42","_description":"","_price":0.6,"_basePrice":0.3,"_stock":10,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"}
+    {"_id":"Seq-4","_barcode":"0005","_name":"Coca-Cola Zero 42","_description":"","_price":0.6,"_basePrice":0.3,"_stock":10,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"DISABLED"}
   ];
   RxLocalStorage.saveLocalStorage({localStorageKey: PRODUCTS_KEY, value:data})
     .subscribe();
@@ -96,11 +96,11 @@ describe('Product list all with low stock use case', () => {
     });
   });
 
-  it('should return 2 products with low stock', (done) => {
+  it('should return 1 products with low stock', (done) => {
     let count = 0;
     const onNumber = (data) => { count = data.length; };
     observableFindAllProducts.findAllWithLowStock({ limit: 10, offset: 0 }).subscribe(onNumber, noop, () => {
-      la(count === 2, `got ${count} products`);
+      la(count === 1, `got ${count} products`);
       done();
     });
   });
