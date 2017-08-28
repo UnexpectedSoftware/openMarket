@@ -58,7 +58,7 @@ const fetchProductEpic = action$ =>
       stock: product.stock,
       stockMin: product.stockMin,
       weighted: product.isWeighted,
-      categoryId: product.categoryId,
+      categoryId: product.category.id,
       status: product.status
     }));
 

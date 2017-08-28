@@ -31,7 +31,7 @@ class Container extends Component {
       },
       {
         Header: 'Category',
-        accessor: 'categoryId',
+        accessor: 'category.name',
         filterable: false
       },
       {

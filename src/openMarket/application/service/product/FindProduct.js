@@ -13,7 +13,7 @@ export default class FindProduct {
         * @type {ProductRepository}
        * @private
        */
-    this._repository = repository;
+    this._productRepository = repository;
   }
 
   /**
@@ -22,7 +22,7 @@ export default class FindProduct {
    * @returns {Observable.<Product>}
    */
   findProductById({ id }) {
-    return this._repository.findById({ id });
+    return this._productRepository.findById({ id });
   }
 
   /**
@@ -31,7 +31,7 @@ export default class FindProduct {
    * @returns {Observable.<Product>}
    */
   findProductByBarcode({ barcode }) {
-    return this._repository.findByBarcode({ barcode });
+    return this._productRepository.findByBarcode({ barcode });
   }
 
 }
