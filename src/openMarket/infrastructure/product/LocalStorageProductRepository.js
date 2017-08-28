@@ -161,7 +161,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .flatMap(products => Observable.from(products))
       .flatMap(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
-      .filter(product => product.stock <= product.stockMin)
+      .filter(product => product.stock <= product.stockMin && product.status ===  ProductStatus.ENABLED)
       .count();
   }
 
