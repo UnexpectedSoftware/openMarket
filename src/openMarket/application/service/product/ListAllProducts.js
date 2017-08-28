@@ -14,7 +14,7 @@ export default class ListAllProducts {
         * @type {ProductRepository}
        * @private
        */
-    this._repository = repository;
+    this._productRepository = repository;
       /**
        *
         * @type {ProductFilterFactory}
@@ -30,7 +30,7 @@ export default class ListAllProducts {
      * @returns {Observable.<Array.<Product>>}
      */
   findAll({ limit, offset }) {
-    return this._repository.findAll({
+    return this._productRepository.findAll({
       productFilter: this._productFilterFactory.createWith({
         limit,
         offset
@@ -46,7 +46,7 @@ export default class ListAllProducts {
      * @returns {*|Observable.<Product>}
      */
   findAllByName({ name, limit, offset }) {
-    return this._repository.findAllByName({
+    return this._productRepository.findAllByName({
       name,
       limit,
       offset
@@ -54,14 +54,14 @@ export default class ListAllProducts {
   }
 
   findAllWithLowStock({ limit, offset }){
-    return this._repository.findAllWithLowStock({
+    return this._productRepository.findAllWithLowStock({
         limit,
         offset
     });
   }
 
   findAllStatuses(){
-    return this._repository.findAllStatuses();
+    return this._productRepository.findAllStatuses();
   }
 
 }
