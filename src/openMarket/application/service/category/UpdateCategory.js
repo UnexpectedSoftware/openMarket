@@ -21,11 +21,10 @@ export default class UpdateCategory {
      * @param {string} imageUrl
      * @returns {Observable.<null>}
      */
-  updateCategory({ id, name, imageUrl }) {
+  updateCategory({ id, name }) {
     return this.repository.update({
       id,
-      name,
-      imageUrl
+      name
     });
   }
 }

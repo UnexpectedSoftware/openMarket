@@ -3,19 +3,19 @@
  */
 export default class ProductStatistics {
   constructor ({repository}) {
-    this._repository = repository;
+    this._productRepository = repository;
   }
 
   countProducts(){
-    return this._repository.countProducts();
+    return this._productRepository.countProducts();
   }
 
   countProductsByName(){
-    return this._repository.countProductsByName();
+    return this._productRepository.countProductsByName();
   }
 
   countProductsWithLowStock(){
-    return this._repository.countProductsWithLowStock();
+    return this._productRepository.countProductsWithLowStock();
   }
 
 

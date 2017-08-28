@@ -41,11 +41,11 @@ describe('Order create use case', () => {
 
   beforeEach(function () {
     const orderData = [
-      {"_id":"01","_createdAt":"01/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
+      {"_id":"01","_createdAt":"01/07/2017 17:53:04","_lines":[{"barcode":"0001","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
     ];
     const productData = [
-      {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"},
-      {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_imageUrl":"http://nuevotiempo.org/mundoactual/files/2013/07/frutasverduras.jpg","_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"PRODUCT_ENABLED"}
+      {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_imageUrl":"a","_categoryId":"1","_status":"ENABLED"},
+      {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_imageUrl":"a","_categoryId":"2","_status":"ENABLED"}
     ];
 
     RxLocalStorage.saveLocalStorage({
@@ -91,9 +91,9 @@ describe('Order find use case by dates', () => {
 
   beforeEach(function () {
     const data = [
-      {"_id":"01","_createdAt":"01/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
-      {"_id":"01","_createdAt":"02/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
-      {"_id":"01","_createdAt":"03/07/2017 17:53:04","_lines":[{"name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
+      {"_id":"01","_createdAt":"01/07/2017 17:53:04","_lines":[{"barcode":"0001","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"01","_createdAt":"02/07/2017 17:53:04","_lines":[{"barcode":"0002","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
+      {"_id":"01","_createdAt":"03/07/2017 17:53:04","_lines":[{"barcode":"0003","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
     ];
     RxLocalStorage.saveLocalStorage({
       localStorageKey: ORDERS_KEY,

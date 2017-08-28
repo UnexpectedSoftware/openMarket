@@ -6,7 +6,6 @@ import NewCategoryReduxForm from './ReduxForm';
 class Container extends Component {
 
   handleSubmit = (values) => {
-    // Do something with the form values
     const { newCategorySave } = this.props;
     newCategorySave(values);
   }

@@ -20,7 +20,7 @@ export default class CreateCategory {
      * @param {string} imageUrl
      * @returns {*|Observable.<null>}
      */
-  createCategory({ name, imageUrl }) {
-    return this.repository.save({ name, imageUrl });
+  createCategory({ name }) {
+    return this.repository.save({ name });
   }
 }

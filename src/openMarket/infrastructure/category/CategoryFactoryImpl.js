@@ -15,17 +15,20 @@ export default class CategoryFactoryImpl extends CategoryFactory {
          * @type {UUIDIdentity}
          * @member CategoryFactoryImpl#identity
          */
-    this.identity = identity;
+    this._identity = identity;
   }
 
     /**
      *
      * @param {string} name
-     * @param {string} imageUrl
      * @returns {Category}
      */
-  createWith({ name, imageUrl }) {
-    return new Category({ identity: this.identity, name, imageUrl });
+  createWith({ name }) {
+    return new Category({ id: this._identity.generate(), name });
+  }
+
+  createWithId({ id, name }) {
+    return new Category({ id, name });
   }
 
 }

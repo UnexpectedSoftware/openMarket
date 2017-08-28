@@ -18,9 +18,8 @@ export default class CategoryRepository {
     /**
      *
      * @param {string} name
-     * @param {string} imageUrl
      */
-  save({ name, imageUrl }) {
+  save({ name }) {
     throw new Error('CategoryRepository#category must be implemented');
   }
 
@@ -28,9 +27,8 @@ export default class CategoryRepository {
      *
      * @param {string} id
      * @param {string} name
-     * @param {string} imageUrl
      */
-  update({ id, name, imageUrl }) {
+  update({ id, name }) {
     throw new Error('CategoryRepository#category must be implemented');
   }
 }

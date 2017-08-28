@@ -7,33 +7,30 @@ export default class Category {
     /**
      * Category Constructor
      * @constructs Category
-     * @param {UUIDIdentity} identity
+     * @param {string} id
      * @param {string} name
-     * @param {string} imageUrl
      */
-  constructor({ identity, name, imageUrl }) {
+  constructor({ id, name }) {
         /**
          * @type {string}
          * @member Category#id
          * */
-    this.id = identity.generate();
+    this._id = id;
 
         /**
          * @type {string}
          * @member Category#name
          * */
-    this.name = name;
+    this._name = name;
 
-        /**
-         * @type {string}
-         * @member Category#imageUrl
-         * */
-    this.imageUrl = imageUrl;
+  }
 
-        /**
-         * @type {Array}
-         * @member Category#products
-         * */
-    this.products = [];
+
+  get name() {
+    return this._name;
+  }
+
+  get id() {
+    return this._id;
   }
 }

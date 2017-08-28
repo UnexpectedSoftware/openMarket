@@ -30,10 +30,10 @@ export default class ProductFactoryImpl extends ProductFactory {
      * @param {number} stock
      * @param {number} stockMin
      * @param {imageUrl} imageUrl
-     * @param {string} categoryId
+     * @param {Category} category
      * @returns {Product}
      */
-  createWith({ barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId }) {
+  createWith({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category }) {
     return new Product({
       id: this._identity.generate(),
       barcode: barcode,
@@ -44,7 +44,7 @@ export default class ProductFactoryImpl extends ProductFactory {
       stock: stock,
       stockMin: stockMin,
       weighted: weighted,
-      categoryId: categoryId,
+      category: category,
       status: ProductStatus.ENABLED
     });
   }
@@ -59,11 +59,11 @@ export default class ProductFactoryImpl extends ProductFactory {
    * @param {number} stock
    * @param {number} stockMin
    * @param {imageUrl} imageUrl
-   * @param {string} categoryId
+   * @param {Category} category
    * @param {string} status
    * @returns {Product}
    */
-  createWithId({ id, barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status }) {
+  createWithId({ id, barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status }) {
     return new Product({
       id: id,
       barcode: barcode,
@@ -74,7 +74,7 @@ export default class ProductFactoryImpl extends ProductFactory {
       stock: stock,
       stockMin: stockMin,
       weighted: weighted,
-      categoryId: categoryId,
+      category: category,
       status: status
     });
   }

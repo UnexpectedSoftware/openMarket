@@ -7,8 +7,7 @@ const saveCategoryEpic = action$ =>
 
   action$.ofType(newCategoryActions.NEW_CATEGORY_SAVE)
     .flatMap(action => OpenMarket.get("categories_create_use_case").createCategory({
-      name: action.category.name,
-      imageUrl: action.category.imageUrl
+      name: action.category.name
     }))
     .map(saved => newCategoryActions.newCategorySaved());
 

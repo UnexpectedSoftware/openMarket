@@ -13,7 +13,7 @@ export default class AddStock {
        * @type {ProductRepository}
        * @private
        */
-    this._repository = repository;
+    this._productRepository = repository;
   }
 
   /**
@@ -24,12 +24,12 @@ export default class AddStock {
    */
   addStock({ barcode, quantity }) {
 
-    return this._repository.findByBarcode({ barcode })
+    return this._productRepository.findByBarcode({ barcode })
       .map(product => {
         // TODO Pattern state for product and use setter
         product._stock += quantity;
         return product;
       })
-      .flatMap(product => this._repository.save({ product }));
+      .flatMap(product => this._productRepository.save({ product }));
   }
 }

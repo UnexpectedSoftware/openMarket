@@ -5,11 +5,13 @@ export default class CategoryFactory {
     /**
      *
      * @param {string} name
-     * @param {string} imageUrl
      */
-  createWith({ name, imageUrl }) {
+  createWith({ name }) {
     throw new Error('CategoryFactory#category must be implemented');
   }
 
+  createWithId({ id, name }) {
+    throw new Error('CategoryFactory#category must be implemented');
+  }
 
 }

@@ -2,7 +2,8 @@ import la from 'lazy-ass';
 import is from 'check-more-types';
 import openMarket from '../openMarket';
 import RxLocalStorage from "../openMarket/infrastructure/service/RxLocalStorage";
-import {PRODUCTS_KEY} from "../openMarket/infrastructure/service/LocalStorageKeys";
+import {CATEGORIES_KEY, PRODUCTS_KEY} from "../openMarket/infrastructure/service/LocalStorageKeys";
+
 
 /**
  *
@@ -32,15 +33,24 @@ const noop = () => {};
 const crash = (err) => { throw err; };  // rethrow
 
 beforeEach(function () {
-  const data = [
-    {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"},
-    {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"},
-    {"_id":"Seq-2","_barcode":"0003","_name":"Coca-Cola Zero sin cafeina","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"},
-    {"_id":"Seq-3","_barcode":"0004","_name":"Coca-Cola Zero zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":9,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"ENABLED"},
-    {"_id":"Seq-4","_barcode":"0005","_name":"Coca-Cola Zero 42","_description":"","_price":0.6,"_basePrice":0.3,"_stock":10,"_stockMin":10,"_categoryId":"3d8dbdcb-fe7a-4e26-baa4-d74f612fe8d4","_status":"DISABLED"}
+  const productsData = [
+    {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_categoryId":"1","_status":"ENABLED"},
+    {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_categoryId":"2","_status":"ENABLED"},
+    {"_id":"Seq-2","_barcode":"0003","_name":"Coca-Cola Zero sin cafeina","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_categoryId":"2","_status":"ENABLED"},
+    {"_id":"Seq-3","_barcode":"0004","_name":"Coca-Cola Zero zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":9,"_stockMin":10,"_categoryId":"1","_status":"ENABLED"},
+    {"_id":"Seq-4","_barcode":"0005","_name":"Coca-Cola Zero 42","_description":"","_price":0.6,"_basePrice":0.3,"_stock":10,"_stockMin":10,"_categoryId":"3","_status":"DISABLED"}
   ];
-  RxLocalStorage.saveLocalStorage({localStorageKey: PRODUCTS_KEY, value:data})
+
+  const categoryData = [
+    {"_id":"1","_name":"Odin"},
+    {"_id":"2","_name":"Thor"},
+    {"_id":"3","_name":"Heimdall"}
+  ];
+
+  RxLocalStorage.saveLocalStorage({localStorageKey: PRODUCTS_KEY, value:productsData})
+    .flatMap(saved => RxLocalStorage.saveLocalStorage({localStorageKey: CATEGORIES_KEY, value:categoryData}))
     .subscribe();
+
 });
 describe('Product list all use case', () => {
 
@@ -154,18 +164,18 @@ describe('Product create use case', () => {
     description: 'Niiiiiiiiiiiii',
     price: 99,
     stock: 200,
-    categoryId: 2
+    categoryId:'2'
   };
 
   it('should create a new product', (done) => {
     let count = 0;
     const onNumber = () => { count += 1; };
     observableCreateProducts.createOrUpdate(productDTO)
-            .flatMap(data => observableFindProducts.findProductByBarcode({barcode: productDTO.barcode}))
-            .subscribe(onNumber, noop, () => {
-              la(count === 1, `got ${count} products`);
-              done();
-            });
+      .flatMap(data => observableFindProducts.findProductByBarcode({barcode: productDTO.barcode}))
+      .subscribe(onNumber, crash, () => {
+        la(count === 1, `got ${count} products`);
+        done();
+      });
   });
 
   it('should update an existing product with the new data', (done) => {
@@ -177,19 +187,19 @@ describe('Product create use case', () => {
         la(product.description === productDTONew.description, 'descriptions are not the same');
         la(product.price === productDTONew.price, 'prices are not the same');
         la(product.stock === productDTONew.stock, 'stocks are not the same');
-        la(product.categoryId === productDTONew.categoryId, 'categoryId are not the same');
-        la(product.status === productDTONew.status, 'statuses are not the same');
+        la(product.category.id === productDTONew.categoryId, 'categoryId are not the same');
+        la(product.status === productDTONew.status, `status not updated, product status is ${product.status} and should be ${productDTONew.status}`);
       }
     };
     const productDTONew = {
-      id: 'lala',
+      id: 'Seq-0',
       barcode: '0001',
       name: 'Updated Name',
       description: 'Updated Description',
       price: 100,
       stock: 100,
-      categoryId: 2,
-      status: "DISABLED"
+      categoryId: '2',
+      status: 'DISABLED'
 
     };
     observableCreateProducts.createOrUpdate(productDTONew)
