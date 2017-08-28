@@ -9,6 +9,7 @@ import CreateOrUpdateProduct from '../../application/service/product/CreateOrUpd
 import AddStock from '../../application/service/product/AddStock';
 import ProductMapper from "./ProductMapper";
 import ProductStatistics from "../../application/service/product/ProductStatistics";
+import CategoryDependencyBuilder from "../category/CategoryDependencyBuilder";
 /**
  * @class ProductDependencyBuilder
  */
@@ -73,8 +74,9 @@ export default class ProductDependencyBuilder {
 
   static buildCreateProduct() {
     return new CreateOrUpdateProduct({
-      repository: ProductDependencyBuilder.buildProductRepository(),
-      productFactory: ProductDependencyBuilder.buildProductFactory()
+      productRepository: ProductDependencyBuilder.buildProductRepository(),
+      productFactory: ProductDependencyBuilder.buildProductFactory(),
+      categoryRepository: CategoryDependencyBuilder.buildCategoryRepository()
     });
   }
 
@@ -86,7 +88,8 @@ export default class ProductDependencyBuilder {
 
   static buildProductMapper() {
     return new ProductMapper({
-      productFactory: ProductDependencyBuilder.buildProductFactory()
+      productFactory: ProductDependencyBuilder.buildProductFactory(),
+      categoryRepository: CategoryDependencyBuilder.buildCategoryRepository()
     });
   }
 

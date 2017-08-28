@@ -13,7 +13,7 @@ export default class DisableProduct {
      * @type {ProductRepository}
      * @private
      */
-    this._repository = repository;
+    this._productRepository = repository;
   }
 
   /**
@@ -22,10 +22,10 @@ export default class DisableProduct {
    * @returns {Observable<null>}
    */
   disable({ id }) {
-    this._repository.findById({id})
+    this._productRepository.findById({id})
       .flatMap(product => {
         product.status = ProductStatus.DISABLED;
-        return this._repository.save({product});
+        return this._productRepository.save({product});
       })
   }
 

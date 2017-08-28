@@ -13,10 +13,10 @@ export default class Product {
      * @param {number} stock
      * @param {number} stockMin
      * @param {boolean} weighted
-     * @param {string} categoryId
+     * @param {Category} category
      * @param {string} status
      */
-  constructor({ id, barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status }) {
+  constructor({ id, barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status }) {
 
       /**
        *
@@ -84,10 +84,10 @@ export default class Product {
 
       /**
        *
-       * @type {string}
+       * @type {Category}
        * @private
        */
-    this._categoryId = categoryId;
+    this._category = category;
       /**
        *
        * @type {string}
@@ -134,8 +134,8 @@ export default class Product {
     return this._weighted;
   }
 
-  get categoryId() {
-    return this._categoryId;
+  get category() {
+    return this._category;
   }
 
   get status() {
