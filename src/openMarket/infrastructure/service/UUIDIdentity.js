@@ -1,5 +1,5 @@
 import Identity from '../../domain/Identity';
-import uuid from 'node-uuid';
+import uuidv4 from 'uuid/v4';
 /**
  * @class UUIDIdentity
  * @implements Identity
@@ -17,7 +17,7 @@ export default class UUIDIdentity extends Identity {
      * @returns {string}
      */
   generate() {
-    return uuid.v4();
+    return uuidv4();
   }
 
 }

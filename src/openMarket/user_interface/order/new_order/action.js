@@ -10,7 +10,7 @@ export const NEW_ORDER_PRODUCT_QUANTITY_CHANGE = 'NEW_ORDER_PRODUCT_QUANTITY_CHA
 export const NEW_ORDER_PRODUCT_DELETED = 'NEW_ORDER_PRODUCT_DELETED';
 export const NEW_ORDER_PRODUCT_NOT_FOUND = 'NEW_ORDER_PRODUCT_NOT_FOUND';
 
-export const newOrderSaved = () => ({ type: NEW_ORDER_SAVED });
+export const newOrderSaved = payload => ({ type: NEW_ORDER_SAVED, payload });
 export const newOrderSave = order => ({ type: NEW_ORDER_SAVE,order});
 
 export const newOrderProductFetched = payload => ({ type: NEW_ORDER_PRODUCT_FETCHED,payload});
