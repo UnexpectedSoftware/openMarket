@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import { Link } from 'react-router';
 import NewOrderReduxForm from './ReduxForm';
 import WeightedDialog from '../weighted_dialog/ReduxConnector';
+import PrinterDialog from '../printer_dialog/ReduxConnector';
 import * as Rx from "rxjs";
 
 class Container extends Component {
@@ -45,6 +46,7 @@ class Container extends Component {
             </Link>
           </p>
           <WeightedDialog/>
+          <PrinterDialog/>
       </div>
     );
   }

@@ -4,6 +4,7 @@ import OpenMarket from "../../../index";
 import * as Rx from "rxjs";
 import {reset} from 'redux-form';
 import orderPrinterService from "../../service/OrderPrinterService";
+import {HIDE_PRINTER_DIALOG, showPrinterDialog} from "../printer_dialog/action";
 
 const newOrderProductFetch = action$ =>
   action$.ofType(newOrderActions.NEW_ORDER_PRODUCT_FETCH)
@@ -31,13 +32,20 @@ const weightedDialogEpic = action$ =>
 
 const newOrderSavedEpic = action$ =>
   action$.ofType(newOrderActions.NEW_ORDER_SAVED)
-    .flatMap(action => orderPrinterService.print({order: action.payload}));
+    .map(action => showPrinterDialog(action.payload));
+
+
+const printerDialogEpic = action$ =>
+  action$.ofType(HIDE_PRINTER_DIALOG)
+    .filter(action => true === action.payload.print)
+    .flatMap(action => orderPrinterService.print({order: action.payload.order}));
 
 export default action$ =>
   Rx.Observable.merge(
     newOrderProductFetch(action$),
     newOrderSave(action$),
     weightedDialogEpic(action$),
+    printerDialogEpic(action$),
     newOrderSavedEpic(action$)
   );
 

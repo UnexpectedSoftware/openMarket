@@ -1,6 +1,8 @@
 import * as Rx from "rxjs";
 import printer from 'node-thermal-printer';
 
+const MAX_CHARACTERS = 19;
+
 class OrderPrinterService {
 
   constructor({ printer }){
@@ -21,7 +23,7 @@ class OrderPrinterService {
     this._printer.alignCenter();
     this._printer.setTextDoubleHeight()
     this._printer.setTextDoubleWidth();
-    this._printer.println("SUPER COMPRIN");
+    this._printer.println('SUPER COMPRIN');
     this._printer.setTextNormal();
     this._printer.println("NIF 476359906P");
     this._printer.println(`Date ${order.createdAt} `);
@@ -37,7 +39,7 @@ class OrderPrinterService {
     ]);
     order.lines
       .map(line => ([
-        { text:line.name, align:"LEFT", width:0.40},
+        { text:line.name.slice(0, this.MAX_CHARACTERS), align:"LEFT", width:0.40},
         { text:line.quantity, align:"CENTER", width:0.20},
         { text:line.price, align:"CENTER", width:0.20},
         { text:line.subtotal, align:"CENTER", width:0.20}
@@ -49,8 +51,9 @@ class OrderPrinterService {
     this._printer.print("Total: ");
     this._printer.bold(true);
     this._printer.print(order.total);
-    this._printer.print("\u20AC");
-
+    this._printer.print('€');
+    this._printer.newLine();
+    this._printer.println("IVA incluido");
     this._printer.cut();
     return this._execute();
   }
@@ -67,6 +70,11 @@ class OrderPrinterService {
       observer.complete();
     });
   }
+
+  get MAX_CHARACTERS (){
+    return MAX_CHARACTERS;
+  }
+
 }
 
 export default new OrderPrinterService({printer: printer});
