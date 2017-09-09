@@ -56,13 +56,14 @@ export default class LocalStorageOrderRepository extends OrderRepository {
     return null;
   }
 
-  save({lines}) {
+  save({order}) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .catch(e => Rx.Observable.of([]))
       .map(ordersArray => {
-        ordersArray.push(this._orderFactory.createWith({lines}));
+        ordersArray.push(order);
         return ordersArray;
       })
-      .flatMap(ordersArray => RxLocalStorage.saveLocalStorage({ localStorageKey: this._localStorageKey, value: ordersArray }));
+      .flatMap(ordersArray => RxLocalStorage.saveLocalStorage({ localStorageKey: this._localStorageKey, value: ordersArray }))
+      .map(() => order);
   }
 }

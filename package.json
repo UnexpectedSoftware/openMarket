@@ -1,9 +1,9 @@
 {
-  "name": "electron-react-boilerplate",
-  "productName": "ElectronReact",
-  "version": "0.10.0",
-  "description": "Electron application boilerplate based on React, React Router, Webpack, React Hot Loader for rapid application development",
-  "main": "main.js",
+  "name": "OpenMarket",
+  "productName": "OpenMarket",
+  "version": "0.0.1",
+  "description": "Desktop application to administrate a generic market with stocks, products, categories etc...",
+  "main": "src/openMarket/user_interface/main.js",
   "scripts": {
     "test": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha --recursive --retries 2 --compilers js:babel-register --require ./src/test/user_interface/setup.js \"src/test/user_interface/**/*.spec.js\"",
     "test-all": "npm run lint && npm run flow && npm run test && npm run build",
@@ -30,9 +30,8 @@
   },
   "browserslist": "electron 1.4",
   "build": {
-    "productName": "ElectronReact",
+    "productName": "OpenMarket",
     "appId": "org.develar.ElectronReact",
-    "category": "public.app-category.tools",
     "dmg": {
       "contents": [
         {
@@ -48,14 +47,22 @@
         }
       ]
     },
+    "directories": {
+      "buildResources": "resources",
+      "output": "release"
+    },
     "files": [
       "dist/",
       "node_modules/",
-      "app.html",
-      "main.js",
-      "main.js.map",
+      "src/resources/",
+      "src/openMarket/user_interface/app.html",
+      "src/openMarket/user_interface/main.js",
+      "src/openMarket/user_interface/main.js.map",
       "package.json"
     ],
+    "mac": {
+      "category": "public.app-category.tools"
+    },
     "win": {
       "target": "nsis"
     },
@@ -66,36 +73,29 @@
       ]
     }
   },
-  "directories": {
-    "buildResources": "resources",
-    "output": "release"
-  },
   "bin": {
     "electron": "./node_modules/.bin/electron"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chentsulin/electron-react-boilerplate.git"
+    "url": "https://github.com/UnexpectedSoftware/openMarket.git"
   },
+  "keywords": [
+    "market",
+    "stocks",
+    "desktop",
+    "electron"
+  ],
   "author": {
-    "name": "C. T. Lin",
-    "email": "chentsulin@gmail.com",
-    "url": "https://github.com/chentsulin"
+    "name": "Victor Caldentey",
+    "email": "victuxbb@gmail.com",
+    "url": "http://www.unexpectedsoftware.com/"
   },
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/chentsulin/electron-react-boilerplate/issues"
+    "url": "https://github.com/UnexpectedSoftware/openMarket/issues"
   },
-  "keywords": [
-    "electron",
-    "boilerplate",
-    "react",
-    "react-router",
-    "flux",
-    "webpack",
-    "react-hot"
-  ],
-  "homepage": "https://github.com/chentsulin/electron-react-boilerplate#readme",
+  "homepage": "http://www.unexpectedsoftware.com/",
   "devDependencies": {
     "asar": "^0.13.0",
     "babel-core": "^6.22.1",
@@ -116,14 +116,14 @@
     "babel-register": "^6.22.0",
     "babili-webpack-plugin": "^0.0.9",
     "boiler-room-custodian": "^0.6.1",
-    "chai": "^4.1.0",
+    "chai": "4.1.0",
     "check-more-types": "^2.21.0",
     "concurrently": "^3.1.0",
     "cross-env": "^3.1.4",
     "css-loader": "^0.26.1",
     "devtron": "^1.4.0",
     "electron": "^1.4.15",
-    "electron-builder": "^12.2.2",
+    "electron-builder": "^19.26.2",
     "electron-devtools-installer": "^2.0.1",
     "enzyme": "^2.7.1",
     "eslint": "^3.14.0",
@@ -170,7 +170,7 @@
     "font-awesome": "^4.7.0",
     "lodash": "^4.17.1",
     "moment": "^2.18.1",
-    "node-uuid": "^1.4.7",
+    "node-thermal-printer": "^1.0.5",
     "react": "^15.4.2",
     "react-datepicker": "^0.48.0",
     "react-dom": "^15.4.2",
@@ -183,7 +183,8 @@
     "redux-observable": "^0.14.1",
     "redux-thunk": "^2.2.0",
     "rxjs": "^5.2.0",
-    "source-map-support": "^0.4.10"
+    "source-map-support": "^0.4.10",
+    "uuid": "^3.1.0"
   },
   "devEngines": {
     "node": ">=6.x",

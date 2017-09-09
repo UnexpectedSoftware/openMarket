@@ -28,7 +28,7 @@ export default class Order {
   /**
    * @type {number}
    */
-    this._total = this.getTotalAmount();
+    this._total = this._getTotalAmount();
   }
 
 
@@ -49,7 +49,7 @@ export default class Order {
     return this._total;
   }
 
-  getTotalAmount() {
+  _getTotalAmount() {
     return this._lines.reduce((acc, element) => acc + (element.price * element.quantity) ,0);
   }
 

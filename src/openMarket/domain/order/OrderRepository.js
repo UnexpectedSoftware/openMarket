@@ -41,10 +41,10 @@ export default class OrderRepository {
 
   /**
    *
-   * @param {Array} lines
-   * @returns {Observable.<null>}
+   * @param {Order} order
+   * @returns {Observable.<Order>}
    */
-  save({ lines }) {
+  save({ order }) {
     throw new Error('OrderRepository#order must be implemented');
   }
 

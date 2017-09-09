@@ -3,6 +3,8 @@ import * as weightedDialogActions from "../weighted_dialog/action";
 import OpenMarket from "../../../index";
 import * as Rx from "rxjs";
 import {reset} from 'redux-form';
+import orderPrinterService from "../../service/OrderPrinterService";
+import {HIDE_PRINTER_DIALOG, showPrinterDialog} from "../printer_dialog/action";
 
 const newOrderProductFetch = action$ =>
   action$.ofType(newOrderActions.NEW_ORDER_PRODUCT_FETCH)
@@ -15,25 +17,35 @@ const newOrderProductFetch = action$ =>
 
 const newOrderSave = action$ =>
   action$.ofType(newOrderActions.NEW_ORDER_SAVE)
-    .flatMap(action => Rx.Observable.from(action.order.lines)
-      .map(line => ({barcode: line.barcode, name: line.name, price: line.price, quantity: line.quantity}))
-      .toArray())
-    .flatMap(lines => OpenMarket.get("orders_create_use_case").createOrder({lines:lines}))
-    .map(savedOrder => newOrderActions.newOrderSaved())
+    .flatMap(action => OpenMarket.get("orders_create_use_case").createOrder({lines:action.order.lines}))
+    .map(savedOrder => newOrderActions.newOrderSaved(savedOrder))
     .mergeMap(action => Rx.Observable.of(reset('new_order'),action));
 
 
 const weightedDialogEpic = action$ =>
   action$.ofType(weightedDialogActions.HIDE_WEIGHTED_DIALOG)
-    .map(action => newOrderActions.newOrderProductFetched({product:action.payload.product,quantity:action.payload.quantity}))
-    .mergeMap(action => Rx.Observable.of(reset('new_order'),action))
+    .map(action => newOrderActions.newOrderProductFetched({
+      product:action.payload.product,
+      quantity:action.payload.quantity
+    }))
+    .mergeMap(action => Rx.Observable.of(reset('new_order'),action));
+
+const newOrderSavedEpic = action$ =>
+  action$.ofType(newOrderActions.NEW_ORDER_SAVED)
+    .map(action => showPrinterDialog(action.payload));
 
 
+const printerDialogEpic = action$ =>
+  action$.ofType(HIDE_PRINTER_DIALOG)
+    .filter(action => true === action.payload.print)
+    .flatMap(action => orderPrinterService.print({order: action.payload.order}));
 
 export default action$ =>
   Rx.Observable.merge(
     newOrderProductFetch(action$),
     newOrderSave(action$),
-    weightedDialogEpic(action$)
+    weightedDialogEpic(action$),
+    printerDialogEpic(action$),
+    newOrderSavedEpic(action$)
   );
 

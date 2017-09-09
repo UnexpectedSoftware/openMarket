@@ -1,10 +1,11 @@
 import CreateOrder from "../../application/service/order/CreateOrder";
 import LocalStorageOrderRepository from "./LocalStorageOrderRepository";
 import OrderFactoryImpl from "./OrderFactoryImpl";
-import UUIDGenerator from "../UUIDGenerator";
+import UUIDIdentity from "../service/UUIDIdentity";
 import ListAllOrders from "../../application/service/order/ListAllOrders";
 import OrdersStatistics from "../../application/service/order/OrdersStatistics";
 import ProductDependencyBuilder from "../product/ProductDependencyBuilder";
+
 export default class OrderDependencyBuilder {
 
   static buildOrderRepository() {
@@ -15,15 +16,16 @@ export default class OrderDependencyBuilder {
 
   static buildCreateOrderUseCase() {
     return new CreateOrder({
-        orderRepository: OrderDependencyBuilder.buildOrderRepository(),
-        productRepository: ProductDependencyBuilder.buildProductRepository()
+      orderRepository: OrderDependencyBuilder.buildOrderRepository(),
+      productRepository: ProductDependencyBuilder.buildProductRepository(),
+      orderFactory: OrderDependencyBuilder.buildOrderFactory()
     });
   }
 
   static buildOrderFactory() {
     return new OrderFactoryImpl(
       {
-        identity: new UUIDGenerator()
+        identity: new UUIDIdentity()
     });
   }
 
