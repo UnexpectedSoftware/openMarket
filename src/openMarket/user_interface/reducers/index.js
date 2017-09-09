@@ -10,6 +10,7 @@ import listOrderReducer from '../order/list_orders/reducer';
 import newOrderReducer from '../order/new_order/reducer';
 import dialogReducer from '../dialog/reducer';
 import weightedDialogReducer from '../order/weighted_dialog/reducer';
+import printerDialogReducer from '../order/printer_dialog/reducer';
 
 
 export const rootReducer = combineReducers({
@@ -20,6 +21,7 @@ export const rootReducer = combineReducers({
   listOrder: listOrderReducer,
   dialog: dialogReducer,
   weightedDialog: weightedDialogReducer,
+  printerDialog: printerDialogReducer,
   form: formReducer,
   routing
 });
