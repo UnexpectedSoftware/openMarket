@@ -14,6 +14,7 @@ class Container extends Component {
     this.handleStartDateChanged = this.handleStartDateChanged.bind(this);
     this.handleEndDateChanged = this.handleEndDateChanged.bind(this);
     this.handleFilterByDates  = this.handleFilterByDates.bind(this);
+    this.renderDetailOrder  = this.renderDetailOrder.bind(this);
     this.moneySymbol = "€";
     this.columns = [
       {
@@ -29,9 +30,20 @@ class Container extends Component {
         Header: 'Total',
         accessor: 'total',
         Cell: (data) => data.value +" "+this.moneySymbol
+      },
+      {
+        Header: 'Actions',
+        accessor: 'actions',
+        Cell: this.renderDetailOrder
       }
     ];
   }
+
+  renderDetailOrder (data) {
+    const { listOrderDetail } = this.props;
+    return (<a onClick={(e) => {listOrderDetail(data.row.id);}}>View</a>);
+  }
+
 
   handlePageChanged (pageIndex) {
     const { listOrderFetchWithFilters, orders } = this.props;

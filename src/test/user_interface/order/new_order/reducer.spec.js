@@ -5,6 +5,11 @@ import {
   NEW_ORDER_PRODUCT_FETCHED,
   NEW_ORDER_PRODUCT_QUANTITY_CHANGE
 } from '../../../../openMarket/user_interface/order/new_order/action';
+import OrderFactoryImpl from "../../../../openMarket/infrastructure/order/OrderFactoryImpl";
+import UUIDIdentity from "../../../../openMarket/infrastructure/service/UUIDIdentity";
+import {LIST_ORDER_DETAIL_LOADED} from "../../../../openMarket/user_interface/order/list_orders/action";
+
+const orderFactory = new OrderFactoryImpl({identity: new UUIDIdentity()});
 
 describe('reducers', () => {
   describe('newOrder', () => {
@@ -13,7 +18,9 @@ describe('reducers', () => {
         order: {
           lines: [],
           total: 0.0
-        }
+        },
+
+        readonly: false
       };
       expect(newOrderReducer(undefined, {})).to.deep.equal(expectedInitialState);
     });
@@ -42,7 +49,9 @@ describe('reducers', () => {
             subtotal: 9.99
           }],
         total: 9.99
-        }
+        },
+
+        readonly: false
       };
       expect(newOrderReducer(undefined, { type: NEW_ORDER_PRODUCT_FETCHED, payload: givenPayload }))
         .to.deep.equal(expectedState);
@@ -72,7 +81,9 @@ describe('reducers', () => {
             subtotal: 9.99
           }],
           total: 9.99
-        }
+        },
+
+        readonly: false
       };
 
       const expectedState = {
@@ -85,7 +96,9 @@ describe('reducers', () => {
             subtotal: 19.98
           }],
           total: 19.98
-        }
+        },
+
+        readonly: false
       };
       expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_FETCHED, payload: givenPayload }))
         .to.deep.equal(expectedState);
@@ -107,7 +120,9 @@ describe('reducers', () => {
             subtotal: 9.99
           }],
           total: 9.99
-        }
+        },
+
+        readonly: false
       };
 
       const expectedState = {
@@ -120,7 +135,9 @@ describe('reducers', () => {
             subtotal: 49.95
           }],
           total: 49.95
-        }
+        },
+
+        readonly: false
       };
       expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_QUANTITY_CHANGE, payload: givenQuantityChange }))
         .to.deep.equal(expectedState);
@@ -143,7 +160,9 @@ describe('reducers', () => {
             subtotal: 9.99
           }],
           total: 9.99
-        }
+        },
+
+        readonly: false
       };
 
       const expectedState = {
@@ -156,7 +175,9 @@ describe('reducers', () => {
             subtotal: 9.99
           }],
           total: 9.99
-        }
+        },
+
+        readonly: false
       };
       expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_QUANTITY_CHANGE, payload: givenQuantityChange }))
         .to.deep.equal(expectedState);
@@ -203,7 +224,9 @@ describe('reducers', () => {
 
           ],
           total: 2.94
-        }
+        },
+
+        readonly: false
       };
 
       const expectedState = {
@@ -240,7 +263,9 @@ describe('reducers', () => {
 
           ],
           total: 5.7
-        }
+        },
+
+        readonly: false
       };
       expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_QUANTITY_CHANGE, payload: givenQuantityChange }))
         .to.deep.equal(expectedState);
@@ -288,7 +313,9 @@ describe('reducers', () => {
 
           ],
           total: 2.94
-        }
+        },
+
+        readonly: false
       };
 
       const expectedState = {
@@ -325,7 +352,9 @@ describe('reducers', () => {
 
           ],
           total: 2.73
-        }
+        },
+
+        readonly: false
       };
       expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_QUANTITY_CHANGE, payload: givenQuantityChange }))
         .to.deep.equal(expectedState);
@@ -358,7 +387,9 @@ describe('reducers', () => {
             }
           ],
           total: 1.15
-        }
+        },
+
+        readonly: false
       };
 
       const expectedState = {
@@ -373,12 +404,54 @@ describe('reducers', () => {
             }
           ],
           total: 0.6
-        }
+        },
+
+        readonly: false
       };
       expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_DELETED, barcode: givenActionWithBarcode }))
         .to.deep.equal(expectedState);
     });
+  });
 
+  describe('view Order', () => {
+    it('should handle LIST_ORDER_DETAIL_LOADED to load previous order',() =>{
+      const giveInitialState = {
+        order: {
+          lines: [],
+          total: 0
+        },
+        readonly: false
+      };
 
+      const givenOrder =  orderFactory.createWith({
+        lines: [{
+          barcode: '0002',
+          name: 'Ninja2',
+          price: 0.6,
+          quantity: 1
+        }]
+      });
+
+      const expectedState = {
+        order: {
+          lines: [
+            {
+              barcode: '0002',
+              name: 'Ninja2',
+              price: 0.6,
+              quantity: 1,
+              subtotal: 0.6
+            }
+          ],
+          total: 0.6,
+          createdAt: givenOrder.createdAt
+        },
+        readonly: true
+      };
+
+      expect(newOrderReducer(giveInitialState, { type: LIST_ORDER_DETAIL_LOADED, payload: givenOrder }))
+        .to.deep.equal(expectedState);
+
+    });
   });
 });

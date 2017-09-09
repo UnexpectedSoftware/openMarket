@@ -3,7 +3,8 @@ export const state = () => {
     order: {
       lines: [],
       total: 0,
-    }
+    },
+    readonly: false
   };
 };
 
@@ -23,6 +24,7 @@ export const addProduct = ({ lines, product, quantity }) => {
   });
 
   return {
+    ...state(),
     order: {
       lines,
       total: calculateTotal({lines})
@@ -39,6 +41,7 @@ export const updateQuantity = ({lines, barcode, quantity}) => {
     return currentProduct;
   });
   return {
+    ...state(),
     order: {
       lines: newLines,
       total: calculateTotal({lines:newLines})
@@ -50,6 +53,7 @@ export const updateQuantity = ({lines, barcode, quantity}) => {
 export const removeProduct = ({lines, barcode}) =>{
   let newLines = lines.filter(product => product.barcode!==barcode);
   return {
+    ...state(),
     order: {
       lines: newLines,
       total: calculateTotal({lines:newLines})
@@ -57,6 +61,15 @@ export const removeProduct = ({lines, barcode}) =>{
   };
 }
 
+export const loadOrder  = ({order}) =>
+  ({
+    order:{
+      lines: order.lines.map(line => ({...line,subtotal:line.quantity * line.price})),
+      total: order.total,
+      createdAt: order.createdAt
+    },
+    readonly:true
+  });
 
 
 const calculateTotal = ({lines}) => {

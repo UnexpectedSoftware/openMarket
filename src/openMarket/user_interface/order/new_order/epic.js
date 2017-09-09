@@ -38,7 +38,17 @@ const newOrderSavedEpic = action$ =>
 const printerDialogEpic = action$ =>
   action$.ofType(HIDE_PRINTER_DIALOG)
     .filter(action => true === action.payload.print)
-    .flatMap(action => orderPrinterService.print({order: action.payload.order}));
+    .flatMap(action => orderPrinterService.print({order: action.payload.order}))
+    .map(result => newOrderActions.printOrderFinished());
+
+const printButtonClickedEpic = action$ =>
+  action$.ofType(newOrderActions.PRINT_ORDER_BUTTON_CLICKED)
+    .flatMap(action => orderPrinterService.print({order: action.payload}))
+    .map(result => newOrderActions.printOrderFinished());
+
+
+
+
 
 export default action$ =>
   Rx.Observable.merge(
@@ -46,6 +56,7 @@ export default action$ =>
     newOrderSave(action$),
     weightedDialogEpic(action$),
     printerDialogEpic(action$),
-    newOrderSavedEpic(action$)
+    newOrderSavedEpic(action$),
+    printButtonClickedEpic(action$)
   );
 

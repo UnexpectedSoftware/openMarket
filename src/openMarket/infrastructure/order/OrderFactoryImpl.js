@@ -7,11 +7,11 @@ export default class OrderFactoryImpl extends OrderFactory {
     this._identity = identity;
   }
 
-  createWith({lines}) {
-    return new Order(
-      {
-        idGenerator: this._identity,
-        lines: lines
+  createWith({id = this._identity.generate(), lines, date} = {}) {
+    return new Order({
+        id: id,
+        lines: lines,
+        date: date
       });
   }
 }
