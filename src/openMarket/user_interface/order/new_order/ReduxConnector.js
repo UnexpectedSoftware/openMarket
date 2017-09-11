@@ -5,7 +5,8 @@ import * as newOrderActions from './action';
 
 function mapStateToProps(state) {
   return {
-    order: state.newOrder.order
+    order: state.newOrder.order,
+    readonly: state.newOrder.readonly
   };
 }
 

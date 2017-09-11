@@ -1,7 +1,7 @@
 import OpenMarket from "../../../index";
 import * as Rx from "rxjs";
 import * as newProductActions from "./action";
-import {reset, destroy} from 'redux-form';
+import {reset} from 'redux-form';
 
 const saveProductEpic = action$ =>
 

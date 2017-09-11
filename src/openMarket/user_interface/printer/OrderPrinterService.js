@@ -1,18 +1,11 @@
 import * as Rx from "rxjs";
-import printer from 'node-thermal-printer';
 
 const MAX_CHARACTERS = 19;
 
-class OrderPrinterService {
+export default class OrderPrinterService {
 
-  constructor({ printer }){
-    printer.init({
-      type: 'epson',
-      interface: '/dev/usb/lp0',
-      characterSet: 'SPAIN1',
-      extraSpecialCharacters:{'€':128}
-    });
-    this._printer = printer;
+  constructor({ printerConnection }){
+    this._printer = printerConnection;
   }
 
   /**
@@ -76,5 +69,3 @@ class OrderPrinterService {
   }
 
 }
-
-export default new OrderPrinterService({printer: printer});

@@ -1,5 +1,9 @@
-import {NEW_ORDER_PRODUCT_FETCHED, NEW_ORDER_PRODUCT_QUANTITY_CHANGE, NEW_ORDER_PRODUCT_DELETED, NEW_ORDER_SAVED} from './action';
-import {state,addProduct, updateQuantity, removeProduct} from './model';
+import {
+  NEW_ORDER_PRODUCT_FETCHED, NEW_ORDER_PRODUCT_QUANTITY_CHANGE, NEW_ORDER_PRODUCT_DELETED, NEW_ORDER_SAVED,
+  NEW_ORDER_CLOSED
+} from './action';
+import {state, addProduct, updateQuantity, removeProduct, loadOrder} from './model';
+import {LIST_ORDER_DETAIL_LOADED} from "../list_orders/action";
 
 const initialState = state();
 
@@ -30,6 +34,14 @@ export default function reducer(state = initialState, action) {
         });
 
     case NEW_ORDER_SAVED:
+      return initialState;
+
+    case LIST_ORDER_DETAIL_LOADED:
+      return loadOrder({
+        order: action.payload
+      })
+
+    case NEW_ORDER_CLOSED:
       return initialState;
 
     default:

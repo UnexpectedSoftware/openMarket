@@ -1,51 +1,36 @@
-import * as newOrderActions from "./action";
-import * as weightedDialogActions from "../weighted_dialog/action";
+
+import {reset} from 'redux-form';
 import OpenMarket from "../../../index";
 import * as Rx from "rxjs";
-import {reset} from 'redux-form';
-import orderPrinterService from "../../service/OrderPrinterService";
-import {HIDE_PRINTER_DIALOG, showPrinterDialog} from "../printer_dialog/action";
 
-const newOrderProductFetch = action$ =>
-  action$.ofType(newOrderActions.NEW_ORDER_PRODUCT_FETCH)
-    .flatMap(action => OpenMarket.get("products_find_use_case").findProductByBarcode({barcode: action.barcode})
-      .map(product => !product.isWeighted ? newOrderActions.newOrderProductFetched({product:product,quantity:1}): weightedDialogActions.showWeightedDialog(product))
-      .defaultIfEmpty(newOrderActions.newOrderProductNotFound({ message:`Product with barcode ${action.barcode} not found!` }))
-      .mergeMap(action => Rx.Observable.of(reset('new_order'),action))
-    );
+import OrderPrinterFactory from "../../printer/OrderPrinterFactory";
+import PrinterConnection from "../../printer/PrinterConnection";
+import {
+  makeNewOrderProductFetchEpic,
+  makeNewOrderSaveEpic,
+  makePrintButtonClickedEpic,
+  makePrinterDialogEpic,
+  makeNewOrderSavedEpic,
+  makeWeightedDialogEpic
+} from "./epicFactory";
 
+/* TODO Maybe make a DIC for user_interface layer */
+const findProductUseCase = OpenMarket.get("products_find_use_case");
+const orderCreateUseCase = OpenMarket.get("orders_create_use_case");
+const orderPrinterService = new OrderPrinterFactory({printerConnection: new PrinterConnection()});
 
-const newOrderSave = action$ =>
-  action$.ofType(newOrderActions.NEW_ORDER_SAVE)
-    .flatMap(action => OpenMarket.get("orders_create_use_case").createOrder({lines:action.order.lines}))
-    .map(savedOrder => newOrderActions.newOrderSaved(savedOrder))
-    .mergeMap(action => Rx.Observable.of(reset('new_order'),action));
+const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(reset);
+const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset);
+const printerDialogEpic = makePrinterDialogEpic(orderPrinterService);
+const printButtonClickedEpic = makePrintButtonClickedEpic(orderPrinterService);
 
-
-const weightedDialogEpic = action$ =>
-  action$.ofType(weightedDialogActions.HIDE_WEIGHTED_DIALOG)
-    .map(action => newOrderActions.newOrderProductFetched({
-      product:action.payload.product,
-      quantity:action.payload.quantity
-    }))
-    .mergeMap(action => Rx.Observable.of(reset('new_order'),action));
-
-const newOrderSavedEpic = action$ =>
-  action$.ofType(newOrderActions.NEW_ORDER_SAVED)
-    .map(action => showPrinterDialog(action.payload));
-
-
-const printerDialogEpic = action$ =>
-  action$.ofType(HIDE_PRINTER_DIALOG)
-    .filter(action => true === action.payload.print)
-    .flatMap(action => orderPrinterService.print({order: action.payload.order}));
 
 export default action$ =>
   Rx.Observable.merge(
-    newOrderProductFetch(action$),
-    newOrderSave(action$),
-    weightedDialogEpic(action$),
+    orderProductFetchEpic(action$),
+    orderSaveEpic(action$),
     printerDialogEpic(action$),
-    newOrderSavedEpic(action$)
+    printButtonClickedEpic(action$),
+    makeNewOrderSavedEpic(action$),
+    makeWeightedDialogEpic(action$)
   );
-
