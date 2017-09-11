@@ -20,7 +20,7 @@ const orderCreateUseCase = OpenMarket.get("orders_create_use_case");
 const orderPrinterService = new OrderPrinterFactory({printerConnection: new PrinterConnection()});
 
 const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(reset);
-const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase);
+const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset);
 const printerDialogEpic = makePrinterDialogEpic(orderPrinterService);
 const printButtonClickedEpic = makePrintButtonClickedEpic(orderPrinterService);
 
