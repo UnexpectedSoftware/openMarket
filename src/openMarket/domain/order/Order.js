@@ -5,19 +5,20 @@ import moment from "moment";
 export default class Order {
 
   /**
-   * @param {IdGenerator} idGenerator
+   * @param {String} id
    * @param {Array.<Line>} lines
+   * @param {date} date
    */
-  constructor({ idGenerator, lines }) {
+  constructor({ id, lines, date=moment().format("DD/MM/YYYY HH:mm:ss") } = {}) {
   /**
    * @type {String}
    * */
-    this._id = idGenerator.generate();
+    this._id = id;
 
   /**
    * @type {Date}
    * */
-    this._createdAt = moment().format("DD/MM/YYYY HH:mm:ss");
+    this._createdAt = date;
     /**
      *
      * @type {Array.<Line>}
