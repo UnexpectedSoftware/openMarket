@@ -1,6 +1,8 @@
 import * as listOrderActions from "./action";
 import OpenMarket from "../../../index";
 import * as Rx from "rxjs";
+import {push} from 'react-router-redux';
+import {listOrderDetailLoaded} from "./action";
 
 const listOrderFetchWithFilters = action$ =>
   action$.ofType(listOrderActions.LIST_ORDER_FETCH_WITH_FILTERS)
@@ -26,8 +28,18 @@ const listOrderFetchWithFilters = action$ =>
     ))
     .map(data => listOrderActions.listOrderFetched(data));
 
+
+const listOrderDetailEpic = action$ =>
+  action$.ofType(listOrderActions.LIST_ORDER_DETAIL)
+    .flatMap(action => OpenMarket.get("orders_list_all_use_case").findById({id: action.payload}))
+    .map(order => listOrderDetailLoaded(order))
+    .flatMap(action => Rx.Observable.of(action,push('/create_order')));
+
+
+
 export default action$ =>
   Rx.Observable.merge(
-    listOrderFetchWithFilters(action$)
+    listOrderFetchWithFilters(action$),
+    listOrderDetailEpic(action$)
   );
 

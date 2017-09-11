@@ -49,16 +49,25 @@ class ReduxForm extends Component {
   }
 
   renderDeleteRow (data) {
-    const { onDeleteProduct } = this.props;
-    return (<a onClick={(e) => {onDeleteProduct(data.row.barcode);this.setFocusOnBarcode();}}>Delete</a>);
+    const { onDeleteProduct, readonly } = this.props;
+    if(!readonly) {
+      return (<a onClick={(e) => {
+        onDeleteProduct(data.row.barcode);
+        this.setFocusOnBarcode();
+      }}>Delete</a>);
+    }
   }
 
   renderEditable (props) {
-    return (<input type="text" onChange={(e) => this.changeQuantity(e.target.value,props.row.barcode)} value={props.value} />);
+    const {readonly} = this.props;
+    return (<input type="text" readOnly={readonly} onChange={(e) => this.changeQuantity(e.target.value,props.row.barcode)} value={props.value} />);
   }
 
   setFocusOnBarcode () {
-    this.barcodeInput.focus();
+    const {readonly} = this.props;
+    if(!readonly){
+      this.barcodeInput.focus();
+    }
   }
 
   changeQuantity(quantity,barcode){
@@ -94,12 +103,13 @@ class ReduxForm extends Component {
   );
 
   render() {
-    const { order, findProduct } = this.props;
+    const { order, readonly, findProduct, printOrder } = this.props;
 
     return (
       <form onKeyPress={event => {if (event.which === 13 /* Enter */) { event.preventDefault();}}}>
-
-        <Field name="barcode" component={this.renderInput} onkeypress={findProduct} type="text" placeholder="Barcode"/>
+        {!readonly &&
+          <Field name="barcode" component={this.renderInput} onkeypress={findProduct} type="text" placeholder="Barcode"/>
+        }
 
         <ReactTable
           data={order.lines}
@@ -110,8 +120,12 @@ class ReduxForm extends Component {
           showPageSizeOptions={false}
         />
         <h1>{order.total+" "+this.moneySymbol} </h1>
-
-        <a onClick={this.saveOrder}>Save</a>
+        {!readonly &&
+          <a onClick={this.saveOrder}>Save</a>
+        }
+        {readonly &&
+        <a onClick={printOrder}>Print!</a>
+        }
       </form>
     );
   }

@@ -13,7 +13,15 @@ export default class LocalStorageOrderRepository extends OrderRepository {
   }
 
   findById({id}) {
-    return null;
+    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
+      .catch(e => Rx.Observable.of([]))
+      .flatMap(ordersArray => Rx.Observable.from(ordersArray))
+      .filter(order => order._id === id)
+      .map(order  => this._orderFactory.createWith({
+        id: order._id,
+        lines: order._lines,
+        date: order._createdAt
+      }));
   }
 
   findAllByDates({limit, offset, startDate, endDate}) {

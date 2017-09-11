@@ -1,6 +1,6 @@
 // @flow
-import React, { Component } from 'react';
-import { Link } from 'react-router';
+import React, {Component} from 'react';
+import {Link} from 'react-router';
 import NewOrderReduxForm from './ReduxForm';
 import WeightedDialog from '../weighted_dialog/ReduxConnector';
 import PrinterDialog from '../printer_dialog/ReduxConnector';
@@ -27,18 +27,30 @@ class Container extends Component {
       .subscribe();
   }
 
+  componentWillUnmount() {
+    const { newOrderClosed } = this.props;
+    newOrderClosed();
+  }
+
+  printOrder() {
+    const { printOrderButtonClicked, order } = this.props;
+    printOrderButtonClicked(order);
+  }
+
   render() {
-    const { order, newOrderProductQuantityChange, newOrderProductDeleted, newOrderProductFetched } = this.props;
+    const { order, readonly, newOrderProductQuantityChange, newOrderProductDeleted } = this.props;
 
     return (
       <div>
-        <p>Let's create a new order!</p>
+        <p>Let's {readonly ? 'edit an':'create a new'} order!</p>
         <NewOrderReduxForm
           onDeleteProduct={newOrderProductDeleted}
           onQuantityChange={newOrderProductQuantityChange}
           onSubmit={this.handleSubmit}
           order={order}
           findProduct={this.handleKeyPress.bind(this)}
+          printOrder={this.printOrder.bind(this)}
+          readonly={readonly}
         />
           <p>
             <Link to="/">
