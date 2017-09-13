@@ -52,9 +52,8 @@ $ npm run build
 $ npm start
 ```
 
-To run End-to-End Test
+To run Tests
 
 ```bash
-$ npm run build
-$ npm run test-e2e
+$ npm run test-all
 ```
