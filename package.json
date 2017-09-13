@@ -5,11 +5,10 @@
   "description": "Desktop application to administrate a generic market with stocks, products, categories etc...",
   "main": "src/openMarket/user_interface/main.js",
   "scripts": {
-    "test": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha --recursive --retries 2 --compilers js:babel-register --require ./src/test/user_interface/setup.js \"src/test/user_interface/**/*.spec.js\"",
-    "test-all": "npm run lint && npm run flow && npm run test && npm run build",
+    "test": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha --recursive --retries 2 --compilers js:babel-register \"src/test/user_interface/**/*.spec.js\"",
+    "test-all": "npm run test && npm run test:domain",
     "test:domain": "./node_modules/.bin/mocha src/test --compilers js:babel-core/register",
     "test-watch": "npm test -- --watch",
-    "test-e2e": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha --retries 2 --compilers js:babel-register --require ./src/test/user_interface/setup.js src/test/user_interface/e2e.js",
     "lint": "eslint --cache --format=node_modules/eslint-formatter-pretty .",
     "lint-fix": "npm run lint -- --fix",
     "hot-server": "cross-env NODE_ENV=development node --max_old_space_size=2096 -r babel-register src/openMarket/infrastructure/configuration/server.js",
@@ -25,8 +24,7 @@
     "package": "npm run build && build --publish never",
     "package-win": "npm run build && build --win --x64",
     "package-linux": "npm run build && build --linux",
-    "package-all": "npm run build && build -mwl",
-    "cleanup": "mop -v"
+    "package-all": "npm run build && build -mwl"
   },
   "browserslist": "electron 1.4",
   "build": {
