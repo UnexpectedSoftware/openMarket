@@ -3,7 +3,7 @@
   "productName": "OpenMarket",
   "version": "0.0.1",
   "description": "Desktop application to administrate a generic market with stocks, products, categories etc...",
-  "main": "src/openMarket/user_interface/main.js",
+  "main": "dist/main.js",
   "scripts": {
     "test": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha --recursive --retries 2 --compilers js:babel-register \"src/test/user_interface/**/*.spec.js\"",
     "test-all": "npm run test && npm run test:domain",
@@ -11,7 +11,7 @@
     "test-watch": "npm test -- --watch",
     "lint": "eslint --cache --format=node_modules/eslint-formatter-pretty .",
     "lint-fix": "npm run lint -- --fix",
-    "hot-server": "cross-env NODE_ENV=development node --max_old_space_size=2096 -r babel-register src/openMarket/infrastructure/configuration/server.js",
+    "hot-server": "cross-env NODE_ENV=development node --max_old_space_size=2096 -r babel-register src/openMarket/infrastructure/configuration/webpack/server.js",
     "build-main": "cross-env NODE_ENV=production node -r babel-register ./node_modules/webpack/bin/webpack --config src/openMarket/infrastructure/configuration/webpack/webpack.config.electron.js --progress --profile --colors",
     "build-renderer": "cross-env NODE_ENV=production node -r babel-register ./node_modules/webpack/bin/webpack --config src/openMarket/infrastructure/configuration/webpack/webpack.config.production.js --progress --profile --colors",
     "build": "npm run build-main && npm run build-renderer",
@@ -53,9 +53,9 @@
       "dist/",
       "node_modules/",
       "src/resources/",
-      "src/openMarket/user_interface/app.html",
-      "src/openMarket/user_interface/main.js",
-      "src/openMarket/user_interface/main.js.map",
+      "app.html",
+      "main.js",
+      "main.js.map",
       "package.json"
     ],
     "mac": {
