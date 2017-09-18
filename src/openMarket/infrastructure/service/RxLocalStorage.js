@@ -1,5 +1,6 @@
 import Rx from 'rxjs/Rx';
 import { LocalStorage } from 'node-localstorage';
+import  os from 'os';
 /**
  * @class
  */
@@ -11,7 +12,7 @@ export default class RxLocalStorage {
      */
   static loadLocalStorage({ localStorageKey }) {
     return Rx.Observable.create(observer => {
-      const localStorage = new LocalStorage('./scratch');
+      const localStorage = new LocalStorage(os.tmpdir());
       const data = localStorage.getItem(localStorageKey);
       if ("" === data || null === data) {
         observer.error("");
@@ -30,7 +31,7 @@ export default class RxLocalStorage {
   static saveLocalStorage({ localStorageKey, value }) {
     return Rx.Observable.create(observer => {
       try {
-        const localStorage = new LocalStorage('./scratch');
+        const localStorage = new LocalStorage(os.tmpdir());
         localStorage.setItem(localStorageKey, JSON.stringify(value));
         observer.next(null);
         observer.complete();

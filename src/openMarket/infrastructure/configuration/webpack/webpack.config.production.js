@@ -17,8 +17,8 @@ export default validate(merge(baseConfig, {
   entry: ['babel-polyfill', './src/openMarket/user_interface/index'],
 
   output: {
-    path: path.join(__dirname, '../../../user_interface/dist'),
-    publicPath: '../../../../../dist/'
+    path: path.join(__dirname, '../../../../../dist'),
+    publicPath: './'
   },
 
   module: {
