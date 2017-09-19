@@ -168,6 +168,7 @@
     "font-awesome": "^4.7.0",
     "lodash": "^4.17.1",
     "moment": "^2.18.1",
+    "mysql2": "^1.4.2",
     "node-thermal-printer": "^1.0.5",
     "react": "^15.4.2",
     "react-datepicker": "^0.48.0",

@@ -5,6 +5,8 @@ import UpdateCategory from '../../application/service/category/UpdateCategory';
 import LocalStorageCategoryRepository from './LocalStorageCategoryRepository';
 import CategoryFactoryImpl from './CategoryFactoryImpl';
 import UUIDIdentity from '../service/UUIDIdentity';
+import Container from "../dic/Container";
+import MysqlCategoryRepository from "./MysqlCategoryRepository";
 /**
  * @class CategoryDependencyBuilder
  */
@@ -15,6 +17,12 @@ export default class CategoryDependencyBuilder {
      * @returns {LocalStorageCategoryRepository}
      */
   static buildCategoryRepository() {
+    const container = new Container({});
+    const connection = container.buildMysqlConnection();
+    /*return new MysqlCategoryRepository({
+      connection,
+      categoryFactory: CategoryDependencyBuilder.buildCategoryFactory()
+    });*/
     return new LocalStorageCategoryRepository({ categoryFactory: CategoryDependencyBuilder.buildCategoryFactory() });
   }
 
