@@ -1,4 +1,4 @@
-import OpenMarket from "../../../index";
+import OpenMarket from "../../../application/index";
 import * as Rx from "rxjs";
 import * as newProductActions from "./action";
 import {reset} from 'redux-form';

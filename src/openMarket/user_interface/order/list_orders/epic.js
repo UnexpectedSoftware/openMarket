@@ -1,5 +1,5 @@
 import * as listOrderActions from "./action";
-import OpenMarket from "../../../index";
+import OpenMarket from "../../../application/index";
 import * as Rx from "rxjs";
 import {push} from 'react-router-redux';
 import {listOrderDetailLoaded} from "./action";

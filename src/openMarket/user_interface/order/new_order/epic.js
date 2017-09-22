@@ -1,10 +1,9 @@
 
 import {reset} from 'redux-form';
-import OpenMarket from "../../../index";
+import OpenMarket from "../../../application/index";
 import * as Rx from "rxjs";
+import container from '../../../infrastructure/dic/Container'
 
-import OrderPrinterFactory from "../../printer/OrderPrinterFactory";
-import PrinterConnection from "../../printer/PrinterConnection";
 import {
   makeNewOrderProductFetchEpic,
   makeNewOrderSaveEpic,
@@ -17,7 +16,7 @@ import {
 /* TODO Maybe make a DIC for user_interface layer */
 const findProductUseCase = OpenMarket.get("products_find_use_case");
 const orderCreateUseCase = OpenMarket.get("orders_create_use_case");
-const orderPrinterService = new OrderPrinterFactory({printerConnection: new PrinterConnection()});
+const orderPrinterService = container.orderPrinterService();
 
 const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(reset);
 const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset);

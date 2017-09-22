@@ -1,6 +1,6 @@
 import * as listProductActions from "./action";
 import * as Rx from "rxjs";
-import OpenMarket from "../../../index";
+import OpenMarket from "../../../application/index";
 
 const fetchProductsEpic = action$ =>
   action$.ofType(listProductActions.LIST_PRODUCT_FETCH)
