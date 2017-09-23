@@ -64,7 +64,7 @@ export default class ProductRepository {
     throw new Error('ProductRepository#product must be implemented');
   }
 
-  countProductsByName(){
+  countProductsByName({name}){
     throw new Error('ProductRepository#product must be implemented');
   }
 

@@ -25,12 +25,19 @@ import OrdersStatistics from "../../application/service/order/OrdersStatistics";
 import OrderFactoryImpl from "../order/OrderFactoryImpl";
 import ProductFactoryImpl from "../product/ProductFactoryImpl";
 import ProductFilterFactoryImpl from "../product/ProductFilterFactoryImpl";
+import LocalStorageProductMapper from "../product/LocalStorageProductMapper";
+import MysqlProductMapper from "../product/MysqlProductMapper";
+import EnvironmentService from "../service/EnvironmentService";
 
 const env = process.env.NODE_ENV
 
 class Container {
   constructor({environment}) {
-    this._environment = environment;
+    this._environment = new EnvironmentService({nodeEnvironment:environment});
+  }
+
+  get environment() {
+    return this._environment;
   }
 
   mysqlConnection(){
@@ -50,14 +57,16 @@ class Container {
   }
 
   categoryRepository() {
-    switch(this._environment) {
-      case 'production':
+    switch(this._environment.config.store) {
+      case 'Mysql':
         return new MysqlCategoryRepository({
           connection: this.mysqlConnection(),
           categoryFactory: this.categoryFactory()
         });
-      default:
+      case 'LocalStorage':
         return new LocalStorageCategoryRepository({ categoryFactory: this.categoryFactory() });
+      default:
+        throw new Error('Unsupported implementation!');
     }
   }
 
@@ -115,14 +124,16 @@ class Container {
   }
 
   productRepository() {
-    switch(this._environment) {
-      case 'production':
+    switch(this._environment.config.store) {
+      case 'Mysql':
         return new MysqlProductRepository({
           connection: this.mysqlConnection(),
           productMapper: this.productMapper()
         });
-      default:
+      case 'LocalStorage':
         return new LocalStorageProductRepository({ productMapper: this.productMapper() });
+      default:
+        throw new Error('Unsupported implementation!');
     }
   }
 
@@ -172,10 +183,20 @@ class Container {
   }
 
   productMapper() {
-    return new ProductMapper({
-      productFactory: this.productFactory(),
-      categoryRepository: this.categoryRepository()
-    });
+    switch(this._environment.config.store) {
+      case 'Mysql':
+        return new MysqlProductMapper({
+          productFactory: this.productFactory(),
+          categoryFactory: this.categoryFactory()
+        });
+      case 'LocalStorage':
+        return new LocalStorageProductMapper({
+          productFactory: this.productFactory(),
+          categoryRepository: this.categoryRepository()
+        });
+      default:
+        throw new Error('Unsupported implementation!');
+    }
   }
 
   orderRepository() {
