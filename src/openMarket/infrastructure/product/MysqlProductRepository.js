@@ -26,6 +26,7 @@ export default class MysqlProductRepository extends ProductRepository {
       )
       .flatMap(result => Rx.Observable.from(result))
       .first()
+      .flatMap(rows => Rx.Observable.from(rows))
       .flatMap(row => this._productMapper.toDomain({ persistenceProduct:row }))
       .toArray();
   }
@@ -42,7 +43,8 @@ export default class MysqlProductRepository extends ProductRepository {
       .flatMap(result => Rx.Observable.from(result))
       .first()
       .flatMap(rows => Rx.Observable.from(rows))
-      .flatMap(row => this._productMapper.toDomain({ persistenceProduct:row }));
+      .flatMap(row => this._productMapper.toDomain({ persistenceProduct:row }))
+      .toArray();
   }
 
   findAllWithLowStock({limit, offset}) {
@@ -67,7 +69,6 @@ export default class MysqlProductRepository extends ProductRepository {
    * @returns {Observable.<null>}
    */
   save({product}) {
-    console.log(product);
     return this._connection.getConnection()
       .flatMap(connection =>
         Rx.Observable.fromPromise(connection.execute(
@@ -105,7 +106,9 @@ export default class MysqlProductRepository extends ProductRepository {
       )
       .flatMap(result => Rx.Observable.from(result))
       .first()
-      .flatMap(rows => this._productMapper.toDomain({ persistenceProduct:rows[0] }));
+      .flatMap(rows => Rx.Observable.from(rows))
+      .first()
+      .flatMap(row => this._productMapper.toDomain({ persistenceProduct:row }));
   }
 
   findAllStatuses() {
