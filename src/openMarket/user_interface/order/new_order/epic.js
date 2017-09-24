@@ -22,7 +22,7 @@ const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(r
 const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset);
 const printerDialogEpic = makePrinterDialogEpic(orderPrinterService);
 const printButtonClickedEpic = makePrintButtonClickedEpic(orderPrinterService);
-
+const weightedDialogEpic = makeWeightedDialogEpic(reset);
 
 export default action$ =>
   Rx.Observable.merge(
@@ -31,5 +31,5 @@ export default action$ =>
     printerDialogEpic(action$),
     printButtonClickedEpic(action$),
     makeNewOrderSavedEpic(action$),
-    makeWeightedDialogEpic(action$)
+    weightedDialogEpic(action$)
   );
