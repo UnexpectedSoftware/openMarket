@@ -8,15 +8,8 @@ export default class Home extends Component {
     return (
       <div>
         <div className={"container"}>
-          <h2>Home</h2>
-          <ul>
-            <li><Link to="/create_product">new Product!</Link></li>
-            <li><Link to="/edit_product">edit Product!</Link></li>
-            <li><Link to="/list_products_low_stock">List Products with LOW stock!</Link></li>
-            <li><Link to="/create_category">new Category!</Link></li>
-            <li><Link to="/create_order">new Order!</Link></li>
-            <li><Link to="/list_orders">List Orders!</Link></li>
-          </ul>
+          <h2>Dashboard</h2>
+          <p>blablalblal</p><p>blablalblal</p><p>blablalblal</p>
         </div>
       </div>
     );
