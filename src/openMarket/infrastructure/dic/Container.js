@@ -30,6 +30,7 @@ import EnvironmentService from "../service/EnvironmentService";
 import baseConfig from '../../../resources/application.json'
 import dev from '../../../resources/application-dev.json'
 import pro from '../../../resources/application-pro.json'
+import MysqlOrderRepository from "../order/MysqlOrderRepository";
 const env = process.env.NODE_ENV
 
 class Container {
@@ -206,9 +207,17 @@ class Container {
   }
 
   orderRepository() {
-    return new LocalStorageOrderRepository({
-      orderFactory: this.orderFactory()
-    });
+    switch(this._environment.config.store) {
+      case 'Mysql':
+        return new MysqlOrderRepository({
+          connection: this.mysqlConnection(),
+          orderFactory: this.orderFactory()
+        });
+      case 'LocalStorage':
+        return new LocalStorageOrderRepository({
+          orderFactory: this.orderFactory()
+        });
+    }
   }
 
   createOrderUseCase() {
