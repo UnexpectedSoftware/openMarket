@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import {Link} from "react-router";
+import Menu, {SubMenu, MenuItem} from 'rc-menu';
 
 export default class Navbar extends Component {
   render() {
@@ -7,15 +8,27 @@ export default class Navbar extends Component {
       <div>
         <div className={"container"}>
           <h2>OpenMarket</h2>
-          <ul>
-            <li><Link to="/">Dashboard</Link></li>
-            <li><Link to="/create_product">new Product!</Link></li>
-            <li><Link to="/edit_product">edit Product!</Link></li>
-            <li><Link to="/list_products_low_stock">List Products with LOW stock!</Link></li>
-            <li><Link to="/create_category">new Category!</Link></li>
-            <li><Link to="/create_order">new Order!</Link></li>
-            <li><Link to="/list_orders">List Orders!</Link></li>
-          </ul>
+          <Menu mode="horizontal">
+            <MenuItem><Link to="/">Dashboard</Link></MenuItem>
+            <SubMenu title="Products">
+              <MenuItem>
+                <Link to="/create_product">new Product!</Link>
+                <Link to="/edit_product">edit Product!</Link>
+                <Link to="/list_products_low_stock">List Products with LOW stock!</Link>
+              </MenuItem>
+            </SubMenu>
+            <SubMenu title="Categories">
+              <MenuItem>
+                <Link to="/create_category">new Category!</Link>
+              </MenuItem>
+            </SubMenu>
+            <SubMenu title="Orders">
+              <MenuItem>
+                <Link to="/create_order">new Order!</Link>
+                <Link to="/list_orders">List Orders!</Link>
+              </MenuItem>
+            </SubMenu>
+          </Menu>
         </div>
       </div>
     );

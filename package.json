@@ -173,6 +173,7 @@
     "moment": "^2.18.1",
     "mysql2": "^1.4.2",
     "node-thermal-printer": "^1.0.5",
+    "rc-menu": "^5.1.2",
     "react": "^15.4.2",
     "react-datepicker": "^0.48.0",
     "react-dom": "^15.4.2",
