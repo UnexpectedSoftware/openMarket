@@ -6,8 +6,8 @@
   "main": "dist/main.js",
   "scripts": {
     "test": "cross-env NODE_ENV=test BABEL_DISABLE_CACHE=1 mocha --recursive --retries 2 --compilers js:babel-register \"src/test/openMarket/**/*.spec.js\"",
-    "test-all": "npm run test && npm run test:domain",
-    "test:domain": "./node_modules/.bin/mocha src/test --compilers js:babel-core/register",
+    "test-all": "npm run test && npm run test:integration",
+    "test:integration": "mocha src/itest --compilers js:babel-core/register",
     "test-watch": "npm test -- --watch",
     "lint": "eslint --cache --format=node_modules/eslint-formatter-pretty .",
     "lint-fix": "npm run lint -- --fix",
