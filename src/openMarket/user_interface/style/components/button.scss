@@ -1,0 +1,13 @@
+button,
+input[type="button"],
+.button {
+  color: $c-white;
+  background-color: $c-primary;
+  border: 1px solid $c-base-border;
+  padding: $s-base/4 $s-base/2;
+  @include transition;
+  &:hover {
+	opacity: 0.8;
+	@include transition;
+  }
+}
