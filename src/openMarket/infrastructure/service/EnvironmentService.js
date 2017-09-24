@@ -1,22 +1,26 @@
 import merge from 'deepmerge'
-import baseConfig from '../../../resources/application.json'
-import dev from '../../../resources/application-dev.json'
-import pro from '../../../resources/application-pro.json'
-
 export default class EnvironmentService{
   /**
    *
-   * @param {string} nodeEnvironment
+   * @param nodeEnvironment
+   * @param baseConfig
+   * @param devConfig
+   * @param proConfig
    */
-  constructor({nodeEnvironment}){
-    this._config = this._mapConfig({env:nodeEnvironment});
+  constructor({nodeEnvironment, baseConfig, devConfig, proConfig}){
+    this._config = this._mapConfig({
+      env:nodeEnvironment,
+      baseConfig,
+      devConfig,
+      proConfig
+    });
   }
 
-  _mapConfig({env}){
+  _mapConfig({env, baseConfig, devConfig, proConfig}){
     const envConfig = (env) => {
-      var mapping = {
-        'development': dev,
-        'production': pro
+      const mapping = {
+        'development': devConfig,
+        'production': proConfig
       }
 
       if (mapping.hasOwnProperty(env)) {

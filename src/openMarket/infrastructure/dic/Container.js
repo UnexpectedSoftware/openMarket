@@ -13,7 +13,6 @@ import UpdateCategory from "../../application/service/category/UpdateCategory";
 import ProductStatistics from "../../application/service/product/ProductStatistics";
 import ListAllProducts from "../../application/service/product/ListAllProducts";
 import LocalStorageProductRepository from "../product/LocalStorageProductRepository";
-import ProductMapper from "../product/ProductMapper";
 import AddStock from "../../application/service/product/AddStock";
 import CreateOrUpdateProduct from "../../application/service/product/CreateOrUpdateProduct";
 import FindProduct from "../../application/service/product/FindProduct";
@@ -28,12 +27,19 @@ import ProductFilterFactoryImpl from "../product/ProductFilterFactoryImpl";
 import LocalStorageProductMapper from "../product/LocalStorageProductMapper";
 import MysqlProductMapper from "../product/MysqlProductMapper";
 import EnvironmentService from "../service/EnvironmentService";
-
+import baseConfig from '../../../resources/application.json'
+import dev from '../../../resources/application-dev.json'
+import pro from '../../../resources/application-pro.json'
 const env = process.env.NODE_ENV
 
 class Container {
   constructor({environment}) {
-    this._environment = new EnvironmentService({nodeEnvironment:environment});
+    this._environment = new EnvironmentService({
+      nodeEnvironment:environment,
+      baseConfig,
+      devConfig:dev,
+      proConfig:pro
+    });
   }
 
   get environment() {
