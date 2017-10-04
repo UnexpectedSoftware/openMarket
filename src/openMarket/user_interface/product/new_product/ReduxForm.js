@@ -14,6 +14,16 @@ class ReduxForm extends Component {
     </div>
   );
 
+  renderTextarea = field => (
+    <div>
+      <label htmlFor={field.placeholder}>{field.placeholder}</label>
+      <textarea />
+      {field.meta.touched &&
+      field.meta.error &&
+      <span className="error">{field.meta.error}</span>}
+    </div>
+  );
+
   renderBarcode = field => {
     const { edition, loadProduct } = this.props;
     return (
@@ -35,7 +45,7 @@ class ReduxForm extends Component {
     if(!edition || (edition &&  showUpdateFields)) return (
       <div>
         <Field name="name" component={this.renderInput} type="text" placeholder="Name" validate={required}/>
-        <Field name="description" component={this.renderInput} type="textarea" placeholder="Description"/>
+        <Field name="description" component={this.renderTextarea} type="textarea" placeholder="Description"/>
         <Field name="price" component={this.renderInput} type="text" placeholder="Price" validate={[required, greaterThan0, number]}/>
         <Field name="basePrice" component={this.renderInput} type="text" placeholder="Base Price" validate={[required, greaterThan0, number]}/>
         <Field name="stock" component={this.renderInput} type="text" placeholder="Stock" validate={[required, greaterOrEqualsThan0, number]}/>
@@ -59,7 +69,10 @@ class ReduxForm extends Component {
             }
         </div>
 
-        <button type="submit" disabled={submitting}>Save</button>
+        <button type="submit" disabled={submitting}>
+          <i className="fa fa-floppy-o" />
+          Save
+        </button>
       </div>
     );
   }

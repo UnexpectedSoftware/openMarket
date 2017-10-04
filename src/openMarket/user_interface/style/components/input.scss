@@ -1,0 +1,16 @@
+input[type="text"] {
+  color: $c-base;
+  background-color: $c-white;
+  border: 1px solid $c-base;
+  padding: $sp-base/4 $sp-base/2;
+  outline: 0;
+  @include border-radius;
+
+  &:hover {
+
+  }
+}
+input[type="checkbox"] {
+  background-color: $c-white;
+  border: 1px solid $c-base;
+}

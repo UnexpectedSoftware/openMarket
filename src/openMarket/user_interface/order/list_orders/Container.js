@@ -88,31 +88,33 @@ class Container extends Component {
   render() {
     const { orders } = this.props;
     return (
-      <div>
-
-        <p>
-          <Link to="/">
-            <i className="fa fa-arrow-left fa-3x" />
+      <div className="container-fluid">
+        <div className="FilterCalendar">
+          <Link className="button button-return" to="/">
+            <i className="fa fa-arrow-left" />
+            Volver
           </Link>
-        </p>
-        <div>
-          <label htmlFor="startDate">Start Date</label>
-          <DatePicker
-            selected={orders.filters.startDate}
-            onChange={this.handleStartDateChanged}
-            locale="es"
-          />
+          <div className="FilterCalendar-item">
+            <label htmlFor="startDate">Start Date</label>
+            <DatePicker
+              selected={orders.filters.startDate}
+              onChange={this.handleStartDateChanged}
+              locale="es"
+            />
+          </div>
+          <div className="FilterCalendar-item">
+            <label htmlFor="endDate">End Date</label>
+            <DatePicker
+              selected={orders.filters.endDate}
+              onChange={this.handleEndDateChanged}
+              locale="es"
+            />
+          </div>
+          <button className="button-filter" onClick={this.handleFilterByDates}>
+            <i className="fa fa-filter" />
+            Filter
+          </button>
         </div>
-        <div>
-          <label htmlFor="endDate">End Date</label>
-          <DatePicker
-            selected={orders.filters.endDate}
-            onChange={this.handleEndDateChanged}
-            locale="es"
-          />
-        </div>
-        <button onClick={this.handleFilterByDates}>Filter</button>
-
         <ReactTable
           data={orders.orders}
           columns={this.columns}

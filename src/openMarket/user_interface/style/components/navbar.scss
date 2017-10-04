@@ -1,0 +1,28 @@
+.rc-menu-root {
+  @include container-fluid;
+  background: none;
+  border: 0;
+  display: flex;
+}
+.rc-menu-horizontal {
+
+  & > .rc-menu-submenu, & > .rc-menu-item {
+	float: none;
+	text-align: center;
+	flex: 1 0 auto;
+	border: 0;
+	padding: 0;
+  }
+}
+
+.rc-menu-item-selected {
+  background: none;
+
+  a{
+	padding: $sp-base;
+	background-color: $c-primary-light;
+	display: block;
+	color: $c-base;
+  }
+}
+

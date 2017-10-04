@@ -41,8 +41,8 @@ class Container extends Component {
     const { order, readonly, newOrderProductQuantityChange, newOrderProductDeleted } = this.props;
 
     return (
-      <div>
-        <p>Let's {readonly ? 'edit an':'create a new'} order!</p>
+      <div className="container-fluid">
+        <h2>Let's {readonly ? 'edit an':'create a new'} order!</h2>
         <NewOrderReduxForm
           onDeleteProduct={newOrderProductDeleted}
           onQuantityChange={newOrderProductQuantityChange}
@@ -52,11 +52,10 @@ class Container extends Component {
           printOrder={this.printOrder.bind(this)}
           readonly={readonly}
         />
-          <p>
-            <Link to="/">
-              <i className="fa fa-arrow-left fa-3x" />
-            </Link>
-          </p>
+        <Link className="button button-return" to="/">
+          <i className="fa fa-arrow-left" />
+          Volver
+        </Link>
           <WeightedDialog/>
           <PrinterDialog/>
       </div>

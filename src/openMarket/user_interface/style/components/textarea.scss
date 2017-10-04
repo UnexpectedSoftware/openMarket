@@ -1,0 +1,18 @@
+form input[type="textarea"], form textarea {
+  color: $c-base;
+  background-color: $c-white;
+  border: 1px solid $c-base;
+  padding: $sp-base/4 $sp-base/2;
+  outline: 0;
+  min-height: 100px;
+  width: 70%;
+  resize: none;
+  margin-bottom: $sp-base;
+  @include border-radius;
+
+  &:hover {
+
+  }
+}
+
+

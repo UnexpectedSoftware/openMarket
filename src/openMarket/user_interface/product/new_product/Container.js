@@ -29,8 +29,8 @@ class Container extends Component {
   render() {
     const { categories, edit, initialValues, showUpdateFields, statuses } = this.props;
     return (
-      <div>
-        <p>Let's {edit ? 'edit a':'create a new'} product!</p>
+      <div className="container-fluid">
+        <h2>Let's {edit ? 'edit a':'create a new'} product!</h2>
         <NewProductReduxForm
           edition={edit}
           showUpdateFields={showUpdateFields}
@@ -40,12 +40,10 @@ class Container extends Component {
           initialValues={initialValues}
           statusesList={statuses}
         />
-          <p>
-            <Link to="/">
-              <i className="fa fa-arrow-left fa-3x" />
-            </Link>
-          </p>
-
+        <Link className="button button-return" to="/">
+          <i className="fa fa-arrow-left" />
+          Volver
+        </Link>
       </div>
     );
   }

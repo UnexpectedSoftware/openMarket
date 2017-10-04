@@ -1,0 +1,34 @@
+form {
+  display: block;
+  width: 100%;
+
+  label {
+	width: 30%;
+	display: inline-block;
+	margin-bottom: $sp-base;
+	vertical-align: top;
+	padding-top: $sp-base/4;
+  }
+
+  input {
+	width: 70%;
+	display: inline-block;
+	margin-bottom: $sp-base;
+  }
+
+  .error {
+	color: $c-warning;
+	margin-left: 30%;
+	margin-bottom: $sp-base;
+	display: block;
+	margin-top: -$sp-base/2;
+  }
+
+  select {
+	-webkit-appearance: none;
+	border: 1px solid $c-base;
+	@include border-radius();
+	background: none;
+	padding: $sp-base/4 $sp-base/2;
+  }
+}

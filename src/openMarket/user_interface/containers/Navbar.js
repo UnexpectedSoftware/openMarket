@@ -6,8 +6,8 @@ export default class Navbar extends Component {
   render() {
     return (
       <div>
-        <div className={"container"}>
-          <h2>OpenMarket</h2>
+        <div className={"header"}>
+          <h1>OpenMarket</h1>
           <Menu mode="horizontal">
             <MenuItem><Link to="/">Dashboard</Link></MenuItem>
             <SubMenu title="Products">

@@ -1,0 +1,61 @@
+.ReactTable {
+  width: 100%;
+  border-color: $c-grey-darkest;
+  margin-bottom: $sp-base;
+
+  .rt-table {
+
+  }
+
+  .rt-thead.-header {
+	box-shadow: none;
+	font-size: 1.6rem;
+	background: $c-grey-darkest;
+	color: $c-white;
+  }
+
+  .rt-thead .rt-th {
+	padding: $sp-base/2;
+  }
+
+  .rt-tbody {
+
+	.rt-tr-group {
+	  border: none;
+
+	  &:nth-child(even) {
+		background: $c-grey-lightest;
+	  }
+	}
+
+	.rt-td {
+	  border-right: 1px dashed $c-grey;
+	}
+  }
+
+  .rt-noData {
+	border: 1px solid $c-base;
+	@include border-radius();
+	background: $c-white;
+	color: $c-base;
+  }
+
+  .-pagination {
+	box-shadow: none;
+	border-top: 1px solid $c-grey-darkest;
+	padding: $sp-base/2;
+
+	.-previous, .-next {
+	  flex: 0;
+	}
+
+	.-btn {
+	  background-color: $c-primary;
+	  border: 1px solid $c-primary;
+	  color: $c-white;
+	  padding: $sp-base/2 $sp-base;
+	}
+  }
+}
+
+

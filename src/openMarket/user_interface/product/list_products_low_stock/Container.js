@@ -64,13 +64,11 @@ class Container extends Component {
   render() {
     const { products } = this.props;
     return (
-      <div>
-        <p>
-          <Link to="/">
-            <i className="fa fa-arrow-left fa-3x" />
-          </Link>
-        </p>
-
+      <div className="container-fluid">
+        <Link className="button button-return" to="/">
+          <i className="fa fa-arrow-left" />
+          Volver
+        </Link>
         <ReactTable
           data={products.products}
           columns={this.columns}
