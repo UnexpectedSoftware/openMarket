@@ -10,8 +10,6 @@ import ProductFilter from "../../../../openMarket/domain/product/ProductFilter";
 
 const productFactory = new ProductFactoryImpl({});
 const categoryFactory  = new CategoryFactoryImpl({});
-const crash = (err) => { throw err; };  // rethrow
-
 
 describe('Mysql Product Repository', () => {
   describe('when save product', () => {
@@ -32,9 +30,7 @@ describe('Mysql Product Repository', () => {
       });
 
       const connectionMock = {
-        getConnection: () => Rx.Observable.of({
-          execute: (query,params) => Promise.resolve([[{},{}],{}])
-        })
+        execute: () => Rx.Observable.of({},{})
       };
 
 
@@ -52,7 +48,7 @@ describe('Mysql Product Repository', () => {
             expect(data).to.be.null;
             spyNext();
           },
-          crash,
+          (error) => done(new Error(error)),
           () => {
             expect(spyNext.called).to.be.true
             done();
@@ -66,9 +62,7 @@ describe('Mysql Product Repository', () => {
     it('should return an Observable with an Array of domain products', (done) => {
 
       const connectionMock = {
-        getConnection: () => Rx.Observable.of({
-          execute: (query,params) => Promise.resolve([[{},{}],{}])
-        })
+        execute: ({}) => Rx.Observable.of({},{})
       };
 
       const product = productFactory.createWithId({
@@ -104,7 +98,7 @@ describe('Mysql Product Repository', () => {
             expect(data[1]).to.deep.equals(product);
             spyNext()
           },
-          crash,
+          (error) => done(new Error(error)),
           () => {
             expect(spyNext.called).to.be.true
             done();
@@ -118,9 +112,7 @@ describe('Mysql Product Repository', () => {
     it('should return an Observable with an Array of domain products', (done) => {
 
       const connectionMock = {
-        getConnection: () => Rx.Observable.of({
-          execute: (query,params) => Promise.resolve([[{},{}],{}])
-        })
+        execute: () => Rx.Observable.of({},{})
       };
 
       const product = productFactory.createWithId({
@@ -160,7 +152,7 @@ describe('Mysql Product Repository', () => {
             expect(data[1]).to.deep.equals(product);
             spyNext()
           },
-          crash,
+          (error) => done(new Error(error)),
           () => {
             expect(spyNext.called).to.be.true
             done();
@@ -174,9 +166,7 @@ describe('Mysql Product Repository', () => {
     it('should return an Observable with an Array of domain products', (done) => {
 
       const connectionMock = {
-        getConnection: () => Rx.Observable.of({
-          execute: (query,params) => Promise.resolve([[{},{}],{}])
-        })
+        execute: () => Rx.Observable.of({},{})
       };
 
       const product = productFactory.createWithId({
@@ -215,7 +205,7 @@ describe('Mysql Product Repository', () => {
             expect(data[1]).to.deep.equals(product);
             spyNext()
           },
-          crash,
+          (error) => done(new Error(error)),
           () => {
             expect(spyNext.called).to.be.true
             done();
@@ -230,9 +220,7 @@ describe('Mysql Product Repository', () => {
     it('should return an Observable of domain product', (done) => {
 
       const connectionMock = {
-        getConnection: () => Rx.Observable.of({
-          execute: (query,params) => Promise.resolve([[{}],{}])
-        })
+        execute: () => Rx.Observable.of({})
       };
 
       const product = productFactory.createWithId({
@@ -266,7 +254,7 @@ describe('Mysql Product Repository', () => {
             expect(data).to.deep.equals(product);
             spyNext()
           },
-          crash,
+          (error) => done(new Error(error)),
           () => {
             expect(spyNext.called).to.be.true
             done();
@@ -276,12 +264,10 @@ describe('Mysql Product Repository', () => {
   });
 
   describe('when find product with unexistent barcode', () => {
-    it('should return an Observable of domain product', (done) => {
+    it('should return an Observable with no elements', (done) => {
 
       const connectionMock = {
-        getConnection: () => Rx.Observable.of({
-          execute: (query,params) => Promise.resolve([[],{}])
-        })
+        execute: () => Rx.Observable.empty()
       };
 
       const mysqlProductRepository = new MysqlProductRepository({
@@ -292,16 +278,16 @@ describe('Mysql Product Repository', () => {
       const spyError = sinon.spy();
 
       mysqlProductRepository.findByBarcode({barcode: 'notfound'})
+        .do((data) => spyError(),error => spyError())
         .subscribe(
-          (data) => {
-            spyError();
-          },
-          (error) => {
+          (data) => expect(spyError.called).to.be.false,
+          (error) => expect(spyError.called).to.be.false,
+          () => {
             expect(spyError.called).to.be.false
             done();
-          },
-          crash
+          }
         );
+
     });
   });
 
@@ -309,9 +295,7 @@ describe('Mysql Product Repository', () => {
     it('should return an Observable of number', (done) => {
 
       const connectionMock = {
-        getConnection: () => Rx.Observable.of({
-          execute: (query,params) => Promise.resolve([[{total:100}],{}])
-        })
+        execute: () => Rx.Observable.of({total:100})
       };
 
       const mysqlProductRepository = new MysqlProductRepository({
@@ -327,7 +311,7 @@ describe('Mysql Product Repository', () => {
             expect(data).to.be.equals(100);
             spyNext();
           },
-          crash,
+          (error) => done(new Error(error)),
           () => {
             expect(spyNext.called).to.be.true
             done();
@@ -340,9 +324,7 @@ describe('Mysql Product Repository', () => {
     it('should return an Observable of number', (done) => {
 
       const connectionMock = {
-        getConnection: () => Rx.Observable.of({
-          execute: (query,params) => Promise.resolve([[{total:100}],{}])
-        })
+        execute: () => Rx.Observable.of({total:100})
       };
 
       const mysqlProductRepository = new MysqlProductRepository({
@@ -358,7 +340,7 @@ describe('Mysql Product Repository', () => {
             expect(data).to.be.equals(100);
             spyNext();
           },
-          crash,
+          (error) => done(new Error(error)),
           () => {
             expect(spyNext.called).to.be.true
             done();
@@ -371,9 +353,7 @@ describe('Mysql Product Repository', () => {
     it('should return an Observable of number', (done) => {
 
       const connectionMock = {
-        getConnection: () => Rx.Observable.of({
-          execute: (query,params) => Promise.resolve([[{total:100}],{}])
-        })
+        execute: () => Rx.Observable.of({total:100})
       };
 
       const mysqlProductRepository = new MysqlProductRepository({
@@ -389,7 +369,7 @@ describe('Mysql Product Repository', () => {
             expect(data).to.be.equals(100);
             spyNext();
           },
-          crash,
+          (error) => done(new Error(error)),
           () => {
             expect(spyNext.called).to.be.true
             done();
@@ -397,7 +377,4 @@ describe('Mysql Product Repository', () => {
         );
     });
   });
-
-
-
 });

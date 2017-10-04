@@ -36,7 +36,7 @@ export const makeWeightedDialogEpic = resetForm => action$ =>
       product:action.payload.product,
       quantity:action.payload.quantity
     }))
-    .mergeMap(action => Rx.Observable.of(resetForm ('new_order'),action));
+    .mergeMap(action => Rx.Observable.of(resetForm('new_order'),action));
 
 export const makeNewOrderSavedEpic = action$ =>
   action$.ofType(newOrderActions.NEW_ORDER_SAVED)

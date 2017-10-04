@@ -16,13 +16,13 @@ import {
 /* TODO Maybe make a DIC for user_interface layer */
 const findProductUseCase = OpenMarket.get("products_find_use_case");
 const orderCreateUseCase = OpenMarket.get("orders_create_use_case");
-const orderPrinterService = container.orderPrinterService();
+const orderPrinterService = container.getInstance({key:'orderPrinterService'});
 
 const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(reset);
 const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset);
 const printerDialogEpic = makePrinterDialogEpic(orderPrinterService);
 const printButtonClickedEpic = makePrintButtonClickedEpic(orderPrinterService);
-const weightedDialogEpic = makeWeightedDialogEpic(reset);
+const weightedDialogEpic  = makeWeightedDialogEpic(reset)
 
 export default action$ =>
   Rx.Observable.merge(
@@ -32,4 +32,4 @@ export default action$ =>
     printButtonClickedEpic(action$),
     makeNewOrderSavedEpic(action$),
     weightedDialogEpic(action$)
-  );
+  ).do(()=> null,(error) => console.log(error));

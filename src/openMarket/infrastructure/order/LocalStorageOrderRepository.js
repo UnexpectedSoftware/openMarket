@@ -12,6 +12,11 @@ export default class LocalStorageOrderRepository extends OrderRepository {
     this._orderFactory = orderFactory;
   }
 
+  /**
+   *
+   * @param id
+   * @returns {Observable<Order>}
+   */
   findById({id}) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .catch(e => Rx.Observable.of([]))
@@ -43,6 +48,12 @@ export default class LocalStorageOrderRepository extends OrderRepository {
 
   }
 
+  /**
+   *
+   * @param startDate
+   * @param endDate
+   * @returns  {Observable<number>}
+   */
   countByDates({ startDate, endDate }){
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .catch(e => Rx.Observable.of([]))

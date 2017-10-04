@@ -13,7 +13,7 @@ class OpenMarket {
          * @member OpenMarket#fixturesService
          * @type {FixturesService}
          */
-    this.fixturesService = container.fixturesService();
+    this.fixturesService = container.getInstance({key:'fixturesService'});
     this.fixturesService.load();
         /**
          *
@@ -21,18 +21,18 @@ class OpenMarket {
          * @private
          */
     this.deps = new Map();
-    this.deps.set('categories_list_all_use_case',container.listAllCategories());
-    this.deps.set('categories_find_by_id_use_case', container.findCategoryById());
-    this.deps.set('categories_create_use_case', container.createCategory());
-    this.deps.set('categories_update_use_case', container.updateCategory());
-    this.deps.set('products_list_all_use_case', container.listAllProductsUseCase());
-    this.deps.set('products_find_use_case', container.findProductsUseCase());
-    this.deps.set('products_create_or_update_use_case', container.createProduct());
-    this.deps.set('products_add_stock_use_case', container.addStockProduct());
-    this.deps.set('products_statistics_use_case', container.productStatisticsUseCase());
-    this.deps.set('orders_create_use_case', container.createOrderUseCase());
-    this.deps.set('orders_list_all_use_case', container.listAllOrdersUseCase());
-    this.deps.set('orders_statistics_use_case', container.orderStatisticsUseCase());
+    this.deps.set('categories_list_all_use_case',container.getInstance({key:'listAllCategories'}));
+    this.deps.set('categories_find_by_id_use_case', container.getInstance({key:'findCategoryById'}));
+    this.deps.set('categories_create_use_case', container.getInstance({key:'createCategory'}));
+    this.deps.set('categories_update_use_case', container.getInstance({key:'updateCategory'}));
+    this.deps.set('products_list_all_use_case', container.getInstance({key:'listAllProductsUseCase'}));
+    this.deps.set('products_find_use_case', container.getInstance({key:'findProductsUseCase'}));
+    this.deps.set('products_create_or_update_use_case', container.getInstance({key:'createProduct'}));
+    this.deps.set('products_add_stock_use_case', container.getInstance({key:'addStockProduct'}));
+    this.deps.set('products_statistics_use_case', container.getInstance({key:'productStatisticsUseCase'}));
+    this.deps.set('orders_create_use_case', container.getInstance({key:'createOrderUseCase'}));
+    this.deps.set('orders_list_all_use_case', container.getInstance({key:'listAllOrdersUseCase'}));
+    this.deps.set('orders_statistics_use_case', container.getInstance({key:'orderStatisticsUseCase'}));
   }
 
     /**

@@ -41,5 +41,6 @@ export default action$ =>
   Rx.Observable.merge(
     listOrderFetchWithFilters(action$),
     listOrderDetailEpic(action$)
-  );
+  ).do(() => null,error => console.log(error),()=> null)
+
 
