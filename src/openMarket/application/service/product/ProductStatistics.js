@@ -10,8 +10,8 @@ export default class ProductStatistics {
     return this._productRepository.countProducts();
   }
 
-  countProductsByName(){
-    return this._productRepository.countProductsByName();
+  countProductsByName({name}){
+    return this._productRepository.countProductsByName({name});
   }
 
   countProductsWithLowStock(){

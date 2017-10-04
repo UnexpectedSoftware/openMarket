@@ -1,10 +1,10 @@
 import { expect } from 'chai';
-import listOrdersReducer from '../../../../openMarket/user_interface/order/list_orders/reducer';
+import listOrdersReducer from '../../../../../openMarket/user_interface/order/list_orders/reducer';
 import {
   LIST_ORDER_FETCHED,
   LIST_ORDER_FILTERS_END_DATE_CHANGED,
   LIST_ORDER_FILTERS_START_DATE_CHANGED
-} from '../../../../openMarket/user_interface/order/list_orders/action';
+} from '../../../../../openMarket/user_interface/order/list_orders/action';
 
 
 

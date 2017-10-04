@@ -24,19 +24,19 @@ export default class CreateOrder {
    */
   createOrder({lines}) {
     return Observable.of(this._orderFactory.createWith({lines}))
-      .flatMap(order => this._orderRepository.save({ order }))
-      .flatMap(order => this._subtrackStock({order}))
+      .flatMap(order => this._orderRepository.save({order}))
+      .flatMap(order => this._subtrackStock({order}));
 
   }
 
   _subtrackStock({order}){
     return Observable.from(order.lines)
       .flatMap(line => this._productRepository.findByBarcode({barcode: line.barcode})
-          .map(product => product.subtractStock({quantity: line.quantity}))
-          .flatMap(product => this._productRepository.save({product}))
+        .map(product => product.subtractStock({quantity: line.quantity}))
+        .flatMap(product => this._productRepository.save({product}))
       )
       .last()
-      .map(() => order);
+      .map(data => order);
   }
 
 }

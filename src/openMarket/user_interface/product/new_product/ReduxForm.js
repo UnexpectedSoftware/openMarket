@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
-import { required, maxLength15, number, greaterThan0 } from '../../validations/formValidations';
+import {required, maxLength15, number, greaterThan0, greaterOrEqualsThan0} from '../../validations/formValidations';
 
 class ReduxForm extends Component {
 
@@ -38,7 +38,7 @@ class ReduxForm extends Component {
         <Field name="description" component={this.renderInput} type="textarea" placeholder="Description"/>
         <Field name="price" component={this.renderInput} type="text" placeholder="Price" validate={[required, greaterThan0, number]}/>
         <Field name="basePrice" component={this.renderInput} type="text" placeholder="Base Price" validate={[required, greaterThan0, number]}/>
-        <Field name="stock" component={this.renderInput} type="text" placeholder="Stock" validate={[required, greaterThan0, number]}/>
+        <Field name="stock" component={this.renderInput} type="text" placeholder="Stock" validate={[required, greaterOrEqualsThan0, number]}/>
         <Field name="stockMin" component={this.renderInput} type="text" placeholder="Stock Minimum" validate={[required, greaterThan0, number]}/>
         <Field name="weighted" component={this.renderInput} type="checkbox" placeholder="Weighted"/>
           <div>

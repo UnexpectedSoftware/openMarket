@@ -40,7 +40,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
           )
         )
       )
-      .flatMap(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .flatMap(jsonProduct => this._productMapper.toDomain({ persistenceProduct:jsonProduct }))
       .toArray();
   }
 
@@ -54,7 +54,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
   findAllByName({ name, limit, offset }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
             .flatMap(products => Observable.from(products))
-            .flatMap(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+            .flatMap(jsonProduct => this._productMapper.toDomain({ persistenceProduct:jsonProduct }))
             .filter(product => product.name.includes(name))
             .toArray()
             .map(products => products.slice(
@@ -67,7 +67,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
   findAllWithLowStock({ limit, offset }){
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .flatMap(products => Observable.from(products))
-      .flatMap(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .flatMap(jsonProduct => this._productMapper.toDomain({ persistenceProduct:jsonProduct }))
       .filter(product => product.stock <= product.stockMin && product.status === ProductStatus.ENABLED)
       .toArray()
       .map(products => products.slice(
@@ -117,7 +117,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
   findById({ id }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
             .flatMap(products => Observable.from(products))
-            .flatMap(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+            .flatMap(jsonProduct => this._productMapper.toDomain({ persistenceProduct:jsonProduct }))
             .filter(product => product.id === id);
   }
   /**
@@ -128,7 +128,7 @@ export default class LocalStorageProductRepository extends ProductRepository {
   findByBarcode({ barcode }) {
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
             .flatMap(products => Observable.from(products))
-            .flatMap(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+            .flatMap(jsonProduct => this._productMapper.toDomain({ persistenceProduct:jsonProduct }))
             .filter(product => product.barcode === barcode);
   }
 
@@ -144,23 +144,28 @@ export default class LocalStorageProductRepository extends ProductRepository {
   countProducts(){
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .flatMap(products => Observable.from(products))
-      .flatMap(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .flatMap(jsonProduct => this._productMapper.toDomain({ persistenceProduct:jsonProduct }))
       .count();
   }
 
-  countProductsByName(){
+  /**
+   * @returns {Observable.<number>}
+   */
+  countProductsByName({name}){
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .flatMap(products => Observable.from(products))
-      .flatMap(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .flatMap(jsonProduct => this._productMapper.toDomain({ persistenceProduct:jsonProduct }))
       .filter(product => product.name.includes(name))
       .count();
   }
 
-
+  /**
+   * @returns {Observable.<number>}
+   */
   countProductsWithLowStock(){
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .flatMap(products => Observable.from(products))
-      .flatMap(jsonProduct => this._productMapper.toDomain({ jsonProduct }))
+      .flatMap(jsonProduct => this._productMapper.toDomain({ persistenceProduct:jsonProduct }))
       .filter(product => product.stock <= product.stockMin && product.status ===  ProductStatus.ENABLED)
       .count();
   }

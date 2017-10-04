@@ -1,4 +1,4 @@
-import OpenMarket from "../../../index";
+import OpenMarket from "../../../application/index";
 import * as Rx from "rxjs";
 import * as newProductActions from "./action";
 import {reset} from 'redux-form';
@@ -47,6 +47,7 @@ const fetchStatusesEpic = action$ =>
 
 const fetchProductEpic = action$ =>
   action$.ofType(newProductActions.EDIT_PRODUCT_FETCH)
+    .do(action => console.log("action:",action))
     .flatMap(action => OpenMarket.get("products_find_use_case").findProductByBarcode({barcode: action.payload}))
     .map(product => newProductActions.editProductFetched({
       id: product.id,
@@ -79,4 +80,4 @@ export default action$ =>
     fetchStatusesEpic(action$),
     fetchProductEpic(action$),
     productPageLoadedEpic(action$)
-  );
+  ).do(() => null,error => console.log(error),()=> null);

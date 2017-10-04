@@ -1,11 +1,11 @@
 import { expect } from 'chai';
-import {makeNewOrderProductFetchEpic} from '../../../../openMarket/user_interface/order/new_order/epicFactory';
+import {makeNewOrderProductFetchEpic} from '../../../../../openMarket/user_interface/order/new_order/epicFactory';
 import {
   NEW_ORDER_PRODUCT_FETCH,
   NEW_ORDER_PRODUCT_FETCHED, NEW_ORDER_PRODUCT_NOT_FOUND
-} from "../../../../openMarket/user_interface/order/new_order/action";
+} from "../../../../../openMarket/user_interface/order/new_order/action";
 import * as Rx from "rxjs";
-import {SHOW_WEIGHTED_DIALOG} from "../../../../openMarket/user_interface/order/weighted_dialog/action";
+import {SHOW_WEIGHTED_DIALOG} from "../../../../../openMarket/user_interface/order/weighted_dialog/action";
 
 const crash = (err) => { throw err; };  // rethrow
 

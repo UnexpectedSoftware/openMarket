@@ -1,5 +1,5 @@
 import la from 'lazy-ass';
-import openMarket from '../openMarket';
+import openMarket from '../openMarket/application/index';
 import moment from "moment";
 import { expect } from 'chai';
 import RxLocalStorage from "../openMarket/infrastructure/service/RxLocalStorage";

@@ -20,7 +20,7 @@ export default validate(merge(baseConfig, {
     `webpack-hot-middleware/client?path=http://localhost:${port}/__webpack_hmr`,
     'babel-polyfill',
     './src/openMarket/user_interface',
-    './src/openMarket/index',
+    './src/openMarket/application/index',
     './node_modules/react-table'
   ],
 

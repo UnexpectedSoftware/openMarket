@@ -11,13 +11,12 @@ const epicMiddleware = createEpicMiddleware(rootEpic);
 
 const router = routerMiddleware(hashHistory);
 
-const enhancer = applyMiddleware(thunk, router);
+const enhancer = applyMiddleware(thunk, router, epicMiddleware);
 
 export default function configureStore(initialState) {
   return createStore(
     rootReducer,
     initialState,
-    enhancer,
-    applyMiddleware(epicMiddleware)
+    enhancer
   ); // eslint-disable-line
 }

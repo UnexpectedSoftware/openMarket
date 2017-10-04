@@ -30,13 +30,13 @@ export const makePrintButtonClickedEpic = orderPrinterService => action$ =>
     .flatMap(action => orderPrinterService.print({order: action.payload}))
     .map(result => newOrderActions.printOrderFinished());
 
-export const makeWeightedDialogEpic = action$ =>
+export const makeWeightedDialogEpic = resetForm => action$ =>
   action$.ofType(weightedDialogActions.HIDE_WEIGHTED_DIALOG)
     .map(action => newOrderActions.newOrderProductFetched({
       product:action.payload.product,
       quantity:action.payload.quantity
     }))
-    .mergeMap(action => Rx.Observable.of(reset('new_order'),action));
+    .mergeMap(action => Rx.Observable.of(resetForm('new_order'),action));
 
 export const makeNewOrderSavedEpic = action$ =>
   action$.ofType(newOrderActions.NEW_ORDER_SAVED)
