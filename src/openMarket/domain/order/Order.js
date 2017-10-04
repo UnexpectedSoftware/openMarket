@@ -55,12 +55,3 @@ export default class Order {
   }
 
 }
-
-class Line {
-
-  constructor({ productName, productQuantity, productPrice }) {
-    this._productName = productName;
-    this._productQuantity = productQuantity;
-    this._productPrice = productPrice;
-  }
-}

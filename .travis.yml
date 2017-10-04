@@ -49,7 +49,6 @@ before_script:
 
 script:
   #- npm run lint
-  - npm run test
-  - npm run test:domain
+  - npm run test-all
   - npm run build
-  #- npm run package
+  - npm run package

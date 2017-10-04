@@ -1,35 +1,38 @@
+import ObjectMapper from "../service/ObjectMapper";
 import * as Rx from "rxjs";
 
-export default class ProductMapper {
+export default class LocalStorageProductMapper extends ObjectMapper{
 
   /**
    *
    * @param {ProductFactory} productFactory
+   * @param {CategoryRepository} categoryRepository
    */
   constructor({ productFactory, categoryRepository }){
+    super();
     this._productFactory = productFactory;
     this._categoryRepository = categoryRepository;
   }
 
   /**
    *
-   * @param jsonProduct
+   * @param persistenceProduct
    * @returns {Observable<Product>}
    */
-  toDomain({ jsonProduct }){
-    return this._categoryRepository.findById({ id:jsonProduct._categoryId })
+  toDomain({ persistenceProduct }){
+    return this._categoryRepository.findById({ id:persistenceProduct._categoryId })
       .map(category => this._productFactory.createWithId({
-        id: jsonProduct._id,
-        barcode: jsonProduct._barcode,
-        name: jsonProduct._name,
-        description: jsonProduct._description,
-        price: jsonProduct._price,
-        basePrice: jsonProduct._basePrice,
-        stock: jsonProduct._stock,
-        stockMin: jsonProduct._stockMin,
+        id: persistenceProduct._id,
+        barcode: persistenceProduct._barcode,
+        name: persistenceProduct._name,
+        description: persistenceProduct._description,
+        price: persistenceProduct._price,
+        basePrice: persistenceProduct._basePrice,
+        stock: persistenceProduct._stock,
+        stockMin: persistenceProduct._stockMin,
         category: category,
-        weighted: jsonProduct._weighted,
-        status: jsonProduct._status
+        weighted: persistenceProduct._weighted,
+        status: persistenceProduct._status
       }));
   }
 
@@ -48,5 +51,4 @@ export default class ProductMapper {
         "_status":product.status
       }));
   }
-
 }

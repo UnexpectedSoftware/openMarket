@@ -8,5 +8,8 @@ const minValue = min => value =>
 export const minValue1 = minValue(1)
 
 const greaterThan = greater => value => value && value <= greater ? `Must be greater than ${greater}` : undefined
+const greaterOrEqualThan = greater => value => value && value < greater ? `Must be greater or equals than ${greater}` : undefined
 export const greaterThan0 = greaterThan(0);
+export const greaterOrEqualsThan0 = greaterOrEqualThan(0);
+
 
