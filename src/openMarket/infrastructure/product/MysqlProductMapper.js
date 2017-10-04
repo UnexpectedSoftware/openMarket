@@ -1,7 +1,7 @@
-import ProductMapper from "./ProductMapper";
+import ObjectMapper from "../service/ObjectMapper";
 import * as Rx from "rxjs";
 
-export default class MysqlProductMapper extends ProductMapper{
+export default class MysqlProductMapper extends ObjectMapper{
 
   /**
    *

@@ -39,4 +39,4 @@ export default action$ =>
     fetchProductsEpic(action$),
     pageLoadedEpic(action$),
     pageChangedEpic(action$)
-  );
+  ).do(data=>null,error=>console.log(error));

@@ -31,6 +31,8 @@ import baseConfig from '../../../resources/application.json'
 import dev from '../../../resources/application-dev.json'
 import pro from '../../../resources/application-pro.json'
 import MysqlOrderRepository from "../order/MysqlOrderRepository";
+import MysqlOrderMapper from "../order/MysqlOrderMapper";
+import MysqlPool from "../service/MysqlPool";
 const env = process.env.NODE_ENV
 
 class Container {
@@ -41,37 +43,49 @@ class Container {
       devConfig:dev,
       proConfig:pro
     });
+    this._instances = new Map();
+  }
+
+  getInstance({key}){
+    if (undefined === this._instances.get(key)){
+      this._instances.set(key,this['_'+key]())
+    }
+    return this._instances.get(key);
   }
 
   get environment() {
     return this._environment;
   }
 
-  mysqlConnection(){
-    return new MysqlConnection({});
+  _mysqlConnection(){
+    return new MysqlConnection({pool$: this.getInstance({key: 'mysqlPool'})});
   }
 
-  fixturesService() {
+  _mysqlPool(){
+    return new MysqlPool({config:this._environment.config})
+  }
+
+  _fixturesService() {
     return new FixturesService();
   }
 
-  printerConnection(){
+  _printerConnection(){
     return new PrinterConnection();
   }
 
-  orderPrinterService(){
-    return new OrderPrinterService({printerConnection: this.printerConnection()});
+  _orderPrinterService(){
+    return new OrderPrinterService({printerConnection: this.getInstance({key: 'printerConnection'})});
   }
 
-  categoryRepository() {
+  _categoryRepository() {
     switch(this._environment.config.store) {
       case 'Mysql':
         return new MysqlCategoryRepository({
-          connection: this.mysqlConnection(),
-          categoryFactory: this.categoryFactory()
+          connection: this.getInstance({key: 'mysqlConnection'}),
+          categoryFactory: this.getInstance({key: 'categoryFactory'})
         });
       case 'LocalStorage':
-        return new LocalStorageCategoryRepository({ categoryFactory: this.categoryFactory() });
+        return new LocalStorageCategoryRepository({ categoryFactory: this.getInstance({key: 'categoryFactory'})});
       default:
         throw new Error('Unsupported implementation!');
     }
@@ -81,20 +95,20 @@ class Container {
    *
    * @returns {ListAllCategories}
    */
-  listAllCategories() {
-    return new ListAllCategories({ repository: this.categoryRepository() });
+  _listAllCategories() {
+    return new ListAllCategories({ repository: this.getInstance({key: 'categoryRepository'})});
   }
 
   /**
    *
    * @returns {FindCategoryById}
    */
-  findCategoryById() {
-    return new FindCategoryById({ repository: this.categoryRepository() });
+  _findCategoryById() {
+    return new FindCategoryById({ repository: this.getInstance({key: 'categoryRepository'}) });
   }
 
 
-  uuidIdentity() {
+  _uuidIdentity() {
     return new UUIDIdentity();
   }
 
@@ -102,43 +116,43 @@ class Container {
    *
    * @returns {CategoryFactoryImpl}
    */
-  categoryFactory() {
-    return new CategoryFactoryImpl({ identity: this.uuidIdentity() });
+  _categoryFactory() {
+    return new CategoryFactoryImpl({ identity: this.getInstance({key: 'uuidIdentity'}) });
   }
 
   /**
    *
    * @returns {CreateCategory}
    */
-  createCategory() {
-    return new CreateCategory({ repository: this.categoryRepository() });
+  _createCategory() {
+    return new CreateCategory({ repository: this.getInstance({key: 'categoryRepository'}) });
   }
 
   /**
    *
    * @returns {UpdateCategory}
    */
-  updateCategory() {
-    return new UpdateCategory({ repository: this.categoryRepository() });
+  _updateCategory() {
+    return new UpdateCategory({ repository: this.getInstance({key: 'categoryRepository'}) });
   }
 
   /**
    *
    * @returns {ProductFilterFactoryImpl}
    */
-  productFilterFactory() {
+  _productFilterFactory() {
     return new ProductFilterFactoryImpl();
   }
 
-  productRepository() {
+  _productRepository() {
     switch(this._environment.config.store) {
       case 'Mysql':
         return new MysqlProductRepository({
-          connection: this.mysqlConnection(),
-          productMapper: this.productMapper()
+          connection: this.getInstance({key: 'mysqlConnection'}),
+          productMapper: this.getInstance({key: 'productMapper'})
         });
       case 'LocalStorage':
-        return new LocalStorageProductRepository({ productMapper: this.productMapper() });
+        return new LocalStorageProductRepository({ productMapper: this.getInstance({key: 'productMapper'})});
       default:
         throw new Error('Unsupported implementation!');
     }
@@ -148,16 +162,16 @@ class Container {
    *
    * @returns {ListAllProducts}
    */
-  listAllProductsUseCase() {
+  _listAllProductsUseCase() {
     return new ListAllProducts({
-      repository: this.productRepository(),
-      productFilterFactory: this.productFilterFactory()
+      repository: this.getInstance({key: 'productRepository'}),
+      productFilterFactory: this.getInstance({key: 'productFilterFactory'})
     });
   }
 
-  productStatisticsUseCase(){
+  _productStatisticsUseCase(){
     return new ProductStatistics({
-      repository: this.productRepository()
+      repository: this.getInstance({key: 'productRepository'})
     });
   }
 
@@ -165,79 +179,85 @@ class Container {
    *
    * @returns {ProductFactoryImpl}
    */
-  productFactory() {
-    return new ProductFactoryImpl({ identity: this.uuidIdentity() });
+  _productFactory() {
+    return new ProductFactoryImpl({ identity: this.getInstance({key: 'uuidIdentity'}) });
   }
 
-  findProductsUseCase() {
+  _findProductsUseCase() {
     return new FindProduct({
-      repository: this.productRepository()
+      repository: this.getInstance({key: 'productRepository'})
     });
   }
 
-  createProduct() {
+  _createProduct() {
     return new CreateOrUpdateProduct({
-      productRepository: this.productRepository(),
-      productFactory: this.productFactory(),
-      categoryRepository: this.categoryRepository()
+      productRepository: this.getInstance({key: 'productRepository'}),
+      productFactory: this.getInstance({key: 'productFactory'}),
+      categoryRepository: this.getInstance({key: 'categoryRepository'})
     });
   }
 
-  addStockProduct() {
+  _addStockProduct() {
     return new AddStock({
-      repository: this.productRepository()
+      repository: this.getInstance({key: 'productRepository'})
     });
   }
 
-  productMapper() {
+  _productMapper() {
     switch(this._environment.config.store) {
       case 'Mysql':
         return new MysqlProductMapper({
-          productFactory: this.productFactory(),
-          categoryFactory: this.categoryFactory()
+          productFactory: this.getInstance({key: 'productFactory'}),
+          categoryFactory: this.getInstance({key: 'categoryFactory'})
         });
       case 'LocalStorage':
         return new LocalStorageProductMapper({
-          productFactory: this.productFactory(),
-          categoryRepository: this.categoryRepository()
+          productFactory: this.getInstance({key: 'productFactory'}),
+          categoryRepository: this.getInstance({key: 'categoryRepository'})
         });
       default:
         throw new Error('Unsupported implementation!');
     }
   }
 
-  orderRepository() {
+  _orderRepository() {
     switch(this._environment.config.store) {
       case 'Mysql':
         return new MysqlOrderRepository({
-          connection: this.mysqlConnection(),
-          orderFactory: this.orderFactory()
+          connection: this.getInstance({key: 'mysqlConnection'}),
+          objectMapper: this.getInstance({key: 'orderMapper'})
         });
       case 'LocalStorage':
         return new LocalStorageOrderRepository({
-          orderFactory: this.orderFactory()
+          orderFactory: this.getInstance({key: 'orderFactory'})
         });
     }
   }
 
-  createOrderUseCase() {
-    return new CreateOrder({
-      orderRepository: this.orderRepository(),
-      productRepository: this.productRepository(),
-      orderFactory: this.orderFactory()
+  _orderMapper(){
+    return new MysqlOrderMapper({
+      orderFactory: this.getInstance({key: 'orderFactory'})
     });
   }
 
-  orderFactory() {
-    return new OrderFactoryImpl({ identity: this.uuidIdentity() });
+  _createOrderUseCase() {
+    return new CreateOrder({
+      orderRepository: this.getInstance({key: 'orderRepository'}),
+      productRepository: this.getInstance({key: 'productRepository'}),
+      orderFactory: this.getInstance({key: 'orderFactory'})
+    });
   }
 
-  listAllOrdersUseCase() {
-    return new ListAllOrders({repository: this.orderRepository() });
+  _orderFactory() {
+    return new OrderFactoryImpl({ identity: this.getInstance({key: 'uuidIdentity'})});
   }
 
-  orderStatisticsUseCase() {
-    return new OrdersStatistics({repository: this.orderRepository()});
+  _listAllOrdersUseCase() {
+    return new ListAllOrders({repository: this.getInstance({key: 'orderRepository'}) });
+  }
+
+  _orderStatisticsUseCase() {
+    return new OrdersStatistics({repository: this.getInstance({key: 'orderRepository'})});
   }
 
 }

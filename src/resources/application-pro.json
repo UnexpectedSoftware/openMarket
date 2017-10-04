@@ -1,3 +1,9 @@
 {
-  "store": "Mysql"
+  "store": "Mysql",
+  "mysql": {
+    "host": "localhost",
+    "user": "root",
+    "password": "root",
+    "database": "tienda"
+  }
 }

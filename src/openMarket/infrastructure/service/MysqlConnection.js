@@ -1,24 +1,33 @@
-import mysql from 'mysql2/promise';
 import * as Rx from "rxjs";
 
 export default class MysqlConnection {
-  constructor({config}) {
-    this._config = config;
-    this._pool$ = this._createPoolConnection();
+  constructor({pool$}) {
+    this._pool$ = pool$.getPool();
   }
 
-  _createPoolConnection(){
-    /* TODO use config environment */
-    return Rx.Observable.of(mysql.createPool({
-      host: 'localhost',
-      user: 'root',
-      password: 'root',
-      database: 'tienda'
-    }));
-  }
-
-  getConnection() {
+  getPool() {
     return this._pool$;
   }
+
+  execute({query, params}){
+    return this.getPool()
+      .flatMap(pool =>
+        Rx.Observable.fromPromise(pool.query(query,params))
+      )
+      .flatMap(result => Rx.Observable.from(result))
+      .first()
+      .flatMap(rows => Array.isArray(rows) ? Rx.Observable.from(rows) : Rx.Observable.of(rows));
+  }
+
+  beginTransaction() {
+    return this.getPool()
+      .flatMap(pool => Rx.Observable.fromPromise(pool.getConnection()))
+      .flatMap(connection =>
+        Rx.Observable.fromPromise(connection.beginTransaction())
+          .map(transaction => connection)
+      );
+  }
+
+
 
 }
