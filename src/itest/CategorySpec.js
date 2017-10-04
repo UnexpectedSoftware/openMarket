@@ -1,7 +1,7 @@
 import la from 'lazy-ass';
 import is from 'check-more-types';
 import Rx from 'rxjs/Rx';
-import openMarket from '../openMarket';
+import openMarket from '../openMarket/application/index';
 import RxLocalStorage from "../openMarket/infrastructure/service/RxLocalStorage";
 import {CATEGORIES_KEY} from "../openMarket/infrastructure/service/LocalStorageKeys";
 /**

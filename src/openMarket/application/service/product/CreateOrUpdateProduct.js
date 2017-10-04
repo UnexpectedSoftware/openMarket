@@ -8,6 +8,7 @@ export default class CreateOrUpdateProduct {
    * Create use case
    * @param {ProductRepository} productRepository
    * @param {ProductFactory} productFactory
+   * @param {CategoryRepository} categoryRepository
    */
   constructor({ productRepository, productFactory, categoryRepository }) {
     /**

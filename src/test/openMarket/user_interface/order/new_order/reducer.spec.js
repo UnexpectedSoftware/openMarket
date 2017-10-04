@@ -1,13 +1,13 @@
 import { expect } from 'chai';
-import newOrderReducer from '../../../../openMarket/user_interface/order/new_order/reducer';
+import newOrderReducer from '../../../../../openMarket/user_interface/order/new_order/reducer';
 import {
   NEW_ORDER_PRODUCT_DELETED,
   NEW_ORDER_PRODUCT_FETCHED,
   NEW_ORDER_PRODUCT_QUANTITY_CHANGE
-} from '../../../../openMarket/user_interface/order/new_order/action';
-import OrderFactoryImpl from "../../../../openMarket/infrastructure/order/OrderFactoryImpl";
-import UUIDIdentity from "../../../../openMarket/infrastructure/service/UUIDIdentity";
-import {LIST_ORDER_DETAIL_LOADED} from "../../../../openMarket/user_interface/order/list_orders/action";
+} from '../../../../../openMarket/user_interface/order/new_order/action';
+import OrderFactoryImpl from "../../../../../openMarket/infrastructure/order/OrderFactoryImpl";
+import UUIDIdentity from "../../../../../openMarket/infrastructure/service/UUIDIdentity";
+import {LIST_ORDER_DETAIL_LOADED} from "../../../../../openMarket/user_interface/order/list_orders/action";
 
 const orderFactory = new OrderFactoryImpl({identity: new UUIDIdentity()});
 
