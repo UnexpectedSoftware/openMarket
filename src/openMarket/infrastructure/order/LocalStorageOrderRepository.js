@@ -70,6 +70,11 @@ export default class LocalStorageOrderRepository extends OrderRepository {
       .reduce((acc, order) => ((parseFloat(acc) + parseFloat(order._total)).toFixed(2)*100/100),0);
   }
 
+  /**
+   * @returns {total:number,createdAt:date}
+   * @param {date} startDate
+   * @param {date} endDate
+   */
   calculateTotalAmountByDays({startDate, endDate}){
     return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
       .catch(e => Rx.Observable.of([]))
