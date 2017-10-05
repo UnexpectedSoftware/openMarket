@@ -167,6 +167,7 @@
     "webpack-validator": "^2.3.0"
   },
   "dependencies": {
+    "chart.js": "^2.7.0",
     "electron-debug": "^1.1.0",
     "font-awesome": "^4.7.0",
     "lodash": "^4.17.1",
@@ -175,6 +176,7 @@
     "node-thermal-printer": "^1.0.5",
     "rc-menu": "^5.1.2",
     "react": "^15.4.2",
+    "react-chartjs-2": "^2.6.4",
     "react-datepicker": "^0.48.0",
     "react-dom": "^15.4.2",
     "react-redux": "^5.0.2",
