@@ -12,7 +12,6 @@ export default class Navbar extends Component {
   }
 
   onOpenChange(openKeys) {
-    console.log('onOpenChange', openKeys);
     this.setState({
       openKeys,
     });
