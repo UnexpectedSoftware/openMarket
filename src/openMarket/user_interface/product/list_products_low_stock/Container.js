@@ -65,10 +65,7 @@ class Container extends Component {
     const { products } = this.props;
     return (
       <div className="container-fluid">
-        <Link className="button button-return" to="/">
-          <i className="fa fa-arrow-left" />
-          Volver
-        </Link>
+        <h2>List Products with LOW stock</h2>
         <ReactTable
           data={products.products}
           columns={this.columns}

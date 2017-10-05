@@ -12,9 +12,9 @@
 @import "./style/components/textarea.scss";
 @import "./style/components/forms.scss";
 @import "./style/components/table.scss";
+@import "./style/components/calendar.scss";
 @import "./style/components/navbar.scss";
-
-
+@import "./style/components/modal.scss";
 
 body {
   position: relative;
@@ -35,23 +35,22 @@ h1 {
 
 h2 {
   color: $c-base;
-  font-size: 2rem;
+  font-size: 2.2rem;
   margin: $sp-base/2 0 $sp-base*1.5;
   border-bottom: 1px solid $c-base;
   padding-bottom: $sp-base/4;
+}
+
+h3 {
+  color: $c-base;
+  font-size: 1.9rem;
+  margin: $sp-base/2 0 $sp-base*1.5;
 }
 
 .header {
   background-color: $c-primary-lightest;
   border-bottom: 1px solid $c-primary-lightest;
 }
-
-
-
-
-
-
-
 
 p {
   margin-bottom: $sp-base;
@@ -72,114 +71,6 @@ a:hover {
   cursor: pointer;
 }
 
-div.dialog-modal {
-  display:block;
-  position:absolute;
-  width: 600px;
-  height: 300px;
-  background:red;
-  top: 30%;
-  left: 20%;
-  z-index: 100;
-
-}
-
 .container {
   @include container-fluid();
-}
-
-.FilterCalendar {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  margin: $sp-base 0;
-
-  .button-return {
-	flex: 0 0 auto;
-	float: none;
-  }
-
-  .FilterCalendar-item {
-	flex: 1 0 auto;
-	text-align: center;
-  }
-
-  .button-filter {
-	flex: 0 0 auto;
-	float: none;
-  }
-
-  label {
-	margin-right: $sp-base;
-  }
-}
-
-.react-datepicker {
-  font-size: 1.6rem;
-  border: 1px solid $c-base;
-}
-.react-datepicker__tether-element-attached-top .react-datepicker__triangle, .react-datepicker__tether-element-attached-top .react-datepicker__triangle::before {
-  border-bottom-color: $c-base;
-}
-
-.react-datepicker__navigation--previous {
-  border-right-color: $c-primary;
-  @include transition();
-
-  &:hover {
-	border-right-color: $c-primary;
-	opacity: 0.8;
-	@include transition();
-  }
-}
-
-.react-datepicker__navigation {
-  border-width: 1rem;
-}
-
-.react-datepicker__navigation--next {
-  border-left-color: $c-primary;
-  @include transition();
-
-  &:hover {
-	border-left-color: $c-primary;
-	opacity: 0.8;
-	@include transition();
-  }
-}
-
-.react-datepicker__header {
-	background-color: $c-primary-lightest;
-}
-
-.react-datepicker__current-month {
-  font-size: 1.8rem;
-}
-
-.react-datepicker__day-name, .react-datepicker__day {
-  color: $c-base;
-  width: auto;
-  line-height: initial;
-  text-align: center;
-  margin: 0;
-  padding: $sp-base/2;
-  width: 14.28%;
-}
-.react-datepicker__day--today {
-  background-color: $c-primary-lightest;
-}
-.react-datepicker__day {
-  @include transition();
-
-  &:hover {
-	background-color: $c-primary;
-	color: white;
-	@include transition();
-  }
-}
-
-.react-datepicker__day--selected {
-  background-color: $c-primary;
-  color: white;
 }

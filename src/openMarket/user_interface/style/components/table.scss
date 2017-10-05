@@ -54,8 +54,45 @@
 	  border: 1px solid $c-primary;
 	  color: $c-white;
 	  padding: $sp-base/2 $sp-base;
+	  @include border-radius();
+	  @include transition();
+
+	  &:not([disabled]):hover {
+		background-color: $c-primary;
+		opacity: 0.8;
+		@include border-radius();
+		@include transition();
+	  }
 	}
   }
 }
 
+
+
+.FilterCalendar {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  margin: $sp-base 0;
+
+  .button-return {
+	flex: 0 0 auto;
+	float: none;
+  }
+
+  .FilterCalendar-item {
+	flex: 0 0 auto;
+	text-align: center;
+  }
+
+  .button-filter {
+	flex: 0 0 auto;
+	float: none;
+  }
+
+  label {
+	margin-right: $sp-base;
+  }
+}
 

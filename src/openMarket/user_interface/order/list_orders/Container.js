@@ -89,11 +89,8 @@ class Container extends Component {
     const { orders } = this.props;
     return (
       <div className="container-fluid">
+        <h2>List Order!</h2>
         <div className="FilterCalendar">
-          <Link className="button button-return" to="/">
-            <i className="fa fa-arrow-left" />
-            Volver
-          </Link>
           <div className="FilterCalendar-item">
             <label htmlFor="startDate">Start Date</label>
             <DatePicker
@@ -126,10 +123,7 @@ class Container extends Component {
           showPageSizeOptions={false}
         />
 
-        <h2>{orders.total} €</h2>
-
-
-
+        <h3>{orders.total} €</h3>
       </div>
     );
   }
