@@ -1,0 +1,99 @@
+.rc-menu {
+  color: $c-base;
+  font-size: 1.6rem;
+}
+
+.rc-menu-root {
+  @include container-fluid;
+  background: none;
+  border: 0;
+  display: flex;
+}
+
+.rc-menu-submenu-selected {
+  background: none;
+}
+
+.rc-menu-horizontal {
+
+  & > .rc-menu-submenu, & > .rc-menu-item {
+	float: none;
+	text-align: center;
+	flex: 1 0 auto;
+	border: 0;
+	padding: 0;
+	background: none;
+  }
+
+  & > .rc-menu-submenu > .rc-menu-submenu-title, & > .rc-menu-item a {
+	padding: 16px;
+	@include transition();
+	display: block;
+  }
+  .rc-menu {
+
+  }
+}
+
+.rc-menu-submenu-active .rc-menu-submenu-title, .rc-menu-submenu-selected  .rc-menu-submenu-title,  .rc-menu-horizontal > .rc-menu-item a:hover {
+  background-color: $c-primary-light;
+  color: $c-white;
+  @include transition();
+}
+
+.rc-menu-item-selected {
+  background: none;
+
+  a {
+	padding: $sp-base;
+	background-color: $c-primary-light;
+	display: block;
+	color: $c-white;
+	@include transition();
+  }
+}
+
+.rc-menu-submenu-arrow:before{
+  font-family: FontAwesome;
+  content: "\f107";
+  margin-left: $sp-base/2;
+  font-style: normal;
+  vertical-align: bottom;
+}
+
+.rc-menu-vertical{
+
+  &.rc-menu-sub {
+	top: 100%;
+	left: 0;
+	position: absolute;
+	min-width: 100%;
+	margin-top: 0;
+	border: 1px solid $c-primary-light;
+	box-shadow: none;
+	border-radius: 0;
+	text-align: left;
+	padding: $sp-base/2 0;
+  }
+  .rc-menu-item {
+	padding: 0;
+	background: none;
+
+	a {
+	  padding: $sp-base/2 $sp-base;
+	  display: block;
+	  @include transition();
+
+	  &:hover {
+		background-color: $c-primary-lightest;
+		@include transition();
+		color: $c-white;
+	  }
+	}
+  }
+  .rc-menu-item-selected a {
+	background-color: $c-primary-lightest;
+  }
+}
+
+

@@ -88,31 +88,30 @@ class Container extends Component {
   render() {
     const { orders } = this.props;
     return (
-      <div>
-
-        <p>
-          <Link to="/">
-            <i className="fa fa-arrow-left fa-3x" />
-          </Link>
-        </p>
-        <div>
-          <label htmlFor="startDate">Start Date</label>
-          <DatePicker
-            selected={orders.filters.startDate}
-            onChange={this.handleStartDateChanged}
-            locale="es"
-          />
+      <div className="container-fluid">
+        <h2>List Order!</h2>
+        <div className="FilterCalendar">
+          <div className="FilterCalendar-item">
+            <label htmlFor="startDate">Start Date</label>
+            <DatePicker
+              selected={orders.filters.startDate}
+              onChange={this.handleStartDateChanged}
+              locale="es"
+            />
+          </div>
+          <div className="FilterCalendar-item">
+            <label htmlFor="endDate">End Date</label>
+            <DatePicker
+              selected={orders.filters.endDate}
+              onChange={this.handleEndDateChanged}
+              locale="es"
+            />
+          </div>
+          <button className="button-filter" onClick={this.handleFilterByDates}>
+            <i className="fa fa-filter" />
+            Filter
+          </button>
         </div>
-        <div>
-          <label htmlFor="endDate">End Date</label>
-          <DatePicker
-            selected={orders.filters.endDate}
-            onChange={this.handleEndDateChanged}
-            locale="es"
-          />
-        </div>
-        <button onClick={this.handleFilterByDates}>Filter</button>
-
         <ReactTable
           data={orders.orders}
           columns={this.columns}
@@ -124,10 +123,7 @@ class Container extends Component {
           showPageSizeOptions={false}
         />
 
-        <h2>{orders.total} €</h2>
-
-
-
+        <h3>{orders.total} €</h3>
       </div>
     );
   }

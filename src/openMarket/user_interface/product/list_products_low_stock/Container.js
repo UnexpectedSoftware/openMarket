@@ -64,13 +64,8 @@ class Container extends Component {
   render() {
     const { products } = this.props;
     return (
-      <div>
-        <p>
-          <Link to="/">
-            <i className="fa fa-arrow-left fa-3x" />
-          </Link>
-        </p>
-
+      <div className="container-fluid">
+        <h2>List Products with LOW stock</h2>
         <ReactTable
           data={products.products}
           columns={this.columns}

@@ -19,7 +19,10 @@ class ReduxForm extends Component {
     return (
       <form onSubmit={handleSubmit}>
         <Field name="name" component={renderInput} type="text" placeholder="Name" validate={required}/>
-        <button type="submit" disabled={submitting}>Save</button>
+        <button type="submit" disabled={submitting}>
+          <i className="fa fa-floppy-o" />
+          Save
+        </button>
       </form>
     );
   }
