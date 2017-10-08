@@ -1,0 +1,91 @@
+.dialog-Modal{
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: rgba(00, 00, 00, 0.5);
+  justify-content: center;
+  height: 100%;
+  display: flex;
+  width: 100%;
+  z-index: 1;
+}
+.dialog-ModalControlX {
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: auto;
+  height: 100%;
+  max-width: 90%;
+}
+.dialog-ModalControlY {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: center;
+}
+.dialog-ModalContainer{
+  max-width: 1200px;
+  min-width: 320px;
+  background-color: $c-white;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: auto;
+  max-height: 90%;
+  border: 10px solid $c-base;
+}
+.dialog-Modal-header{
+  flex-grow: 0;
+  flex-shrink: 0;
+  flex-basis: auto;
+  padding: $sp-base/2;
+  background-color: $c-grey-darkest;
+
+  h2 {
+	color: $c-white;
+	border: none;
+	margin: 0;
+  }
+}
+.dialog-Modal-main{
+  flex-grow: 0;
+  flex-shrink: 1;
+  flex-basis: auto;
+  overflow-y: auto;
+  padding: $sp-base $sp-base/2;
+
+  input[type=button] {
+	float: none;
+	margin: auto;
+	display: block;
+  }
+
+  button {
+	float: left;
+  }
+
+  form + input[type=button] {
+	float: left;
+  }
+
+  button + button {
+	float: right;
+  }
+}
+
+.dialog-ModalAlert {
+  border-color: $c-alert;
+
+  .dialog-Modal-header {
+  	background-color: $c-alert-light;
+
+  }
+}
+
+.close {
+  float: right;
+  color: $c-white;
+  margin-left: $sp-base;
+}

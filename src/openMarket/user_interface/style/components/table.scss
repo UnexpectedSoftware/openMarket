@@ -1,11 +1,7 @@
 .ReactTable {
   width: 100%;
   border-color: $c-grey-darkest;
-  margin-bottom: $sp-base;
 
-  .rt-table {
-
-  }
 
   .rt-thead.-header {
 	box-shadow: none;
@@ -16,6 +12,7 @@
 
   .rt-thead .rt-th {
 	padding: $sp-base/2;
+	box-shadow: none !important;
   }
 
   .rt-tbody {
@@ -54,8 +51,77 @@
 	  border: 1px solid $c-primary;
 	  color: $c-white;
 	  padding: $sp-base/2 $sp-base;
+	  @include border-radius();
+	  @include transition();
+
+	  &:not([disabled]):hover {
+		background-color: $c-primary;
+		opacity: 0.8;
+		@include border-radius();
+		@include transition();
+	  }
 	}
+  }
+
+  & + h3 {
+	margin-top: $sp-base*1.5;
+  }
+
+  .-pagination .-pageJump input {
+	padding: $sp-base/2 $sp-base;
+  }
+
+  .rt-resizable-header-content {
+	padding: 0 $sp-base*2;
+	position: relative;
+
+	&:after {
+	  font-family: 'FontAwesome';
+	  position: absolute;
+	  top: -4px;
+	  right: $sp-base/2;
+	  pointer-events: none;
+	  font-size: 2rem;
+	}
+  }
+
+  .-sort-asc .rt-resizable-header-content:after {
+	content: "\f0de";
+	top: 6px;
+  }
+
+  .-sort-desc .rt-resizable-header-content:after {
+	content: "\f0dd";
+
   }
 }
 
+
+
+.FilterCalendar {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  margin: $sp-base 0;
+
+  .button-return {
+	flex: 0 0 auto;
+	float: none;
+  }
+
+  .FilterCalendar-item {
+	flex: 0 0 auto;
+	text-align: center;
+  }
+
+  .button-filter {
+	flex: 0 0 auto;
+	float: none;
+  }
+
+  label {
+	margin-right: $sp-base;
+  }
+}
 

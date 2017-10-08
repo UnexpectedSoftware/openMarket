@@ -7,7 +7,7 @@ form {
 	display: inline-block;
 	margin-bottom: $sp-base;
 	vertical-align: top;
-	padding-top: $sp-base/4;
+	padding-top: $sp-base/2;
   }
 
   input {
@@ -24,11 +24,35 @@ form {
 	margin-top: -$sp-base/2;
   }
 
+  .SelectContainer {
+	display: inline-block;
+	position: relative;
+
+	&:after {
+	  content:"\f107";
+	  font-family:'FontAwesome';
+	  position: absolute;
+	  top: $sp-base/2;
+	  right: $sp-base/2;
+	  pointer-events: none;
+	  font-size: 1.6rem;
+	}
+  }
   select {
 	-webkit-appearance: none;
 	border: 1px solid $c-base;
 	@include border-radius();
 	background: none;
-	padding: $sp-base/4 $sp-base/2;
+	padding: $sp-base/2;
+	padding-right: $sp-base*2;
+	outline: 0;
+
+	&:after {
+	  content: 'hola';
+	}
+  }
+
+  .ReactTable input {
+	margin-bottom: 0;
   }
 }

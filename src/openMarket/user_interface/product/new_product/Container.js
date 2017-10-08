@@ -40,10 +40,6 @@ class Container extends Component {
           initialValues={initialValues}
           statusesList={statuses}
         />
-        <Link className="button button-return" to="/">
-          <i className="fa fa-arrow-left" />
-          Volver
-        </Link>
       </div>
     );
   }

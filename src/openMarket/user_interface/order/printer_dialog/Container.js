@@ -28,10 +28,20 @@ class Container extends Component {
     const { printerDialog } = this.props;
     if(!printerDialog.visible) return null;
     return (
-      <div className="dialog-modal">
-        <h1>Do you want a ticket?!</h1>
-        <button onClick={this.handleKO}>NO</button>
-        <button onClick={this.handleOK}>YES!</button>
+      <div className="dialog-Modal">
+        <div className="dialog-ModalControlX">
+          <div className="dialog-ModalControlY">
+            <div className="dialog-ModalContainer">
+              <div className="dialog-Modal-header">
+                <h2>Do you want a ticket?! <a className="close" onClick={this.closeDialog}><i className="fa fa-times"></i></a></h2>
+              </div>
+              <div className="dialog-Modal-main">
+                <button onClick={this.handleOK}>YES!</button>
+                <button onClick={this.handleKO}>NO</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

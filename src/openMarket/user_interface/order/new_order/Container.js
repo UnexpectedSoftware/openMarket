@@ -52,12 +52,8 @@ class Container extends Component {
           printOrder={this.printOrder.bind(this)}
           readonly={readonly}
         />
-        <Link className="button button-return" to="/">
-          <i className="fa fa-arrow-left" />
-          Volver
-        </Link>
-          <WeightedDialog/>
-          <PrinterDialog/>
+        <WeightedDialog/>
+        <PrinterDialog/>
       </div>
     );
   }
