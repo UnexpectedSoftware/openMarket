@@ -2,7 +2,7 @@
 import React from 'react';
 import { Route, IndexRoute } from 'react-router';
 import App from './containers/App';
-import HomePage from './home/Container';
+import HomePage from './home/ReduxConnector';
 import ProductPage from './product/new_product/ReduxConnector';
 import ProductListingLowStock from './product/list_products_low_stock/ReduxConnector';
 import CategoryPage from './category/new_category/ReduxConnector';

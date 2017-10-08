@@ -7,11 +7,9 @@ import {
 import * as Rx from "rxjs";
 import {SHOW_WEIGHTED_DIALOG} from "../../../../../openMarket/user_interface/order/weighted_dialog/action";
 
-const crash = (err) => { throw err; };  // rethrow
-
 describe('Order Epics', () => {
   describe('Order Product Fetch', () => {
-    it('should return an action of type NEW_ORDER_PRODUCT_FETCHED and action of type Redux reset form', () => {
+    it('should return an action of type NEW_ORDER_PRODUCT_FETCHED and action of type Redux reset form', (done) => {
       const givenBarcode = '0001';
       const givenActions$ = Rx.Observable.of({
         type: NEW_ORDER_PRODUCT_FETCH,
@@ -54,14 +52,14 @@ describe('Order Epics', () => {
         .toArray()
         .subscribe(
         actionsArray => expect(actionsArray).to.deep.equal(expectedActions),
-        crash,
-        () => {}
+          (error) => done(new Error(error)),
+        () => done()
       );
 
     });
 
 
-    it('should return an action of type NEW_ORDER_PRODUCT_NOT_FOUND and Redux reset form action', () => {
+    it('should return an action of type NEW_ORDER_PRODUCT_NOT_FOUND and Redux reset form action', (done) => {
       const givenBarcode = '0042';
       const givenActions$ = Rx.Observable.of({
         type: NEW_ORDER_PRODUCT_FETCH,
@@ -97,13 +95,13 @@ describe('Order Epics', () => {
         .toArray()
         .subscribe(
           actionsArray => expect(actionsArray).to.deep.equal(expectedActions),
-          crash,
-          () => {}
+          (error) => done(new Error(error)),
+          () => done()
         );
 
     });
 
-    it('should return an action of type SHOW_WEIGHTED_DIALOG and action of type Redux reset form', () => {
+    it('should return an action of type SHOW_WEIGHTED_DIALOG and action of type Redux reset form', (done) => {
       const givenBarcode = '0001';
       const givenActions$ = Rx.Observable.of({
         type: NEW_ORDER_PRODUCT_FETCH,
@@ -143,8 +141,8 @@ describe('Order Epics', () => {
         .toArray()
         .subscribe(
           actionsArray => expect(actionsArray).to.deep.equal(expectedActions),
-          crash,
-          () => {}
+          (error) => done(new Error(error)),
+          () => done()
         );
 
     });
