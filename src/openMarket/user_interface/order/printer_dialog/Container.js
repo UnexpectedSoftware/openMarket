@@ -33,12 +33,11 @@ class Container extends Component {
           <div className="dialog-ModalControlY">
             <div className="dialog-ModalContainer">
               <div className="dialog-Modal-header">
-                <h2>Do you want a ticket?!</h2>
-                <a className="close" onClick={this.closeDialog}>Close</a>
+                <h2>Do you want a ticket?! <a className="close" onClick={this.closeDialog}><i className="fa fa-times"></i></a></h2>
               </div>
               <div className="dialog-Modal-main">
-                <button onClick={this.handleKO}>NO</button>
                 <button onClick={this.handleOK}>YES!</button>
+                <button onClick={this.handleKO}>NO</button>
               </div>
             </div>
           </div>

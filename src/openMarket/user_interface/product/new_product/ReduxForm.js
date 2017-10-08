@@ -53,19 +53,23 @@ class ReduxForm extends Component {
         <Field name="weighted" component={this.renderInput} type="checkbox" placeholder="Weighted"/>
           <div>
           <label htmlFor="categoryId">Category</label>
-        <Field name="categoryId" component="select">
-          <option value="">Select a category...</option>
-          {categoriesList.map(category =>
-            <option value={category.id} key={category.id}>{category.name}</option>
-          )}
-        </Field>
+            <div className="SelectContainer">
+              <Field name="categoryId" component="select">
+                <option value="">Select a category...</option>
+                {categoriesList.map(category =>
+                  <option value={category.id} key={category.id}>{category.name}</option>
+                )}
+              </Field>
+            </div>
             {edition &&
+            <div className="SelectContainer">
             <Field name="status" component="select">
               <option value="">Select an status...</option>
               {statusesList.map(status =>
                 <option value={status.key} key={status.key}>{status.value}</option>
               )}
             </Field>
+            </div>
             }
         </div>
 

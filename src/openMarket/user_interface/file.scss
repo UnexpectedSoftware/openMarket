@@ -22,7 +22,7 @@ body {
   height: 100vh;
   background-color: $c-white;
   font-family: $f-family;
-  overflow-y: hidden;
+  // overflow-y: hidden;
   font-size: 1.4rem;
 }
 
@@ -45,6 +45,10 @@ h3 {
   color: $c-base;
   font-size: 1.9rem;
   margin: $sp-base/2 0 $sp-base*1.5;
+
+  .button {
+	margin-top: -$sp-base/2;
+  }
 }
 
 .header {

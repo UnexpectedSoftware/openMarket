@@ -1,11 +1,7 @@
 .ReactTable {
   width: 100%;
   border-color: $c-grey-darkest;
-  margin-bottom: $sp-base;
 
-  .rt-table {
-
-  }
 
   .rt-thead.-header {
 	box-shadow: none;
@@ -16,6 +12,7 @@
 
   .rt-thead .rt-th {
 	padding: $sp-base/2;
+	box-shadow: none !important;
   }
 
   .rt-tbody {
@@ -64,6 +61,38 @@
 		@include transition();
 	  }
 	}
+  }
+
+  & + h3 {
+	margin-top: $sp-base*1.5;
+  }
+
+  .-pagination .-pageJump input {
+	padding: $sp-base/2 $sp-base;
+  }
+
+  .rt-resizable-header-content {
+	padding: 0 $sp-base*2;
+	position: relative;
+
+	&:after {
+	  font-family: 'FontAwesome';
+	  position: absolute;
+	  top: -4px;
+	  right: $sp-base/2;
+	  pointer-events: none;
+	  font-size: 2rem;
+	}
+  }
+
+  .-sort-asc .rt-resizable-header-content:after {
+	content: "\f0de";
+	top: 6px;
+  }
+
+  .-sort-desc .rt-resizable-header-content:after {
+	content: "\f0dd";
+
   }
 }
 

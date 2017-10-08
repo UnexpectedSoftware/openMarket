@@ -30,8 +30,8 @@ class Container extends Component {
           <div className="dialog-ModalControlY">
             <div className="dialog-ModalContainer">
               <div className="dialog-Modal-header">
-                <h2>Weight!</h2>
-                <a className="close" onClick={this.closeDialog}>Close</a>
+                <h2>Weight! <a className="close" onClick={this.closeDialog}><i className="fa fa-times"></i></a></h2>
+
               </div>
               <div className="dialog-Modal-main">
                 <WeightedDialogForm

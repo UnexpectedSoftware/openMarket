@@ -119,7 +119,7 @@ class ReduxForm extends Component {
           showPagination={false}
           showPageSizeOptions={false}
         />
-        <h3>{order.total+" "+this.moneySymbol} </h3>
+        <h3>{order.total+" "+this.moneySymbol}
         {!readonly &&
           <a className="button" onClick={this.saveOrder}>
             <i className="fa fa-floppy-o" />
@@ -132,6 +132,7 @@ class ReduxForm extends Component {
           Print!
         </a>
         }
+        </h3>
       </form>
     );
   }

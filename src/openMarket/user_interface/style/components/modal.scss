@@ -34,16 +34,58 @@
   flex-shrink: 0;
   flex-basis: auto;
   max-height: 90%;
-  border: 10px solid $c-grey;
+  border: 10px solid $c-base;
 }
 .dialog-Modal-header{
   flex-grow: 0;
   flex-shrink: 0;
   flex-basis: auto;
+  padding: $sp-base/2;
+  background-color: $c-grey-darkest;
+
+  h2 {
+	color: $c-white;
+	border: none;
+	margin: 0;
+  }
 }
 .dialog-Modal-main{
   flex-grow: 0;
   flex-shrink: 1;
   flex-basis: auto;
   overflow-y: auto;
+  padding: $sp-base $sp-base/2;
+
+  input[type=button] {
+	float: none;
+	margin: auto;
+	display: block;
+  }
+
+  button {
+	float: left;
+  }
+
+  form + input[type=button] {
+	float: left;
+  }
+
+  button + button {
+	float: right;
+  }
+}
+
+.dialog-ModalAlert {
+  border-color: $c-alert;
+
+  .dialog-Modal-header {
+  	background-color: $c-alert-light;
+
+  }
+}
+
+.close {
+  float: right;
+  color: $c-white;
+  margin-left: $sp-base;
 }
