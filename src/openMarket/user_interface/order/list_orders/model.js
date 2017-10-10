@@ -22,6 +22,6 @@ export const calculateTotal = ({orders}) => {
   return orders
     .map(order => order.total)
     .reduce((acc,element) =>{
-      return (parseFloat(acc) + parseFloat(element)).toFixed(2);
+      return ((parseFloat(acc) + parseFloat(element)).toFixed(2)*100/100);
   },0);
 }

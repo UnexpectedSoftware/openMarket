@@ -12,15 +12,9 @@ class Container extends Component {
 
   render() {
     return (
-      <div>
-        <p>Let's create a new category!</p>
+      <div className="container-fluid">
+        <h2>Let's create a new category!</h2>
         <NewCategoryReduxForm onSubmit={this.handleSubmit}/>
-          <p>
-            <Link to="/">
-              <i className="fa fa-arrow-left fa-3x" />
-            </Link>
-          </p>
-
       </div>
     );
   }

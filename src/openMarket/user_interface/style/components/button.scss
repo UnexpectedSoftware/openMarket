@@ -1,0 +1,32 @@
+button,
+input[type="button"],
+.button {
+  color: $c-white;
+  background-color: $c-primary;
+  border: 1px solid $c-primary;
+  padding: $sp-base/2 $sp-base;
+  @include transition;
+  @include border-radius;
+  cursor: pointer;
+  float: right;
+  font-size: 1.6rem;
+  outline: 0;
+
+  &:hover {
+	opacity: 0.8;
+	@include transition;
+  }
+
+  .fa {
+	padding-right: $sp-base/2;
+  }
+}
+
+.button-return {
+  float: left;
+}
+
+input[type="button"] {
+  width: auto;
+}
+
