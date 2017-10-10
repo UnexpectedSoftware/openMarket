@@ -31,7 +31,11 @@ describe('Order Epics', () => {
         type: 'RESET_FORM_REDUX_WHATEVER'
       });
 
-      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(resetFormMock);
+      const notificationMock = anything => ({
+        type: 'RNS_SHOW_NOTIFICATION'
+      });
+
+      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(resetFormMock)(notificationMock);
 
       const actions$ = newOrderProductFetchEpic(givenActions$);
 
@@ -63,7 +67,7 @@ describe('Order Epics', () => {
     });
 
 
-    it('should return an action of type NEW_ORDER_PRODUCT_NOT_FOUND and Redux reset form action', (done) => {
+    it('should return an action of type RNS_SHOW_NOTIFICATION and Redux reset form action', (done) => {
       const givenBarcode = '0042';
       const givenActions$ = Rx.Observable.of({
         type: NEW_ORDER_PRODUCT_FETCH,
@@ -78,7 +82,11 @@ describe('Order Epics', () => {
         type: 'RESET_FORM_REDUX_WHATEVER'
       });
 
-      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(resetFormMock);
+      const notificationMock = anything => ({
+        type: 'RNS_SHOW_NOTIFICATION'
+      });
+
+      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(resetFormMock)(notificationMock);
 
       const actions$ = newOrderProductFetchEpic(givenActions$);
 
@@ -88,10 +96,7 @@ describe('Order Epics', () => {
           type: 'RESET_FORM_REDUX_WHATEVER'
         },
         {
-          type: NEW_ORDER_PRODUCT_NOT_FOUND,
-          payload: {
-            message: `Product with barcode ${givenBarcode} not found!`
-          }
+          type: 'RNS_SHOW_NOTIFICATION',
         }
       ];
 
@@ -123,7 +128,11 @@ describe('Order Epics', () => {
         type: 'RESET_FORM_REDUX_WHATEVER'
       });
 
-      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(resetFormMock);
+      const notificationMock = anything => ({
+        type: 'RNS_SHOW_NOTIFICATION'
+      });
+
+      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(resetFormMock)(notificationMock);
 
       const actions$ = newOrderProductFetchEpic(givenActions$);
 
@@ -183,12 +192,19 @@ describe('Order Epics', () => {
         type: 'RESET_FORM_REDUX_WHATEVER'
       });
 
-      const newOrderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCaseMock)(resetFormMock);
+      const notificationMock = anything => ({
+        type: 'RNS_SHOW_NOTIFICATION'
+      });
+
+      const newOrderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCaseMock)(resetFormMock)(notificationMock)(notificationMock);
 
       const actions$ = newOrderSaveEpic(givenActions$);
 
 
       const expectedActions = [
+        {
+          type: 'RNS_SHOW_NOTIFICATION'
+        },
         {
           type: 'RESET_FORM_REDUX_WHATEVER'
         },
@@ -214,7 +230,7 @@ describe('Order Epics', () => {
     });
 
 
-    it('should return an action of type NEW_ORDER_ERRORS_FOUND and action of type Redux reset form', (done) => {
+    it('should return an action of type RNS_SHOW_NOTIFICATION and action of type Redux reset form', (done) => {
       const givenEmptyLines = [];
       const givenActions$ = Rx.Observable.of({
         type: NEW_ORDER_SAVE,
@@ -227,11 +243,15 @@ describe('Order Epics', () => {
         createOrder: ({lines}) => Rx.Observable.throw(new Error('Empty lines!'))
       };
 
+      const notificationMock = anything => ({
+        type: 'RNS_SHOW_NOTIFICATION'
+      });
+
       const resetFormMock = anything => ({
         type: 'RESET_FORM_REDUX_WHATEVER'
       });
 
-      const newOrderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCaseMock)(resetFormMock);
+      const newOrderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCaseMock)(resetFormMock)(notificationMock)(notificationMock);
 
       const actions$ = newOrderSaveEpic(givenActions$);
 
@@ -241,8 +261,7 @@ describe('Order Epics', () => {
           type: 'RESET_FORM_REDUX_WHATEVER'
         },
         {
-          type: NEW_ORDER_ERRORS_FOUND,
-          payload: 'Empty lines!'
+          type: 'RNS_SHOW_NOTIFICATION'
         }
       ];
 
