@@ -1,11 +1,11 @@
 import OpenMarket from "../../../application/index";
 import * as Rx from "rxjs";
+import { success, error } from 'react-notification-system-redux';
 import * as newProductActions from "./action";
 import {reset} from 'redux-form';
 import {makeProductCloseEpic} from "./epicFactory";
 
 const saveProductEpic = action$ =>
-
   action$.ofType(newProductActions.NEW_PRODUCT_SAVE)
     .flatMap(action => OpenMarket.get("products_create_or_update_use_case").createOrUpdate({
       id: action.product.id,
@@ -30,7 +30,13 @@ const savedProductEpic = action$ =>
       Rx.Observable.of(
         resetAction,
         newProductActions.newProductFetchCategories(),
-        newProductActions.productFetchStatuses()
+        newProductActions.productFetchStatuses(),
+        success({
+          title: 'Product saved!',
+          message: 'Product saved in database',
+          position: 'tr',
+          autoDismiss: 4
+        })
       )
     );
 
