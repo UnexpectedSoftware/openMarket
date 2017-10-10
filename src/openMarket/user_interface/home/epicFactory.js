@@ -1,11 +1,10 @@
 import * as homeActions from "./action";
 import moment from "moment";
+import container from '../../infrastructure/dic/Container'
 
-const startDate = moment().day(-7);
+const calculationDays = container.environment.config.maxDaysStatisticsCount;
+const startDate = moment().subtract(calculationDays, 'days');
 const endDate = moment();
-
-/*const startDate = moment('2004-12-31 00:00:00','YYYY-MM-DD HH:mm:ss');
-const endDate = moment('2005-01-06 23:59:59','YYYY-MM-DD HH:mm:ss');*/
 
 export const makeHomePageLoadedEpic = ordersStatisticsUseCase => action$ =>
   action$
