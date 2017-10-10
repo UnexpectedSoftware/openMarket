@@ -1,0 +1,80 @@
+@import "../../../node_modules/font-awesome/css/font-awesome.css";
+@import "../../../node_modules/react-table/react-table.css";
+@import '../../../node_modules/react-datepicker/dist/react-datepicker.css';
+@import '../../../node_modules/rc-menu/assets/index.css';
+@import "./style/settings/settings.scss";
+@import "./style/generics/normalize.scss";
+@import "./style/utils/mixins/transition.scss";
+@import "./style/utils/mixins/border-radius.scss";
+@import "./style/utils/mixins/container-fluid";
+@import "./style/components/button.scss";
+@import "./style/components/input.scss";
+@import "./style/components/textarea.scss";
+@import "./style/components/forms.scss";
+@import "./style/components/table.scss";
+@import "./style/components/calendar.scss";
+@import "./style/components/navbar.scss";
+@import "./style/components/modal.scss";
+
+body {
+  position: relative;
+  color: $c-font;
+  height: 100vh;
+  background-color: $c-white;
+  font-family: $f-family;
+  // overflow-y: hidden;
+  font-size: 1.4rem;
+}
+
+h1 {
+  color: $c-white;
+  font-size: 2.6rem;
+  padding: $sp-base;
+  background-color: $c-primary-darkest;
+}
+
+h2 {
+  color: $c-base;
+  font-size: 2.2rem;
+  margin: $sp-base/2 0 $sp-base*1.5;
+  border-bottom: 1px solid $c-base;
+  padding-bottom: $sp-base/4;
+}
+
+h3 {
+  color: $c-base;
+  font-size: 1.9rem;
+  margin: $sp-base/2 0 $sp-base*1.5;
+
+  .button {
+	margin-top: -$sp-base/2;
+  }
+}
+
+.header {
+  background-color: $c-primary-lightest;
+  border-bottom: 1px solid $c-primary-lightest;
+}
+
+p {
+  margin-bottom: $sp-base;
+}
+
+li {
+  list-style: none;
+}
+
+a {
+  color: $c-primary;
+  text-decoration: none;
+}
+
+a:hover {
+  opacity: 1;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.container {
+  @include container-fluid();
+}

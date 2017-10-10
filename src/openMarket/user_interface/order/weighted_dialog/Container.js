@@ -25,11 +25,23 @@ class Container extends Component {
     const { weightedDialog } = this.props;
     if(!weightedDialog.visible) return null;
     return (
-      <div className="dialog-modal">
-        <h1>Weight!</h1>
-        <WeightedDialogForm
-          onSubmit={this.handleSubmit}
-        />
+      <div className="dialog-Modal">
+        <div className="dialog-ModalControlX">
+          <div className="dialog-ModalControlY">
+            <div className="dialog-ModalContainer">
+              <div className="dialog-Modal-header">
+                <h2>Weight! <a className="close" onClick={this.closeDialog}><i className="fa fa-times"></i></a></h2>
+
+              </div>
+              <div className="dialog-Modal-main">
+                <WeightedDialogForm
+                  onSubmit={this.handleSubmit}
+                />
+                <input type="button" value="CLOSE" onClick={this.closeDialog}/>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

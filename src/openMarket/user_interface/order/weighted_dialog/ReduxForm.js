@@ -40,7 +40,10 @@ class ReduxForm extends Component {
     return (
       <form onKeyPress={event => {if (event.which === 13 /* Enter */) { event.preventDefault();}}}>
         <Field name="quantity" component={this.renderInput} type="text" placeholder="Quantity" validate={[required, greaterThan0, number]}/>
-        <a onClick={this.save}>Save</a>
+        <a className="button" onClick={this.save}>
+          <i className="fa fa-floppy-o" />
+          Save
+        </a>
       </form>
     );
   }
