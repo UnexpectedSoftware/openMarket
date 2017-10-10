@@ -48,7 +48,6 @@ const fetchStatusesEpic = action$ =>
 
 const fetchProductEpic = action$ =>
   action$.ofType(newProductActions.EDIT_PRODUCT_FETCH)
-    .do(action => console.log("action:",action))
     .flatMap(action => OpenMarket.get("products_find_use_case").findProductByBarcode({barcode: action.payload}))
     .map(product => newProductActions.editProductFetched({
       id: product.id,

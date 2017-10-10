@@ -14,9 +14,13 @@ export const makeNewOrderProductFetchEpic = findProductUseCase => resetForm => a
     );
 
 export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => action$ =>
-  action$.ofType(newOrderActions.NEW_ORDER_SAVE)
-    .flatMap(action => orderCreateUseCase.createOrder({lines:action.order.lines}))
-    .map(savedOrder => newOrderActions.newOrderSaved(savedOrder))
+  action$
+    .filter(action => action.type === newOrderActions.NEW_ORDER_SAVE)
+    .flatMap(action =>
+      orderCreateUseCase.createOrder({lines:action.order.lines})
+        .map(savedOrder => newOrderActions.newOrderSaved(savedOrder))
+        .catch(error => Rx.Observable.of(newOrderActions.newOrderErrorsFound(error.message)))
+    )
     .mergeMap(action => Rx.Observable.of(resetForm('new_order'),action));
 
 export const makePrinterDialogEpic = orderPrinterService => action$ =>

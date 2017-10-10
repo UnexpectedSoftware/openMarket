@@ -19,6 +19,9 @@ export default class Order {
    * @type {Date}
    * */
     this._createdAt = date;
+
+    if(0 === lines.length || undefined === lines || null === lines) throw Error("Lines must not be empty",id);
+
     /**
      *
      * @type {Array.<Line>}
