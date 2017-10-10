@@ -64,6 +64,22 @@ export default class MysqlOrderRepository extends OrderRepository{
     return super.update({id, lines});
   }
 
+  /**
+   *
+   * @param {date} startDate
+   * @param {date} endDate
+   */
+  calculateTotalAmountByDays({startDate, endDate}){
+    return this._connection.execute({
+      query: 'SELECT SUM(o.total) as total, DATE_FORMAT(o.created_at,\'%d/%m/%Y\') as createdAt, min(o.created_at) FROM `order` o WHERE '+
+      '(o.created_at BETWEEN ? AND ?) group by createdAt ORDER BY min(o.created_at) ASC',
+      params: [startDate.format('YYYY-MM-DD HH:mm:ss').toString(), endDate.format('YYYY-MM-DD HH:mm:ss').toString()]
+    })
+      .toArray();
+  }
+
+
+
   save({order}) {
     return this._connection.getPool()
       .flatMap(pool =>

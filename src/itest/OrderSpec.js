@@ -2,6 +2,7 @@ import la from 'lazy-ass';
 import openMarket from '../openMarket/application/index';
 import moment from "moment";
 import { expect } from 'chai';
+import sinon from 'sinon';
 import RxLocalStorage from "../openMarket/infrastructure/service/RxLocalStorage";
 import {ORDERS_KEY, PRODUCTS_KEY} from "../openMarket/infrastructure/service/LocalStorageKeys";
 
@@ -15,14 +16,12 @@ import {ORDERS_KEY, PRODUCTS_KEY} from "../openMarket/infrastructure/service/Loc
  */
 const observableCreateOrder = openMarket.get('orders_create_use_case');
 const observableFindOrders = openMarket.get('orders_list_all_use_case');
+const orderStatisticsUseCase = openMarket.get('orders_statistics_use_case');
 /**
  *
  * @type {FindProduct}
  */
 const observableFindProducts = openMarket.get('products_find_use_case');
-
-const noop = () => {};
-const crash = (err) => { throw err; };  // rethrow
 
 afterEach(function () {
   RxLocalStorage.saveLocalStorage({
@@ -65,26 +64,25 @@ describe('Order create use case', () => {
       name: "Coca-Cola",
       price: 0.55,
       quantity:5}];
+    const spyNext = sinon.spy();
+
     observableCreateOrder.createOrder({
       lines: lines
     })
       .flatMap(saved => observableFindProducts.findProductByBarcode({ barcode: '0001' }))
-      .subscribe((product) => {
-        expect(product.stock).to.equal(95);
-        done();
-      },crash, noop);
+      .subscribe(
+        (product) => {
+          expect(product.stock).to.equal(95);
+          spyNext();
+        },
+        (error) => done(new Error(error)),
+        () => {
+          expect(spyNext.called).to.be.true;
+          done();
+        }
+      );
   });
 
-  it('has no errors and complete', (done) => {
-    const lines = [{
-      barcode: "0001",
-      name: "Coca-Cola",
-      price: 0.55,
-      quantity:1}];
-    observableCreateOrder.createOrder({
-      lines: lines
-    }).subscribe(noop, crash, done);
-  });
 });
 
 describe('Order find use case by dates', () => {
@@ -106,36 +104,50 @@ describe('Order find use case by dates', () => {
 
     const givenStartDate = moment('01/07/2017 17:53:04','DD/MM/YYYY HH:mm:ss');
     const givenEndDate = moment('01/07/2017 23:59:59','DD/MM/YYYY HH:mm:ss');
-    let count = 0;
-    const onNumber = (data) => { count = data.length; };
+
+    const spyNext = sinon.spy();
     observableFindOrders.findAllByDates({
       startDate: givenStartDate,
       endDate: givenEndDate,
       limit: 10,
       offset: 0
     })
-      .subscribe(onNumber, noop, () => {
-        la(count === 1, `got ${count} orders`);
-        done();
-      });
+      .subscribe(
+        (orderArray) => {
+          expect(orderArray[0]).to.deep.equals({id:'01',createdAt:'01/07/2017 17:53:04',total:0.55});
+          spyNext();
+        },
+        (error) => done(new Error(error)),
+        () => {
+          expect(spyNext.called).to.be.true;
+          done();
+        }
+      );
 
   });
   it('shouldn\'t find any order between given dates', (done) => {
 
     const givenStartDate = moment('01/06/2017 17:53:04','DD/MM/YYYY HH:mm:ss');
     const givenEndDate = moment('02/06/2017 17:53:04','DD/MM/YYYY HH:mm:ss');
-    let count = 0;
-    const onNumber = (data) => { count = data.length; };
+    const spyNext = sinon.spy();
+
     observableFindOrders.findAllByDates({
       startDate: givenStartDate,
       endDate: givenEndDate,
       limit: 10,
       offset: 0
     })
-      .subscribe(onNumber, noop, () => {
-        la(count === 0, `got ${count} orders`);
-        done();
-      });
+      .subscribe(
+        (orderArray) => {
+          expect(orderArray).to.be.empty;
+          spyNext();
+        },
+        (error) => done(new Error(error)),
+        () => {
+          expect(spyNext.called).to.be.true;
+          done();
+        }
+      );
 
   });
 
@@ -143,20 +155,124 @@ describe('Order find use case by dates', () => {
 
     const givenStartDate = moment('01/07/2017 17:53:04','DD/MM/YYYY HH:mm:ss');
     const givenEndDate = moment('31/07/2017 17:53:04','DD/MM/YYYY HH:mm:ss');
-    let count = 0;
-    const onNumber = (data) => { count = data.length; };
+    const spyNext = sinon.spy();
+
     observableFindOrders.findAllByDates({
       startDate: givenStartDate,
       endDate: givenEndDate,
       limit: 1,
       offset: 1
     })
-      .subscribe(onNumber, noop, () => {
-        la(count === 1, `got ${count} orders`);
-        done();
-      });
+      .subscribe(
+        (orderArray) => {
+          expect(orderArray).to.have.lengthOf(1);
+          spyNext();
+        },
+        (error) => done(new Error(error)),
+        () => {
+          expect(spyNext.called).to.be.true;
+          done();
+        }
+      );
 
   });
 
 
 });
+
+
+describe('Order statistics', () => {
+  describe('when calculate total amount by days', () => {
+
+    beforeEach(function () {
+      const data = [
+        {
+          "_id": "01",
+          "_createdAt": "01/07/2017 13:53:04",
+          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
+          "_total": 0.55
+        },
+        {
+          "_id": "01",
+          "_createdAt": "01/07/2017 14:53:04",
+          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
+          "_total": 0.55
+        },
+        {
+          "_id": "01",
+          "_createdAt": "01/07/2017 17:53:04",
+          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
+          "_total": 0.55
+        },
+        {
+          "_id": "01",
+          "_createdAt": "01/07/2017 19:53:04",
+          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
+          "_total": 0.55
+        },
+        {
+          "_id": "01",
+          "_createdAt": "02/07/2017 17:53:04",
+          "_lines": [{"barcode": "0002", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
+          "_total": 0.55
+        },
+        {
+          "_id": "01",
+          "_createdAt": "02/07/2017 17:53:04",
+          "_lines": [{"barcode": "0002", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
+          "_total": 0.55
+        },
+        {
+          "_id": "01",
+          "_createdAt": "03/07/2017 17:53:04",
+          "_lines": [{"barcode": "0003", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
+          "_total": 0.55
+        },
+        {
+          "_id": "01",
+          "_createdAt": "03/07/2017 17:53:04",
+          "_lines": [{"barcode": "0003", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
+          "_total": 0.55
+        },
+        {
+          "_id": "01",
+          "_createdAt": "03/07/2017 17:53:04",
+          "_lines": [{"barcode": "0003", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
+          "_total": 0.55
+        }
+      ];
+      RxLocalStorage.saveLocalStorage({
+        localStorageKey: ORDERS_KEY,
+        value: data
+      }).subscribe();
+    });
+
+
+    it('should return total amount by days', (done) => {
+
+      const givenStartDate = moment('01/07/2017 00:00:00', 'DD/MM/YYYY HH:mm:ss');
+      const givenEndDate = moment('04/07/2017 23:59:59', 'DD/MM/YYYY HH:mm:ss');
+      const spyNext = sinon.spy();
+
+      orderStatisticsUseCase.calculateTotalAmountByDays({
+        startDate: givenStartDate,
+        endDate: givenEndDate
+      })
+        .subscribe(
+          (orderArray) => {
+            expect(orderArray).to.have.lengthOf(3);
+            expect(orderArray[0].total).to.be.equals(2.2);
+            expect(orderArray[1].total).to.be.equals(1.1);
+            expect(orderArray[2].total).to.be.equals(1.65);
+            spyNext();
+          },
+          (error) => done(new Error(error)),
+          () => {
+            expect(spyNext.called).to.be.true;
+            done();
+          }
+        );
+    });
+  });
+});
+

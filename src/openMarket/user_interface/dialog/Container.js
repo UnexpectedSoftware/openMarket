@@ -19,14 +19,20 @@ class Container extends Component {
     const { dialog } = this.props;
     if(!dialog.visible) return null;
     return (
-      <div className="dialog-modal">
-        <h1>Warning!</h1>
-        <p>
-          { dialog.message }
-        </p>
-
-        <input type="button" value="CLOSE" onClick={this.closeDialog}/>
-
+      <div className="dialog-Modal">
+        <div className="dialog-ModalControlX">
+          <div className="dialog-ModalControlY">
+            <div className="dialog-ModalContainer dialog-ModalAlert">
+              <div className="dialog-Modal-header">
+                <h2>Warning!<a className="close" onClick={this.closeDialog}><i className="fa fa-times"></i></a></h2>
+              </div>
+              <div className="dialog-Modal-main">
+                <p>{ dialog.message }</p>
+                <input type="button" value="CLOSE" onClick={this.closeDialog}/>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }

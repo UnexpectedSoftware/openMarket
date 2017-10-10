@@ -11,4 +11,8 @@ export default class OrdersStatistics {
     return this._productRepository.calculateTotalAmount({startDate, endDate});
   }
 
+  calculateTotalAmountByDays({startDate, endDate}) {
+    return this._productRepository.calculateTotalAmountByDays({startDate, endDate});
+  }
+
 }

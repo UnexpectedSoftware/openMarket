@@ -14,6 +14,16 @@ class ReduxForm extends Component {
     </div>
   );
 
+  renderTextarea = field => (
+    <div>
+      <label htmlFor={field.placeholder}>{field.placeholder}</label>
+      <textarea {...field.input} />
+      {field.meta.touched &&
+      field.meta.error &&
+      <span className="error">{field.meta.error}</span>}
+    </div>
+  );
+
   renderBarcode = field => {
     const { edition, loadProduct } = this.props;
     return (
@@ -35,7 +45,7 @@ class ReduxForm extends Component {
     if(!edition || (edition &&  showUpdateFields)) return (
       <div>
         <Field name="name" component={this.renderInput} type="text" placeholder="Name" validate={required}/>
-        <Field name="description" component={this.renderInput} type="textarea" placeholder="Description"/>
+        <Field name="description" component={this.renderTextarea} placeholder="Description"/>
         <Field name="price" component={this.renderInput} type="text" placeholder="Price" validate={[required, greaterThan0, number]}/>
         <Field name="basePrice" component={this.renderInput} type="text" placeholder="Base Price" validate={[required, greaterThan0, number]}/>
         <Field name="stock" component={this.renderInput} type="text" placeholder="Stock" validate={[required, greaterOrEqualsThan0, number]}/>
@@ -43,23 +53,30 @@ class ReduxForm extends Component {
         <Field name="weighted" component={this.renderInput} type="checkbox" placeholder="Weighted"/>
           <div>
           <label htmlFor="categoryId">Category</label>
-        <Field name="categoryId" component="select">
-          <option value="">Select a category...</option>
-          {categoriesList.map(category =>
-            <option value={category.id} key={category.id}>{category.name}</option>
-          )}
-        </Field>
+            <div className="SelectContainer">
+              <Field name="categoryId" component="select">
+                <option value="">Select a category...</option>
+                {categoriesList.map(category =>
+                  <option value={category.id} key={category.id}>{category.name}</option>
+                )}
+              </Field>
+            </div>
             {edition &&
+            <div className="SelectContainer">
             <Field name="status" component="select">
               <option value="">Select an status...</option>
               {statusesList.map(status =>
                 <option value={status.key} key={status.key}>{status.value}</option>
               )}
             </Field>
+            </div>
             }
         </div>
 
-        <button type="submit" disabled={submitting}>Save</button>
+        <button type="submit" disabled={submitting}>
+          <i className="fa fa-floppy-o" />
+          Save
+        </button>
       </div>
     );
   }

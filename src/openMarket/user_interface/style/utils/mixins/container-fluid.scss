@@ -1,0 +1,11 @@
+@mixin container-fluid {
+  width: 100%;
+  display: block;
+  max-width: $max-layout;
+  margin: 0 auto;
+  padding: $sp-base /2;
+}
+
+.container-fluid {
+  @include container-fluid();
+}
