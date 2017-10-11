@@ -19,6 +19,9 @@ export default class Order {
    * @type {Date}
    * */
     this._createdAt = date;
+
+    if(0 === lines.length || undefined === lines || null === lines) throw Error("Lines must not be empty",id);
+
     /**
      *
      * @type {Array.<Line>}
@@ -51,7 +54,8 @@ export default class Order {
   }
 
   _getTotalAmount() {
-    return this._lines.reduce((acc, element) => acc + (element.price * element.quantity) ,0);
+    return this._lines.reduce((acc, element) =>
+      ((parseFloat(acc) + (parseFloat(element.price) * parseFloat(element.quantity))).toFixed(2))*100/100 ,0);
   }
 
 }

@@ -9,6 +9,7 @@ export const NEW_ORDER_PRODUCT_FETCHED = 'NEW_ORDER_PRODUCT_FETCHED';
 export const NEW_ORDER_PRODUCT_QUANTITY_CHANGE = 'NEW_ORDER_PRODUCT_QUANTITY_CHANGE';
 export const NEW_ORDER_PRODUCT_DELETED = 'NEW_ORDER_PRODUCT_DELETED';
 export const NEW_ORDER_PRODUCT_NOT_FOUND = 'NEW_ORDER_PRODUCT_NOT_FOUND';
+export const NEW_ORDER_ERRORS_FOUND = 'NEW_ORDER_ERRORS_FOUND';
 export const NEW_ORDER_CLOSED = 'NEW_ORDER_CLOSED';
 export const PRINT_ORDER_BUTTON_CLICKED = 'PRINT_ORDER_BUTTON_CLICKED';
 export const PRINT_ORDER_FINISHED = 'PRINT_ORDER_FINISHED';
@@ -28,5 +29,5 @@ export const newOrderProductNotFound = payload => ({ type: NEW_ORDER_PRODUCT_NOT
 export const newOrderClosed = () => ({ type: NEW_ORDER_CLOSED});
 export const printOrderButtonClicked = payload => ({ type: PRINT_ORDER_BUTTON_CLICKED, payload});
 export const printOrderFinished = () => ({ type: PRINT_ORDER_FINISHED});
-
+export const newOrderErrorsFound = payload => ({ type: NEW_ORDER_ERRORS_FOUND,payload});
 

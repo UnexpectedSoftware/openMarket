@@ -7,12 +7,6 @@ class Container extends Component {
 
   constructor(props,context) {
     super(props, context);
-    this.closeDialog = this.closeDialog.bind(this);
-  }
-
-  closeDialog(e){
-    const { dialogHide } = this.props;
-    dialogHide();
   }
 
   handleSubmit = (values) => {
@@ -30,14 +24,12 @@ class Container extends Component {
           <div className="dialog-ModalControlY">
             <div className="dialog-ModalContainer">
               <div className="dialog-Modal-header">
-                <h2>Weight! <a className="close" onClick={this.closeDialog}><i className="fa fa-times"></i></a></h2>
-
+                <h2>Weight!</h2>
               </div>
               <div className="dialog-Modal-main">
                 <WeightedDialogForm
                   onSubmit={this.handleSubmit}
                 />
-                <input type="button" value="CLOSE" onClick={this.closeDialog}/>
               </div>
             </div>
           </div>

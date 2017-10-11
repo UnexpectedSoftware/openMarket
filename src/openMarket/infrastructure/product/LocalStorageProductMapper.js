@@ -48,7 +48,8 @@ export default class LocalStorageProductMapper extends ObjectMapper{
         "_stock":product.stock,
         "_stockMin":product.stockMin,
         "_categoryId":product.category.id,
-        "_status":product.status
+        "_status":product.status,
+        "_weighted":product.isWeighted
       }));
   }
 }
