@@ -23,10 +23,22 @@ export default class CreateOrder {
    * @returns {Observable.<Order>}
    */
   createOrder({lines}) {
-    return Observable.of(this._orderFactory.createWith({lines}))
+      return this._buildOrder({lines})
       .flatMap(order => this._orderRepository.save({order}))
       .flatMap(order => this._subtrackStock({order}));
 
+  }
+
+  _buildOrder({lines})  {
+    return Observable.create(observer => {
+      try {
+        const order = this._orderFactory.createWith({lines});
+        observer.next(order);
+      } catch (error) {
+        observer.error(error);
+      }
+      observer.complete();
+    })
   }
 
   _subtrackStock({order}){

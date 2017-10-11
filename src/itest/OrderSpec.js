@@ -57,30 +57,52 @@ describe('Order create use case', () => {
       })
     ).subscribe();
   });
+  describe('When save an order', () => {
+    it('should create a new order and then would be 2 Orders on DB', (done) => {
+      const lines = [{
+        barcode: "0001",
+        name: "Coca-Cola",
+        price: 0.55,
+        quantity: 5
+      }];
+      const spyNext = sinon.spy();
 
-  it('should create a new order and then would be 2 Orders on DB', (done) => {
-    const lines = [{
-      barcode: "0001",
-      name: "Coca-Cola",
-      price: 0.55,
-      quantity:5}];
-    const spyNext = sinon.spy();
+      observableCreateOrder.createOrder({
+        lines: lines
+      })
+        .flatMap(saved => observableFindProducts.findProductByBarcode({barcode: '0001'}))
+        .subscribe(
+          (product) => {
+            expect(product.stock).to.equal(95);
+            spyNext();
+          },
+          (error) => done(new Error(error)),
+          () => {
+            expect(spyNext.called).to.be.true;
+            done();
+          }
+        );
+    });
+  });
 
-    observableCreateOrder.createOrder({
-      lines: lines
-    })
-      .flatMap(saved => observableFindProducts.findProductByBarcode({ barcode: '0001' }))
-      .subscribe(
-        (product) => {
-          expect(product.stock).to.equal(95);
-          spyNext();
-        },
-        (error) => done(new Error(error)),
-        () => {
-          expect(spyNext.called).to.be.true;
-          done();
-        }
-      );
+  describe('When save an order with empty lines', () => {
+    it('should throw an exception', (done) => {
+      const lines = [];
+      observableCreateOrder.createOrder({
+        lines: lines
+      })
+        .subscribe(
+          (data) => {
+            done(new Error('shouldnt be called'))
+          },
+          (error) => {
+            done();
+          },
+          () => {
+            done(new Error('shouldnt be called'))
+          }
+        );
+    });
   });
 
 });
