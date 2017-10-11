@@ -20,7 +20,7 @@ export const addProduct = ({ lines, product, quantity }) => {
     name: product.name,
     price: product.price,
     quantity: productQuantity,
-    subtotal: (parseFloat(productQuantity) * parseFloat(product.price))*100/100
+    subtotal: ((parseFloat(productQuantity) * parseFloat(product.price)).toFixed(2))*100/100
   });
 
   return {
@@ -36,7 +36,7 @@ export const updateQuantity = ({lines, barcode, quantity}) => {
   let newLines = lines.map(currentProduct => {
     if(!isNaN(quantity) && currentProduct.barcode === barcode ) {
       currentProduct.quantity = quantity;
-      currentProduct.subtotal = (parseFloat(quantity) * parseFloat(currentProduct.price))*100/100;
+      currentProduct.subtotal = ((parseFloat(quantity) * parseFloat(currentProduct.price)).toFixed(2))*100/100;
     }
     return currentProduct;
   });
