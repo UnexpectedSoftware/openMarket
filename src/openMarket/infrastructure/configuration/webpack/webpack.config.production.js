@@ -57,38 +57,16 @@ export default validate(merge(baseConfig, {
   },
 
   plugins: [
-    /**
-     * Assign the module and chunk ids by occurrence count
-     * Reduces total file size and is recommended
-     */
+
     new webpack.optimize.OccurrenceOrderPlugin(),
 
-    /**
-     * Create global constants which can be configured at compile time.
-     *
-     * Useful for allowing different behaviour between development builds and
-     * release builds
-     *
-     * NODE_ENV should be production so that modules do not perform certain
-     * development checks
-     */
+
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify('production')
     }),
 
-    /**
-     * Babli is an ES6+ aware minifier based on the Babel toolchain (beta)
-     */
-    new BabiliPlugin({
-      // Disable deadcode until https://github.com/babel/babili/issues/385 fixed
-      deadcode: false,
-    }),
-
     new ExtractTextPlugin('style.css', { allChunks: true }),
 
-    /**
-     * Dynamically generate index.html page
-     */
     new HtmlWebpackPlugin({
       filename: 'app.html',
       template: 'src/openMarket/user_interface/app.html',
@@ -96,6 +74,5 @@ export default validate(merge(baseConfig, {
     })
   ],
 
-  // https://github.com/chentsulin/webpack-target-electron-renderer#how-this-module-works
   target: 'electron-renderer'
 }));
