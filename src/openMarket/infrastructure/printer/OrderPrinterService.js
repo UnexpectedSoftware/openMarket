@@ -5,7 +5,7 @@ const MAX_CHARACTERS = 19;
 export default class OrderPrinterService {
 
   constructor({ printerConnection }){
-    this._printer = printerConnection;
+    this._printer = printerConnection.printer;
   }
 
   /**
