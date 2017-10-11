@@ -111,17 +111,6 @@ export default class LocalStorageProductRepository extends ProductRepository {
 
   /**
    *
-   * @param {string} id
-   * @returns {Observable.<Product>}
-   */
-  findById({ id }) {
-    return RxLocalStorage.loadLocalStorage({ localStorageKey: this._localStorageKey })
-            .flatMap(products => Observable.from(products))
-            .flatMap(jsonProduct => this._productMapper.toDomain({ persistenceProduct:jsonProduct }))
-            .filter(product => product.id === id);
-  }
-  /**
-   *
    * @param {string} barcode
    * @returns {Observable.<Product>}
    */

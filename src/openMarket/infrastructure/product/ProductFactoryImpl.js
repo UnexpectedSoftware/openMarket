@@ -31,21 +31,21 @@ export default class ProductFactoryImpl extends ProductFactory {
      * @param {number} stockMin
      * @param {imageUrl} imageUrl
      * @param {Category} category
+     * @param {string} status
      * @returns {Product}
      */
-  createWith({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category }) {
+  createWith({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status = ProductStatus.ENABLED} = {}) {
     return new Product({
-      id: this._identity.generate(),
-      barcode: barcode,
-      name: name,
-      description: description,
-      price: price,
-      basePrice: basePrice,
-      stock: stock,
-      stockMin: stockMin,
-      weighted: weighted,
-      category: category,
-      status: ProductStatus.ENABLED
+      barcode,
+      name,
+      description,
+      price,
+      basePrice,
+      stock,
+      stockMin,
+      weighted,
+      category,
+      status
     });
   }
 

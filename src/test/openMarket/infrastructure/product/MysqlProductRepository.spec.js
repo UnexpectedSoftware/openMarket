@@ -15,7 +15,7 @@ describe('Mysql Product Repository', () => {
   describe('when save product', () => {
     it('should return an Observable with one element of null value', (done) => {
 
-      const givenProduct = productFactory.createWithId({
+      const givenProduct = productFactory.createWith({
         id: 'test',
         barcode: '4242',
         name: 'Odin',
@@ -65,7 +65,7 @@ describe('Mysql Product Repository', () => {
         execute: ({}) => Rx.Observable.of({},{})
       };
 
-      const product = productFactory.createWithId({
+      const product = productFactory.createWith({
         id: 'test',
         barcode: '4242',
         name: '',
@@ -115,7 +115,7 @@ describe('Mysql Product Repository', () => {
         execute: () => Rx.Observable.of({},{})
       };
 
-      const product = productFactory.createWithId({
+      const product = productFactory.createWith({
         id: 'test',
         barcode: '4242',
         name: 'FORLAYO',
@@ -169,7 +169,7 @@ describe('Mysql Product Repository', () => {
         execute: () => Rx.Observable.of({},{})
       };
 
-      const product = productFactory.createWithId({
+      const product = productFactory.createWith({
         id: 'test',
         barcode: '4242',
         name: 'FORLAYO',
@@ -223,7 +223,7 @@ describe('Mysql Product Repository', () => {
         execute: () => Rx.Observable.of({})
       };
 
-      const product = productFactory.createWithId({
+      const product = productFactory.createWith({
         id: 'test',
         barcode: '4242',
         name: 'FORLAYO',

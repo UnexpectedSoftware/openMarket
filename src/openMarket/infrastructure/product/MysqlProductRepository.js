@@ -70,10 +70,6 @@ export default class MysqlProductRepository extends ProductRepository {
       .map(result => null)
   }
 
-  findById({id}) {
-    return super.findById({id});
-  }
-
   /**
    *
    * @param {string} barcode
