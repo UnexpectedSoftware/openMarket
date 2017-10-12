@@ -21,7 +21,9 @@ export default class MysqlProductRepository extends ProductRepository {
    */
   findAll({productFilter}){
     return this._connection.execute({
-        query: 'SELECT * FROM `product` LIMIT ? OFFSET ?',
+        query: 'SELECT p.barcode,p.name,p.description,p.stock_min,p.price,p.stock,p.base_price,p.status,p.weighted,' +
+        'c.id as category_id,c.name as category_name FROM product p, category c WHERE p.category_id=c.id' +
+        ' LIMIT ? OFFSET ?',
         params: [productFilter.limit,productFilter.offset]
       })
       .flatMap(row => this._productMapper.toDomain({ persistenceProduct:row }))
