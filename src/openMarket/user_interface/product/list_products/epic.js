@@ -1,5 +1,6 @@
 import * as listProductsActions from "./action";
 import * as Rx from "rxjs";
+import {push} from 'react-router-redux';
 import OpenMarket from "../../../application/index";
 
 const fetchProductsEpic = action$ =>
@@ -32,11 +33,38 @@ const pageChangedEpic = action$ =>
       offset: action.payload.offset
     }));
 
+const listProductsDetailEpic = action$ =>
+  action$.ofType(listProductsActions.LIST_PRODUCTS_DETAIL)
+    .flatMap(action => OpenMarket.get("products_find_use_case").findProductByBarcode({
+      barcode: action.payload
+    }))
+    .map(product => ({
+      barcode:  product.barcode,
+      basePrice: product.basePrice,
+      description: product.description,
+      name: product.name,
+      price: product.price,
+      status: product.status,
+      stock: product.stock,
+      stockMin: product.stockMin,
+      weighted: product.isWeighted,
+      categoryId: product.category.id
+    }))
+    .flatMap(product =>
+      Rx.Observable.of(
+        listProductsActions.listProductsDetailLoaded(product),
+        push({
+          pathname: '/create_product',
+          search: '?edition=true'
+        })
+      )
+    );
 
 
 export default action$ =>
   Rx.Observable.merge(
     fetchProductsEpic(action$),
     pageLoadedEpic(action$),
-    pageChangedEpic(action$)
+    pageChangedEpic(action$),
+    listProductsDetailEpic(action$)
   ).do(data=>null,error=>console.log(error));

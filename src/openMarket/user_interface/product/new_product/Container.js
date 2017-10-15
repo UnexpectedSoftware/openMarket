@@ -11,11 +11,6 @@ class Container extends Component {
     newProductSave({...values,id:initialValues.id});
   }
 
-  componentWillMount() {
-    const { productPageLoaded } = this.props;
-    productPageLoaded();
-  }
-
   componentWillUnmount() {
     const { productClose } = this.props;
     productClose();
@@ -27,13 +22,12 @@ class Container extends Component {
   }
 
   render() {
-    const { categories, edit, initialValues, showUpdateFields, statuses } = this.props;
+    const { categories, edition, initialValues, statuses } = this.props;
     return (
       <div className="container-fluid">
-        <h2>Let's {edit ? 'edit a':'create a new'} product!</h2>
+        <h2>Let's {edition ? 'edit a':'create a new'} product!</h2>
         <NewProductReduxForm
-          edition={edit}
-          showUpdateFields={showUpdateFields}
+          edition={edition}
           loadProduct={this.loadProduct}
           onSubmit={this.handleSubmit}
           categoriesList={categories}

@@ -8,38 +8,44 @@ class Container extends Component {
   constructor(props,context) {
     super(props, context);
     this.handlePageChanged = this.handlePageChanged.bind(this);
+    this.renderDetailProduct = this.renderDetailProduct.bind(this);
     this.columns = [{
       Header: 'Barcode',
       accessor: 'barcode',
-      filterable: false
+      show: false
     },
       {
         Header: 'Name',
-        accessor: 'name',
-        filterMethod: (filter, row) => (row[filter.id].includes(filter.value))
+        accessor: 'name'
       },
       {
         Header: 'Price',
-        accessor: 'price',
-        filterable: false
+        accessor: 'price'
       },
 
       {
         Header: 'Stock',
-        accessor: 'stock',
-        filterable: false
+        accessor: 'stock'
       },
       {
         Header: 'Category',
-        accessor: 'category.name',
-        filterable: false
+        accessor: 'category.name'
       },
       {
         Header: 'Status',
-        accessor: 'status',
-        filterable: false
+        accessor: 'status'
+      },
+      {
+        Header: 'Actions',
+        accessor: 'actions',
+        Cell: this.renderDetailProduct
       }
     ];
+  }
+
+  renderDetailProduct (data) {
+    const { listProductsDetail } = this.props;
+    return (<a onClick={(e) => {listProductsDetail(data.row.barcode);}}>View</a>);
   }
 
   handlePageChanged (pageIndex) {

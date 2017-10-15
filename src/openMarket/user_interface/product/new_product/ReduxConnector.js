@@ -8,12 +8,8 @@ const selector = formValueSelector('new_product')
 
 function mapStateToProps(state, ownProps) {
   return {
-    categories: state.newProduct.categories,
-    edit: ownProps.location.pathname.includes("edit_product"),
-    initialValues: state.newProduct.initialValues,
-    barcode: selector(state, 'barcode'),
-    showUpdateFields: state.newProduct.showUpdateFields,
-    statuses: state.newProduct.statuses
+    ...state.newProduct,
+    barcode: selector(state, 'barcode')
   };
 }
 
