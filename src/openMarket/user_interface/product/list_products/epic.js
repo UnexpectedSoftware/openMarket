@@ -2,6 +2,7 @@ import * as listProductsActions from "./action";
 import * as Rx from "rxjs";
 import {push} from 'react-router-redux';
 import OpenMarket from "../../../application/index";
+import {defaultLimit, defaultOffset} from "../../order/list_orders/model";
 
 const fetchProductsEpic = action$ =>
   action$.ofType(listProductsActions.LIST_PRODUCTS_FETCH)
@@ -61,10 +62,60 @@ const listProductsDetailEpic = action$ =>
     );
 
 
+const listProductsFilterChangedEpic = action$ =>
+  action$.debounceTime(300)
+    .ofType(listProductsActions.LIST_PRODUCTS_FILTER_CHANGED)
+    .flatMap(action => Rx.Observable.from(action.payload)
+      .map(filter => {
+        return (filter.id === 'barcode')?
+          listProductsActions.listProductsBarcodeFilterChanged(filter.value) :
+          listProductsActions.listProductsNameFilterChanged(filter.value)
+      })
+      .defaultIfEmpty(listProductsActions.listProductsFilterReseted())
+    );
+
+const listProductsFilterResetedEpic = action$ =>
+  action$.ofType(listProductsActions.LIST_PRODUCTS_FILTER_RESETED)
+    .map(action => listProductsActions.listProductsFetch({
+      limit: defaultLimit,
+      offset: defaultOffset,
+      page: 0
+    }));
+
+const listProductsBarcodeFilterChangedEpic = action$ =>
+  action$.ofType(listProductsActions.LIST_PRODUCTS_BARCODE_FILTER_CHANGED)
+    .flatMap(action =>
+      OpenMarket.get("products_find_use_case").findProductByBarcode({
+        barcode: action.payload
+      })
+        .toArray()
+    )
+    .map(products => ({products:products, total:1, page: 0}))
+    .map(products => listProductsActions.listProductsFetched(products));
+
+const listProductsNameFilterChangedEpic = action$ =>
+  action$.ofType(listProductsActions.LIST_PRODUCTS_NAME_FILTER_CHANGED)
+    .flatMap(action =>
+      Rx.Observable.zip(
+        OpenMarket.get("products_list_all_use_case").findAllByName({
+          name: action.payload,
+          limit: 100,
+          offset: defaultOffset
+        }),
+        OpenMarket.get("products_statistics_use_case").countProductsByName({name: action.payload}),
+        (products, total) => ({products:products, total:total, page: action.payload.page})
+      ))
+    .map(products => listProductsActions.listProductsFetched(products));
+
+
 export default action$ =>
   Rx.Observable.merge(
     fetchProductsEpic(action$),
     pageLoadedEpic(action$),
     pageChangedEpic(action$),
-    listProductsDetailEpic(action$)
+    listProductsDetailEpic(action$),
+    listProductsFilterChangedEpic(action$),
+    listProductsBarcodeFilterChangedEpic(action$),
+    listProductsNameFilterChangedEpic(action$),
+    listProductsFilterResetedEpic(action$)
   ).do(data=>null,error=>console.log(error));

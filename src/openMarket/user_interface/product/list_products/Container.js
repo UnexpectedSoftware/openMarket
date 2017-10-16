@@ -2,6 +2,7 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router';
 import ReactTable from 'react-table';
+import * as Rx from "rxjs";
 
 class Container extends Component {
 
@@ -9,36 +10,41 @@ class Container extends Component {
     super(props, context);
     this.handlePageChanged = this.handlePageChanged.bind(this);
     this.renderDetailProduct = this.renderDetailProduct.bind(this);
+    this.handleFilterChanged = this.handleFilterChanged.bind(this);
     this.columns = [{
       Header: 'Barcode',
-      accessor: 'barcode',
-      show: false
-    },
+      accessor: 'barcode'
+      },
       {
         Header: 'Name',
         accessor: 'name'
       },
       {
         Header: 'Price',
-        accessor: 'price'
+        accessor: 'price',
+        filterable: false
       },
 
       {
         Header: 'Stock',
-        accessor: 'stock'
+        accessor: 'stock',
+        filterable: false
       },
       {
         Header: 'Category',
-        accessor: 'category.name'
+        accessor: 'category.name',
+        filterable: false
       },
       {
         Header: 'Status',
-        accessor: 'status'
+        accessor: 'status',
+        filterable: false
       },
       {
         Header: 'Actions',
         accessor: 'actions',
-        Cell: this.renderDetailProduct
+        Cell: this.renderDetailProduct,
+        filterable: false
       }
     ];
   }
@@ -51,11 +57,17 @@ class Container extends Component {
   handlePageChanged (pageIndex) {
     const { listProductsPageChanged, products } = this.props;
     listProductsPageChanged({
+      type: products.filter_type,
       page: pageIndex,
       limit: products.filters.limit,
       offset: (pageIndex * products.filters.limit)
     });
 
+  }
+
+  handleFilterChanged(column, value){
+    const { listProductsFilterChanged} = this.props;
+    listProductsFilterChanged(column);
   }
 
   componentWillMount() {
@@ -74,6 +86,7 @@ class Container extends Component {
         <h2>List Products</h2>
         <ReactTable
           data={products.products}
+          showPagination={!products.filter_type}
           columns={this.columns}
           manual
           defaultPageSize={products.filters.limit}
@@ -81,6 +94,8 @@ class Container extends Component {
           pages={products.total_pages}
           onPageChange={this.handlePageChanged}
           showPageSizeOptions={false}
+          filterable
+          onFilteredChange={this.handleFilterChanged}
         />
       </div>
     );

@@ -6,7 +6,7 @@ export const state = () => {
     products: [],
     filters: {
       offset: defaultOffset,
-      limit: defaultLimit
+      limit: defaultLimit,
     },
     total_pages: 0,
     current_page: 0

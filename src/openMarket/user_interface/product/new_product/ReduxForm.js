@@ -42,7 +42,7 @@ class ReduxForm extends Component {
             <div>
               <label htmlFor="categoryId">Category</label>
               <div className="SelectContainer">
-                <Field name="categoryId" component="select">
+                <Field name="categoryId" component="select" validate={[required]}>
                   <option value="">Select a category...</option>
                   {categoriesList.map(category =>
                     <option value={category.id} key={category.id}>{category.name}</option>
