@@ -2,7 +2,6 @@ import printer from 'node-thermal-printer';
 
 export default class PrinterConnection {
   constructor() {
-    console.log(printer.getPrinters());
     printer.init({
       type: 'epson',
       interface: '/dev/usb/lp',
