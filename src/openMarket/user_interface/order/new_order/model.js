@@ -1,3 +1,5 @@
+import {number} from "../../validations/formValidations";
+
 export const state = () => {
   return {
     order: {
@@ -32,9 +34,10 @@ export const addProduct = ({ lines, product, quantity }) => {
   };
 };
 
+
 export const updateQuantity = ({lines, barcode, quantity}) => {
   let newLines = lines.map(currentProduct => {
-    if(!isNaN(quantity) && currentProduct.barcode === barcode ) {
+    if(number(quantity) === undefined && currentProduct.barcode === barcode ) {
       currentProduct.quantity = quantity;
       currentProduct.subtotal = ((parseFloat(quantity) * parseFloat(currentProduct.price)).toFixed(2))*100/100;
     }
