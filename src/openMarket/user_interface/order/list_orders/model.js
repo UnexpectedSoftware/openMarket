@@ -1,3 +1,5 @@
+import {add} from "../../../infrastructure/service/floatCalculatorService";
+
 export const defaultLimit = 20;
 export const defaultOffset = 0;
 import moment from "moment";
@@ -21,7 +23,5 @@ export const state = () => {
 export const calculateTotal = ({orders}) => {
   return orders
     .map(order => order.total)
-    .reduce((acc,element) =>{
-      return ((parseFloat(acc) + parseFloat(element)).toFixed(2)*100/100);
-  },0);
+    .reduce((acc,element) => add(acc,element),0)
 }

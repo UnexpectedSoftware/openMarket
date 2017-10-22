@@ -1,4 +1,5 @@
 import {number} from "../../validations/formValidations";
+import {add, multiply} from "../../../infrastructure/service/floatCalculatorService";
 
 export const state = () => {
   return {
@@ -15,14 +16,14 @@ export const addProduct = ({ lines, product, quantity }) => {
   let productQuantity = quantity;
   if (undefined !== repeatedProduct) {
     lines = lines.filter(currentProduct => currentProduct.barcode !== product.barcode);
-    productQuantity = parseFloat(repeatedProduct.quantity) + parseFloat(quantity);
+    productQuantity = add(repeatedProduct.quantity,quantity);
   }
   lines.push({
     barcode: product.barcode,
     name: product.name,
     price: product.price,
     quantity: productQuantity,
-    subtotal: ((parseFloat(productQuantity) * parseFloat(product.price)).toFixed(2))*100/100
+    subtotal: multiply(productQuantity,product.price)
   });
 
   return {
@@ -39,7 +40,7 @@ export const updateQuantity = ({lines, barcode, quantity}) => {
   let newLines = lines.map(currentProduct => {
     if(number(quantity) === undefined && currentProduct.barcode === barcode ) {
       currentProduct.quantity = quantity;
-      currentProduct.subtotal = ((parseFloat(quantity) * parseFloat(currentProduct.price)).toFixed(2))*100/100;
+      currentProduct.subtotal = multiply(quantity,currentProduct.price);
     }
     return currentProduct;
   });
@@ -67,7 +68,7 @@ export const removeProduct = ({lines, barcode}) =>{
 export const loadOrder  = ({order}) =>
   ({
     order:{
-      lines: order.lines.map(line => ({...line,subtotal:line.quantity * line.price})),
+      lines: order.lines.map(line => ({...line,subtotal:multiply(line.quantity,line.price)})),
       total: order.total,
       createdAt: order.createdAt
     },
@@ -77,8 +78,8 @@ export const loadOrder  = ({order}) =>
 
 const calculateTotal = ({lines}) => {
   let totalOrder = 0.0;
-  lines.forEach(product => totalOrder += parseFloat(product.quantity) * product.price);
-  return parseFloat(totalOrder.toFixed(2));
+  lines.forEach(product => totalOrder = add(totalOrder, multiply(product.quantity,product.price)));
+  return totalOrder;
 }
 
 
