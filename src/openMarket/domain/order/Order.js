@@ -2,6 +2,7 @@
  * @class Order
  */
 import moment from "moment";
+import {add, multiply} from "../../infrastructure/service/floatCalculatorService";
 export default class Order {
 
   /**
@@ -55,7 +56,7 @@ export default class Order {
 
   _getTotalAmount() {
     return this._lines.reduce((acc, element) =>
-      ((parseFloat(acc) + (parseFloat(element.price) * parseFloat(element.quantity))).toFixed(2))*100/100 ,0);
+      add(acc,multiply(element.price,element.quantity)),0);
   }
 
 }

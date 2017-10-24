@@ -4,6 +4,7 @@ import {
 } from './action';
 import {state, addProduct, updateQuantity, removeProduct, loadOrder} from './model';
 import {LIST_ORDER_DETAIL_LOADED} from "../list_orders/action";
+import { LOCATION_CHANGE } from 'react-router-redux';
 
 const initialState = state();
 
@@ -43,6 +44,9 @@ export default function reducer(state = initialState, action) {
 
     case NEW_ORDER_CLOSED:
       return initialState;
+
+    case LOCATION_CHANGE:
+      if(action.payload.action === 'POP') return initialState;
 
     default:
       return state;

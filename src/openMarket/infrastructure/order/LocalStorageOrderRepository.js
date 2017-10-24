@@ -1,6 +1,7 @@
 import OrderRepository from "../../domain/order/OrderRepository";
 import RxLocalStorage from "../service/RxLocalStorage";
 import {ORDERS_KEY} from '../service/LocalStorageKeys';
+import {add} from '../service/floatCalculatorService'
 import * as Rx from "rxjs";
 import moment from "moment";
 
@@ -67,7 +68,7 @@ export default class LocalStorageOrderRepository extends OrderRepository {
       .catch(e => Rx.Observable.of([]))
       .flatMap(ordersArray => Rx.Observable.from(ordersArray))
       .filter(order => moment(order._createdAt,"DD/MM/YYYY HH:mm:ss").isBetween(startDate, endDate, null, '[]'))
-      .reduce((acc, order) => ((parseFloat(acc) + parseFloat(order._total)).toFixed(2)*100/100),0);
+      .reduce((acc, order) => add(acc,order._total),0);
   }
 
   /**
@@ -82,7 +83,7 @@ export default class LocalStorageOrderRepository extends OrderRepository {
       .filter(order => moment(order._createdAt,"DD/MM/YYYY HH:mm:ss").isBetween(startDate, endDate, null, '[]'))
       .groupBy(order => moment(order._createdAt,"DD/MM/YYYY HH:mm:ss").format('DD/MM/YYYY'))
       .flatMap(orderGroup =>
-        orderGroup.reduce((acc, order) => ((parseFloat(acc) + parseFloat(order._total)).toFixed(2)*100/100),0)
+        orderGroup.reduce((acc, order) => add(acc,order._total),0)
           .map(total => ({total:total,createdAt:orderGroup.key}))
       )
       .toArray();

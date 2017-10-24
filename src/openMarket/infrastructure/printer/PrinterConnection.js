@@ -4,7 +4,7 @@ export default class PrinterConnection {
   constructor() {
     printer.init({
       type: 'epson',
-      interface: '/dev/usb/lp0',
+      interface: '/dev/usb/lp',
       characterSet: 'SPAIN1',
       extraSpecialCharacters:{'€':128}
     });

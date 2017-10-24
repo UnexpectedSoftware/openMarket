@@ -32,8 +32,17 @@ const listOrderFetchWithFilters = action$ =>
 const listOrderDetailEpic = action$ =>
   action$.ofType(listOrderActions.LIST_ORDER_DETAIL)
     .flatMap(action => OpenMarket.get("orders_list_all_use_case").findById({id: action.payload}))
-    .map(order => listOrderDetailLoaded(order))
-    .flatMap(action => Rx.Observable.of(action,push('/create_order')));
+    .flatMap(order =>
+      Rx.Observable.of(
+        listOrderDetailLoaded(order),
+        push({
+          pathname: '/create_order',
+          search: `?id=${order.id}`,
+          state: { orderId: order.id }
+        })
+      )
+    );
+
 
 
 

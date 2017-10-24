@@ -125,3 +125,30 @@
   }
 }
 
+
+.FilterProducts {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  margin: $sp-base 0;
+
+  .button-return {
+	flex: 0 0 auto;
+	float: none;
+  }
+
+  .FilterCalendar-item {
+	flex: 0 0 auto;
+	text-align: center;
+  }
+
+  .button-filter {
+	flex: 0 0 auto;
+	float: left;
+  }
+
+  label {
+	margin-right: $sp-base;
+  }
+}

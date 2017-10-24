@@ -4,6 +4,7 @@ import {Link} from 'react-router';
 import NewOrderReduxForm from './ReduxForm';
 import WeightedDialog from '../weighted_dialog/ReduxConnector';
 import PrinterDialog from '../printer_dialog/ReduxConnector';
+import NewProductDialog from '../new_product_dialog/ReduxConnector';
 import * as Rx from "rxjs";
 
 class Container extends Component {
@@ -23,6 +24,7 @@ class Container extends Component {
     this.keyPressSubject$
       .map(event => ({key:event.key, value: event.target.value}))
       .filter(data => data.key === 'Enter')
+      .filter(data => data.value)
       .map(data => newOrderProductFetch(data.value))
       .subscribe();
   }
@@ -54,6 +56,7 @@ class Container extends Component {
         />
         <WeightedDialog/>
         <PrinterDialog/>
+        <NewProductDialog/>
       </div>
     );
   }

@@ -17,15 +17,6 @@ export default class FindProduct {
   }
 
   /**
-   * Find a product by ID
-   * @param {string} id
-   * @returns {Observable.<Product>}
-   */
-  findProductById({ id }) {
-    return this._productRepository.findById({ id });
-  }
-
-  /**
    *
    * @param {string} barcode
    * @returns {Observable.<Product>}

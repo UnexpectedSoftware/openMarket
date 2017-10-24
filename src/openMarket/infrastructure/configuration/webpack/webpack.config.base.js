@@ -4,7 +4,6 @@
 
 import path from 'path';
 import validate from 'webpack-validator';
-import { dependencies as externals } from '../../../user_interface/package.json';
 
 export default validate({
   module: {
@@ -39,7 +38,6 @@ export default validate({
     packageMains: ['webpack', 'browser', 'web', 'browserify', ['jam', 'main'], 'main']
   },
 
-  plugins: [],
+  plugins: []
 
-  externals: Object.keys(externals || {})
 });
