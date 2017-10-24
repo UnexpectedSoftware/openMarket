@@ -4,19 +4,12 @@ import * as Rx from "rxjs";
 import {HIDE_PRINTER_DIALOG} from "../printer_dialog/action";
 import {showPrinterDialog} from "../printer_dialog/action";
 
-export const makeNewOrderProductFetchEpic = findProductUseCase => resetForm => errorNotification => action$ =>
+export const makeNewOrderProductFetchEpic = findProductUseCase => resetForm => action$ =>
   action$
     .filter(action => action.type === newOrderActions.NEW_ORDER_PRODUCT_FETCH)
     .flatMap(action => findProductUseCase.findProductByBarcode({barcode: action.barcode})
       .map(product => !product.isWeighted ? newOrderActions.newOrderProductFetched({product:product,quantity:1}): weightedDialogActions.showWeightedDialog(product))
-      .defaultIfEmpty(errorNotification(
-        {
-          title: 'Product not found!',
-          message:`Product with barcode ${action.barcode} not found!`,
-          position: 'tr',
-          autoDismiss:5
-        })
-      )
+      .defaultIfEmpty(newOrderActions.newOrderProductNotFound(action.barcode))
       .mergeMap(action => Rx.Observable.of(resetForm('new_order'),action))
     );
 

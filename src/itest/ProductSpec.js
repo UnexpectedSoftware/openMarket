@@ -139,22 +139,6 @@ describe('Product Find by barcode use case', () => {
   });
 });
 
-describe('Product Find by ID use case', () => {
-
-  it('should return an Observable of products', () => {
-    la(is.fn(observableFindProducts.findProductById({ id: '0' }).subscribe), 'has subscribe method');
-  });
-
-  it('should return 1 product with Id Seq-0', (done) => {
-    let count = 0;
-    const onNumber = () => { count += 1; };
-    observableFindProducts.findProductById({ id: 'Seq-0' }).subscribe(onNumber, noop, () => {
-      la(count === 1, `got ${count} product`);
-      done();
-    });
-  });
-});
-
 
 describe('Product create use case', () => {
 

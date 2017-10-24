@@ -21,7 +21,9 @@ export default class MysqlProductRepository extends ProductRepository {
    */
   findAll({productFilter}){
     return this._connection.execute({
-        query: 'SELECT * FROM `product` LIMIT ? OFFSET ?',
+        query: 'SELECT p.barcode,p.name,p.description,p.stock_min,p.price,p.stock,p.base_price,p.status,p.weighted,' +
+        'c.id as category_id,c.name as category_name FROM product p, category c WHERE p.category_id=c.id' +
+        ' LIMIT ? OFFSET ?',
         params: [productFilter.limit,productFilter.offset]
       })
       .flatMap(row => this._productMapper.toDomain({ persistenceProduct:row }))
@@ -32,8 +34,8 @@ export default class MysqlProductRepository extends ProductRepository {
     return this._connection.execute({
         query: 'SELECT p.barcode,p.name,p.description,p.stock_min,p.price,p.stock,p.base_price,p.status,p.weighted,' +
         'c.id as category_id,c.name as category_name FROM product p, category c WHERE p.category_id=c.id AND' +
-        ' p.name like \'%?%\' LIMIT ? OFFSET ?',
-        params: [name,limit,offset]
+        ' p.name like ? LIMIT ? OFFSET ?',
+        params: [`%${name}%`,limit,offset]
       })
       .flatMap(row => this._productMapper.toDomain({ persistenceProduct:row }))
       .toArray();
@@ -68,10 +70,6 @@ export default class MysqlProductRepository extends ProductRepository {
         ]
       })
       .map(result => null)
-  }
-
-  findById({id}) {
-    return super.findById({id});
   }
 
   /**
@@ -113,8 +111,8 @@ export default class MysqlProductRepository extends ProductRepository {
    */
   countProductsByName({name}) {
     return this._connection.execute({
-        query: 'SELECT count(*) as total FROM `product` WHERE name like \'%?%\'',
-        params: [name]
+        query: 'SELECT count(*) as total FROM `product` WHERE name like ?',
+        params: [`%${name}%`]
       })
       .map(row => row.total)
   }

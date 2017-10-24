@@ -1,9 +1,12 @@
 import OpenMarket from "../../../application/index";
 import * as Rx from "rxjs";
 import { success, error } from 'react-notification-system-redux';
+import { LOCATION_CHANGE } from 'react-router-redux';
 import * as newProductActions from "./action";
 import {reset} from 'redux-form';
 import {makeProductCloseEpic} from "./epicFactory";
+import {LIST_PRODUCTS_DETAIL_LOADED} from "../list_products/action";
+
 
 const saveProductEpic = action$ =>
   action$.ofType(newProductActions.NEW_PRODUCT_SAVE)
@@ -78,6 +81,20 @@ const productPageLoadedEpic = action$ =>
       )
     );
 
+const newProductLocationLoadedEpic = action$ =>
+  action$.ofType(LOCATION_CHANGE)
+    .filter(action => action.payload.pathname === '/create_product' && action.payload.search !== '?edition=true' )
+    .map(action => newProductActions.productPageLoaded());
+
+const listProductsDetailLoadedEpic = action$ =>
+  action$.ofType(LIST_PRODUCTS_DETAIL_LOADED)
+    .flatMap(action =>
+      Rx.Observable.of(
+        newProductActions.newProductFetchCategories(),
+        newProductActions.productFetchStatuses()
+      )
+    );
+
 export default action$ =>
   Rx.Observable.merge(
     saveProductEpic(action$),
@@ -85,5 +102,7 @@ export default action$ =>
     fetchCategoriesEpic(action$),
     fetchStatusesEpic(action$),
     fetchProductEpic(action$),
-    productPageLoadedEpic(action$)
+    productPageLoadedEpic(action$),
+    newProductLocationLoadedEpic(action$),
+    listProductsDetailLoadedEpic(action$)
   ).do(() => null,error => console.log(error),()=> null);

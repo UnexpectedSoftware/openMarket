@@ -4,7 +4,6 @@
 export default class Product {
     /**
      * @constructs Product
-     * @param {string} id
      * @param {string} barcode
      * @param {string} name
      * @param {string} description
@@ -16,14 +15,7 @@ export default class Product {
      * @param {Category} category
      * @param {string} status
      */
-  constructor({ id, barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status }) {
-
-      /**
-       *
-       * @type {string}
-       * @private
-       */
-    this._id = id;
+  constructor({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status }) {
 
       /**
        *
@@ -97,10 +89,6 @@ export default class Product {
 
   }
 
-
-  get id() {
-    return this._id;
-  }
 
   get barcode() {
     return this._barcode;

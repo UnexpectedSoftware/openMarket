@@ -1,4 +1,13 @@
 {
   "store": "LocalStorage",
-  "maxDaysStatisticsCount": 7
+  "maxDaysStatisticsCount": 7,
+  "productDefaults":{
+    "description": "Default description for quick creation",
+    "basePrice": 1,
+    "stock": 10,
+    "stockMin": 1,
+    "weighted": false,
+    "categoryId": "2",
+    "status": "ENABLED"
+  }
 }

@@ -32,7 +32,6 @@ export default class CreateOrUpdateProduct {
 
   /**
    * Create or update a product
-   * @param {string} id
    * @param {string} barcode
    * @param {string} name
    * @param {string} description
@@ -45,13 +44,9 @@ export default class CreateOrUpdateProduct {
    * @param {string} status
    * @returns {Observable.<null>}
    */
-  createOrUpdate({ id, barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status }) {
+  createOrUpdate({ barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status }) {
     return this._categoryRepository.findById({id: categoryId})
-      .flatMap(category =>
-        Rx.Observable.of(id)
-          .filter(productId => undefined !== productId)
-          .map(productId => this._productFactory.createWithId({
-            id:productId,
+      .map(category => this._productFactory.createWith({
             barcode,
             name,
             description,
@@ -63,18 +58,6 @@ export default class CreateOrUpdateProduct {
             category,
             status
           }))
-          .defaultIfEmpty(this._productFactory.createWith({
-            barcode,
-            name,
-            description,
-            price,
-            basePrice,
-            stock,
-            stockMin,
-            weighted,
-            category,
-          }))
-      )
       .flatMap(product => this._productRepository.save({ product }));
   }
 }

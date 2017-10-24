@@ -21,7 +21,7 @@ export default class LocalStorageProductMapper extends ObjectMapper{
    */
   toDomain({ persistenceProduct }){
     return this._categoryRepository.findById({ id:persistenceProduct._categoryId })
-      .map(category => this._productFactory.createWithId({
+      .map(category => this._productFactory.createWith({
         id: persistenceProduct._id,
         barcode: persistenceProduct._barcode,
         name: persistenceProduct._name,

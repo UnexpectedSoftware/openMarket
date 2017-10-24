@@ -184,6 +184,47 @@ describe('reducers', () => {
     });
 
 
+    it('should handle NEW_ORDER_PRODUCT_QUANTITY_CHANGE with quantity as blank', () => {
+      const givenQuantityChange = {
+        barcode: '0001',
+        quantityChanged: '',
+      };
+
+      const giveInitialState = {
+        order: {
+          lines: [{
+            barcode: '0001',
+            name: 'Ninja',
+            price: 9.99,
+            quantity: 1,
+            subtotal: 9.99
+          }],
+          total: 9.99
+        },
+
+        readonly: false
+      };
+
+      const expectedState = {
+        order: {
+          lines: [{
+            barcode: '0001',
+            name: 'Ninja',
+            price: 9.99,
+            quantity: 1,
+            subtotal: 9.99
+          }],
+          total: 9.99
+        },
+
+        readonly: false
+      };
+      expect(newOrderReducer(giveInitialState, { type: NEW_ORDER_PRODUCT_QUANTITY_CHANGE, payload: givenQuantityChange }))
+        .to.deep.equal(expectedState);
+    });
+
+
+
     it('should handle NEW_ORDER_PRODUCT_QUANTITY_CHANGE with quantity 6 and get a total with 2 decimals', () => {
       const givenQuantityChange = {
         barcode: '0001',

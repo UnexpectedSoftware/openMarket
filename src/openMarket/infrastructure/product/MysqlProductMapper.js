@@ -21,8 +21,7 @@ export default class MysqlProductMapper extends ObjectMapper{
    */
   toDomain({persistenceProduct}) {
     return Rx.Observable.of(
-      this._productFactory.createWithId({
-        id: undefined,
+      this._productFactory.createWith({
         barcode: persistenceProduct.barcode,
         basePrice: persistenceProduct.base_price,
         description: persistenceProduct.description,
