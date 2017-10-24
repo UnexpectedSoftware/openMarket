@@ -34,14 +34,14 @@ class ReduxForm extends Component {
         <Field name="name" component={this.renderInput} type="text" placeholder="Name" validate={required}/>
         <Field name="price" component={this.renderInput} type="text" placeholder="Price" validate={[required, greaterThan0, number]}/>
 
-        <a className="button" onClick={close}>
-          <i className="fa" />
-          Cancel
-        </a>
-
         <a className="button" onClick={this.save}>
           <i className="fa fa-floppy-o" />
           Save
+        </a>
+
+        <a className="button" onClick={close}>
+          <i className="fa" />
+          Cancel
         </a>
       </form>
     );

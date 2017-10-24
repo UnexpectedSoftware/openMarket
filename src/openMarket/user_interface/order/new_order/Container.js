@@ -24,6 +24,7 @@ class Container extends Component {
     this.keyPressSubject$
       .map(event => ({key:event.key, value: event.target.value}))
       .filter(data => data.key === 'Enter')
+      .filter(data => data.value)
       .map(data => newOrderProductFetch(data.value))
       .subscribe();
   }
