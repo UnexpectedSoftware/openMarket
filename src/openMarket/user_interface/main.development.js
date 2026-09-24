@@ -1,20 +1,12 @@
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { app, BrowserWindow, Menu, shell, ipcMain } from 'electron';
-import { readAppVersion } from '../infrastructure/service/AppVersion.js';
+import { app, BrowserWindow, Menu, shell } from 'electron';
 
 const sourceDirectory = typeof __dirname === 'undefined'
   ? path.dirname(fileURLToPath(import.meta.url))
   : __dirname;
 
-function displayedVersion() {
-  const version = readAppVersion(sourceDirectory);
-  return version ? `v${version}` : '';
-}
-
-ipcMain.on('openmarket-version', event => {
-  event.returnValue = displayedVersion();
-});
+const versionLabel = process.env.OPENMARKET_VERSION;
 
 let menu;
 let template;
@@ -78,7 +70,6 @@ app.whenReady().then(async () => {
     }
   });
 
-  const versionLabel = displayedVersion();
   if (versionLabel) {
     mainWindow.setTitle(`OpenMarket ${versionLabel}`);
   }

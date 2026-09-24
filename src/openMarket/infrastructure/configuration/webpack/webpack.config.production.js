@@ -7,7 +7,7 @@ import webpack from 'webpack';
 import { merge } from 'webpack-merge';
 import HtmlWebpackPlugin from 'html-webpack-plugin';
 import MiniCssExtractPlugin from 'mini-css-extract-plugin';
-import baseConfig, { root } from './webpack.config.base';
+import baseConfig, { appVersion, root } from './webpack.config.base';
 
 const sassLoader = {
   loader: 'sass-loader',
@@ -57,7 +57,8 @@ export default merge(baseConfig, {
 
   plugins: [
     new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify('production')
+      'process.env.NODE_ENV': JSON.stringify('production'),
+      'process.env.OPENMARKET_VERSION': JSON.stringify(appVersion)
     }),
     new MiniCssExtractPlugin({ filename: 'style.css' }),
     new HtmlWebpackPlugin({

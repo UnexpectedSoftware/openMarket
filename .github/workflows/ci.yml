@@ -17,6 +17,22 @@ jobs:
       - run: npm run test-all
       - run: npm run build
 
+  version-decision:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require a version decision
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set -euo pipefail
+          BASE=$(node -e "const fs=require('fs'); const p=JSON.parse(fs.readFileSync(0,'utf8')); process.stdout.write(p.version)" < <(git show "${{ github.event.pull_request.base.sha }}:package.json"))
+          HEAD=$(node -p "require('./package.json').version")
+          node .github/scripts/version-decision.js "$BASE" "$HEAD"
+
   package:
     needs: test-and-build
     if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
@@ -41,13 +57,6 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Stamp version
-        shell: bash
-        run: |
-          set -euo pipefail
-          BASE=$(node -p "require('./package.json').version")
-          SHORT=${GITHUB_SHA::7}
-          npm pkg set "version=${BASE}-${SHORT}"
       - name: Package
         run: npm run ${{ matrix.npm_script }}
         env:
@@ -97,8 +106,7 @@ jobs:
         run: |
           set -euo pipefail
           BASE=$(node -p "require('./package.json').version")
-          SHORT=${GITHUB_SHA::7}
-          TAG="v${BASE}-${SHORT}"
+          TAG="v${BASE}"
           NOTES=$(git log -1 --pretty=%B)
           shopt -s nullglob
           files=(dist-releases/*)

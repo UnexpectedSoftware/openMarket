@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import {Link} from "react-router";
-import {ipcRenderer} from 'electron';
 import Menu, {SubMenu, MenuItem} from 'rc-menu';
 
 export default class Navbar extends Component {
@@ -9,7 +8,7 @@ export default class Navbar extends Component {
     super(props, context);
     this.state =  {
       openKeys: ['1-1'],
-      version: ipcRenderer.sendSync('openmarket-version')
+      version: process.env.OPENMARKET_VERSION
     };
   }
 

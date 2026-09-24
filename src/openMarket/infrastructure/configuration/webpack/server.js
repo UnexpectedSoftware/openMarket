@@ -12,6 +12,11 @@ import { spawn } from 'child_process';
 import config from './webpack.config.development';
 
 const argv = require('minimist')(process.argv.slice(2));
+const pkg = require('../../../../../package.json');
+
+if (!process.env.OPENMARKET_VERSION) {
+  process.env.OPENMARKET_VERSION = pkg.version;
+}
 
 const app = express();
 const compiler = webpack(config);
