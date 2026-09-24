@@ -51,7 +51,7 @@ A push to `master` runs the tests, then builds installers and publishes them as 
 - Windows x64: NSIS `.exe`
 - macOS: universal `.dmg` and `.zip` (Intel and Apple Silicon)
 
-The release tag is `v` plus the `version` in `package.json`, for example `v0.0.1`. The installer name carries that version, the OS, and the architecture. The running window shows the same number at the right of the header. A merge does not change the number. The pull request says `Version: patch`, `minor`, `major`, or `none`, and `package.json` has to match that choice. These builds are unsigned, so Windows SmartScreen and macOS Gatekeeper warn on first launch.
+The release tag is `v` plus the `version` in `package.json`, for example `v1.0.0`. The installer name carries that version, the OS, and the architecture. The running window shows the same number at the right of the header. A merge does not change the number. The pull request says `Version: patch`, `minor`, `major`, or `none`, and `package.json` has to match that choice. These builds are unsigned, so Windows SmartScreen and macOS Gatekeeper warn on first launch.
 
 To build the installer for the machine you are on:
 
