@@ -1,86 +1,79 @@
-/* eslint-disable max-len */
 /**
- * Build config for development process that uses Hot-Module-Replacement
- * https://webpack.github.io/docs/hot-module-replacement-with-webpack.html
+ * Renderer bundle served by the hot-reload middleware.
  */
 
 import webpack from 'webpack';
-import validate from 'webpack-validator';
-import merge from 'webpack-merge';
-import baseConfig from './webpack.config.base';
+import { merge } from 'webpack-merge';
+import baseConfig, { root } from './webpack.config.base';
+import path from 'path';
 
 const port = process.env.PORT || 3000;
 
-export default validate(merge(baseConfig, {
-  debug: true,
+const sassLoader = {
+  loader: 'sass-loader',
+  options: {
+    sassOptions: {
+      silenceDeprecations: ['import', 'legacy-js-api', 'global-builtin', 'color-functions', 'slash-div']
+    }
+  }
+};
 
-  devtool: 'inline-source-map',
+export default merge(baseConfig, {
+  mode: 'development',
+  devtool: 'cheap-module-source-map',
 
   entry: [
-    `webpack-hot-middleware/client?path=http://localhost:${port}/__webpack_hmr`,
-    'babel-polyfill',
-    './src/openMarket/user_interface',
-    './src/openMarket/application/index',
-    './node_modules/react-table'
+    `webpack-hot-middleware/client?path=http://localhost:${port}/__webpack_hmr&reload=true`,
+    './src/openMarket/user_interface/index.js'
   ],
 
   output: {
+    path: path.join(root, 'dist'),
+    filename: 'bundle.js',
     publicPath: `http://localhost:${port}/dist/`
   },
 
   module: {
-    loaders: [
+    rules: [
       {
-        test: /\.global\.css$/,
-        loaders: [
-          'style-loader',
-          'css-loader?sourceMap'
-        ]
+        test: /\.jsx?$/,
+        loader: 'babel-loader',
+        exclude: /node_modules/
       },
-
       {
-        test: /^((?!\.global).)*\.css$/,
-        loaders: [
-          'style-loader',
-          'css-loader?modules&sourceMap&importLoaders=1&localIdentName=[name]__[local]___[hash:base64:5]'
-        ]
+        test: /\.scss$/,
+        use: ['style-loader', 'css-loader', sassLoader]
       },
-      { test: /\.gif$/, loader: "url-loader?mimetype=image/png" },
-      { test: /\.woff(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=application/font-woff' },
-      { test: /\.woff2(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=application/font-woff' },
-      { test: /\.ttf(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=application/octet-stream' },
-      { test: /\.eot(\?v=\d+\.\d+\.\d+)?$/, loader: 'file' },
-      { test: /\.svg(\?v=\d+\.\d+\.\d+)?$/, loader: 'url?limit=10000&mimetype=image/svg+xml' },
+      {
+        test: /\.css$/,
+        use: ['style-loader', 'css-loader']
+      },
+      {
+        test: /\.(woff2?|ttf|eot|svg|png|jpe?g|gif|ico)(\?.*)?$/,
+        type: 'asset/resource',
+        generator: {
+          filename: 'assets/[hash][ext]'
+        }
+      }
     ]
   },
 
   plugins: [
-    // https://webpack.github.io/docs/hot-module-replacement-with-webpack.html
     new webpack.HotModuleReplacementPlugin(),
-
-    /**
-     * If you are using the CLI, the webpack process will not exit with an error
-     * code by enabling this plugin.
-     * https://github.com/webpack/docs/wiki/list-of-plugins#noerrorsplugin
-     */
-    new webpack.NoErrorsPlugin(),
-
-    /**
-     * Create global constants which can be configured at compile time.
-     *
-     * Useful for allowing different behaviour between development builds and
-     * release builds
-     *
-     * NODE_ENV should be production so that modules do not perform certain
-     * development checks
-     */
     new webpack.DefinePlugin({
       'process.env.NODE_ENV': JSON.stringify('development')
     })
   ],
 
-  /**
-   * https://github.com/chentsulin/webpack-target-electron-renderer#how-this-module-works
-   */
+  optimization: {
+    emitOnErrors: false
+  },
+
+  externals: {
+    electron: 'commonjs electron',
+    mysql2: 'commonjs mysql2',
+    'mysql2/promise': 'commonjs mysql2/promise'
+  },
+
   target: 'electron-renderer'
-}));
+});

@@ -1,7 +1,6 @@
 /* eslint-disable no-console */
 /**
- * Setup and run the development server for Hot-Module-Replacement
- * https://webpack.github.io/docs/hot-module-replacement-with-webpack.html
+ * Development server for hot module replacement, then the Electron window.
  */
 
 import express from 'express';
@@ -18,15 +17,9 @@ const app = express();
 const compiler = webpack(config);
 const PORT = process.env.PORT || 3000;
 
-const wdm = webpackDevMiddleware(compiler, {
-  publicPath: config.output.publicPath,
-  stats: {
-    colors: true
-  }
-});
+const wdm = webpackDevMiddleware(compiler);
 
 app.use(wdm);
-
 app.use(webpackHotMiddleware(compiler));
 
 const server = app.listen(PORT, 'localhost', serverError => {
