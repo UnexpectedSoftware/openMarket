@@ -1,3 +1,4 @@
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { app, BrowserWindow, Menu, shell } from 'electron';
@@ -78,6 +79,11 @@ app.whenReady().then(async () => {
   mainWindow.webContents.on('did-finish-load', () => {
     if (versionLabel) {
       mainWindow.setTitle(`OpenMarket ${versionLabel}`);
+    }
+    if (process.env.OPENMARKET_SMOKE === '1') {
+      fs.writeSync(1, `OPENMARKET_SMOKE ${versionLabel}\n`);
+      app.exit(0);
+      return;
     }
     mainWindow.show();
     mainWindow.focus();

@@ -32,6 +32,9 @@
       "output": "release"
     },
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "toolsets": {
+      "appimage": "1.0.3"
+    },
     "files": [
       "dist/**/*",
       "node_modules/**/*",
@@ -51,6 +54,9 @@
       "target": [
         "nsis"
       ]
+    },
+    "nsis": {
+      "runAfterFinish": false
     },
     "linux": {
       "icon": "src/openMarket/user_interface/resources/icon.png",
