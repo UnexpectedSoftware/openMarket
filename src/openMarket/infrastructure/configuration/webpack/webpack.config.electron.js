@@ -5,7 +5,7 @@
 import path from 'path';
 import webpack from 'webpack';
 import { merge } from 'webpack-merge';
-import baseConfig, { root } from './webpack.config.base';
+import baseConfig, { appVersion, root } from './webpack.config.base';
 
 export default merge(baseConfig, {
   mode: 'production',
@@ -20,7 +20,8 @@ export default merge(baseConfig, {
 
   plugins: [
     new webpack.DefinePlugin({
-      'process.env.NODE_ENV': JSON.stringify('production')
+      'process.env.NODE_ENV': JSON.stringify('production'),
+      'process.env.OPENMARKET_VERSION': JSON.stringify(appVersion)
     })
   ],
 

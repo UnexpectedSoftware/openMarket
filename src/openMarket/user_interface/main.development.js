@@ -2,6 +2,12 @@ import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { app, BrowserWindow, Menu, shell } from 'electron';
 
+const sourceDirectory = typeof __dirname === 'undefined'
+  ? path.dirname(fileURLToPath(import.meta.url))
+  : __dirname;
+
+const versionLabel = process.env.OPENMARKET_VERSION;
+
 let menu;
 let template;
 let mainWindow = null;
@@ -64,12 +70,15 @@ app.whenReady().then(async () => {
     }
   });
 
-  const appDirectory = typeof __dirname === 'undefined'
-    ? path.dirname(fileURLToPath(import.meta.url))
-    : __dirname;
-  mainWindow.loadURL(pathToFileURL(path.join(appDirectory, 'app.html')).href);
+  if (versionLabel) {
+    mainWindow.setTitle(`OpenMarket ${versionLabel}`);
+  }
+  mainWindow.loadURL(pathToFileURL(path.join(sourceDirectory, 'app.html')).href);
 
   mainWindow.webContents.on('did-finish-load', () => {
+    if (versionLabel) {
+      mainWindow.setTitle(`OpenMarket ${versionLabel}`);
+    }
     mainWindow.show();
     mainWindow.focus();
   });

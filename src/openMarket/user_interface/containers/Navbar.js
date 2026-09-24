@@ -8,6 +8,7 @@ export default class Navbar extends Component {
     super(props, context);
     this.state =  {
       openKeys: ['1-1'],
+      version: process.env.OPENMARKET_VERSION
     };
   }
 
@@ -17,12 +18,21 @@ export default class Navbar extends Component {
     });
   }
 
+  componentDidMount() {
+    if (this.state.version) {
+      document.title = `OpenMarket ${this.state.version}`;
+    }
+  }
+
 
   render() {
     return (
       <div>
         <div className={"header"}>
-          <h1>OpenMarket</h1>
+          <h1>
+            OpenMarket
+            {this.state.version ? <span className="app-version">{this.state.version}</span> : null}
+          </h1>
           <Menu
             mode="horizontal"
             onOpenChange={this.onOpenChange.bind(this)}
