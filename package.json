@@ -55,6 +55,9 @@
         "nsis"
       ]
     },
+    "nsis": {
+      "runAfterFinish": false
+    },
     "linux": {
       "icon": "src/openMarket/user_interface/resources/icon.png",
       "target": [

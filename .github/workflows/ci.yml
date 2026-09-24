@@ -83,18 +83,29 @@ jobs:
           node .github/scripts/smoke-launch.js xvfb-run -a "$bin" --no-sandbox --disable-gpu
       - name: Smoke-launch Windows installer
         if: matrix.artifact == 'windows'
+        timeout-minutes: 5
         shell: pwsh
         env:
           OPENMARKET_SMOKE: "1"
           OPENMARKET_STORE: LocalStorage
         run: |
-          $installer = Get-ChildItem release -Filter *.exe | Select-Object -First 1
-          if ($null -eq $installer) { throw "no installer" }
-          & $installer.FullName /S
-          $installed = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs","$env:ProgramFiles" -Filter OpenMarket.exe -Recurse -ErrorAction SilentlyContinue |
+          $installer = Get-ChildItem release -Filter *.exe |
+            Where-Object { $_.Name -notlike '*uninstaller*' } |
             Select-Object -First 1
-          if ($null -eq $installed) { throw "installed OpenMarket.exe not found" }
-          node .github/scripts/smoke-launch.js $installed.FullName --disable-gpu
+          if ($null -eq $installer) { throw "no installer" }
+          Write-Host "Installing $($installer.FullName)"
+          $proc = Start-Process -FilePath $installer.FullName -ArgumentList '/S' -PassThru
+          if (-not $proc.WaitForExit(120000)) {
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            throw "installer timed out"
+          }
+          if ($proc.ExitCode -ne 0) { throw "installer exit $($proc.ExitCode)" }
+          $installed = Join-Path $env:LOCALAPPDATA "Programs\OpenMarket\OpenMarket.exe"
+          if (-not (Test-Path $installed)) {
+            Get-ChildItem "$env:LOCALAPPDATA\Programs" -ErrorAction SilentlyContinue | Format-Table FullName
+            throw "installed OpenMarket.exe not found at $installed"
+          }
+          node .github/scripts/smoke-launch.js $installed --disable-gpu
       - name: Smoke-launch macOS app
         if: matrix.artifact == 'macos'
         env:
