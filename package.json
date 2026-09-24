@@ -32,6 +32,9 @@
       "output": "release"
     },
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "toolsets": {
+      "appimage": "1.0.3"
+    },
     "files": [
       "dist/**/*",
       "node_modules/**/*",

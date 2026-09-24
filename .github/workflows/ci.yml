@@ -35,7 +35,7 @@ jobs:
 
   package:
     needs: test-and-build
-    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: success() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/master')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -61,6 +61,56 @@ jobs:
         run: npm run ${{ matrix.npm_script }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
+      - name: Smoke-launch Linux installers
+        if: matrix.artifact == 'linux'
+        env:
+          OPENMARKET_SMOKE: "1"
+          OPENMARKET_STORE: LocalStorage
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 libsecret-1-0 libasound2t64 libgbm1 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libcups2
+          shopt -s nullglob
+          appimages=(release/*.AppImage)
+          debs=(release/*.deb)
+          test ${#appimages[@]} -eq 1
+          test ${#debs[@]} -eq 1
+          chmod +x "${appimages[0]}"
+          node .github/scripts/smoke-launch.js xvfb-run -a "${appimages[0]}" --no-sandbox --disable-gpu
+          sudo apt-get install -y "./${debs[0]}"
+          bin=$(find /opt -type f -name openmarket -executable | head -n 1)
+          test -n "$bin"
+          node .github/scripts/smoke-launch.js xvfb-run -a "$bin" --no-sandbox --disable-gpu
+      - name: Smoke-launch Windows installer
+        if: matrix.artifact == 'windows'
+        shell: pwsh
+        env:
+          OPENMARKET_SMOKE: "1"
+          OPENMARKET_STORE: LocalStorage
+        run: |
+          $installer = Get-ChildItem release -Filter *.exe | Select-Object -First 1
+          if ($null -eq $installer) { throw "no installer" }
+          & $installer.FullName /S
+          $installed = Get-ChildItem -Path "$env:LOCALAPPDATA\Programs","$env:ProgramFiles" -Filter OpenMarket.exe -Recurse -ErrorAction SilentlyContinue |
+            Select-Object -First 1
+          if ($null -eq $installed) { throw "installed OpenMarket.exe not found" }
+          node .github/scripts/smoke-launch.js $installed.FullName --disable-gpu
+      - name: Smoke-launch macOS app
+        if: matrix.artifact == 'macos'
+        env:
+          OPENMARKET_SMOKE: "1"
+          OPENMARKET_STORE: LocalStorage
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          zips=(release/*.zip)
+          test ${#zips[@]} -eq 1
+          rm -rf /tmp/openmarket-smoke
+          mkdir -p /tmp/openmarket-smoke
+          unzip -q "${zips[0]}" -d /tmp/openmarket-smoke
+          bin=$(find /tmp/openmarket-smoke -type f -path '*.app/Contents/MacOS/OpenMarket' | head -n 1)
+          test -n "$bin"
+          node .github/scripts/smoke-launch.js "$bin" --disable-gpu --no-sandbox
       - name: Upload Linux installers
         if: matrix.artifact == 'linux'
         uses: actions/upload-artifact@v4
