@@ -1,19 +1,28 @@
+import path from 'path';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { app, BrowserWindow, Menu, shell } from 'electron';
 
 let menu;
 let template;
 let mainWindow = null;
 
-if (process.env.NODE_ENV === 'production') {
-  const sourceMapSupport = require('source-map-support'); // eslint-disable-line
-  sourceMapSupport.install();
-}
+const openExternal = url => {
+  shell.openExternal(url).catch(error => console.log(error));
+};
 
-if (process.env.NODE_ENV === 'development') {
-  require('electron-debug')(); // eslint-disable-line global-require
-  const path = require('path'); // eslint-disable-line
-  const p = path.join(__dirname, '..', 'user_interface', 'node_modules'); // eslint-disable-line
-  require('module').globalPaths.push(p); // eslint-disable-line
+async function enableProcessHelpers() {
+  if (process.env.NODE_ENV === 'production') {
+    const { default: sourceMapSupport } = await import('source-map-support');
+    sourceMapSupport.install();
+  }
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      const electronDebug = await import('electron-debug');
+      electronDebug.default();
+    } catch (error) {
+      console.log('electron-debug is unavailable', error);
+    }
+  }
 }
 
 app.on('window-all-closed', () => {
@@ -22,35 +31,43 @@ app.on('window-all-closed', () => {
 
 
 const installExtensions = async () => {
-  if (process.env.NODE_ENV === 'development') {
-    const installer = require('electron-devtools-installer'); // eslint-disable-line global-require
-
+  if (process.env.NODE_ENV !== 'development') {
+    return;
+  }
+  try {
+    const installer = await import('electron-devtools-installer');
     const extensions = [
-      'REACT_DEVELOPER_TOOLS',
-      'REDUX_DEVTOOLS'
-    ];
-
-    const forceDownload = !!process.env.UPGRADE_EXTENSIONS;
-
-    // TODO: Use async interation statement.
-    //       Waiting on https://github.com/tc39/proposal-async-iteration
-    //       Promises will fail silently, which isn't what we want in development
-    return Promise
-      .all(extensions.map(name => installer.default(installer[name], forceDownload)))
-      .catch(console.log);
+      installer.REACT_DEVELOPER_TOOLS,
+      installer.REDUX_DEVTOOLS
+    ].filter(Boolean);
+    await installer.installExtension(extensions);
+  } catch (error) {
+    console.log('DevTools extensions were not installed', error);
   }
 };
 
-app.on('ready', async () => {
+app.whenReady().then(async () => {
+  await enableProcessHelpers();
   await installExtensions();
+
+  const isDevelopment = process.env.NODE_ENV === 'development';
 
   mainWindow = new BrowserWindow({
     show: false,
     width: 1024,
-    height: 728
+    height: 728,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+      sandbox: false,
+      webSecurity: !isDevelopment
+    }
   });
 
-  mainWindow.loadURL(`file://${__dirname}/app.html`);
+  const appDirectory = typeof __dirname === 'undefined'
+    ? path.dirname(fileURLToPath(import.meta.url))
+    : __dirname;
+  mainWindow.loadURL(pathToFileURL(path.join(appDirectory, 'app.html')).href);
 
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.show();
@@ -69,9 +86,9 @@ app.on('ready', async () => {
       Menu.buildFromTemplate([{
         label: 'Inspect element',
         click() {
-          mainWindow.inspectElement(x, y);
+          mainWindow.webContents.inspectElement(x, y);
         }
-      }]).popup(mainWindow);
+      }]).popup({ window: mainWindow });
     });
   }
 
@@ -185,22 +202,22 @@ app.on('ready', async () => {
       submenu: [{
         label: 'Learn More',
         click() {
-          shell.openExternal('http://electron.atom.io');
+          openExternal('http://electron.atom.io');
         }
       }, {
         label: 'Documentation',
         click() {
-          shell.openExternal('https://github.com/atom/electron/tree/master/docs#readme');
+          openExternal('https://github.com/atom/electron/tree/master/docs#readme');
         }
       }, {
         label: 'Community Discussions',
         click() {
-          shell.openExternal('https://discuss.atom.io/c/electron');
+          openExternal('https://discuss.atom.io/c/electron');
         }
       }, {
         label: 'Search Issues',
         click() {
-          shell.openExternal('https://github.com/atom/electron/issues');
+          openExternal('https://github.com/atom/electron/issues');
         }
       }]
     }];
@@ -246,22 +263,22 @@ app.on('ready', async () => {
       submenu: [{
         label: 'Learn More',
         click() {
-          shell.openExternal('http://electron.atom.io');
+          openExternal('http://electron.atom.io');
         }
       }, {
         label: 'Documentation',
         click() {
-          shell.openExternal('https://github.com/atom/electron/tree/master/docs#readme');
+          openExternal('https://github.com/atom/electron/tree/master/docs#readme');
         }
       }, {
         label: 'Community Discussions',
         click() {
-          shell.openExternal('https://discuss.atom.io/c/electron');
+          openExternal('https://discuss.atom.io/c/electron');
         }
       }, {
         label: 'Search Issues',
         click() {
-          shell.openExternal('https://github.com/atom/electron/issues');
+          openExternal('https://github.com/atom/electron/issues');
         }
       }]
     }];

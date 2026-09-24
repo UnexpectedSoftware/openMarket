@@ -7,16 +7,17 @@ export default class EnvironmentService{
    * @param devConfig
    * @param proConfig
    */
-  constructor({nodeEnvironment, baseConfig, devConfig, proConfig}){
+  constructor({nodeEnvironment, baseConfig, devConfig, proConfig, storeOverride}){
     this._config = this._mapConfig({
       env:nodeEnvironment,
       baseConfig,
       devConfig,
-      proConfig
+      proConfig,
+      storeOverride
     });
   }
 
-  _mapConfig({env, baseConfig, devConfig, proConfig}){
+  _mapConfig({env, baseConfig, devConfig, proConfig, storeOverride}){
     const envConfig = (env) => {
       const mapping = {
         'development': devConfig,
@@ -29,7 +30,11 @@ export default class EnvironmentService{
 
       return {}
     };
-    return merge(baseConfig,envConfig(env));
+    const config = merge(baseConfig, envConfig(env));
+    if (storeOverride) {
+      return merge(config, { store: storeOverride });
+    }
+    return config;
   }
 
   get config() {

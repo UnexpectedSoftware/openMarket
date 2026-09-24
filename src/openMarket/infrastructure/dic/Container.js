@@ -34,6 +34,7 @@ import MysqlOrderRepository from "../order/MysqlOrderRepository";
 import MysqlOrderMapper from "../order/MysqlOrderMapper";
 import MysqlPool from "../service/MysqlPool";
 const env = process.env.NODE_ENV
+const storeOverride = process.env.OPENMARKET_STORE
 
 class Container {
   constructor({environment}) {
@@ -41,7 +42,8 @@ class Container {
       nodeEnvironment:environment,
       baseConfig,
       devConfig:dev,
-      proConfig:pro
+      proConfig:pro,
+      storeOverride
     });
     this._instances = new Map();
   }

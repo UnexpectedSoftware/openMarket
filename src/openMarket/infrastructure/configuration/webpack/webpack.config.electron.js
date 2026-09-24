@@ -1,62 +1,40 @@
 /**
- * Build config for electron 'Main Process' file
+ * Production main-process bundle written to dist/main.js.
  */
 
+import path from 'path';
 import webpack from 'webpack';
-import validate from 'webpack-validator';
-import merge from 'webpack-merge';
-import BabiliPlugin from 'babili-webpack-plugin';
-import baseConfig from './webpack.config.base';
+import { merge } from 'webpack-merge';
+import baseConfig, { root } from './webpack.config.base';
 
-export default validate(merge(baseConfig, {
+export default merge(baseConfig, {
+  mode: 'production',
   devtool: 'source-map',
 
-  entry: ['babel-polyfill', './src/openMarket/user_interface/main.development'],
+  entry: ['./src/openMarket/user_interface/main.development.js'],
 
-  // 'main.js' in root
   output: {
-    path: __dirname,
-    filename: '../../../../../dist/main.js'
+    path: path.join(root, 'dist'),
+    filename: 'main.js'
   },
 
   plugins: [
-    /**
-     * Babli is an ES6+ aware minifier based on the Babel toolchain (beta)
-     */
-    new BabiliPlugin({
-      // Disable deadcode until https://github.com/babel/babili/issues/385 fixed
-      deadcode: false,
-    }),
-
-    /**
-     * Create global constants which can be configured at compile time.
-     *
-     * Useful for allowing different behaviour between development builds and
-     * release builds
-     *
-     * NODE_ENV should be production so that modules do not perform certain
-     * development checks
-     */
     new webpack.DefinePlugin({
-      'process.env': {
-        NODE_ENV: JSON.stringify('production')
-      }
+      'process.env.NODE_ENV': JSON.stringify('production')
     })
   ],
 
-  /**
-   * Set target to Electron specific node.js env.
-   * https://github.com/chentsulin/webpack-target-electron-renderer#how-this-module-works
-   */
+  externals: {
+    electron: 'commonjs electron',
+    'electron-debug': 'commonjs electron-debug',
+    'electron-devtools-installer': 'commonjs electron-devtools-installer',
+    'source-map-support': 'commonjs source-map-support'
+  },
+
   target: 'electron-main',
 
-  /**
-   * Disables webpack processing of __dirname and __filename.
-   * If you run the bundle in node.js it falls back to these values of node.js.
-   * https://github.com/webpack/webpack/issues/2010
-   */
   node: {
     __dirname: false,
     __filename: false
-  },
-}));
+  }
+});

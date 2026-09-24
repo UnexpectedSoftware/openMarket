@@ -1,43 +1,17 @@
 /**
- * Base webpack config used across other specific configs
+ * Shared webpack settings. Each concrete config sets mode, target, and output.
  */
 
 import path from 'path';
-import validate from 'webpack-validator';
 
-export default validate({
-  module: {
-    loaders: [{
-      test: /\.jsx?$/,
-      loaders: ['babel-loader'],
-      exclude: /(node_modules|src\/openMarket\/infrastructure\/configuration\/webpack)/
-    }, {
-      test: /\.json$/,
-      loader: 'json-loader'
-    },
-      {
-        test: /\.scss$/,
-        loaders: ["style-loader", "css-loader", "sass-loader"]
-      }
-    ]
-  },
+export const root = path.resolve(__dirname, '../../../../..');
 
-  output: {
-    path: path.join(__dirname, 'user_interface'),
-    filename: 'bundle.js',
-
-    // https://github.com/webpack/webpack/issues/1114
-    libraryTarget: 'commonjs2'
-  },
-
-  /**
-   * Determine the array of extensions that should be used to resolve modules.
-   */
+export default {
+  context: root,
   resolve: {
-    extensions: ['', '.js', '.jsx', '.json'],
-    packageMains: ['webpack', 'browser', 'web', 'browserify', ['jam', 'main'], 'main']
+    extensions: ['.js', '.jsx', '.json']
   },
-
-  plugins: []
-
-});
+  performance: {
+    hints: false
+  }
+};
