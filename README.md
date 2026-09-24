@@ -45,11 +45,23 @@ Unit tests mock MySQL. Integration tests run the use cases against LocalStorage.
 
 ## Packaging
 
+A push to `master` runs the tests, then builds installers and publishes them as one GitHub Release:
+
+- Linux x64: `.deb` and `.AppImage`
+- Windows x64: NSIS `.exe`
+- macOS: universal `.dmg` and `.zip` (Intel and Apple Silicon)
+
+The tag is `v<version>-<short sha>`, for example `v0.0.1-a3523fa`. The file name carries the same version, OS, and architecture. The running window shows that same tag at the right of the header, so you can match an open copy to the release. A checkout that was not stamped shows the package version plus the current commit. These builds are unsigned, so Windows SmartScreen and macOS Gatekeeper warn on first launch.
+
+To build the installer for the machine you are on:
+
 ```bash
-npm run package
+npm run package-linux
+npm run package-win
+npm run package-mac
 ```
 
-Linux, Windows, and macOS scripts are `package-linux`, `package-win`, and `package-all`. Packaging is not part of CI.
+`package-mac` runs on macOS. `npm run package` builds the current platform only.
 
 ## Not in this pass
 
@@ -58,4 +70,4 @@ These stayed on the APIs the current screens and tests already use:
 - React 15, React Router 3, Redux 3, redux-form 6, redux-observable 0.14, RxJS 5
 - react-table 6, react-datepicker 0.48, chart.js 2
 
-Still to do later: React 18 and React Router 6, RxJS 7, a preload script instead of `nodeIntegration`, Flow, an ESLint cleanup, and installers for Windows and macOS.
+Still to do later: React 18 and React Router 6, RxJS 7, a preload script instead of `nodeIntegration`, Flow, and an ESLint cleanup.

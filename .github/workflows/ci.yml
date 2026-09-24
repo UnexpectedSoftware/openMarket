@@ -16,3 +16,101 @@ jobs:
       - run: npm ci
       - run: npm run test-all
       - run: npm run build
+
+  package:
+    needs: test-and-build
+    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            npm_script: package-linux
+            artifact: linux
+          - os: windows-latest
+            npm_script: package-win
+            artifact: windows
+          - os: macos-latest
+            npm_script: package-mac
+            artifact: macos
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Stamp version
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE=$(node -p "require('./package.json').version")
+          SHORT=${GITHUB_SHA::7}
+          npm pkg set "version=${BASE}-${SHORT}"
+      - name: Package
+        run: npm run ${{ matrix.npm_script }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+      - name: Upload Linux installers
+        if: matrix.artifact == 'linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: openmarket-linux
+          if-no-files-found: error
+          path: |
+            release/*.AppImage
+            release/*.deb
+      - name: Upload Windows installer
+        if: matrix.artifact == 'windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: openmarket-windows
+          if-no-files-found: error
+          path: release/*.exe
+      - name: Upload macOS installers
+        if: matrix.artifact == 'macos'
+        uses: actions/upload-artifact@v4
+        with:
+          name: openmarket-macos
+          if-no-files-found: error
+          path: |
+            release/*.dmg
+            release/*.zip
+
+  publish:
+    needs: package
+    if: success() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: openmarket-*
+          path: dist-releases
+          merge-multiple: true
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BASE=$(node -p "require('./package.json').version")
+          SHORT=${GITHUB_SHA::7}
+          TAG="v${BASE}-${SHORT}"
+          NOTES=$(git log -1 --pretty=%B)
+          shopt -s nullglob
+          files=(dist-releases/*)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "No release artifacts downloaded" >&2
+            exit 1
+          fi
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "${files[@]}" --clobber
+          else
+            gh release create "$TAG" "${files[@]}" \
+              --target "$GITHUB_SHA" \
+              --title "OpenMarket ${TAG}" \
+              --notes "$NOTES"
+          fi

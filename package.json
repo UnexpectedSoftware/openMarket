@@ -17,9 +17,10 @@
     "start-hot": "cross-env HOT=1 NODE_ENV=development electron ./src/openMarket/user_interface/main.development.js",
     "dev": "npm run hot-server -- --start-hot",
     "package": "npm run build && electron-builder --publish never",
-    "package-win": "npm run build && electron-builder --win --x64",
-    "package-linux": "npm run build && electron-builder --linux",
-    "package-all": "npm run build && electron-builder -mwl"
+    "package-win": "npm run build && electron-builder --win --x64 --publish never",
+    "package-linux": "npm run build && electron-builder --linux --publish never",
+    "package-mac": "npm run build && electron-builder --mac --universal --publish never",
+    "package-all": "npm run build && electron-builder -mwl --publish never"
   },
   "engines": {
     "node": ">=24"
@@ -28,21 +29,31 @@
     "productName": "OpenMarket",
     "appId": "com.unexpectedsoftware.openmarket",
     "directories": {
-      "buildResources": "resources",
       "output": "release"
     },
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
     "files": [
       "dist/**/*",
       "node_modules/**/*",
       "package.json"
     ],
     "mac": {
-      "category": "public.app-category.tools"
+      "category": "public.app-category.tools",
+      "icon": "src/openMarket/user_interface/resources/icon.icns",
+      "identity": null,
+      "target": [
+        "dmg",
+        "zip"
+      ]
     },
     "win": {
-      "target": "nsis"
+      "icon": "src/openMarket/user_interface/resources/icon.ico",
+      "target": [
+        "nsis"
+      ]
     },
     "linux": {
+      "icon": "src/openMarket/user_interface/resources/icon.png",
       "target": [
         "deb",
         "AppImage"
