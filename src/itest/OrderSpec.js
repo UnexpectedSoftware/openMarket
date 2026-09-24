@@ -3,8 +3,10 @@ import openMarket from '../openMarket/application/index';
 import moment from "moment";
 import { expect } from 'chai';
 import sinon from 'sinon';
-import RxLocalStorage from "../openMarket/infrastructure/service/RxLocalStorage";
-import {ORDERS_KEY, PRODUCTS_KEY} from "../openMarket/infrastructure/service/LocalStorageKeys";
+import container from '../openMarket/infrastructure/dic/Container';
+import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
+
+const database = container.getInstance({key: 'sqliteConnection'}).database;
 
 /**
  * Howto
@@ -24,14 +26,7 @@ const orderStatisticsUseCase = openMarket.get('orders_statistics_use_case');
 const observableFindProducts = openMarket.get('products_find_use_case');
 
 afterEach(function () {
-  RxLocalStorage.saveLocalStorage({
-    localStorageKey: ORDERS_KEY,
-    value: []
-  }).flatMap(saved => RxLocalStorage.saveLocalStorage({
-    localStorageKey: PRODUCTS_KEY,
-    value: []
-  })
-  ).subscribe();
+  replaceSqliteData(database, {});
 
 
 });
@@ -47,15 +42,7 @@ describe('Order create use case', () => {
       {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_imageUrl":"a","_categoryId":"2","_status":"ENABLED"}
     ];
 
-    RxLocalStorage.saveLocalStorage({
-      localStorageKey: ORDERS_KEY,
-      value: orderData
-    }).flatMap(saved =>
-      RxLocalStorage.saveLocalStorage({
-        localStorageKey: PRODUCTS_KEY,
-        value: productData
-      })
-    ).subscribe();
+    replaceSqliteData(database, {orders: orderData, products: productData});
   });
   describe('When save an order', () => {
     it('should create a new order and then would be 2 Orders on DB', (done) => {
@@ -115,10 +102,7 @@ describe('Order find use case by dates', () => {
       {"_id":"01","_createdAt":"02/07/2017 17:53:04","_lines":[{"barcode":"0002","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
       {"_id":"01","_createdAt":"03/07/2017 17:53:04","_lines":[{"barcode":"0003","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
     ];
-    RxLocalStorage.saveLocalStorage({
-      localStorageKey: ORDERS_KEY,
-      value: data
-    }).subscribe();
+    replaceSqliteData(database, {orders: data});
   });
 
 
@@ -263,10 +247,7 @@ describe('Order statistics', () => {
           "_total": 0.55
         }
       ];
-      RxLocalStorage.saveLocalStorage({
-        localStorageKey: ORDERS_KEY,
-        value: data
-      }).subscribe();
+      replaceSqliteData(database, {orders: data});
     });
 
 

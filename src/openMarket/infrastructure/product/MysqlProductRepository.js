@@ -6,7 +6,7 @@ export default class MysqlProductRepository extends ProductRepository {
 
   /**
    * @param {MysqlConnection} connection
-   * @param {MysqlProductMapper} productMapper
+   * @param {SqlProductMapper} productMapper
    */
   constructor({connection, productMapper})  {
     super();

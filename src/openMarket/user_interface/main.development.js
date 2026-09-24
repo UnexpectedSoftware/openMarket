@@ -9,6 +9,8 @@ const sourceDirectory = typeof __dirname === 'undefined'
 
 const versionLabel = process.env.OPENMARKET_VERSION;
 
+app.setName('OpenMarket');
+
 let menu;
 let template;
 let mainWindow = null;
@@ -58,6 +60,8 @@ app.whenReady().then(async () => {
   await installExtensions();
 
   const isDevelopment = process.env.NODE_ENV === 'development';
+  const userData = app.getPath('userData');
+  process.env.OPENMARKET_USER_DATA = userData;
 
   mainWindow = new BrowserWindow({
     show: false,
@@ -67,7 +71,8 @@ app.whenReady().then(async () => {
       nodeIntegration: true,
       contextIsolation: false,
       sandbox: false,
-      webSecurity: !isDevelopment
+      webSecurity: !isDevelopment,
+      additionalArguments: [`--openmarket-user-data=${userData}`]
     }
   });
 

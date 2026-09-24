@@ -1,8 +1,10 @@
 import la from 'lazy-ass';
 import is from 'check-more-types';
 import openMarket from '../openMarket/application/index';
-import RxLocalStorage from "../openMarket/infrastructure/service/RxLocalStorage";
-import {CATEGORIES_KEY, PRODUCTS_KEY} from "../openMarket/infrastructure/service/LocalStorageKeys";
+import container from '../openMarket/infrastructure/dic/Container';
+import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
+
+const database = container.getInstance({key: 'sqliteConnection'}).database;
 
 
 /**
@@ -47,9 +49,7 @@ beforeEach(function () {
     {"_id":"3","_name":"Heimdall"}
   ];
 
-  RxLocalStorage.saveLocalStorage({localStorageKey: PRODUCTS_KEY, value:productsData})
-    .flatMap(saved => RxLocalStorage.saveLocalStorage({localStorageKey: CATEGORIES_KEY, value:categoryData}))
-    .subscribe();
+  replaceSqliteData(database, {products: productsData, categories: categoryData});
 
 });
 describe('Product list all use case', () => {
