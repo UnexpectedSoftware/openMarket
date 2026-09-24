@@ -18,7 +18,7 @@ npm ci
 
 ## Run it locally
 
-Development uses the LocalStorage repositories and the fixture data in `src/resources/fixtures/`:
+Development, `npm start`, and a packaged install use a SQLite file, `openmarket.sqlite`, in Electron's user-data directory. The first `npm run dev` copies `src/resources/fixtures/` into that file when it has no categories. Later launches leave the file alone, so an installed app with an empty file starts empty.
 
 ```bash
 npm run dev
@@ -26,14 +26,14 @@ npm run dev
 
 That starts the webpack middleware on port 3000 and opens the Electron window with hot reload.
 
-To open the production bundle against the same LocalStorage data:
+To open the production bundle against the same file:
 
 ```bash
 npm run build
 npm start
 ```
 
-`npm start` sets `OPENMARKET_STORE=LocalStorage`. A packaged build that does not set that variable uses the production config in `src/resources/application-pro.json`, which points at MySQL (`localhost`, database `tienda`).
+`OPENMARKET_STORE=LocalStorage` still selects the file store. `OPENMARKET_STORE=Mysql` still selects MySQL from `src/resources/application-pro.json` (`localhost`, database `tienda`).
 
 ## Tests
 
@@ -41,7 +41,7 @@ npm start
 npm run test-all
 ```
 
-Unit tests mock MySQL. Integration tests run the use cases against LocalStorage. No database is required.
+Unit tests mock MySQL. Integration tests run the use cases against a temporary SQLite file. No database server is required.
 
 ## Packaging
 
@@ -51,7 +51,7 @@ A push to `master` runs the tests, then builds installers and publishes them as 
 - Windows x64: NSIS `.exe`
 - macOS: universal `.dmg` and `.zip` (Intel and Apple Silicon)
 
-The release tag is `v` plus the `version` in `package.json`, for example `v1.0.0`. The installer name carries that version, the OS, and the architecture. The running window shows the same number at the right of the header. The AppImage uses a static runtime, so it does not need FUSE 2. Before a release is published, CI launches each installer with `OPENMARKET_STORE=LocalStorage` and checks that the window loads. A merge does not change the number. The pull request says `Version: patch`, `minor`, `major`, or `none`, and `package.json` has to match that choice. These builds are unsigned, so Windows SmartScreen and macOS Gatekeeper warn on first launch.
+The release tag is `v` plus the `version` in `package.json`, for example `v1.1.0`. The installer name carries that version, the OS, and the architecture. The running window shows the same number at the right of the header. The AppImage uses a static runtime, so it does not need FUSE 2. Before a release is published, CI launches each installer and checks that the window loads. A merge does not change the number. The pull request says `Version: patch`, `minor`, `major`, or `none`, and `package.json` has to match that choice. These builds are unsigned, so Windows SmartScreen and macOS Gatekeeper warn on first launch.
 
 To build the installer for the machine you are on:
 

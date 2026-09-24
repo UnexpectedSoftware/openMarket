@@ -1,5 +1,5 @@
 {
-  "store": "Mysql",
+  "store": "Sqlite",
   "mysql": {
     "host": "localhost",
     "user": "root",

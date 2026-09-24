@@ -1,17 +1,17 @@
 import {expect} from 'chai';
 import sinon from 'sinon';
 import OrderFactoryImpl from "../../../../openMarket/infrastructure/order/OrderFactoryImpl";
-import MysqlOrderMapper from "../../../../openMarket/infrastructure/order/MysqlOrderMapper";
+import SqlOrderMapper from "../../../../openMarket/infrastructure/order/SqlOrderMapper";
 import UUIDIdentity from "../../../../openMarket/infrastructure/service/UUIDIdentity";
 
 
 const orderFactory = new OrderFactoryImpl({identity: new UUIDIdentity()});
 
-describe('Mysql Order Mapper', () => {
-  describe('Given Order rows data from mysql', () => {
+describe('Sql Order Mapper', () => {
+  describe('Given Order rows data from sql', () => {
     it('should return an Observable of one Order', (done) => {
 
-      const givenMysqlRows = [
+      const givenRows = [
         {
           id: 27,
           created_at: '04-feb-2004 0:00:00',
@@ -41,7 +41,7 @@ describe('Mysql Order Mapper', () => {
         }
       ];
 
-      const mysqlOrderMapper = new MysqlOrderMapper({orderFactory});
+      const sqlOrderMapper = new SqlOrderMapper({orderFactory});
 
       const spyNext = sinon.spy();
 
@@ -70,8 +70,8 @@ describe('Mysql Order Mapper', () => {
         ]
       });
 
-      mysqlOrderMapper.toDomain({
-        rows: givenMysqlRows
+      sqlOrderMapper.toDomain({
+        rows: givenRows
       })
         .subscribe(
           (data) => {

@@ -1,7 +1,7 @@
 import ObjectMapper from "../service/ObjectMapper";
 import * as Rx from "rxjs";
 
-export default class MysqlOrderMapper extends ObjectMapper {
+export default class SqlOrderMapper extends ObjectMapper {
   constructor({orderFactory}){
     super();
     this._orderFactory = orderFactory;

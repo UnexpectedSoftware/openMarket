@@ -25,14 +25,18 @@ import OrderFactoryImpl from "../order/OrderFactoryImpl";
 import ProductFactoryImpl from "../product/ProductFactoryImpl";
 import ProductFilterFactoryImpl from "../product/ProductFilterFactoryImpl";
 import LocalStorageProductMapper from "../product/LocalStorageProductMapper";
-import MysqlProductMapper from "../product/MysqlProductMapper";
+import SqlProductMapper from "../product/SqlProductMapper";
 import EnvironmentService from "../service/EnvironmentService";
 import baseConfig from '../../../resources/application.json'
 import dev from '../../../resources/application-dev.json'
 import pro from '../../../resources/application-pro.json'
 import MysqlOrderRepository from "../order/MysqlOrderRepository";
-import MysqlOrderMapper from "../order/MysqlOrderMapper";
+import SqlOrderMapper from "../order/SqlOrderMapper";
 import MysqlPool from "../service/MysqlPool";
+import SqliteConnection from "../service/SqliteConnection";
+import SqliteCategoryRepository from "../category/SqliteCategoryRepository";
+import SqliteProductRepository from "../product/SqliteProductRepository";
+import SqliteOrderRepository from "../order/SqliteOrderRepository";
 const env = process.env.NODE_ENV
 const storeOverride = process.env.OPENMARKET_STORE
 
@@ -67,8 +71,16 @@ class Container {
     return new MysqlPool({config:this._environment.config})
   }
 
+  _sqliteConnection() {
+    return new SqliteConnection();
+  }
+
   _fixturesService() {
-    return new FixturesService();
+    const store = this._environment.config.store;
+    return new FixturesService({
+      store,
+      database: store === 'Sqlite' ? this.getInstance({key: 'sqliteConnection'}).database : null
+    });
   }
 
   _printerConnection(){
@@ -88,6 +100,11 @@ class Container {
         });
       case 'LocalStorage':
         return new LocalStorageCategoryRepository({ categoryFactory: this.getInstance({key: 'categoryFactory'})});
+      case 'Sqlite':
+        return new SqliteCategoryRepository({
+          connection: this.getInstance({key: 'sqliteConnection'}),
+          categoryFactory: this.getInstance({key: 'categoryFactory'})
+        });
       default:
         throw new Error('Unsupported implementation!');
     }
@@ -155,6 +172,11 @@ class Container {
         });
       case 'LocalStorage':
         return new LocalStorageProductRepository({ productMapper: this.getInstance({key: 'productMapper'})});
+      case 'Sqlite':
+        return new SqliteProductRepository({
+          connection: this.getInstance({key: 'sqliteConnection'}),
+          productMapper: this.getInstance({key: 'productMapper'})
+        });
       default:
         throw new Error('Unsupported implementation!');
     }
@@ -208,7 +230,8 @@ class Container {
   _productMapper() {
     switch(this._environment.config.store) {
       case 'Mysql':
-        return new MysqlProductMapper({
+      case 'Sqlite':
+        return new SqlProductMapper({
           productFactory: this.getInstance({key: 'productFactory'}),
           categoryFactory: this.getInstance({key: 'categoryFactory'})
         });
@@ -233,11 +256,18 @@ class Container {
         return new LocalStorageOrderRepository({
           orderFactory: this.getInstance({key: 'orderFactory'})
         });
+      case 'Sqlite':
+        return new SqliteOrderRepository({
+          connection: this.getInstance({key: 'sqliteConnection'}),
+          objectMapper: this.getInstance({key: 'orderMapper'})
+        });
+      default:
+        throw new Error('Unsupported implementation!');
     }
   }
 
   _orderMapper(){
-    return new MysqlOrderMapper({
+    return new SqlOrderMapper({
       orderFactory: this.getInstance({key: 'orderFactory'})
     });
   }

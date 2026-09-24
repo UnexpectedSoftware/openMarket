@@ -6,10 +6,22 @@ import {CATEGORIES_KEY, PRODUCTS_KEY, ORDERS_KEY} from "../service/LocalStorageK
 import categories from "../../../resources/fixtures/categories.json"
 import products from "../../../resources/fixtures/products.json"
 import orders from "../../../resources/fixtures/orders.json"
+import { seedSqliteIfEmpty } from "./sqliteSeed";
 
 export default class FixturesService {
 
+  constructor({store = 'LocalStorage', database = null} = {}) {
+    this._store = store;
+    this._database = database;
+  }
+
   load() {
+    if (this._store === 'Sqlite') {
+      if (process.env.NODE_ENV === 'development' && this._database) {
+        seedSqliteIfEmpty(this._database, {categories, products, orders});
+      }
+      return;
+    }
     this.loadCategories();
     this.loadProducts();
     this.loadOrders();

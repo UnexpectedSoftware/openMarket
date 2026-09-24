@@ -2,8 +2,10 @@ import la from 'lazy-ass';
 import is from 'check-more-types';
 import Rx from 'rxjs/Rx';
 import openMarket from '../openMarket/application/index';
-import RxLocalStorage from "../openMarket/infrastructure/service/RxLocalStorage";
-import {CATEGORIES_KEY} from "../openMarket/infrastructure/service/LocalStorageKeys";
+import container from '../openMarket/infrastructure/dic/Container';
+import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
+
+const database = container.getInstance({key: 'sqliteConnection'}).database;
 /**
  * Howto
  * https://glebbahmutov.com/blog/testing-reactive-code/
@@ -37,8 +39,7 @@ beforeEach(function () {
       {"_id":"2","_name":"Thor"},
       {"_id":"3","_name":"Heimdall"}
     ];
-  RxLocalStorage.saveLocalStorage({localStorageKey: CATEGORIES_KEY, value:data})
-    .subscribe();
+  replaceSqliteData(database, {categories: data});
 });
 
 describe('Category find by id use case', () => {
