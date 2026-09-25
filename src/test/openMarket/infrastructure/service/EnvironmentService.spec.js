@@ -6,15 +6,15 @@ describe('Environment service', () => {
     it('should return DEV properties mixed with base properties', () => {
       const givenNodeEnvironment = 'development';
       const givenBaseConfig = {
-        "store": "LocalStorage",
+        "store": "base",
         "maxConnections": 10,
         "tableLimit": 20
       };
       const givenDevConfig = {
-        "store": "LocalStorage"
+        "store": "base"
       };
       const givenProConfig = {
-        "store": "Mysql"
+        "store": "pro"
       };
 
       const environmentService = new EnvironmentService({
@@ -25,7 +25,7 @@ describe('Environment service', () => {
       });
 
       const expectedConfig = {
-        "store": "LocalStorage",
+        "store": "base",
         "maxConnections": 10,
         "tableLimit": 20
       };
@@ -37,15 +37,15 @@ describe('Environment service', () => {
     it('should return PRO properties mixed with base properties', () => {
       const givenNodeEnvironment = 'production';
       const givenBaseConfig = {
-        "store": "LocalStorage",
+        "store": "base",
         "maxConnections": 10,
         "tableLimit": 20
       };
       const givenDevConfig = {
-        "store": "LocalStorage"
+        "store": "base"
       };
       const givenProConfig = {
-        "store": "Mysql"
+        "store": "pro"
       };
 
       const environmentService = new EnvironmentService({
@@ -56,7 +56,7 @@ describe('Environment service', () => {
       });
 
       const expectedConfig = {
-        "store": "Mysql",
+        "store": "pro",
         "maxConnections": 10,
         "tableLimit": 20
       };
@@ -69,15 +69,15 @@ describe('Environment service', () => {
     it('should return base properties', () => {
       const givenNodeEnvironment = undefined;
       const givenBaseConfig = {
-        "store": "LocalStorage",
+        "store": "base",
         "maxConnections": 10,
         "tableLimit": 20
       };
       const givenDevConfig = {
-        "store": "LocalStorage"
+        "store": "base"
       };
       const givenProConfig = {
-        "store": "Mysql"
+        "store": "pro"
       };
 
       const environmentService = new EnvironmentService({
@@ -88,7 +88,7 @@ describe('Environment service', () => {
       });
 
       const expectedConfig = {
-        "store": "LocalStorage",
+        "store": "base",
         "maxConnections": 10,
         "tableLimit": 20
       };
@@ -102,10 +102,10 @@ describe('Environment service', () => {
       const givenNodeEnvironment = 'development';
       const givenBaseConfig = undefined;
       const givenDevConfig = {
-        "store": "LocalStorage"
+        "store": "base"
       };
       const givenProConfig = {
-        "store": "Mysql"
+        "store": "pro"
       };
 
       const environmentService = new EnvironmentService({
@@ -116,7 +116,7 @@ describe('Environment service', () => {
       });
 
       const expectedConfig = {
-        "store": "LocalStorage"
+        "store": "base"
       };
 
       expect(environmentService.config).to.deep.equal(expectedConfig);
@@ -128,10 +128,10 @@ describe('Environment service', () => {
       const givenNodeEnvironment = 'production';
       const givenBaseConfig = undefined;
       const givenDevConfig = {
-        "store": "LocalStorage"
+        "store": "base"
       };
       const givenProConfig = {
-        "store": "Mysql"
+        "store": "pro"
       };
 
       const environmentService = new EnvironmentService({
@@ -142,7 +142,7 @@ describe('Environment service', () => {
       });
 
       const expectedConfig = {
-        "store": "Mysql"
+        "store": "pro"
       };
 
       expect(environmentService.config).to.deep.equal(expectedConfig);

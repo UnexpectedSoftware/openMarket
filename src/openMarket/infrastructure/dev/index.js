@@ -2,9 +2,9 @@ import FixturesService from './FixturesService';
 import * as demoCatalog from './demoCatalog';
 import * as demoOrders from './demoOrders';
 
-export function createFixturesService({database, store}) {
+export function createFixturesService({database}) {
   return new FixturesService({
-    database: store === 'Sqlite' ? database : null,
+    database,
     demoCatalog,
     demoOrders
   });
