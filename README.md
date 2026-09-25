@@ -18,7 +18,7 @@ npm ci
 
 ## Run it locally
 
-Development, `npm start`, and a packaged install use a SQLite file, `openmarket.sqlite`, in Electron's user-data directory. The first `npm run dev` fills that file, when it has no categories, with generated categories, products, and a week of orders. Later launches leave the file alone, so an installed app with an empty file starts empty.
+The app stores the shop in an embedded SQLite file, `openmarket.sqlite`, in Electron's user-data directory. Development, `npm start`, and a packaged install all use that file. The first `npm run dev` fills it, when it has no categories, with generated categories, products, and a week of orders. Later launches leave the file alone, so an installed app with an empty file starts empty.
 
 ```bash
 npm run dev
@@ -33,15 +33,13 @@ npm run build
 npm start
 ```
 
-`OPENMARKET_STORE=LocalStorage` still selects the file store. `OPENMARKET_STORE=Mysql` still selects MySQL from `src/resources/application-pro.json` (`localhost`, database `tienda`).
-
 ## Tests
 
 ```bash
 npm run test-all
 ```
 
-Unit tests mock MySQL. Integration tests run the use cases against a temporary SQLite file. No database server is required.
+Unit tests cover the services and SQLite repositories. Integration tests run the use cases against a temporary SQLite file. No database server is required.
 
 ## Packaging
 

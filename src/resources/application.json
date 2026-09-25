@@ -1,5 +1,4 @@
 {
-  "store": "Sqlite",
   "maxDaysStatisticsCount": 7,
   "productDefaults":{
     "description": "Default description for quick creation",

@@ -72,8 +72,6 @@ export default merge(baseConfig, {
 
   externals: {
     electron: 'commonjs electron',
-    mysql2: 'commonjs mysql2',
-    'mysql2/promise': 'commonjs mysql2/promise',
     'node:sqlite': 'commonjs node:sqlite'
   },
 
