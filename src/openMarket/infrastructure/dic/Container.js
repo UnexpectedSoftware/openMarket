@@ -1,5 +1,4 @@
 import MysqlConnection from "../service/MysqlConnection";
-import FixturesService from "../service/FixturesService";
 import PrinterConnection from "../printer/PrinterConnection";
 import OrderPrinterService from "../printer/OrderPrinterService";
 import MysqlCategoryRepository from "../category/MysqlCategoryRepository";
@@ -37,6 +36,7 @@ import SqliteConnection from "../service/SqliteConnection";
 import SqliteCategoryRepository from "../category/SqliteCategoryRepository";
 import SqliteProductRepository from "../product/SqliteProductRepository";
 import SqliteOrderRepository from "../order/SqliteOrderRepository";
+import { createFixturesService } from "../dev";
 const env = process.env.NODE_ENV
 const storeOverride = process.env.OPENMARKET_STORE
 
@@ -77,16 +77,9 @@ class Container {
 
   _fixturesService() {
     const store = this._environment.config.store;
-    let demoCatalog = null;
-    let demoOrders = null;
-    if (process.env.NODE_ENV === 'development' && store === 'Sqlite') {
-      demoCatalog = require('../service/demoCatalog');
-      demoOrders = require('../service/demoOrders');
-    }
-    return new FixturesService({
+    return createFixturesService({
       database: store === 'Sqlite' ? this.getInstance({key: 'sqliteConnection'}).database : null,
-      demoCatalog,
-      demoOrders
+      store
     });
   }
 

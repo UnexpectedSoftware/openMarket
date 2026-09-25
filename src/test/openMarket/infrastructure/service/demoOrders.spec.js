@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import moment from 'moment';
 import { add, multiply } from '../../../../openMarket/infrastructure/service/floatCalculatorService';
-import { buildDemoOrders } from '../../../../openMarket/infrastructure/service/demoOrders';
+import { buildDemoOrders } from '../../../../openMarket/infrastructure/dev/demoOrders';
 
 const DISPLAY_FORMAT = 'DD/MM/YYYY HH:mm:ss';
 

@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { add, multiply } from './floatCalculatorService';
+import { add, multiply } from '../service/floatCalculatorService';
 
 const OPEN_MINUTES = 10 * 60;
 const CLOSE_MINUTES = 20 * 60 + 30;

@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import SqliteConnection from '../../../../openMarket/infrastructure/service/SqliteConnection';
-import FixturesService from '../../../../openMarket/infrastructure/service/FixturesService';
+import FixturesService from '../../../../openMarket/infrastructure/dev/FixturesService';
 
 const category = {_id: '1', _name: 'Fruit'};
 const product = {

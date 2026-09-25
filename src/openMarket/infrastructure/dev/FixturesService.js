@@ -1,7 +1,7 @@
 /**
  * @class FixturesService
  */
-import { createFixtureInserter } from './sqliteSeed';
+import { createFixtureInserter } from '../service/sqliteSeed';
 
 export default class FixturesService {
 

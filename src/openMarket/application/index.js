@@ -1,7 +1,6 @@
 /**
  * @class OpenMarket
  */
-import FixturesService from '../infrastructure/service/FixturesService';
 import container from '../infrastructure/dic/Container';
 class OpenMarket {
 
@@ -9,10 +8,6 @@ class OpenMarket {
      * @constructs OpenMarket
      */
   constructor({container}) {
-        /**
-         * @member OpenMarket#fixturesService
-         * @type {FixturesService}
-         */
     this.fixturesService = container.getInstance({key:'fixturesService'});
     this.fixturesService.load();
         /**

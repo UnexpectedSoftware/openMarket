@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { buildCategories, buildProducts } from '../../../../openMarket/infrastructure/service/demoCatalog';
+import { buildCategories, buildProducts } from '../../../../openMarket/infrastructure/dev/demoCatalog';
 
 describe('Demo catalog', () => {
   const categories = buildCategories();

@@ -65,7 +65,11 @@ export default merge(baseConfig, {
       filename: 'app.html',
       template: path.join(root, 'src/openMarket/user_interface/app.html'),
       inject: true
-    })
+    }),
+    new webpack.NormalModuleReplacementPlugin(
+      /[\\/]infrastructure[\\/]dev[\\/]index\.js$/,
+      path.join(root, 'src/openMarket/infrastructure/fixturesNoop.js')
+    )
   ],
 
   externals: {
