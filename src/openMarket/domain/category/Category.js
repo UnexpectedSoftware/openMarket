@@ -9,8 +9,9 @@ export default class Category {
      * @constructs Category
      * @param {string} id
      * @param {string} name
+     * @param {?string} imageName
      */
-  constructor({ id, name }) {
+  constructor({ id, name, imageName = null }) {
         /**
          * @type {string}
          * @member Category#id
@@ -23,6 +24,13 @@ export default class Category {
          * */
     this._name = name;
 
+        /**
+         * Filename stored next to the database, or null
+         * @type {?string}
+         * @member Category#imageName
+         * */
+    this._imageName = imageName || null;
+
   }
 
 
@@ -32,5 +40,9 @@ export default class Category {
 
   get id() {
     return this._id;
+  }
+
+  get imageName() {
+    return this._imageName;
   }
 }

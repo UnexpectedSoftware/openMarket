@@ -4,6 +4,7 @@ import { combineReducers } from 'redux';
 import { routerReducer as routing } from 'react-router-redux';
 import { reducer as formReducer } from 'redux-form'
 import newProductReducer from '../product/new_product/reducer';
+import categoriesReducer from '../category/reducer';
 import listProductLowStockReducer from '../product/list_products_low_stock/reducer';
 import listProductsReducer from '../product/list_products/reducer';
 import listOrderReducer from '../order/list_orders/reducer';
@@ -18,6 +19,7 @@ import {reducer as notifications} from 'react-notification-system-redux';
 
 export const rootReducer = combineReducers({
   newProduct: newProductReducer,
+  categoriesPage: categoriesReducer,
   listProductLowStock: listProductLowStockReducer,
   listProducts:listProductsReducer,
   newOrder: newOrderReducer,

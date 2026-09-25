@@ -2,19 +2,21 @@ import CategoryRepository from "../../domain/category/CategoryRepository";
 import * as Rx from "rxjs";
 
 export default class SqliteCategoryRepository extends CategoryRepository {
-  constructor({connection, categoryFactory}) {
+  constructor({connection, categoryFactory, images}) {
     super();
     this._database = connection.database;
     this._categoryFactory = categoryFactory;
+    this._images = images;
   }
 
   findAll() {
     return Rx.Observable.defer(() => {
-      const rows = this._database.prepare('SELECT id, name FROM category').all();
+      const rows = this._database.prepare('SELECT id, name, image_name FROM category').all();
       return Rx.Observable.from(rows)
         .map(row => this._categoryFactory.createWithId({
           id: row.id,
-          name: row.name
+          name: row.name,
+          imageName: row.image_name
         }))
         .toArray();
     });
@@ -22,21 +24,35 @@ export default class SqliteCategoryRepository extends CategoryRepository {
 
   findById({id}) {
     return Rx.Observable.defer(() => {
-      const row = this._database.prepare('SELECT id, name FROM category WHERE id = ?').get(String(id));
+      const row = this._database.prepare('SELECT id, name, image_name FROM category WHERE id = ?').get(String(id));
       if (!row) {
         return Rx.Observable.empty();
       }
       return Rx.Observable.of(this._categoryFactory.createWithId({
         id: row.id,
-        name: row.name
+        name: row.name,
+        imageName: row.image_name
       }));
     });
   }
 
-  save({name}) {
+  save({name, imagePath}) {
     return Rx.Observable.defer(() => {
       const category = this._categoryFactory.createWith({name});
-      this._database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run(category.id, category.name);
+      let imageName = null;
+      if (imagePath) {
+        imageName = this._images.store({id: category.id, sourcePath: imagePath});
+      }
+      try {
+        this._database.prepare(
+          'INSERT INTO category (id, name, image_name) VALUES (?, ?, ?)'
+        ).run(category.id, category.name, imageName);
+      } catch (insertError) {
+        if (imageName) {
+          this._images.remove(imageName);
+        }
+        throw insertError;
+      }
       return Rx.Observable.of(null);
     });
   }

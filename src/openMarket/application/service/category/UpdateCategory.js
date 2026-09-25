@@ -18,7 +18,6 @@ export default class UpdateCategory {
      *
      * @param {string} id
      * @param {string} name
-     * @param {string} imageUrl
      * @returns {Observable.<null>}
      */
   updateCategory({ id, name }) {

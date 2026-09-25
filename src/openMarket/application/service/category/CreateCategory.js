@@ -17,10 +17,10 @@ export default class CreateCategory {
     /**
      *
      * @param {string} name
-     * @param {string} imageUrl
+     * @param {?string} imagePath absolute path of a file to copy, when the user picked one
      * @returns {*|Observable.<null>}
      */
-  createCategory({ name }) {
-    return this.repository.save({ name });
+  createCategory({ name, imagePath }) {
+    return this.repository.save({ name, imagePath });
   }
 }
