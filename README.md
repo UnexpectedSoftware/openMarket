@@ -18,7 +18,7 @@ npm ci
 
 ## Run it locally
 
-Development, `npm start`, and a packaged install use a SQLite file, `openmarket.sqlite`, in Electron's user-data directory. The first `npm run dev` copies `src/resources/fixtures/` into that file when it has no categories. Later launches leave the file alone, so an installed app with an empty file starts empty.
+Development, `npm start`, and a packaged install use a SQLite file, `openmarket.sqlite`, in Electron's user-data directory. The first `npm run dev` fills that file, when it has no categories, with generated categories, products, and a week of orders. Later launches leave the file alone, so an installed app with an empty file starts empty.
 
 ```bash
 npm run dev

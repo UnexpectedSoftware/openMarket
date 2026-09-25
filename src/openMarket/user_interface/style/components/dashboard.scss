@@ -1,0 +1,25 @@
+.dashboard-takings {
+  margin: 0 0 $sp-base * 2;
+  color: $c-primary-darkest;
+  font-size: 4rem;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.dashboard-takings-label {
+  display: block;
+  margin-top: $sp-base / 2;
+  color: $c-grey-darkest;
+  font-size: 1.4rem;
+  font-weight: normal;
+}
+
+.dashboard-chart {
+  position: relative;
+  height: 280px;
+
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+}

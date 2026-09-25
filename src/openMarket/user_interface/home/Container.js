@@ -1,8 +1,14 @@
 import React, {Component} from "react";
-import {Link} from "react-router";
 import {Bar} from 'react-chartjs-2';
 import moment from "moment";
+import { add } from "../../infrastructure/service/floatCalculatorService";
 
+const BAR_COLOR = 'rgba(33, 150, 243, 0.35)';
+const BAR_BORDER = '#2196F3';
+
+function formatEuro(amount) {
+  return '€' + Number(amount).toFixed(2);
+}
 
 export default class Container extends Component {
 
@@ -11,7 +17,24 @@ export default class Container extends Component {
     this.mapChartData = this.mapChartData.bind(this);
 
     this._chartOptions = {
-      maintainAspectRatio: false
+      maintainAspectRatio: false,
+      legend: { display: false },
+      scales: {
+        yAxes: [{
+          ticks: {
+            beginAtZero: true,
+            callback: value => formatEuro(value)
+          }
+        }],
+        xAxes: [{
+          gridLines: { display: false }
+        }]
+      },
+      tooltips: {
+        callbacks: {
+          label: tooltipItem => formatEuro(tooltipItem.yLabel)
+        }
+      }
     };
 
   }
@@ -24,47 +47,37 @@ export default class Container extends Component {
 
 
   mapChartData = () => {
-    const { statistics } = this.props;
-    const days = statistics.totalAmountByDays.map(data => moment(data.createdAt,'DD/MM/YYYY').format("MMMM Do"));
+    const days = this.props.statistics.totalAmountByDays;
     return {
-      labels: days,
-        datasets: [
-      {
-        label: 'Last 7 days sells',
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.2)',
-          'rgba(54, 162, 235, 0.2)',
-          'rgba(255, 206, 86, 0.2)',
-          'rgba(75, 192, 192, 0.2)',
-          'rgba(153, 102, 255, 0.2)',
-          'rgba(255, 159, 64, 0.2)',
-          'rgba(255, 99, 132, 0.2)'
-        ],
-        borderColor: [
-          'rgba(255,99,132,1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(153, 102, 255, 1)',
-          'rgba(255, 159, 64, 1)',
-          'rgba(255,99,132,1)'
-        ],
-        borderWidth: 1,
-        hoverBackgroundColor: 'rgba(255,99,132,0.4)',
-        hoverBorderColor: 'rgba(255,99,132,1)',
-        data: statistics.totalAmountByDays.map(data => data.total)
-      }
-    ]
+      labels: days.map(data => moment(data.createdAt, 'DD/MM/YYYY').format('ddd D')),
+      datasets: [
+        {
+          label: 'Takings',
+          backgroundColor: BAR_COLOR,
+          borderColor: BAR_BORDER,
+          borderWidth: 1,
+          hoverBackgroundColor: 'rgba(33, 150, 243, 0.55)',
+          data: days.map(data => data.total)
+        }
+      ]
     };
   }
 
   render() {
+    const takings = this.props.statistics.totalAmountByDays.reduce(
+      (sum, day) => add(sum, day.total),
+      0
+    );
     return (
       <div>
-        <div className={"container"}>
-          <h2>Dashboard</h2>
-          <div id="top">
-            <Bar data={this.mapChartData()} options={this._chartOptions} width={400} height={600}/>
+        <div className="container dashboard">
+          <h2>Last 7 days</h2>
+          <p className="dashboard-takings">
+            {formatEuro(takings)}
+            <span className="dashboard-takings-label">Takings</span>
+          </p>
+          <div className="dashboard-chart">
+            <Bar data={this.mapChartData()} options={this._chartOptions} />
           </div>
         </div>
       </div>
