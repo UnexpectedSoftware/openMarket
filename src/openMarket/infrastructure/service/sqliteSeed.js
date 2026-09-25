@@ -23,7 +23,7 @@ function bit(value) {
   return value ? 1 : 0;
 }
 
-export function replaceSqliteData(database, {categories = [], products = [], orders = []} = {}) {
+export function createFixtureInserter(database) {
   const insertCategory = database.prepare('INSERT INTO category (id, name) VALUES (?, ?)');
   const insertProduct = database.prepare(
     'INSERT INTO product (barcode, name, description, price, base_price, stock, stock_min, status, weighted, category_id) ' +
@@ -33,22 +33,16 @@ export function replaceSqliteData(database, {categories = [], products = [], ord
   const insertLine = database.prepare(
     'INSERT INTO line (order_id, barcode, name, price, quantity) VALUES (?, ?, ?, ?, ?)'
   );
+  const categoryIds = new Set();
+  const usedOrderIds = new Set();
 
-  database.exec('BEGIN');
-  try {
-    database.exec('DELETE FROM line');
-    database.exec('DELETE FROM "order"');
-    database.exec('DELETE FROM product');
-    database.exec('DELETE FROM category');
-
-    const categoryIds = new Set();
-    categories.forEach(category => {
+  return {
+    insertCategory(category) {
       const id = String(category._id);
       insertCategory.run(id, category._name);
       categoryIds.add(id);
-    });
-
-    products.forEach(product => {
+    },
+    insertProduct(product) {
       const categoryId = product._categoryId == null ? null : String(product._categoryId);
       if (categoryId != null && !categoryIds.has(categoryId)) {
         insertCategory.run(categoryId, categoryId);
@@ -66,17 +60,28 @@ export function replaceSqliteData(database, {categories = [], products = [], ord
         bit(product._weighted),
         categoryId
       );
-    });
-
-    const usedOrderIds = new Set();
-    orders.forEach(order => {
+    },
+    insertOrder(order) {
       const id = allocateId(order._id, usedOrderIds);
       insertOrder.run(id, toStoredBound(order._createdAt), order._total);
       (order._lines || []).forEach(line => {
         insertLine.run(id, line.barcode, line.name, line.price, line.quantity);
       });
-    });
+    }
+  };
+}
 
+export function replaceSqliteData(database, {categories = [], products = [], orders = []} = {}) {
+  const inserter = createFixtureInserter(database);
+  database.exec('BEGIN');
+  try {
+    database.exec('DELETE FROM line');
+    database.exec('DELETE FROM "order"');
+    database.exec('DELETE FROM product');
+    database.exec('DELETE FROM category');
+    categories.forEach(category => inserter.insertCategory(category));
+    products.forEach(product => inserter.insertProduct(product));
+    orders.forEach(order => inserter.insertOrder(order));
     database.exec('COMMIT');
   } catch (error) {
     try {
@@ -85,12 +90,5 @@ export function replaceSqliteData(database, {categories = [], products = [], ord
       // A failed statement can already have ended the transaction.
     }
     throw error;
-  }
-}
-
-export function seedSqliteIfEmpty(database, data) {
-  const count = Number(database.prepare('SELECT count(*) AS total FROM category').get().total);
-  if (count === 0) {
-    replaceSqliteData(database, data);
   }
 }

@@ -1,45 +1,54 @@
 /**
  * @class FixturesService
  */
-import RxLocalStorage from "../service/RxLocalStorage";
-import {CATEGORIES_KEY, PRODUCTS_KEY, ORDERS_KEY} from "../service/LocalStorageKeys";
-import categories from "../../../resources/fixtures/categories.json"
-import products from "../../../resources/fixtures/products.json"
-import orders from "../../../resources/fixtures/orders.json"
-import { seedSqliteIfEmpty } from "./sqliteSeed";
+import { createFixtureInserter } from './sqliteSeed';
 
 export default class FixturesService {
 
-  constructor({store = 'LocalStorage', database = null} = {}) {
-    this._store = store;
+  constructor({database = null, demoCatalog = null, demoOrders = null} = {}) {
     this._database = database;
+    this._demoCatalog = demoCatalog;
+    this._demoOrders = demoOrders;
   }
 
   load() {
-    if (this._store === 'Sqlite') {
-      if (process.env.NODE_ENV === 'development' && this._database) {
-        seedSqliteIfEmpty(this._database, {categories, products, orders});
-      }
+    if (process.env.NODE_ENV !== 'development' || !this._database || !this._demoCatalog || !this._demoOrders) {
       return;
     }
-    this.loadCategories();
-    this.loadProducts();
-    this.loadOrders();
+    const count = Number(this._database.prepare('SELECT count(*) AS total FROM category').get().total);
+    if (count > 0) {
+      return;
+    }
+
+    this._inserter = createFixtureInserter(this._database);
+    this._database.exec('BEGIN');
+    try {
+      this.loadCategories();
+      this.loadProducts();
+      this.loadOrders();
+      this._database.exec('COMMIT');
+    } catch (error) {
+      try {
+        this._database.exec('ROLLBACK');
+      } catch (rollbackError) {
+        // A failed statement can already have ended the transaction.
+      }
+      throw error;
+    }
   }
 
-  loadCategories(){
-    RxLocalStorage.saveLocalStorage({localStorageKey: CATEGORIES_KEY, value:categories})
-      .subscribe();
+  loadCategories() {
+    this._categories = this._demoCatalog.buildCategories();
+    this._categories.forEach(category => this._inserter.insertCategory(category));
   }
 
-  loadProducts(){
-    RxLocalStorage.saveLocalStorage({localStorageKey: PRODUCTS_KEY, value:products})
-      .subscribe();
+  loadProducts() {
+    this._products = this._demoCatalog.buildProducts(this._categories);
+    this._products.forEach(product => this._inserter.insertProduct(product));
   }
 
   loadOrders() {
-    RxLocalStorage.saveLocalStorage({localStorageKey: ORDERS_KEY, value:orders})
-      .subscribe();
+    this._demoOrders.buildDemoOrders(this._products).forEach(order => this._inserter.insertOrder(order));
   }
 
 }

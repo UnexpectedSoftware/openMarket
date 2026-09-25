@@ -77,9 +77,16 @@ class Container {
 
   _fixturesService() {
     const store = this._environment.config.store;
+    let demoCatalog = null;
+    let demoOrders = null;
+    if (process.env.NODE_ENV === 'development' && store === 'Sqlite') {
+      demoCatalog = require('../service/demoCatalog');
+      demoOrders = require('../service/demoOrders');
+    }
     return new FixturesService({
-      store,
-      database: store === 'Sqlite' ? this.getInstance({key: 'sqliteConnection'}).database : null
+      database: store === 'Sqlite' ? this.getInstance({key: 'sqliteConnection'}).database : null,
+      demoCatalog,
+      demoOrders
     });
   }
 
