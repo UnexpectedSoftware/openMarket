@@ -14,6 +14,7 @@ import weightedDialogReducer from '../order/weighted_dialog/reducer';
 import printerDialogReducer from '../order/printer_dialog/reducer';
 import newProductDialogReducer from '../order/new_product_dialog/reducer';
 import homeReducer from '../home/reducer';
+import imageFetchReducer from '../image/reducer';
 import {reducer as notifications} from 'react-notification-system-redux';
 
 
@@ -29,6 +30,7 @@ export const rootReducer = combineReducers({
   printerDialog: printerDialogReducer,
   newProductDialog: newProductDialogReducer,
   statistics: homeReducer,
+  imageFetch: imageFetchReducer,
   notifications,
   form: formReducer,
   routing

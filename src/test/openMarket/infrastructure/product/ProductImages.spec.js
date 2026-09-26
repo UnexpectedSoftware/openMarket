@@ -224,4 +224,95 @@ describe('product images', () => {
       cleanup(directory);
     }
   });
+
+  it('updates only the image of an existing product', (done) => {
+    const {directory, connection, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    repository.save({product: product('0001', 'Apple')})
+      .flatMap(() => repository.updateProduct({barcode: '0001', imagePath: source}))
+      .flatMap(() => repository.findByBarcode({barcode: '0001'}))
+      .subscribe(
+        saved => {
+          const row = connection.database.prepare(
+            'SELECT name, price, stock, image_name FROM product WHERE barcode = ?'
+          ).get('0001');
+          expect(row).to.deep.equal({name: 'Apple', price: 1, stock: 4, image_name: '0001.png'});
+          expect(saved.imageName).to.equal('0001.png');
+          expect(fs.existsSync(path.join(directory, '0001.png'))).to.equal(true);
+          cleanup(directory);
+          done();
+        },
+        error => {
+          cleanup(directory);
+          done(error);
+        }
+      );
+  });
+
+  it('rejects an image update for an unknown barcode', (done) => {
+    const {directory, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    repository.updateProduct({barcode: 'missing', imagePath: source})
+      .subscribe(
+        () => {
+          cleanup(directory);
+          done(new Error('expected a missing product'));
+        },
+        error => {
+          expect(error.message).to.match(/product not found/);
+          cleanup(directory);
+          done();
+        }
+      );
+  });
+
+  it('returns one ordered page and includes disabled products', (done) => {
+    const {directory, repository} = setup();
+    const disabled = product('0002', 'Pear');
+    disabled._status = 'DISABLED';
+    repository.save({product: product('0003', 'Fig')})
+      .flatMap(() => repository.save({product: disabled}))
+      .flatMap(() => repository.save({product: product('0001', 'Apple')}))
+      .flatMap(() => repository.findPage({limit: 2, offset: 0}))
+      .flatMap(page => repository.findPage({limit: 2, offset: 2}).map(next => ({page, next})))
+      .subscribe(
+        ({page, next}) => {
+          expect(page.map(item => item.barcode)).to.deep.equal(['0001', '0002']);
+          expect(page[1].status).to.equal('DISABLED');
+          expect(next.map(item => item.barcode)).to.deep.equal(['0003']);
+          cleanup(directory);
+          done();
+        },
+        error => {
+          cleanup(directory);
+          done(error);
+        }
+      );
+  });
+
+  it('counts products that still need a photo and can be looked up', (done) => {
+    const {directory, connection, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    repository.save({product: product('12345678', 'Has photo'), imagePath: source})
+      .flatMap(() => repository.save({product: product('87654321', 'Eight')}))
+      .flatMap(() => repository.save({product: product('62', 'Short')}))
+      .flatMap(() => repository.save({product: product('ABCDEFGH', 'Letters')}))
+      .flatMap(() => repository.save({product: product('123456789012', 'Twelve')}))
+      .flatMap(() => repository.save({product: product('1234567890123', 'Thirteen')}))
+      .flatMap(() => {
+        connection.database.prepare('UPDATE product SET image_name = ? WHERE barcode = ?').run('', '1234567890123');
+        return repository.countWithoutImage();
+      })
+      .subscribe(
+        total => {
+          expect(total).to.equal(3);
+          cleanup(directory);
+          done();
+        },
+        error => {
+          cleanup(directory);
+          done(error);
+        }
+      );
+  });
 });

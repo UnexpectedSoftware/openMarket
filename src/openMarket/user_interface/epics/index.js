@@ -7,6 +7,7 @@ import listProductsEpic from '../product/list_products/epic';
 import listOrderEpic from '../order/list_orders/epic';
 import homeEpic from '../home/epic';
 import newProductDialogEpic from '../order/new_product_dialog/epic'
+import fetchImagesEpic from '../image/epic';
 
 export const rootEpic = combineEpics(
   newProductEpic,
@@ -16,5 +17,6 @@ export const rootEpic = combineEpics(
   listOrderEpic,
   newOrderEpic,
   homeEpic,
-  newProductDialogEpic
+  newProductDialogEpic,
+  fetchImagesEpic
 );

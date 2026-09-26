@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
+import {connect} from 'react-redux';
 import {Link} from "react-router";
 import Menu, {SubMenu, MenuItem} from 'rc-menu';
 
-export default class Navbar extends Component {
+class Navbar extends Component {
 
   constructor(props,context) {
     super(props, context);
@@ -26,12 +27,21 @@ export default class Navbar extends Component {
 
 
   render() {
+    const {imageFetch} = this.props;
     return (
       <div>
         <div className={"header"}>
           <h1>
             OpenMarket
-            {this.state.version ? <span className="app-version">{this.state.version}</span> : null}
+            <span className="header-aside">
+              {imageFetch ? (
+                <span className="fetch-progress">
+                  <span className="fetch-progress-spinner" />
+                  Fetching images {imageFetch.percent}%
+                </span>
+              ) : null}
+              {this.state.version ? <span className="app-version">{this.state.version}</span> : null}
+            </span>
           </h1>
           <Menu
             mode="horizontal"
@@ -56,3 +66,7 @@ export default class Navbar extends Component {
     );
   }
 }
+
+export default connect(
+  state => ({imageFetch: state.imageFetch})
+)(Navbar);

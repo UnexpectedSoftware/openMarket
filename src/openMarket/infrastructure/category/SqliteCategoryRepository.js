@@ -66,4 +66,34 @@ export default class SqliteCategoryRepository extends CategoryRepository {
       return Rx.Observable.of(null);
     });
   }
+
+  updateCategory({id, imagePath}) {
+    return Rx.Observable.defer(() => {
+      const previous = this._database.prepare(
+        'SELECT name, image_name FROM category WHERE id = ?'
+      ).get(String(id));
+      if (!previous) {
+        return Rx.Observable.throw(new Error('category not found'));
+      }
+      const imageName = this._images.store({id, sourcePath: imagePath});
+      try {
+        const result = this._database.prepare(
+          'UPDATE category SET image_name = ? WHERE id = ?'
+        ).run(imageName, String(id));
+        if (Number(result.changes) === 0) {
+          this._images.remove(imageName);
+          return Rx.Observable.throw(new Error('category not found'));
+        }
+      } catch (updateError) {
+        if (imageName !== previous.image_name) {
+          this._images.remove(imageName);
+        }
+        return Rx.Observable.throw(updateError);
+      }
+      if (previous.image_name && previous.image_name !== imageName) {
+        this._images.remove(previous.image_name);
+      }
+      return Rx.Observable.of(null);
+    });
+  }
 }

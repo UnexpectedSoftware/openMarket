@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { app, BrowserWindow, Menu, shell } from 'electron';
+import { FETCH_IMAGES_CHANNEL } from './image/channel.js';
 
 const sourceDirectory = typeof __dirname === 'undefined'
   ? path.dirname(fileURLToPath(import.meta.url))
@@ -18,6 +19,12 @@ let mainWindow = null;
 const openExternal = url => {
   shell.openExternal(url).catch(error => console.log(error));
 };
+
+function sendFetchImages() {
+  if (mainWindow) {
+    mainWindow.webContents.send(FETCH_IMAGES_CHANNEL);
+  }
+}
 
 async function enableProcessHelpers() {
   if (process.env.NODE_ENV === 'production') {
@@ -146,6 +153,14 @@ app.whenReady().then(async () => {
         }
       }]
     }, {
+      label: 'File',
+      submenu: [{
+        label: 'Fetch images',
+        click() {
+          sendFetchImages();
+        }
+      }]
+    }, {
       label: 'Edit',
       submenu: [{
         label: 'Undo',
@@ -248,6 +263,11 @@ app.whenReady().then(async () => {
     template = [{
       label: '&File',
       submenu: [{
+        label: 'Fetch &images',
+        click() {
+          sendFetchImages();
+        }
+      }, {
         label: '&Open',
         accelerator: 'Ctrl+O'
       }, {
