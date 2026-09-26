@@ -191,4 +191,44 @@ describe('category images', () => {
       fs.rmSync(directory, {recursive: true, force: true});
     }
   });
+
+  it('updates only the image of an existing category', (done) => {
+    const {directory, connection, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    repository.save({name: 'Fruit'})
+      .flatMap(() => {
+        const row = connection.database.prepare('SELECT id, name FROM category').get();
+        return repository.updateCategory({id: row.id, imagePath: source}).map(() => row);
+      })
+      .subscribe(
+        row => {
+          const stored = connection.database.prepare('SELECT id, name, image_name FROM category WHERE id = ?').get(row.id);
+          expect(stored).to.deep.equal({id: row.id, name: 'Fruit', image_name: row.id + '.png'});
+          expect(fs.existsSync(path.join(directory, row.id + '.png'))).to.equal(true);
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        },
+        error => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(error);
+        }
+      );
+  });
+
+  it('rejects an image update for an unknown category', (done) => {
+    const {directory, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    repository.updateCategory({id: 'missing', imagePath: source})
+      .subscribe(
+        () => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(new Error('expected a missing category'));
+        },
+        error => {
+          expect(error.message).to.match(/category not found/);
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        }
+      );
+  });
 });

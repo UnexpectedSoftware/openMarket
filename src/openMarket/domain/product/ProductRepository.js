@@ -63,4 +63,23 @@ export default class ProductRepository {
   countProductsWithLowStock(){
     throw new Error('ProductRepository#product must be implemented');
   }
+
+  /**
+   * One page of products, ordered by barcode. Includes disabled products.
+   * @param {number} limit
+   * @param {number} offset
+   * @returns {Observable<Array<Product>>}
+   */
+  findPage({limit, offset}) {
+    throw new Error('ProductRepository#findPage must be implemented');
+  }
+
+  /**
+   * @param {string} barcode
+   * @param {string} imagePath absolute path of a file to copy
+   * @returns {Observable<null>}
+   */
+  updateProduct({barcode, imagePath}) {
+    throw new Error('ProductRepository#updateProduct must be implemented');
+  }
 }

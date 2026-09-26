@@ -1,0 +1,82 @@
+[
+  {
+    "name": "CHIPS",
+    "products": [
+      {"barcode": "5053990125029", "name": "Pringles Original 70g"},
+      {"barcode": "8411859554606", "name": "risketos 80g"},
+      {"barcode": "8410199019660", "name": "3D Bugles 72g"},
+      {"barcode": "8410199004727", "name": "Artesanas Lays 130g"},
+      {"barcode": "8422114711863", "name": "Apetinas 90g"}
+    ]
+  },
+  {
+    "name": "conservas",
+    "products": [
+      {"barcode": "8410010000181", "name": "Aceite Carbonell 1L"},
+      {"barcode": "8410066000029", "name": "Tomate Orlando frito 400g"},
+      {"barcode": "8413176915825", "name": "Pimientos del Piquillo Enteros"},
+      {"barcode": "8718114782638", "name": "Salsa Rosa Calve"},
+      {"barcode": "3073780902366", "name": "Babibel"}
+    ]
+  },
+  {
+    "name": "Refrescos",
+    "products": [
+      {"barcode": "5449000131805", "name": "Coca Cola Zero Lata"},
+      {"barcode": "5449000004840", "name": "Fanta Naranja 2L"},
+      {"barcode": "5449000018472", "name": "Nestea 1L Limon"},
+      {"barcode": "5449000131843", "name": "Coca-Cola zero 2L"},
+      {"barcode": "54491472", "name": "CocaCola 50cl"}
+    ]
+  },
+  {
+    "name": "dulces&pasteleria",
+    "products": [
+      {"barcode": "80135463", "name": "Nutella 200g"},
+      {"barcode": "80310891", "name": "Kinder Joy"},
+      {"barcode": "80052760", "name": "kinder bueno negro"},
+      {"barcode": "8410022116498", "name": "madalenas bella easo"},
+      {"barcode": "8410196099009", "name": "Neulas Virginias"}
+    ]
+  },
+  {
+    "name": "arrozesypastas",
+    "products": [
+      {"barcode": "8076802085981", "name": "Fusilli Barilla"},
+      {"barcode": "8076808060654", "name": "Barilla farfalle"},
+      {"barcode": "8410069001320", "name": "fideo 4"},
+      {"barcode": "8413080018742", "name": "fideo 4"},
+      {"barcode": "8410069001078", "name": "letras gallo"}
+    ]
+  },
+  {
+    "name": "caldos&sopas",
+    "products": [
+      {"barcode": "8711200405343", "name": "caldo knorr"},
+      {"barcode": "8410300349044", "name": "Caldo de Carne Gallina Blanca"},
+      {"barcode": "8718114806129", "name": "Tomaten Soep 515ml"},
+      {"barcode": "5000354403194", "name": "Cup a Soup Golden Vegetable"},
+      {"barcode": "8718452744664", "name": "Goulash Soep Jumbo"}
+    ]
+  },
+  {
+    "name": "leche&batidos",
+    "products": [
+      {"barcode": "8410050021078", "name": "El Castillo Semi 1.5L"},
+      {"barcode": "8410050021009", "name": "El Castillo Entera 1L"},
+      {"barcode": "8410320328869", "name": "Queso Gouda"},
+      {"barcode": "8413080016052", "name": "saquitos leche"},
+      {"barcode": "8413176917911", "name": "queso semi cortado coaliment"}
+    ]
+  },
+  {
+    "name": "pan",
+    "products": [
+      {"barcode": "8412600022825", "name": "Silueta Integral 450g"},
+      {"barcode": "8412600024324", "name": "Thins 100% Integral"},
+      {"barcode": "8412600300138", "name": "mini tostas integral"},
+      {"barcode": "8412600450024", "name": "Hot Dogs 6"},
+      {"barcode": "8412600550014", "name": "palitos aceite"}
+    ]
+  }
+]

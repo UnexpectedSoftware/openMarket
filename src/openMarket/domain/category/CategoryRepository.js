@@ -32,4 +32,13 @@ export default class CategoryRepository {
   update({ id, name }) {
     throw new Error('CategoryRepository#category must be implemented');
   }
+
+  /**
+   * @param {string} id
+   * @param {string} imagePath absolute path of a file to copy
+   * @returns {Observable<null>}
+   */
+  updateCategory({id, imagePath}) {
+    throw new Error('CategoryRepository#updateCategory must be implemented');
+  }
 }

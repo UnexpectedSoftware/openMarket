@@ -29,6 +29,9 @@ import ImageStore, {imagesDirectory} from "../service/ImageStore";
 import SqliteProductRepository from "../product/SqliteProductRepository";
 import SqliteOrderRepository from "../order/SqliteOrderRepository";
 import { createFixturesService } from "../dev";
+import OpenFoodFactsProductImageSource from "../image/OpenFoodFactsProductImageSource";
+import WikimediaCategoryImageSource from "../image/WikimediaCategoryImageSource";
+import FetchCatalogImages from "../../application/service/image/FetchCatalogImages";
 const env = process.env.NODE_ENV
 
 class Container {
@@ -231,6 +234,26 @@ class Container {
 
   _orderStatisticsUseCase() {
     return new OrdersStatistics({repository: this.getInstance({key: 'orderRepository'})});
+  }
+
+  _productImageSource() {
+    return new OpenFoodFactsProductImageSource();
+  }
+
+  _categoryImageSource() {
+    return new WikimediaCategoryImageSource();
+  }
+
+  /**
+   * @returns {FetchCatalogImages}
+   */
+  _fetchCatalogImages() {
+    return new FetchCatalogImages({
+      categoryRepository: this.getInstance({key: 'categoryRepository'}),
+      productRepository: this.getInstance({key: 'productRepository'}),
+      categoryImageSource: this.getInstance({key: 'categoryImageSource'}),
+      productImageSource: this.getInstance({key: 'productImageSource'})
+    });
   }
 
 }

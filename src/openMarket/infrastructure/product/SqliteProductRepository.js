@@ -123,6 +123,48 @@ export default class SqliteProductRepository extends ProductRepository {
     );
   }
 
+  findPage({limit, offset}) {
+    const size = Number(limit);
+    const start = Number(offset);
+    if (!Number.isInteger(size) || size < 1 || !Number.isInteger(start) || start < 0) {
+      return Rx.Observable.throw(new Error('Invalid product page'));
+    }
+    return this._query(
+      PRODUCT_SELECT + ' ORDER BY p.barcode LIMIT ? OFFSET ?',
+      [size, start]
+    );
+  }
+
+  updateProduct({barcode, imagePath}) {
+    return Rx.Observable.defer(() => {
+      const previous = this._database.prepare(
+        'SELECT image_name FROM product WHERE barcode = ?'
+      ).get(barcode);
+      if (!previous) {
+        return Rx.Observable.throw(new Error('product not found'));
+      }
+      const imageName = this._images.store({id: barcode, sourcePath: imagePath});
+      try {
+        const result = this._database.prepare(
+          'UPDATE product SET image_name = ? WHERE barcode = ?'
+        ).run(imageName, barcode);
+        if (Number(result.changes) === 0) {
+          this._images.remove(imageName);
+          return Rx.Observable.throw(new Error('product not found'));
+        }
+      } catch (updateError) {
+        if (imageName !== previous.image_name) {
+          this._images.remove(imageName);
+        }
+        return Rx.Observable.throw(updateError);
+      }
+      if (previous.image_name && previous.image_name !== imageName) {
+        this._images.remove(previous.image_name);
+      }
+      return Rx.Observable.of(null);
+    });
+  }
+
   _query(sql, params) {
     return Rx.Observable.defer(() => {
       const rows = this._database.prepare(sql).all(...params);
