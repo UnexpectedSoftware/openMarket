@@ -289,4 +289,30 @@ describe('product images', () => {
         }
       );
   });
+
+  it('counts products that still need a photo and can be looked up', (done) => {
+    const {directory, connection, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    repository.save({product: product('12345678', 'Has photo'), imagePath: source})
+      .flatMap(() => repository.save({product: product('87654321', 'Eight')}))
+      .flatMap(() => repository.save({product: product('62', 'Short')}))
+      .flatMap(() => repository.save({product: product('ABCDEFGH', 'Letters')}))
+      .flatMap(() => repository.save({product: product('123456789012', 'Twelve')}))
+      .flatMap(() => repository.save({product: product('1234567890123', 'Thirteen')}))
+      .flatMap(() => {
+        connection.database.prepare('UPDATE product SET image_name = ? WHERE barcode = ?').run('', '1234567890123');
+        return repository.countWithoutImage();
+      })
+      .subscribe(
+        total => {
+          expect(total).to.equal(3);
+          cleanup(directory);
+          done();
+        },
+        error => {
+          cleanup(directory);
+          done(error);
+        }
+      );
+  });
 });

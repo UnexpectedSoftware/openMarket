@@ -21,7 +21,9 @@ function harness({pathname, execute}) {
     },
     categoriesPageLoaded: () => ({type: 'CATEGORIES_PAGE_LOADED'}),
     listProductsFetch: payload => ({type: 'LIST_PRODUCTS_FETCH', payload}),
-    listProductFetch: payload => ({type: 'LIST_PRODUCT_FETCH', payload})
+    listProductFetch: payload => ({type: 'LIST_PRODUCT_FETCH', payload}),
+    imageFetchProgressed: percent => ({type: 'IMAGE_FETCH_PROGRESSED', percent}),
+    imageFetchFinished: () => ({type: 'IMAGE_FETCH_FINISHED'})
   });
   const store = {
     getState: () => ({
@@ -55,13 +57,16 @@ describe('Fetch images epic', () => {
       position: 'tr',
       autoDismiss: 4
     });
+    push.next({progress: true, completed: 1, total: 2, percent: 50});
+    expect(emitted[1]).to.deep.equal({type: 'IMAGE_FETCH_PROGRESSED', percent: 50});
     push.next({productsUpdated: 2, categoriesUpdated: 1});
     push.complete();
-    expect(emitted[1].payload.title).to.equal('Images ready');
-    expect(emitted[1].payload.message).to.include('2 product photos');
-    expect(emitted[1].payload.message).to.include('1 category photo');
-    expect(emitted[1].payload.message).to.include('CC BY-SA');
-    expect(emitted[2]).to.deep.equal({type: 'CATEGORIES_PAGE_LOADED'});
+    expect(emitted[2]).to.deep.equal({type: 'IMAGE_FETCH_FINISHED'});
+    expect(emitted[3].payload.title).to.equal('Images ready');
+    expect(emitted[3].payload.message).to.include('2 product photos');
+    expect(emitted[3].payload.message).to.include('1 category photo');
+    expect(emitted[3].payload.message).to.include('CC BY-SA');
+    expect(emitted[4]).to.deep.equal({type: 'CATEGORIES_PAGE_LOADED'});
   });
 
   it('does not start a second job while one is running', () => {
@@ -78,8 +83,9 @@ describe('Fetch images epic', () => {
     expect(emitted[1].payload.title).to.equal('Already fetching images');
     push.next({productsUpdated: 0, categoriesUpdated: 0});
     push.complete();
-    expect(emitted[2].payload.message).to.include('No new photos found');
-    expect(emitted).to.have.length(3);
+    expect(emitted[2]).to.deep.equal({type: 'IMAGE_FETCH_FINISHED'});
+    expect(emitted[3].payload.message).to.include('No new photos found');
+    expect(emitted).to.have.length(4);
   });
 
   it('refreshes the product list that is open and reports a failed job', () => {
@@ -93,7 +99,8 @@ describe('Fetch images epic', () => {
     products.fetch();
     push.next({productsUpdated: 1, categoriesUpdated: 0});
     push.complete();
-    expect(products.emitted[2]).to.deep.equal({
+    expect(products.emitted[1]).to.deep.equal({type: 'IMAGE_FETCH_FINISHED'});
+    expect(products.emitted[3]).to.deep.equal({
       type: 'LIST_PRODUCTS_FETCH',
       payload: {limit: 20, offset: 40, page: 2}
     });
@@ -104,7 +111,8 @@ describe('Fetch images epic', () => {
     });
     failed.fetch();
     expect(failed.emitted[0].payload.title).to.equal('Fetching images');
-    expect(failed.emitted[1]).to.deep.equal({
+    expect(failed.emitted[1]).to.deep.equal({type: 'IMAGE_FETCH_FINISHED'});
+    expect(failed.emitted[2]).to.deep.equal({
       type: 'ERROR',
       payload: {
         title: 'Could not fetch images',

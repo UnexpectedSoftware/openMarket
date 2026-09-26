@@ -28,25 +28,47 @@ export default class FetchCatalogImages {
   }
 
   /**
-   * @returns {Observable<{productsUpdated: number, categoriesUpdated: number}>}
+   * Emits `{progress, completed, total, percent}` after the count and after each lookup,
+   * then `{productsUpdated, categoriesUpdated}`.
+   * @returns {Observable<Object>}
    */
   execute() {
-    return Rx.Observable.defer(() => Rx.Observable.fromPromise(this._run()));
+    return Rx.Observable.create(observer => {
+      this._run(observer).then(
+        () => observer.complete(),
+        error => observer.error(error)
+      );
+    });
   }
 
-  async _run() {
+  async _run(observer) {
     const summary = {productsUpdated: 0, categoriesUpdated: 0};
     const categories = await this._categoryRepository.findAll().toPromise();
-    const categoryRows = categories || [];
-    for (let index = 0; index < categoryRows.length; index += 1) {
-      const category = categoryRows[index];
-      if (category.imageName) {
-        continue;
+    const categoryWork = (categories || []).filter(category => !category.imageName);
+    const productTotal = Number(await this._productRepository.countWithoutImage().toPromise()) || 0;
+    const total = categoryWork.length + productTotal;
+    let completed = 0;
+    const report = () => {
+      if (total < 1) {
+        return;
       }
+      observer.next({
+        progress: true,
+        completed,
+        total,
+        percent: Math.min(100, Math.round((completed / total) * 100))
+      });
+    };
+    report();
+
+    for (let index = 0; index < categoryWork.length; index += 1) {
+      const category = categoryWork[index];
       summary.categoriesUpdated += await this._store(
         this._categoryImageSource.findByName({name: category.name}),
         imagePath => this._categoryRepository.updateCategory({id: category.id, imagePath})
       );
+      completed += 1;
+      report();
     }
 
     let offset = 0;
@@ -65,13 +87,15 @@ export default class FetchCatalogImages {
           this._productImageSource.findByBarcode({barcode: product.barcode}),
           imagePath => this._productRepository.updateProduct({barcode: product.barcode, imagePath})
         );
+        completed += 1;
+        report();
       }
       if (products.length < PRODUCT_BATCH_SIZE) {
         break;
       }
       offset += PRODUCT_BATCH_SIZE;
     }
-    return summary;
+    observer.next(summary);
   }
 
   async _store(source, update) {

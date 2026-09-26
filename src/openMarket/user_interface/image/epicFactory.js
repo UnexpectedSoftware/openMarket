@@ -54,7 +54,9 @@ export function makeFetchImagesEpic({
   listen,
   categoriesPageLoaded,
   listProductsFetch,
-  listProductFetch
+  listProductFetch,
+  imageFetchProgressed,
+  imageFetchFinished
 }) {
   const actions = {categoriesPageLoaded, listProductsFetch, listProductFetch};
   return (action$, store) => Rx.Observable.create(observer => {
@@ -77,11 +79,16 @@ export function makeFetchImagesEpic({
         autoDismiss: 4
       }));
       fetchCatalogImages.execute().subscribe(
-        summary => {
+        value => {
+          if (value && value.progress) {
+            observer.next(imageFetchProgressed(value.percent));
+            return;
+          }
           running = false;
+          observer.next(imageFetchFinished());
           observer.next(successNotification({
             title: 'Images ready',
-            message: fetchImagesMessage(summary),
+            message: fetchImagesMessage(value),
             position: 'tr',
             autoDismiss: 4
           }));
@@ -89,6 +96,7 @@ export function makeFetchImagesEpic({
         },
         fetchError => {
           running = false;
+          observer.next(imageFetchFinished());
           observer.next(errorNotification({
             title: 'Could not fetch images',
             message: fetchError && fetchError.message ? fetchError.message : 'Could not fetch images',

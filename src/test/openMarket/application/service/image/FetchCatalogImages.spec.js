@@ -44,7 +44,8 @@ describe('FetchCatalogImages', () => {
       updateProduct({barcode, imagePath}) {
         productUpdates.push({barcode, imagePath});
         return of(null);
-      }
+      },
+      countWithoutImage: () => of(2)
     };
     const useCase = new FetchCatalogImages({
       categoryRepository: categories,
@@ -94,7 +95,8 @@ describe('FetchCatalogImages', () => {
       },
       updateProduct() {
         return of(null);
-      }
+      },
+      countWithoutImage: () => of(0)
     };
     const useCase = new FetchCatalogImages({
       categoryRepository: {findAll: () => of([])},
@@ -124,7 +126,8 @@ describe('FetchCatalogImages', () => {
       categoryRepository: {findAll: () => of([])},
       productRepository: {
         findPage: () => of([{barcode: '8410000000003', imageName: null}]),
-        updateProduct: () => Rx.Observable.throw(new Error('not an image'))
+        updateProduct: () => Rx.Observable.throw(new Error('not an image')),
+        countWithoutImage: () => of(1)
       },
       categoryImageSource: {findByName: () => of(null)},
       productImageSource: {findByBarcode: () => of(filePath)},
@@ -134,5 +137,40 @@ describe('FetchCatalogImages', () => {
     expect(summary.productsUpdated).to.equal(0);
     expect(fs.existsSync(filePath)).to.equal(false);
     fs.rmSync(directory, {recursive: true, force: true});
+  });
+
+  it('emits a percent after each lookup and finishes with the summary', () => {
+    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-fetch-'));
+    const categoryFile = path.join(directory, 'pan.jpg');
+    const productFile = path.join(directory, 'product.jpg');
+    fs.writeFileSync(categoryFile, 'pan');
+    fs.writeFileSync(productFile, 'product');
+    const useCase = new FetchCatalogImages({
+      categoryRepository: {
+        findAll: () => of([
+          {id: '1', name: 'CHIPS', imageName: 'kept.png'},
+          {id: '2', name: 'pan', imageName: null}
+        ]),
+        updateCategory: () => of(null)
+      },
+      productRepository: {
+        countWithoutImage: () => of(1),
+        findPage: () => of([{barcode: '8410000000003', imageName: null}]),
+        updateProduct: () => of(null)
+      },
+      categoryImageSource: {findByName: () => of(categoryFile)},
+      productImageSource: {findByBarcode: () => of(productFile)},
+      pauseMs: 0
+    });
+    const values = [];
+    return useCase.execute().toArray().toPromise().then(emitted => {
+      values.push(...emitted);
+      expect(values.filter(value => value.progress).map(value => value.percent)).to.deep.equal([0, 50, 100]);
+      expect(values[0]).to.include({progress: true, completed: 0, total: 2});
+      expect(values[1]).to.include({progress: true, completed: 1, total: 2});
+      expect(values[2]).to.include({progress: true, completed: 2, total: 2});
+      expect(values[3]).to.deep.equal({productsUpdated: 1, categoriesUpdated: 1});
+      fs.rmSync(directory, {recursive: true, force: true});
+    });
   });
 });

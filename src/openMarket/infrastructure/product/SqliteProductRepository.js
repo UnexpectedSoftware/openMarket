@@ -123,6 +123,17 @@ export default class SqliteProductRepository extends ProductRepository {
     );
   }
 
+  countWithoutImage() {
+    return this._count(
+      'SELECT count(*) AS total FROM product ' +
+      'WHERE (image_name IS NULL OR image_name = \'\') ' +
+      'AND length(barcode) IN (8, 12, 13) ' +
+      'AND barcode GLOB \'[0-9]*\' ' +
+      'AND barcode NOT GLOB \'*[^0-9]*\'',
+      []
+    );
+  }
+
   findPage({limit, offset}) {
     const size = Number(limit);
     const start = Number(offset);

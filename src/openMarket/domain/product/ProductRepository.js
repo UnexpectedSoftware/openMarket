@@ -65,6 +65,14 @@ export default class ProductRepository {
   }
 
   /**
+   * Products with no photo whose barcode can be looked up.
+   * @returns {Observable<number>}
+   */
+  countWithoutImage() {
+    throw new Error('ProductRepository#countWithoutImage must be implemented');
+  }
+
+  /**
    * One page of products, ordered by barcode. Includes disabled products.
    * @param {number} limit
    * @param {number} offset
