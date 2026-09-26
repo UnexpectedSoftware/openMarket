@@ -5,6 +5,17 @@ import NewProductReduxForm from './ReduxForm';
 
 class Container extends Component {
 
+  componentDidMount() {
+    this.blockFileNavigation = (event) => {
+      const types = event.dataTransfer && event.dataTransfer.types;
+      if (types && Array.prototype.indexOf.call(types, 'Files') !== -1) {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener('dragover', this.blockFileNavigation);
+    window.addEventListener('drop', this.blockFileNavigation);
+  }
+
   handleSubmit = (values) => {
     // Do something with the form values
     const { newProductSave, initialValues } = this.props;
@@ -12,6 +23,8 @@ class Container extends Component {
   }
 
   componentWillUnmount() {
+    window.removeEventListener('dragover', this.blockFileNavigation);
+    window.removeEventListener('drop', this.blockFileNavigation);
     const { productClose } = this.props;
     productClose();
   }
@@ -22,11 +35,12 @@ class Container extends Component {
   }
 
   render() {
-    const { categories, edition, initialValues, statuses } = this.props;
+    const { categories, edition, initialValues, statuses, formKey } = this.props;
     return (
       <div className="container-fluid">
         <h2>Let's {edition ? 'edit a':'create a new'} product!</h2>
         <NewProductReduxForm
+          key={formKey}
           edition={edition}
           loadProduct={this.loadProduct}
           onSubmit={this.handleSubmit}

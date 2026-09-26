@@ -19,7 +19,8 @@ CREATE TABLE IF NOT EXISTS product (
   stock_min REAL,
   status TEXT,
   weighted INTEGER,
-  category_id TEXT
+  category_id TEXT,
+  image_name TEXT
 );
 CREATE TABLE IF NOT EXISTS "order" (
   id TEXT PRIMARY KEY,
@@ -51,6 +52,7 @@ export default class SqliteConnection {
     this._database = new DatabaseSync(databasePath);
     this._database.exec(SCHEMA);
     ensureColumn(this._database, 'category', 'image_name', 'TEXT');
+    ensureColumn(this._database, 'product', 'image_name', 'TEXT');
   }
 
   get database() {

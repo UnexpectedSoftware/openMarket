@@ -1,8 +1,12 @@
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import la from 'lazy-ass';
 import is from 'check-more-types';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
 import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
+import { imagesDirectory } from '../openMarket/infrastructure/service/ImageStore';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 
@@ -190,6 +194,57 @@ describe('Product create use case', () => {
       .flatMap(data => observableFindProducts.findProductByBarcode({barcode: productDTONew.barcode}))
       .subscribe(onData, noop, () => {
         la(count === 1, `got ${count} products`);
+        done();
+      });
+  });
+
+  it('copies a chosen image and keeps it when the product is updated without a new file', (done) => {
+    const source = path.join(os.tmpdir(), `openmarket-product-${process.pid}-${Date.now()}.png`);
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64'
+    );
+    fs.writeFileSync(source, png);
+    let stored = null;
+    const cleanup = () => {
+      fs.rmSync(source, {force: true});
+      if (stored) {
+        fs.rmSync(stored, {force: true});
+      }
+    };
+    observableCreateProducts.createOrUpdate({
+      barcode: '00991',
+      name: 'With image',
+      description: '',
+      price: 1,
+      stock: 1,
+      categoryId: '1',
+      imagePath: source
+    })
+      .flatMap(() => observableFindProducts.findProductByBarcode({barcode: '00991'}))
+      .flatMap((created) => {
+        la(created.imageName && created.imageName.endsWith('.png'), `image ${created.imageName}`);
+        stored = path.join(imagesDirectory('product-images'), created.imageName);
+        la(fs.existsSync(stored), 'copied file');
+        return observableCreateProducts.createOrUpdate({
+          barcode: '00991',
+          name: 'Renamed',
+          description: '',
+          price: 2,
+          stock: 2,
+          categoryId: '1'
+        });
+      })
+      .flatMap(() => observableFindProducts.findProductByBarcode({barcode: '00991'}))
+      .subscribe((updated) => {
+        la(updated.name === 'Renamed', 'name was not updated');
+        la(updated.imageName === '00991.png', `image ${updated.imageName}`);
+        la(fs.existsSync(stored), 'image file was removed');
+      }, (err) => {
+        cleanup();
+        crash(err);
+      }, () => {
+        cleanup();
         done();
       });
   });

@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
 import {required, maxLength15, number, greaterThan0, greaterOrEqualsThan0} from '../../validations/formValidations';
+import ImageField from '../../components/ImageField';
 
 class ReduxForm extends Component {
 
@@ -25,13 +26,30 @@ class ReduxForm extends Component {
   );
 
 
+  attachImage = (values) => {
+    const chosen = this.imageField ? this.imageField.readChosenPath() : {imagePath: null};
+    if (chosen.error) {
+      return;
+    }
+    const payload = {...values};
+    if (chosen.imagePath) {
+      payload.imagePath = chosen.imagePath;
+    }
+    this.props.onSubmit(payload);
+  };
+
   render() {
-    const { handleSubmit, edition, statusesList, submitting, categoriesList } = this.props;
+    const { handleSubmit, edition, statusesList, submitting, categoriesList, initialValues } = this.props;
     return (
-      <form onSubmit={handleSubmit} onKeyPress={event => {if (event.which === 13 /* Enter */) { event.preventDefault();}}}>
+      <form onSubmit={handleSubmit(this.attachImage)} onKeyPress={event => {if (event.which === 13 /* Enter */) { event.preventDefault();}}}>
         <Field name="barcode" readOnly={edition} component={this.renderInput} type="text" placeholder="Barcode" validate={[required, maxLength15]}/>
         <div>
           <Field name="name" component={this.renderInput} type="text" placeholder="Name" validate={required}/>
+          <ImageField
+            inputId="product-image"
+            currentSrc={initialValues && initialValues.imageSrc}
+            ref={(node) => { this.imageField = node; }}
+          />
           <Field name="description" component={this.renderTextarea} placeholder="Description"/>
           <Field name="price" component={this.renderInput} type="text" placeholder="Price" validate={[required, greaterThan0, number]}/>
           <Field name="basePrice" component={this.renderInput} type="text" placeholder="Base Price" validate={[required, greaterThan0, number]}/>

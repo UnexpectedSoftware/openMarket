@@ -2,7 +2,7 @@ import ProductRepository from "../../domain/product/ProductRepository";
 import * as Rx from "rxjs";
 import ProductStatus from "../../domain/product/ProductStatus";
 
-const PRODUCT_SELECT = 'SELECT p.barcode, p.name, p.description, p.stock_min, p.price, p.stock, p.base_price, p.status, p.weighted, ' +
+const PRODUCT_SELECT = 'SELECT p.barcode, p.name, p.description, p.stock_min, p.price, p.stock, p.base_price, p.status, p.weighted, p.image_name, ' +
   'p.category_id as category_id, c.name as category_name ' +
   'FROM product p LEFT JOIN category c ON c.id = p.category_id';
 
@@ -18,10 +18,11 @@ function bit(value) {
 }
 
 export default class SqliteProductRepository extends ProductRepository {
-  constructor({connection, productMapper}) {
+  constructor({connection, productMapper, images}) {
     super();
     this._database = connection.database;
     this._productMapper = productMapper;
+    this._images = images;
   }
 
   findAll({productFilter}) {
@@ -45,26 +46,46 @@ export default class SqliteProductRepository extends ProductRepository {
     );
   }
 
-  save({product}) {
+  save({product, imagePath}) {
     return Rx.Observable.defer(() => {
-      this._database.prepare(
-        'INSERT INTO product (barcode, base_price, category_id, description, name, price, status, stock, stock_min, weighted) ' +
-        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ' +
-        'ON CONFLICT(barcode) DO UPDATE SET base_price=excluded.base_price, category_id=excluded.category_id, ' +
-        'description=excluded.description, name=excluded.name, price=excluded.price, status=excluded.status, ' +
-        'stock=excluded.stock, stock_min=excluded.stock_min, weighted=excluded.weighted'
-      ).run(
-        sqlValue(product.barcode),
-        sqlValue(product.basePrice),
-        sqlValue(product.category.id),
-        sqlValue(product.description),
-        sqlValue(product.name),
-        sqlValue(product.price),
-        sqlValue(product.status),
-        sqlValue(product.stock),
-        sqlValue(product.stockMin),
-        bit(product.isWeighted)
-      );
+      const previous = this._database.prepare(
+        'SELECT image_name FROM product WHERE barcode = ?'
+      ).get(product.barcode);
+      const previousName = previous ? previous.image_name : null;
+      let imageName = null;
+      if (imagePath) {
+        imageName = this._images.store({id: product.barcode, sourcePath: imagePath});
+      }
+      try {
+        this._database.prepare(
+          'INSERT INTO product (barcode, base_price, category_id, description, name, price, status, stock, stock_min, weighted, image_name) ' +
+          'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ' +
+          'ON CONFLICT(barcode) DO UPDATE SET base_price=excluded.base_price, category_id=excluded.category_id, ' +
+          'description=excluded.description, name=excluded.name, price=excluded.price, status=excluded.status, ' +
+          'stock=excluded.stock, stock_min=excluded.stock_min, weighted=excluded.weighted, ' +
+          'image_name=COALESCE(excluded.image_name, product.image_name)'
+        ).run(
+          sqlValue(product.barcode),
+          sqlValue(product.basePrice),
+          sqlValue(product.category.id),
+          sqlValue(product.description),
+          sqlValue(product.name),
+          sqlValue(product.price),
+          sqlValue(product.status),
+          sqlValue(product.stock),
+          sqlValue(product.stockMin),
+          bit(product.isWeighted),
+          imageName
+        );
+      } catch (insertError) {
+        if (imageName && imageName !== previousName) {
+          this._images.remove(imageName);
+        }
+        throw insertError;
+      }
+      if (imageName && previousName && previousName !== imageName) {
+        this._images.remove(previousName);
+      }
       return Rx.Observable.of(null);
     });
   }

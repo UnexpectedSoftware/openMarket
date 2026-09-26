@@ -1,6 +1,16 @@
 import * as listProductActions from "./action";
 import * as Rx from "rxjs";
 import OpenMarket from "../../../application/index";
+import ImageStore, {imagesDirectory} from "../../../infrastructure/service/ImageStore";
+
+const images = new ImageStore({directory: imagesDirectory('product-images')});
+
+function withImageSrc(products) {
+  return products.map(product => {
+    product.imageSrc = images.readDataUrl(product.imageName);
+    return product;
+  });
+}
 
 const fetchProductsEpic = action$ =>
   action$.ofType(listProductActions.LIST_PRODUCT_FETCH)
@@ -11,7 +21,7 @@ const fetchProductsEpic = action$ =>
           offset: action.payload.offset
         }),
         OpenMarket.get("products_statistics_use_case").countProductsWithLowStock(),
-        (products, total) => ({products:products, total:total, page: action.payload.page})
+        (products, total) => ({products: withImageSrc(products), total:total, page: action.payload.page})
       ))
      .map(products => listProductActions.listProductFetched(products));
 

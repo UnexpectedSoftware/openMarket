@@ -68,6 +68,7 @@ describe('SQLite repositories', () => {
         product => {
           expect(product.name).to.equal('Manzanas fuji');
           expect(product.stock).to.equal(8);
+          expect(product.imageName).to.equal(null);
           expect(Number(connection.database.prepare('SELECT count(*) AS total FROM product').get().total)).to.equal(1);
         },
         error => done(error),

@@ -14,8 +14,9 @@ export default class Product {
      * @param {boolean} weighted
      * @param {Category} category
      * @param {string} status
+     * @param {?string} imageName
      */
-  constructor({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status }) {
+  constructor({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status, imageName = null }) {
 
       /**
        *
@@ -87,6 +88,13 @@ export default class Product {
        */
     this._status = status;
 
+      /**
+       * Filename stored next to the database, or null
+       * @type {?string}
+       * @private
+       */
+    this._imageName = imageName || null;
+
   }
 
 
@@ -128,6 +136,10 @@ export default class Product {
 
   get status() {
     return this._status;
+  }
+
+  get imageName() {
+    return this._imageName;
   }
 
   /**

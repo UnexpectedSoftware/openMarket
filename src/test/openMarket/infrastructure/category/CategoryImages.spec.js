@@ -6,7 +6,7 @@ import {DatabaseSync} from 'node:sqlite';
 import SqliteConnection from '../../../../openMarket/infrastructure/service/SqliteConnection';
 import SqliteCategoryRepository from '../../../../openMarket/infrastructure/category/SqliteCategoryRepository';
 import CategoryFactoryImpl from '../../../../openMarket/infrastructure/category/CategoryFactoryImpl';
-import CategoryImageStore, {CATEGORY_IMAGE_MAX_BYTES} from '../../../../openMarket/infrastructure/category/CategoryImageStore';
+import ImageStore, {IMAGE_MAX_BYTES} from '../../../../openMarket/infrastructure/service/ImageStore';
 import UUIDIdentity from '../../../../openMarket/infrastructure/service/UUIDIdentity';
 
 const PNG = Buffer.from(
@@ -18,7 +18,7 @@ const categoryFactory = new CategoryFactoryImpl({identity: new UUIDIdentity()});
 
 function setup() {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-category-images-'));
-  const images = new CategoryImageStore({directory});
+  const images = new ImageStore({directory});
   const connection = new SqliteConnection({filename: ':memory:'});
   const repository = new SqliteCategoryRepository({
     connection,
@@ -109,7 +109,7 @@ describe('category images', () => {
     const textFile = path.join(directory, 'note.txt');
     fs.writeFileSync(textFile, 'hello');
     const hugeFile = path.join(directory, 'huge.png');
-    fs.writeFileSync(hugeFile, Buffer.alloc(CATEGORY_IMAGE_MAX_BYTES + 1));
+    fs.writeFileSync(hugeFile, Buffer.alloc(IMAGE_MAX_BYTES + 1));
 
     expect(() => images.store({id: '1', sourcePath: textFile})).to.throw(/JPEG, PNG, GIF, or WebP/);
     expect(() => images.store({id: '2', sourcePath: hugeFile})).to.throw(/5 MB/);
@@ -169,6 +169,8 @@ describe('category images', () => {
     expect(fs.existsSync(path.join(directory, '..', 'outside.jpeg'))).to.equal(false);
     expect(images.readDataUrl('../secret.png')).to.equal(null);
     expect(images.readDataUrl(null)).to.equal(null);
+    expect(() => images.store({id: '..', sourcePath: source})).to.throw(/image file/);
+    expect(() => images.store({id: '.', sourcePath: source})).to.throw(/image file/);
     fs.rmSync(directory, {recursive: true, force: true});
   });
 

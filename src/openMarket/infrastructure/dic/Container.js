@@ -25,7 +25,7 @@ import pro from '../../../resources/application-pro.json'
 import SqlOrderMapper from "../order/SqlOrderMapper";
 import SqliteConnection from "../service/SqliteConnection";
 import SqliteCategoryRepository from "../category/SqliteCategoryRepository";
-import CategoryImageStore from "../category/CategoryImageStore";
+import ImageStore, {imagesDirectory} from "../service/ImageStore";
 import SqliteProductRepository from "../product/SqliteProductRepository";
 import SqliteOrderRepository from "../order/SqliteOrderRepository";
 import { createFixturesService } from "../dev";
@@ -72,7 +72,11 @@ class Container {
   }
 
   _categoryImageStore() {
-    return new CategoryImageStore();
+    return new ImageStore({directory: imagesDirectory('category-images')});
+  }
+
+  _productImageStore() {
+    return new ImageStore({directory: imagesDirectory('product-images')});
   }
 
   _categoryRepository() {
@@ -139,7 +143,8 @@ class Container {
   _productRepository() {
     return new SqliteProductRepository({
       connection: this.getInstance({key: 'sqliteConnection'}),
-      productMapper: this.getInstance({key: 'productMapper'})
+      productMapper: this.getInstance({key: 'productMapper'}),
+      images: this.getInstance({key: 'productImageStore'})
     });
   }
 

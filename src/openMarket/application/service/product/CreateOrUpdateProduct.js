@@ -42,9 +42,10 @@ export default class CreateOrUpdateProduct {
    * @param {boolean} weighted
    * @param {string} categoryId
    * @param {string} status
+   * @param {?string} imagePath absolute path of a file to copy, when the user picked one
    * @returns {Observable.<null>}
    */
-  createOrUpdate({ barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status }) {
+  createOrUpdate({ barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status, imagePath }) {
     return this._categoryRepository.findById({id: categoryId})
       .map(category => this._productFactory.createWith({
             barcode,
@@ -58,6 +59,6 @@ export default class CreateOrUpdateProduct {
             category,
             status
           }))
-      .flatMap(product => this._productRepository.save({ product }));
+      .flatMap(product => this._productRepository.save({ product, imagePath }));
   }
 }

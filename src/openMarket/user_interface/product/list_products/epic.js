@@ -3,6 +3,16 @@ import * as Rx from "rxjs";
 import {push} from 'react-router-redux';
 import OpenMarket from "../../../application/index";
 import {defaultLimit, defaultOffset} from "../../order/list_orders/model";
+import ImageStore, {imagesDirectory} from "../../../infrastructure/service/ImageStore";
+
+const images = new ImageStore({directory: imagesDirectory('product-images')});
+
+function withImageSrc(products) {
+  return products.map(product => {
+    product.imageSrc = images.readDataUrl(product.imageName);
+    return product;
+  });
+}
 
 const fetchProductsEpic = action$ =>
   action$.ofType(listProductsActions.LIST_PRODUCTS_FETCH)
@@ -13,7 +23,7 @@ const fetchProductsEpic = action$ =>
           offset: action.payload.offset
         }),
         OpenMarket.get("products_statistics_use_case").countProducts(),
-        (products, total) => ({products:products, total:total, page: action.payload.page})
+        (products, total) => ({products: withImageSrc(products), total:total, page: action.payload.page})
       ))
      .map(products => listProductsActions.listProductsFetched(products));
 
@@ -49,7 +59,8 @@ const listProductsDetailEpic = action$ =>
       stock: product.stock,
       stockMin: product.stockMin,
       weighted: product.isWeighted,
-      categoryId: product.category.id
+      categoryId: product.category.id,
+      imageSrc: images.readDataUrl(product.imageName)
     }))
     .flatMap(product =>
       Rx.Observable.of(
@@ -90,7 +101,7 @@ const listProductsBarcodeFilterChangedEpic = action$ =>
       })
         .toArray()
     )
-    .map(products => ({products:products, total:1, page: 0}))
+    .map(products => ({products: withImageSrc(products), total:1, page: 0}))
     .map(products => listProductsActions.listProductsFetched(products));
 
 const listProductsNameFilterChangedEpic = action$ =>
@@ -103,7 +114,7 @@ const listProductsNameFilterChangedEpic = action$ =>
           offset: defaultOffset
         }),
         OpenMarket.get("products_statistics_use_case").countProductsByName({name: action.payload}),
-        (products, total) => ({products:products, total:total, page: action.payload.page})
+        (products, total) => ({products: withImageSrc(products), total:total, page: action.payload.page})
       ))
     .map(products => listProductsActions.listProductsFetched(products));
 
