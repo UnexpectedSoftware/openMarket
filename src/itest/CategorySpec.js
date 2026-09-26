@@ -1,9 +1,13 @@
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 import la from 'lazy-ass';
 import is from 'check-more-types';
 import Rx from 'rxjs/Rx';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
 import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
+import { categoryImagesDirectory } from '../openMarket/infrastructure/category/CategoryImageStore';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 /**
@@ -116,6 +120,61 @@ describe('Category create use case', () => {
     observableCreateCategory.createCategory({
       name: 'category test'
     }).subscribe(noop, crash, done);
+  });
+
+  it('copies a chosen image and lists the filename', (done) => {
+    const source = path.join(os.tmpdir(), `openmarket-category-${process.pid}-${Date.now()}.png`);
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64'
+    );
+    fs.writeFileSync(source, png);
+    let stored = null;
+    const cleanup = () => {
+      fs.rmSync(source, {force: true});
+      if (stored) {
+        fs.rmSync(stored, {force: true});
+      }
+    };
+    observableCreateCategory.createCategory({
+      name: 'With image',
+      imagePath: source
+    })
+      .flatMap(() => observableCategories.findAll())
+      .subscribe((categories) => {
+        const created = categories.filter(category => category.name === 'With image')[0];
+        la(created, 'created category');
+        la(created.imageName && created.imageName.endsWith('.png'), `image ${created.imageName}`);
+        stored = path.join(categoryImagesDirectory(), created.imageName);
+        la(fs.existsSync(stored), 'copied file');
+        const seeded = categories.filter(category => category.name === 'Odin')[0];
+        la(seeded.imageName == null, 'seeded category has no image');
+      }, (err) => {
+        cleanup();
+        crash(err);
+      }, () => {
+        cleanup();
+        done();
+      });
+  });
+
+  it('does not insert a category when the image is not allowed', (done) => {
+    const source = path.join(os.tmpdir(), `openmarket-category-${process.pid}-${Date.now()}.txt`);
+    fs.writeFileSync(source, 'hello');
+    observableCreateCategory.createCategory({
+      name: 'Not an image',
+      imagePath: source
+    }).subscribe(() => {
+      fs.rmSync(source, {force: true});
+      done(new Error('expected the image to be rejected'));
+    }, () => {
+      fs.rmSync(source, {force: true});
+      observableCategories.findAll().subscribe((categories) => {
+        la(categories.length === 3, `got ${categories.length} categories`);
+        la(!categories.some(category => category.name === 'Not an image'), 'row was inserted');
+        done();
+      }, crash);
+    });
   });
 });
 

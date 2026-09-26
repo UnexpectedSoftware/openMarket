@@ -45,9 +45,7 @@ export default class Navbar extends Component {
               <MenuItem key="2-2"><Link to="/list_products">List Products!</Link></MenuItem>
               <MenuItem key="2-3"><Link to="/list_products_low_stock">List Products with LOW stock!</Link></MenuItem>
             </SubMenu>
-            <SubMenu key="3" title="Categories">
-              <MenuItem key="3-1"><Link to="/create_category">new Category!</Link></MenuItem>
-            </SubMenu>
+            <MenuItem key="3"><Link to="/categories">Categories</Link></MenuItem>
             <SubMenu key="4" title="Orders">
               <MenuItem key="4-1"><Link to="/create_order">new Order!</Link></MenuItem>
               <MenuItem key="4-2"><Link to="/list_orders">List Orders!</Link></MenuItem>

@@ -25,6 +25,7 @@ import pro from '../../../resources/application-pro.json'
 import SqlOrderMapper from "../order/SqlOrderMapper";
 import SqliteConnection from "../service/SqliteConnection";
 import SqliteCategoryRepository from "../category/SqliteCategoryRepository";
+import CategoryImageStore from "../category/CategoryImageStore";
 import SqliteProductRepository from "../product/SqliteProductRepository";
 import SqliteOrderRepository from "../order/SqliteOrderRepository";
 import { createFixturesService } from "../dev";
@@ -70,10 +71,15 @@ class Container {
     return new OrderPrinterService({printerConnection: this.getInstance({key: 'printerConnection'})});
   }
 
+  _categoryImageStore() {
+    return new CategoryImageStore();
+  }
+
   _categoryRepository() {
     return new SqliteCategoryRepository({
       connection: this.getInstance({key: 'sqliteConnection'}),
-      categoryFactory: this.getInstance({key: 'categoryFactory'})
+      categoryFactory: this.getInstance({key: 'categoryFactory'}),
+      images: this.getInstance({key: 'categoryImageStore'})
     });
   }
 

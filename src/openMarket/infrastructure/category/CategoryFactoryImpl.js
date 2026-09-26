@@ -21,14 +21,15 @@ export default class CategoryFactoryImpl extends CategoryFactory {
     /**
      *
      * @param {string} name
+     * @param {?string} imageName
      * @returns {Category}
      */
-  createWith({ name }) {
-    return new Category({ id: this._identity.generate(), name });
+  createWith({ name, imageName = null }) {
+    return new Category({ id: this._identity.generate(), name, imageName });
   }
 
-  createWithId({ id, name }) {
-    return new Category({ id, name });
+  createWithId({ id, name, imageName = null }) {
+    return new Category({ id, name, imageName });
   }
 
 }
