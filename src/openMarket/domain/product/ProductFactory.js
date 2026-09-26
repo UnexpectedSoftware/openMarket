@@ -12,11 +12,11 @@ export default class ProductFactory {
    * @param {number} basePrice
    * @param {number} stock
    * @param {number} stockMin
-   * @param {imageUrl} imageUrl
+   * @param {?string} imageName
    * @param {Category} category
    * @returns {Product}
    */
-  createWith({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status }) {
+  createWith({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status, imageName }) {
     throw new Error('ProductFactory#createWith must be implemented');
   }
 }

@@ -21,10 +21,16 @@ const saveProductEpic = action$ =>
       stockMin: action.product.stockMin,
       weighted: action.product.weighted,
       categoryId: action.product.categoryId,
-      status: action.product.status
+      status: action.product.status,
+      imagePath: action.product.imagePath
     })
-    )
-    .map(saved => newProductActions.newProductSaved());
+      .map(() => newProductActions.newProductSaved())
+      .catch(saveError => Rx.Observable.of(error({
+        title: 'Product was not saved',
+        message: saveError && saveError.message ? saveError.message : 'Product was not saved',
+        position: 'tr',
+        autoDismiss: 4
+      }))));
 
 const savedProductEpic = action$ =>
   action$.ofType(newProductActions.NEW_PRODUCT_SAVED)

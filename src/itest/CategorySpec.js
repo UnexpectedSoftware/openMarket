@@ -7,7 +7,7 @@ import Rx from 'rxjs/Rx';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
 import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
-import { categoryImagesDirectory } from '../openMarket/infrastructure/category/CategoryImageStore';
+import { imagesDirectory } from '../openMarket/infrastructure/service/ImageStore';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 /**
@@ -145,7 +145,7 @@ describe('Category create use case', () => {
         const created = categories.filter(category => category.name === 'With image')[0];
         la(created, 'created category');
         la(created.imageName && created.imageName.endsWith('.png'), `image ${created.imageName}`);
-        stored = path.join(categoryImagesDirectory(), created.imageName);
+        stored = path.join(imagesDirectory('category-images'), created.imageName);
         la(fs.existsSync(stored), 'copied file');
         const seeded = categories.filter(category => category.name === 'Odin')[0];
         la(seeded.imageName == null, 'seeded category has no image');

@@ -3,6 +3,7 @@ import React, { Component } from 'react';
 import { Link } from 'react-router';
 import ReactTable from 'react-table';
 import * as Rx from "rxjs";
+import placeholder from '../../resources/category-placeholder.svg';
 
 class Container extends Component {
 
@@ -12,6 +13,14 @@ class Container extends Component {
     this.renderDetailProduct = this.renderDetailProduct.bind(this);
     this.handleFilterChanged = this.handleFilterChanged.bind(this);
     this.columns = [{
+      Header: 'Image',
+      accessor: 'imageSrc',
+      filterable: false,
+      sortable: false,
+      width: 72,
+      Cell: (data) => (<img className="product-thumb" src={data.value || placeholder} alt="" />)
+      },
+      {
       Header: 'Barcode',
       accessor: 'barcode'
       },

@@ -10,7 +10,8 @@ const initialState = {
   categories: [],
   statuses: [],
   initialValues: {},
-  edition: false
+  edition: false,
+  formKey: 0
 };
 
 export default function reducer(state = initialState, action) {
@@ -35,7 +36,10 @@ export default function reducer(state = initialState, action) {
       };
 
     case NEW_PRODUCT_SAVED:
-      return initialState;
+      return {
+        ...initialState,
+        formKey: state.formKey + 1
+      };
 
     case PRODUCT_CLOSE:
       return initialState;

@@ -3,9 +3,9 @@ import * as Rx from "rxjs";
 import { reset } from 'redux-form';
 import { success, error } from 'react-notification-system-redux';
 import * as categoryActions from "./action";
-import CategoryImageStore from "../../infrastructure/category/CategoryImageStore";
+import ImageStore, {imagesDirectory} from "../../infrastructure/service/ImageStore";
 
-const images = new CategoryImageStore();
+const images = new ImageStore({directory: imagesDirectory('category-images')});
 
 const loadCategoriesEpic = action$ =>
   action$.ofType(categoryActions.CATEGORIES_PAGE_LOADED)

@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import sqliteDatabasePath from '../service/sqliteDatabasePath';
+import sqliteDatabasePath from './sqliteDatabasePath';
 
-export const CATEGORY_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
 const TYPES = {
   '.jpg': 'image/jpeg',
@@ -12,16 +12,20 @@ const TYPES = {
   '.webp': 'image/webp'
 };
 
-export function categoryImagesDirectory() {
-  return path.join(path.dirname(sqliteDatabasePath()), 'category-images');
+export function imagesDirectory(folderName) {
+  return path.join(path.dirname(sqliteDatabasePath()), folderName);
 }
 
 /**
- * Copies a category image into the app data directory and reads it back.
+ * Copies an image into one app-data folder and reads it back.
+ * Callers pass the folder so categories and products do not share files.
  */
-export default class CategoryImageStore {
-  constructor({directory} = {}) {
-    this._directory = directory || categoryImagesDirectory();
+export default class ImageStore {
+  constructor({directory}) {
+    if (!directory) {
+      throw new Error('ImageStore requires a directory');
+    }
+    this._directory = directory;
   }
 
   /**
@@ -39,7 +43,7 @@ export default class CategoryImageStore {
     if (!stat.isFile() || stat.size <= 0) {
       throw new Error('Choose an image file');
     }
-    if (stat.size > CATEGORY_IMAGE_MAX_BYTES) {
+    if (stat.size > IMAGE_MAX_BYTES) {
       throw new Error('Image must be 5 MB or smaller');
     }
     const extension = path.extname(sourcePath).toLowerCase();
@@ -47,6 +51,9 @@ export default class CategoryImageStore {
       throw new Error('Use a JPEG, PNG, GIF, or WebP image');
     }
     const safeId = path.basename(String(id));
+    if (!safeId || safeId === '.' || safeId === '..') {
+      throw new Error('Choose an image file');
+    }
     const imageName = safeId + extension;
     fs.mkdirSync(this._directory, {recursive: true});
     fs.copyFileSync(sourcePath, path.join(this._directory, imageName));

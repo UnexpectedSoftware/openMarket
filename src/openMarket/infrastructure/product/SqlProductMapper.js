@@ -31,6 +31,7 @@ export default class SqlProductMapper extends ObjectMapper{
         stock: persistenceProduct.stock,
         stockMin: persistenceProduct.stock_min,
         weighted: persistenceProduct.weighted,
+        imageName: persistenceProduct.image_name,
         category: this._categoryFactory.createWithId({
           id: persistenceProduct.category_id,
           name: persistenceProduct.category_name

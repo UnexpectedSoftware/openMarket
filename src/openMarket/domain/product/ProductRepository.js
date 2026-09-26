@@ -29,9 +29,10 @@ export default class ProductRepository {
   /**
    *
    * @param {Product} product
+   * @param {?string} imagePath absolute path of a file to copy, when the user picked one
    * @returns {Observable<null>}
    */
-  save({ product }) {
+  save({ product, imagePath }) {
     throw new Error('ProductRepository#product must be implemented');
   }
 
