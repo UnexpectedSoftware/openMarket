@@ -5,6 +5,19 @@ import Dialog from '../dialog/ReduxConnector';
 import Navbar from "./Navbar";
 import Notifications from "react-notification-system-redux";
 
+const notificationStyle = {
+  Title: {
+    warning: {
+      color: '#F57C00'
+    }
+  },
+  NotificationItem: {
+    warning: {
+      borderTop: '2px solid #F57C00'
+    }
+  }
+};
+
 class App extends Component {
   props: {
     children: HTMLElement
@@ -19,7 +32,7 @@ class App extends Component {
         </nav>
         {this.props.children}
         <Dialog/>
-        <Notifications notifications={notifications} />
+        <Notifications notifications={notifications} style={notificationStyle} />
       </div>
     );
   }
