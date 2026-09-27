@@ -3,6 +3,7 @@ import * as weightedDialogActions from "../weighted_dialog/action";
 import * as Rx from "rxjs";
 import {HIDE_PRINTER_DIALOG} from "../printer_dialog/action";
 import {showPrinterDialog} from "../printer_dialog/action";
+import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
 
 export const makeNewOrderProductFetchEpic = findProductUseCase => resetForm => action$ =>
   action$
@@ -58,3 +59,12 @@ export const makeWeightedDialogEpic = resetForm => action$ =>
 export const makeNewOrderSavedEpic = action$ =>
   action$.ofType(newOrderActions.NEW_ORDER_SAVED)
     .map(action => showPrinterDialog(action.payload));
+
+export const makeLowStockWarningEpic = domainEventBus => warningNotification => () =>
+  domainEventBus.ofType(ProductWithLowStock)
+    .map(event => warningNotification({
+      title: 'Stock is low',
+      message: `${event.name} has ${event.stock} left (minimum ${event.stockMin}).`,
+      position: 'tr',
+      autoDismiss: 8
+    }))

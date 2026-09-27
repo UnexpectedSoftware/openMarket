@@ -5,6 +5,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import container from '../openMarket/infrastructure/dic/Container';
 import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
+import ProductWithLowStock from '../openMarket/domain/event/ProductWithLowStock';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 
@@ -24,6 +25,7 @@ const orderStatisticsUseCase = openMarket.get('orders_statistics_use_case');
  * @type {FindProduct}
  */
 const observableFindProducts = openMarket.get('products_find_use_case');
+const domainEventBus = openMarket.get('domain_event_bus');
 
 afterEach(function () {
   replaceSqliteData(database, {});
@@ -66,6 +68,75 @@ describe('Order create use case', () => {
           (error) => done(new Error(error)),
           () => {
             expect(spyNext.called).to.be.true;
+            done();
+          }
+        );
+    });
+  });
+
+  describe('When save an order that leaves stock at the minimum', () => {
+    it('publishes ProductWithLowStock and stores the remaining stock', (done) => {
+      const events = [];
+      const subscription = domainEventBus.ofType(ProductWithLowStock)
+        .subscribe(event => events.push(event));
+      const lines = [{
+        barcode: "0001",
+        name: "Coca-Cola",
+        price: 0.55,
+        quantity: 90
+      }];
+
+      observableCreateOrder.createOrder({lines})
+        .flatMap(order => observableFindProducts.findProductByBarcode({barcode: '0001'})
+          .map(product => ({order, product})))
+        .subscribe(
+          ({order, product}) => {
+            expect(order.lines).to.have.lengthOf(1);
+            expect(product.stock).to.equal(10);
+            expect(events).to.have.lengthOf(1);
+            expect(events[0]).to.be.instanceof(ProductWithLowStock);
+            expect(events[0].barcode).to.equal('0001');
+            expect(events[0].name).to.equal('Coca-Cola');
+            expect(events[0].stock).to.equal(10);
+            expect(events[0].stockMin).to.equal(10);
+          },
+          (error) => {
+            subscription.unsubscribe();
+            done(new Error(error));
+          },
+          () => {
+            subscription.unsubscribe();
+            done();
+          }
+        );
+    });
+  });
+
+  describe('When save an order that leaves stock above the minimum', () => {
+    it('publishes nothing and stores the remaining stock', (done) => {
+      const events = [];
+      const subscription = domainEventBus.ofType(ProductWithLowStock)
+        .subscribe(event => events.push(event));
+      const lines = [{
+        barcode: "0001",
+        name: "Coca-Cola",
+        price: 0.55,
+        quantity: 5
+      }];
+
+      observableCreateOrder.createOrder({lines})
+        .flatMap(() => observableFindProducts.findProductByBarcode({barcode: '0001'}))
+        .subscribe(
+          (product) => {
+            expect(product.stock).to.equal(95);
+            expect(events).to.deep.equal([]);
+          },
+          (error) => {
+            subscription.unsubscribe();
+            done(new Error(error));
+          },
+          () => {
+            subscription.unsubscribe();
             done();
           }
         );

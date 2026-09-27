@@ -1,8 +1,11 @@
 import { expect } from 'chai';
 import {
   makeNewOrderProductFetchEpic,
-  makeNewOrderSaveEpic
+  makeNewOrderSaveEpic,
+  makeLowStockWarningEpic
 } from '../../../../../openMarket/user_interface/order/new_order/epicFactory';
+import DomainEventBus from '../../../../../openMarket/domain/service/DomainEventBus';
+import ProductWithLowStock from '../../../../../openMarket/domain/event/ProductWithLowStock';
 import {
   NEW_ORDER_ERRORS_FOUND,
   NEW_ORDER_PRODUCT_FETCH,
@@ -264,5 +267,50 @@ describe('Order Epics', () => {
 
     });
 
+  });
+
+  describe('Low stock warning', () => {
+    it('shows one warning for each ProductWithLowStock event', (done) => {
+      const bus = new DomainEventBus();
+      const warningNotification = options => ({
+        type: 'RNS_SHOW_NOTIFICATION',
+        title: options.title,
+        message: options.message
+      });
+      const actions$ = makeLowStockWarningEpic(bus)(warningNotification)();
+
+      actions$
+        .take(2)
+        .toArray()
+        .subscribe(
+          actions => expect(actions).to.deep.equal([
+            {
+              type: 'RNS_SHOW_NOTIFICATION',
+              title: 'Stock is low',
+              message: 'Coca-Cola has 4 left (minimum 10).'
+            },
+            {
+              type: 'RNS_SHOW_NOTIFICATION',
+              title: 'Stock is low',
+              message: 'Water has 0 left (minimum 5).'
+            }
+          ]),
+          error => done(new Error(error)),
+          () => done()
+        );
+
+      bus.publish(new ProductWithLowStock({
+        barcode: '0001',
+        name: 'Coca-Cola',
+        stock: 4,
+        stockMin: 10
+      }));
+      bus.publish(new ProductWithLowStock({
+        barcode: '0002',
+        name: 'Water',
+        stock: 0,
+        stockMin: 5
+      }));
+    });
   });
 });

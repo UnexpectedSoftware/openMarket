@@ -160,5 +160,16 @@ export default class Product {
     return this;
   }
 
+  /**
+   * Stock left is at or below the minimum. A missing stock or minimum is not low.
+   * @returns {boolean}
+   */
+  isStockLow() {
+    if (this._stock == null || this._stockMin == null) {
+      return false;
+    }
+    return this._stock <= this._stockMin;
+  }
+
 
 }

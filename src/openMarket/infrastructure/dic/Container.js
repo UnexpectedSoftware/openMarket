@@ -32,6 +32,7 @@ import { createFixturesService } from "../dev";
 import OpenFoodFactsProductImageSource from "../image/OpenFoodFactsProductImageSource";
 import WikimediaCategoryImageSource from "../image/WikimediaCategoryImageSource";
 import FetchCatalogImages from "../../application/service/image/FetchCatalogImages";
+import DomainEventBus from "../../domain/service/DomainEventBus";
 const env = process.env.NODE_ENV
 
 class Container {
@@ -216,11 +217,16 @@ class Container {
     });
   }
 
+  _domainEventBus() {
+    return new DomainEventBus();
+  }
+
   _createOrderUseCase() {
     return new CreateOrder({
       orderRepository: this.getInstance({key: 'orderRepository'}),
       productRepository: this.getInstance({key: 'productRepository'}),
-      orderFactory: this.getInstance({key: 'orderFactory'})
+      orderFactory: this.getInstance({key: 'orderFactory'}),
+      domainEventBus: this.getInstance({key: 'domainEventBus'})
     });
   }
 
