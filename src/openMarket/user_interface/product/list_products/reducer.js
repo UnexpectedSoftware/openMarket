@@ -1,5 +1,21 @@
 import {LIST_PRODUCTS_DISABLED, LIST_PRODUCTS_FETCHED, LIST_PRODUCTS_FILTER_RESETED, LIST_PRODUCTS_NAME_FILTER_CHANGED} from './action';
+import ProductStatus from '../../../domain/product/ProductStatus';
 import {state} from './model';
+
+function byEnabledThenBarcode(left, right) {
+  const leftRank = left.status === ProductStatus.ENABLED ? 0 : 1;
+  const rightRank = right.status === ProductStatus.ENABLED ? 0 : 1;
+  if (leftRank !== rightRank) {
+    return leftRank - rightRank;
+  }
+  if (left.barcode < right.barcode) {
+    return -1;
+  }
+  if (left.barcode > right.barcode) {
+    return 1;
+  }
+  return 0;
+}
 
 const initialState = state();
 
@@ -29,7 +45,11 @@ export default function reducer(state = initialState, action) {
     case LIST_PRODUCTS_DISABLED:
       return {
         ...state,
-        products: state.products.filter(product => product.barcode !== action.payload)
+        products: state.products
+          .map(product => (product.barcode === action.payload
+            ? {...product, status: ProductStatus.DISABLED}
+            : product))
+          .sort(byEnabledThenBarcode)
       };
 
     default:

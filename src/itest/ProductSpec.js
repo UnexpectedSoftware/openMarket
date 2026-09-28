@@ -79,11 +79,11 @@ describe('Product list all use case', () => {
   });
 
 
-  it('leaves disabled products out of the list', (done) => {
+  it('lists disabled products after the enabled ones', (done) => {
     observableFindAllProducts.findAll({ limit: 10, offset: 0 }).subscribe((products) => {
-      la(products.length === 4, `got ${products.length} products`);
-      la(products.every(product => product.status === 'ENABLED'), 'a disabled product was listed');
-      la(!products.some(product => product.barcode === '0005'), 'barcode 0005 was listed');
+      la(products.map(product => product.barcode).join() === '0001,0002,0003,0004,0005',
+        `order ${products.map(product => product.barcode).join()}`);
+      la(products[4].status === 'DISABLED', `status ${products[4].status}`);
     }, crash, done);
   });
 
@@ -101,10 +101,11 @@ describe('Product list all use case', () => {
     observableFindAllProducts.findAll({ limit: 10, offset: 0 }).subscribe(noop, crash, done);
   });
 
-  it('hides a disabled product from name search', (done) => {
+  it('finds a disabled product by name and lists it after enabled matches', (done) => {
     observableFindAllProducts.findAllByName({ name: 'Coca-Cola', limit: 10, offset: 0 }).subscribe((products) => {
-      la(products.length === 4, `got ${products.length} products`);
-      la(!products.some(product => product.barcode === '0005'), 'barcode 0005 was listed');
+      la(products.map(product => product.barcode).join() === '0001,0002,0003,0004,0005',
+        `order ${products.map(product => product.barcode).join()}`);
+      la(products[4].status === 'DISABLED', `status ${products[4].status}`);
     }, crash, done);
   });
 });
@@ -293,9 +294,9 @@ describe('Product add stock use case', () => {
 
 describe('Product statistics use case', () => {
 
-  it('should return the count of enabled products in data base', (done) => {
+  it('should return the count of all products in data base', (done) => {
     const onData = (total) => {
-      la(total === 4, `counted ${total}`);
+      la(total === 5, `counted ${total}`);
     };
 
     observableProductsStatistics.countProducts().subscribe(onData, crash, done);
@@ -309,9 +310,9 @@ describe('Product statistics use case', () => {
     observableProductsStatistics.countProductsWithLowStock().subscribe(onData, crash, done);
   });
 
-  it('counts enabled products whose name matches', (done) => {
+  it('counts every product whose name matches, including disabled ones', (done) => {
     observableProductsStatistics.countProductsByName({name: 'Coca-Cola'}).subscribe((total) => {
-      la(total === 4, `counted ${total}`);
+      la(total === 5, `counted ${total}`);
     }, crash, done);
   });
 
@@ -320,21 +321,27 @@ describe('Product statistics use case', () => {
 
 describe('Disable and enable a product', () => {
 
-  it('hides a disabled product from the lists and keeps it loadable by barcode', (done) => {
-    observableDisableProducts.disable({barcode: '0004'})
-      .flatMap(() => observableFindProducts.findProductByBarcode({barcode: '0004'}))
+  it('keeps a disabled product on the catalog after the enabled ones and drops it from low stock', (done) => {
+    observableDisableProducts.disable({barcode: '0001'})
+      .flatMap(() => observableFindProducts.findProductByBarcode({barcode: '0001'}))
       .flatMap((product) => {
         la(product.status === 'DISABLED', `status ${product.status}`);
-        la(product.stock === 9, `stock ${product.stock}`);
+        la(product.stock === 100, `stock ${product.stock}`);
         return observableFindAllProducts.findAll({limit: 10, offset: 0});
       })
       .flatMap((products) => {
-        la(products.length === 3, `listed ${products.length}`);
-        la(!products.some(product => product.barcode === '0004'), 'disabled product was listed');
+        la(products.map(product => product.barcode).join() === '0002,0003,0004,0001,0005',
+          `order ${products.map(product => product.barcode).join()}`);
+        return observableFindAllProducts.findAllByName({name: 'Coca', limit: 10, offset: 0});
+      })
+      .flatMap((products) => {
+        la(products.map(product => product.barcode).join() === '0002,0003,0004,0001,0005',
+          `name order ${products.map(product => product.barcode).join()}`);
         return observableFindAllProducts.findAllWithLowStock({limit: 10, offset: 0});
       })
       .subscribe((products) => {
-        la(products.length === 0, `low stock ${products.length}`);
+        la(products.length === 1, `low stock ${products.length}`);
+        la(products[0].barcode === '0004', `low stock barcode ${products[0] && products[0].barcode}`);
       }, crash, done);
   });
 

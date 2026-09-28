@@ -57,7 +57,7 @@ const disableProductEpic = action$ =>
         change('new_product', 'status', ProductStatus.DISABLED),
         success({
           title: 'Product disabled',
-          message: 'It will stay out of the product lists.',
+          message: 'It stays on the catalog and drops out of the low stock list.',
           position: 'tr',
           autoDismiss: 4
         })

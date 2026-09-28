@@ -6,6 +6,8 @@ const PRODUCT_SELECT = 'SELECT p.barcode, p.name, p.description, p.stock_min, p.
   'p.category_id as category_id, c.name as category_name ' +
   'FROM product p LEFT JOIN category c ON c.id = p.category_id';
 
+const ORDER_ENABLED_FIRST = ' ORDER BY CASE WHEN p.status = ? THEN 0 ELSE 1 END, p.barcode';
+
 function sqlValue(value) {
   return value === undefined ? null : value;
 }
@@ -27,14 +29,14 @@ export default class SqliteProductRepository extends ProductRepository {
 
   findAll({productFilter}) {
     return this._query(
-      PRODUCT_SELECT + ' WHERE p.status = ? ORDER BY p.barcode LIMIT ? OFFSET ?',
-      [productFilter.status, productFilter.limit, productFilter.offset]
+      PRODUCT_SELECT + ORDER_ENABLED_FIRST + ' LIMIT ? OFFSET ?',
+      [ProductStatus.ENABLED, productFilter.limit, productFilter.offset]
     );
   }
 
   findAllByName({name, limit, offset}) {
     return this._query(
-      PRODUCT_SELECT + ' WHERE p.name LIKE ? AND p.status = ? ORDER BY p.barcode LIMIT ? OFFSET ?',
+      PRODUCT_SELECT + ' WHERE p.name LIKE ?' + ORDER_ENABLED_FIRST + ' LIMIT ? OFFSET ?',
       ['%' + name + '%', ProductStatus.ENABLED, limit, offset]
     );
   }
@@ -109,13 +111,13 @@ export default class SqliteProductRepository extends ProductRepository {
   }
 
   countProducts() {
-    return this._count('SELECT count(*) AS total FROM product WHERE status = ?', [ProductStatus.ENABLED]);
+    return this._count('SELECT count(*) AS total FROM product', []);
   }
 
   countProductsByName({name}) {
     return this._count(
-      'SELECT count(*) AS total FROM product WHERE name LIKE ? AND status = ?',
-      ['%' + name + '%', ProductStatus.ENABLED]
+      'SELECT count(*) AS total FROM product WHERE name LIKE ?',
+      ['%' + name + '%']
     );
   }
 
