@@ -1,4 +1,3 @@
-import ProductStatus from "../../../domain/product/ProductStatus";
 /**
  * @class DisableProduct
  */
@@ -17,16 +16,14 @@ export default class DisableProduct {
   }
 
   /**
-   *
-   * @param {string} id
+   * Mark a product disabled. The row stays, so old order lines still point at it.
+   * @param {string} barcode
    * @returns {Observable<null>}
    */
-  disable({ id }) {
-    this._productRepository.findById({id})
-      .flatMap(product => {
-        product.status = ProductStatus.DISABLED;
-        return this._productRepository.save({product});
-      })
+  disable({ barcode }) {
+    return this._productRepository.findByBarcode({ barcode })
+      .map(product => product.disable())
+      .flatMap(product => this._productRepository.save({ product }));
   }
 
 }

@@ -1,3 +1,5 @@
+import ProductStatus from "./ProductStatus";
+
 /**
  * @class Product
  */
@@ -169,6 +171,29 @@ export default class Product {
       return false;
     }
     return this._stock <= this._stockMin;
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  isDisabled() {
+    return this._status === ProductStatus.DISABLED;
+  }
+
+  /**
+   * @returns {Product}
+   */
+  disable() {
+    this._status = ProductStatus.DISABLED;
+    return this;
+  }
+
+  /**
+   * @returns {Product}
+   */
+  enable() {
+    this._status = ProductStatus.ENABLED;
+    return this;
   }
 
 

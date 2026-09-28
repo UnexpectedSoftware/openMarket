@@ -27,15 +27,15 @@ export default class SqliteProductRepository extends ProductRepository {
 
   findAll({productFilter}) {
     return this._query(
-      PRODUCT_SELECT + ' ORDER BY p.barcode LIMIT ? OFFSET ?',
-      [productFilter.limit, productFilter.offset]
+      PRODUCT_SELECT + ' WHERE p.status = ? ORDER BY p.barcode LIMIT ? OFFSET ?',
+      [productFilter.status, productFilter.limit, productFilter.offset]
     );
   }
 
   findAllByName({name, limit, offset}) {
     return this._query(
-      PRODUCT_SELECT + ' WHERE p.name LIKE ? ORDER BY p.barcode LIMIT ? OFFSET ?',
-      ['%' + name + '%', limit, offset]
+      PRODUCT_SELECT + ' WHERE p.name LIKE ? AND p.status = ? ORDER BY p.barcode LIMIT ? OFFSET ?',
+      ['%' + name + '%', ProductStatus.ENABLED, limit, offset]
     );
   }
 
@@ -109,11 +109,14 @@ export default class SqliteProductRepository extends ProductRepository {
   }
 
   countProducts() {
-    return this._count('SELECT count(*) AS total FROM product', []);
+    return this._count('SELECT count(*) AS total FROM product WHERE status = ?', [ProductStatus.ENABLED]);
   }
 
   countProductsByName({name}) {
-    return this._count('SELECT count(*) AS total FROM product WHERE name LIKE ?', ['%' + name + '%']);
+    return this._count(
+      'SELECT count(*) AS total FROM product WHERE name LIKE ? AND status = ?',
+      ['%' + name + '%', ProductStatus.ENABLED]
+    );
   }
 
   countProductsWithLowStock() {

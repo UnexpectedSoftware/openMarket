@@ -10,6 +10,8 @@ export const LIST_PRODUCTS_FILTER_CHANGED = 'LIST_PRODUCTS_FILTER_CHANGED';
 export const LIST_PRODUCTS_BARCODE_FILTER_CHANGED = 'LIST_PRODUCTS_BARCODE_FILTER_CHANGED';
 export const LIST_PRODUCTS_NAME_FILTER_CHANGED = 'LIST_PRODUCTS_NAME_FILTER_CHANGED';
 export const LIST_PRODUCTS_FILTER_RESETED = 'LIST_PRODUCTS_FILTER_RESETED';
+export const LIST_PRODUCTS_DISABLE = 'LIST_PRODUCTS_DISABLE';
+export const LIST_PRODUCTS_DISABLED = 'LIST_PRODUCTS_DISABLED';
 
 export const listProductsFetch = payload => ({ type: LIST_PRODUCTS_FETCH,payload });
 export const listProductsFetched = payload => ({ type: LIST_PRODUCTS_FETCHED,payload});
@@ -22,3 +24,5 @@ export const listProductsFilterChanged = payload => ({ type: LIST_PRODUCTS_FILTE
 export const listProductsBarcodeFilterChanged = payload => ({ type: LIST_PRODUCTS_BARCODE_FILTER_CHANGED,payload});
 export const listProductsNameFilterChanged = payload => ({ type: LIST_PRODUCTS_NAME_FILTER_CHANGED,payload});
 export const listProductsFilterReseted = () => ({ type: LIST_PRODUCTS_FILTER_RESETED});
+export const listProductsDisable = payload => ({ type: LIST_PRODUCTS_DISABLE, payload });
+export const listProductsDisabled = payload => ({ type: LIST_PRODUCTS_DISABLED, payload });

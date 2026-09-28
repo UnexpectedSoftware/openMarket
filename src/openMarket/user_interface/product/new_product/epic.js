@@ -3,7 +3,8 @@ import * as Rx from "rxjs";
 import { success, error } from 'react-notification-system-redux';
 import { LOCATION_CHANGE } from 'react-router-redux';
 import * as newProductActions from "./action";
-import {reset} from 'redux-form';
+import {change, reset} from 'redux-form';
+import ProductStatus from "../../../domain/product/ProductStatus";
 import {makeProductCloseEpic} from "./epicFactory";
 import {LIST_PRODUCTS_DETAIL_LOADED} from "../list_products/action";
 
@@ -48,6 +49,25 @@ const savedProductEpic = action$ =>
         })
       )
     );
+
+const disableProductEpic = action$ =>
+  action$.ofType(newProductActions.PRODUCT_DISABLE)
+    .flatMap(action => OpenMarket.get("products_disable_use_case").disable({barcode: action.payload})
+      .mergeMap(() => Rx.Observable.of(
+        change('new_product', 'status', ProductStatus.DISABLED),
+        success({
+          title: 'Product disabled',
+          message: 'It will stay out of the product lists.',
+          position: 'tr',
+          autoDismiss: 4
+        })
+      ))
+      .catch(disableError => Rx.Observable.of(error({
+        title: 'Product was not disabled',
+        message: disableError && disableError.message ? disableError.message : 'Product was not disabled',
+        position: 'tr',
+        autoDismiss: 4
+      }))));
 
 const fetchCategoriesEpic = action$ =>
   action$.ofType(newProductActions.NEW_PRODUCT_FETCH_CATEGORIES)
@@ -105,6 +125,7 @@ export default action$ =>
   Rx.Observable.merge(
     saveProductEpic(action$),
     savedProductEpic(action$),
+    disableProductEpic(action$),
     fetchCategoriesEpic(action$),
     fetchStatusesEpic(action$),
     fetchProductEpic(action$),

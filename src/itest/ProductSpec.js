@@ -5,6 +5,7 @@ import la from 'lazy-ass';
 import is from 'check-more-types';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
+import ProductEnabledAgain from '../openMarket/domain/event/ProductEnabledAgain';
 import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
 import { imagesDirectory } from '../openMarket/infrastructure/service/ImageStore';
 
@@ -32,6 +33,8 @@ const observableCreateProducts = openMarket.get('products_create_or_update_use_c
  * @type {AddStock}
  */
 const observableAddStockProducts = openMarket.get('products_add_stock_use_case');
+const observableDisableProducts = openMarket.get('products_disable_use_case');
+const observableEnableProducts = openMarket.get('products_enable_use_case');
 
 const observableProductsStatistics = openMarket.get('products_statistics_use_case');
 
@@ -76,6 +79,14 @@ describe('Product list all use case', () => {
   });
 
 
+  it('leaves disabled products out of the list', (done) => {
+    observableFindAllProducts.findAll({ limit: 10, offset: 0 }).subscribe((products) => {
+      la(products.length === 4, `got ${products.length} products`);
+      la(products.every(product => product.status === 'ENABLED'), 'a disabled product was listed');
+      la(!products.some(product => product.barcode === '0005'), 'barcode 0005 was listed');
+    }, crash, done);
+  });
+
   it('should return 1 product with name Coca-Cola and  limit 10 and offset 0', (done) => {
     let count = 0;
     const onNumber = () => { count += 1; };
@@ -88,6 +99,13 @@ describe('Product list all use case', () => {
 
   it('has no errors', (done) => {
     observableFindAllProducts.findAll({ limit: 10, offset: 0 }).subscribe(noop, crash, done);
+  });
+
+  it('hides a disabled product from name search', (done) => {
+    observableFindAllProducts.findAllByName({ name: 'Coca-Cola', limit: 10, offset: 0 }).subscribe((products) => {
+      la(products.length === 4, `got ${products.length} products`);
+      la(!products.some(product => product.barcode === '0005'), 'barcode 0005 was listed');
+    }, crash, done);
   });
 });
 
@@ -140,6 +158,13 @@ describe('Product Find by barcode use case', () => {
       la(count === 1, `got ${count} product`);
       done();
     });
+  });
+
+  it('still returns a disabled product by barcode', (done) => {
+    observableFindProducts.findProductByBarcode({ barcode: '0005' }).subscribe((product) => {
+      la(product.status === 'DISABLED', `status ${product.status}`);
+      la(product.barcode === '0005', 'barcode');
+    }, crash, done);
   });
 });
 
@@ -268,22 +293,73 @@ describe('Product add stock use case', () => {
 
 describe('Product statistics use case', () => {
 
-  it('should return the count of all products in data base', (done) => {
+  it('should return the count of enabled products in data base', (done) => {
     const onData = (total) => {
-      la(total === 5, 'Is not counting right!');
+      la(total === 4, `counted ${total}`);
     };
 
-    observableProductsStatistics.countProducts().subscribe(onData, noop, done());
+    observableProductsStatistics.countProducts().subscribe(onData, crash, done);
   });
 
-  it('should return the count of all products with stock lower than stockMin', (done) => {
+  it('should return the count of enabled products with stock lower than stockMin', (done) => {
     const onData = (total) => {
-      la(total === 2, 'Is not counting right!');
+      la(total === 1, `counted ${total}`);
     };
 
-    observableProductsStatistics.countProductsWithLowStock().subscribe(onData, noop, done());
+    observableProductsStatistics.countProductsWithLowStock().subscribe(onData, crash, done);
   });
 
+  it('counts enabled products whose name matches', (done) => {
+    observableProductsStatistics.countProductsByName({name: 'Coca-Cola'}).subscribe((total) => {
+      la(total === 4, `counted ${total}`);
+    }, crash, done);
+  });
+
+
+});
+
+describe('Disable and enable a product', () => {
+
+  it('hides a disabled product from the lists and keeps it loadable by barcode', (done) => {
+    observableDisableProducts.disable({barcode: '0004'})
+      .flatMap(() => observableFindProducts.findProductByBarcode({barcode: '0004'}))
+      .flatMap((product) => {
+        la(product.status === 'DISABLED', `status ${product.status}`);
+        la(product.stock === 9, `stock ${product.stock}`);
+        return observableFindAllProducts.findAll({limit: 10, offset: 0});
+      })
+      .flatMap((products) => {
+        la(products.length === 3, `listed ${products.length}`);
+        la(!products.some(product => product.barcode === '0004'), 'disabled product was listed');
+        return observableFindAllProducts.findAllWithLowStock({limit: 10, offset: 0});
+      })
+      .subscribe((products) => {
+        la(products.length === 0, `low stock ${products.length}`);
+      }, crash, done);
+  });
+
+  it('enables a disabled product, adds one to stock, and publishes one event', (done) => {
+    const events = [];
+    const subscription = openMarket.get('domain_event_bus')
+      .ofType(ProductEnabledAgain)
+      .subscribe(event => events.push(event));
+    observableEnableProducts.enableForSale({barcode: '0005'})
+      .flatMap(() => observableEnableProducts.enableForSale({barcode: '0005'}))
+      .flatMap(() => observableFindProducts.findProductByBarcode({barcode: '0005'}))
+      .subscribe((product) => {
+        la(product.status === 'ENABLED', `status ${product.status}`);
+        la(product.stock === 11, `stock ${product.stock}`);
+        la(events.length === 1, `events ${events.length}`);
+        la(events[0].barcode === '0005', 'event barcode');
+        la(events[0].name === 'Coca-Cola Zero 42', 'event name');
+      }, (err) => {
+        subscription.unsubscribe();
+        crash(err);
+      }, () => {
+        subscription.unsubscribe();
+        done();
+      });
+  });
 
 });
 

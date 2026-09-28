@@ -1,4 +1,4 @@
-import {LIST_PRODUCTS_FETCHED, LIST_PRODUCTS_FILTER_RESETED, LIST_PRODUCTS_NAME_FILTER_CHANGED} from './action';
+import {LIST_PRODUCTS_DISABLED, LIST_PRODUCTS_FETCHED, LIST_PRODUCTS_FILTER_RESETED, LIST_PRODUCTS_NAME_FILTER_CHANGED} from './action';
 import {state} from './model';
 
 const initialState = state();
@@ -24,6 +24,12 @@ export default function reducer(state = initialState, action) {
       return {
         ...state,
         filter_type: undefined
+      };
+
+    case LIST_PRODUCTS_DISABLED:
+      return {
+        ...state,
+        products: state.products.filter(product => product.barcode !== action.payload)
       };
 
     default:

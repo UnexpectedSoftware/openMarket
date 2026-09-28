@@ -11,18 +11,21 @@ import {
   makePrinterDialogEpic,
   makeNewOrderSavedEpic,
   makeWeightedDialogEpic,
-  makeLowStockWarningEpic
+  makeLowStockWarningEpic,
+  makeProductEnabledAgainEpic
 } from "./epicFactory";
 
 /* TODO Maybe make a DIC for user_interface layer */
 const findProductUseCase = OpenMarket.get("products_find_use_case");
+const enableProductUseCase = OpenMarket.get("products_enable_use_case");
 const orderCreateUseCase = OpenMarket.get("orders_create_use_case");
 const domainEventBus = OpenMarket.get("domain_event_bus");
 const orderPrinterService = container.getInstance({key:'orderPrinterService'});
 
-const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(reset);
+const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(enableProductUseCase)(reset);
 const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset)(error)(success);
 const lowStockWarningEpic = makeLowStockWarningEpic(domainEventBus)(warning);
+const productEnabledAgainEpic = makeProductEnabledAgainEpic(domainEventBus)(warning);
 const printerDialogEpic = makePrinterDialogEpic(orderPrinterService);
 const printButtonClickedEpic = makePrintButtonClickedEpic(orderPrinterService);
 const weightedDialogEpic  = makeWeightedDialogEpic(reset)
@@ -35,5 +38,6 @@ export default action$ =>
     printButtonClickedEpic(action$),
     makeNewOrderSavedEpic(action$),
     weightedDialogEpic(action$),
-    lowStockWarningEpic()
+    lowStockWarningEpic(),
+    productEnabledAgainEpic()
   ).do(()=> null,(error) => console.log(error));

@@ -10,6 +10,8 @@ import ProductStatistics from "../../application/service/product/ProductStatisti
 import ListAllProducts from "../../application/service/product/ListAllProducts";
 import AddStock from "../../application/service/product/AddStock";
 import CreateOrUpdateProduct from "../../application/service/product/CreateOrUpdateProduct";
+import DisableProduct from "../../application/service/product/DisableProduct";
+import EnableProduct from "../../application/service/product/EnableProduct";
 import FindProduct from "../../application/service/product/FindProduct";
 import CreateOrder from "../../application/service/order/CreateOrder";
 import ListAllOrders from "../../application/service/order/ListAllOrders";
@@ -194,6 +196,19 @@ class Container {
   _addStockProduct() {
     return new AddStock({
       repository: this.getInstance({key: 'productRepository'})
+    });
+  }
+
+  _disableProduct() {
+    return new DisableProduct({
+      repository: this.getInstance({key: 'productRepository'})
+    });
+  }
+
+  _enableProduct() {
+    return new EnableProduct({
+      repository: this.getInstance({key: 'productRepository'}),
+      domainEventBus: this.getInstance({key: 'domainEventBus'})
     });
   }
 
