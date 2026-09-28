@@ -1,6 +1,7 @@
 import * as listProductsActions from "./action";
 import * as Rx from "rxjs";
 import {push} from 'react-router-redux';
+import { success, error } from 'react-notification-system-redux';
 import OpenMarket from "../../../application/index";
 import {defaultLimit, defaultOffset} from "../../order/list_orders/model";
 import ImageStore, {imagesDirectory} from "../../../infrastructure/service/ImageStore";
@@ -85,6 +86,42 @@ const listProductsFilterChangedEpic = action$ =>
       .defaultIfEmpty(listProductsActions.listProductsFilterReseted())
     );
 
+const disabledToast = () => success({
+  title: 'Product disabled',
+  message: 'It stays on the catalog and drops out of the low stock list.',
+  position: 'tr',
+  autoDismiss: 4
+});
+
+const listProductsDisableEpic = action$ =>
+  action$.ofType(listProductsActions.LIST_PRODUCTS_DISABLE)
+    .flatMap(action =>
+      OpenMarket.get("products_disable_use_case").disable({barcode: action.payload.barcode})
+        .mergeMap(() => {
+          const toast = disabledToast();
+          if (action.payload.filterType === 'name') {
+            return Rx.Observable.of(
+              listProductsActions.listProductsDisabled(action.payload.barcode),
+              toast
+            );
+          }
+          return Rx.Observable.of(
+            listProductsActions.listProductsFetch({
+              limit: action.payload.limit,
+              offset: action.payload.offset,
+              page: action.payload.page
+            }),
+            toast
+          );
+        })
+        .catch(disableError => Rx.Observable.of(error({
+          title: 'Product was not disabled',
+          message: disableError && disableError.message ? disableError.message : 'Product was not disabled',
+          position: 'tr',
+          autoDismiss: 4
+        })))
+    );
+
 const listProductsFilterResetedEpic = action$ =>
   action$.ofType(listProductsActions.LIST_PRODUCTS_FILTER_RESETED)
     .map(action => listProductsActions.listProductsFetch({
@@ -126,6 +163,7 @@ export default action$ =>
     pageChangedEpic(action$),
     listProductsDetailEpic(action$),
     listProductsFilterChangedEpic(action$),
+    listProductsDisableEpic(action$),
     listProductsBarcodeFilterChangedEpic(action$),
     listProductsNameFilterChangedEpic(action$),
     listProductsFilterResetedEpic(action$)

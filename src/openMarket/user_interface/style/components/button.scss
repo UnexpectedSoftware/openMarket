@@ -26,6 +26,10 @@ input[type="button"],
   float: left;
 }
 
+.button-disable {
+  margin-right: $sp-base/2;
+}
+
 input[type="button"] {
   width: auto;
 }

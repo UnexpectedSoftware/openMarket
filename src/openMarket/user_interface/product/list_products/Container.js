@@ -12,6 +12,7 @@ class Container extends Component {
     this.handlePageChanged = this.handlePageChanged.bind(this);
     this.renderDetailProduct = this.renderDetailProduct.bind(this);
     this.handleFilterChanged = this.handleFilterChanged.bind(this);
+    this.disableProduct = this.disableProduct.bind(this);
     this.columns = [{
       Header: 'Image',
       accessor: 'imageSrc',
@@ -60,7 +61,25 @@ class Container extends Component {
 
   renderDetailProduct (data) {
     const { listProductsDetail } = this.props;
-    return (<a onClick={(e) => {listProductsDetail(data.row.barcode);}}>View</a>);
+    return (
+      <span>
+        <a onClick={() => { listProductsDetail(data.row.barcode); }}>View</a>
+        {data.row.status !== 'DISABLED' &&
+          <a onClick={() => { this.disableProduct(data.row.barcode); }}>{' '}Disable</a>
+        }
+      </span>
+    );
+  }
+
+  disableProduct (barcode) {
+    const { listProductsDisable, products } = this.props;
+    listProductsDisable({
+      barcode,
+      limit: products.filters.limit,
+      offset: products.current_page * products.filters.limit,
+      page: products.current_page,
+      filterType: products.filter_type
+    });
   }
 
   handlePageChanged (pageIndex) {

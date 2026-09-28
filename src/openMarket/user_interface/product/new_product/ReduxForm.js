@@ -39,7 +39,7 @@ class ReduxForm extends Component {
   };
 
   render() {
-    const { handleSubmit, edition, statusesList, submitting, categoriesList, initialValues } = this.props;
+    const { handleSubmit, edition, statusesList, submitting, categoriesList, initialValues, canDisable, onDisable } = this.props;
     return (
       <form onSubmit={handleSubmit(this.attachImage)} onKeyPress={event => {if (event.which === 13 /* Enter */) { event.preventDefault();}}}>
         <Field name="barcode" readOnly={edition} component={this.renderInput} type="text" placeholder="Barcode" validate={[required, maxLength15]}/>
@@ -87,6 +87,11 @@ class ReduxForm extends Component {
             <i className="fa fa-floppy-o" />
             Save
           </button>
+          {canDisable &&
+            <button type="button" className="button-disable" onClick={onDisable}>
+              Disable
+            </button>
+          }
         </div>
       </form>
     );

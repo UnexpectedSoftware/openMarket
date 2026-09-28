@@ -4,14 +4,19 @@ import * as Rx from "rxjs";
 import {HIDE_PRINTER_DIALOG} from "../printer_dialog/action";
 import {showPrinterDialog} from "../printer_dialog/action";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
+import ProductEnabledAgain from "../../../domain/event/ProductEnabledAgain";
+import ProductStatus from "../../../domain/product/ProductStatus";
 
-export const makeNewOrderProductFetchEpic = findProductUseCase => resetForm => action$ =>
+export const makeNewOrderProductFetchEpic = findProductUseCase => enableProductUseCase => resetForm => action$ =>
   action$
     .filter(action => action.type === newOrderActions.NEW_ORDER_PRODUCT_FETCH)
     .flatMap(action => findProductUseCase.findProductByBarcode({barcode: action.barcode})
+      .flatMap(product => product.status === ProductStatus.DISABLED
+        ? enableProductUseCase.enableForSale({barcode: action.barcode})
+        : Rx.Observable.of(product))
       .map(product => !product.isWeighted ? newOrderActions.newOrderProductFetched({product:product,quantity:1}): weightedDialogActions.showWeightedDialog(product))
       .defaultIfEmpty(newOrderActions.newOrderProductNotFound(action.barcode))
-      .mergeMap(action => Rx.Observable.of(resetForm('new_order'),action))
+      .mergeMap(nextAction => Rx.Observable.of(resetForm('new_order'), nextAction))
     );
 
 export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => errorNotification => successNotification => action$ =>
@@ -65,6 +70,15 @@ export const makeLowStockWarningEpic = domainEventBus => warningNotification => 
     .map(event => warningNotification({
       title: 'Stock is low',
       message: `${event.name} has ${event.stock} left (minimum ${event.stockMin}).`,
+      position: 'tr',
+      autoDismiss: 8
+    }))
+
+export const makeProductEnabledAgainEpic = domainEventBus => warningNotification => () =>
+  domainEventBus.ofType(ProductEnabledAgain)
+    .map(event => warningNotification({
+      title: 'Product enabled',
+      message: `${event.name} has been enabled again and the stock was increased by +1.`,
       position: 'tr',
       autoDismiss: 8
     }))

@@ -35,7 +35,8 @@ class Container extends Component {
   }
 
   render() {
-    const { categories, edition, initialValues, statuses, formKey } = this.props;
+    const { categories, edition, initialValues, statuses, formKey, status, productDisable } = this.props;
+    const currentStatus = status || (initialValues && initialValues.status);
     return (
       <div className="container-fluid">
         <h2>Let's {edition ? 'edit a':'create a new'} product!</h2>
@@ -44,6 +45,8 @@ class Container extends Component {
           edition={edition}
           loadProduct={this.loadProduct}
           onSubmit={this.handleSubmit}
+          onDisable={() => productDisable(initialValues.barcode)}
+          canDisable={edition && currentStatus !== 'DISABLED'}
           categoriesList={categories}
           initialValues={initialValues}
           statusesList={statuses}

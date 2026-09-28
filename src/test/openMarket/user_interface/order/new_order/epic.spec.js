@@ -2,10 +2,12 @@ import { expect } from 'chai';
 import {
   makeNewOrderProductFetchEpic,
   makeNewOrderSaveEpic,
-  makeLowStockWarningEpic
+  makeLowStockWarningEpic,
+  makeProductEnabledAgainEpic
 } from '../../../../../openMarket/user_interface/order/new_order/epicFactory';
 import DomainEventBus from '../../../../../openMarket/domain/service/DomainEventBus';
 import ProductWithLowStock from '../../../../../openMarket/domain/event/ProductWithLowStock';
+import ProductEnabledAgain from '../../../../../openMarket/domain/event/ProductEnabledAgain';
 import {
   NEW_ORDER_ERRORS_FOUND,
   NEW_ORDER_PRODUCT_FETCH,
@@ -34,7 +36,11 @@ describe('Order Epics', () => {
         type: 'RESET_FORM_REDUX_WHATEVER'
       });
 
-      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(resetFormMock);
+      const enableProductUseCaseMock = {
+        enableForSale: () => Rx.Observable.throw(new Error('enabled product must stay as it is'))
+      };
+
+      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(enableProductUseCaseMock)(resetFormMock);
 
       const actions$ = newOrderProductFetchEpic(givenActions$);
 
@@ -81,7 +87,11 @@ describe('Order Epics', () => {
         type: 'RESET_FORM_REDUX_WHATEVER'
       });
 
-      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(resetFormMock);
+      const enableProductUseCaseMock = {
+        enableForSale: () => Rx.Observable.throw(new Error('missing product must not be enabled'))
+      };
+
+      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(enableProductUseCaseMock)(resetFormMock);
 
       const actions$ = newOrderProductFetchEpic(givenActions$);
 
@@ -124,7 +134,11 @@ describe('Order Epics', () => {
         type: 'RESET_FORM_REDUX_WHATEVER'
       });
 
-      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(resetFormMock);
+      const enableProductUseCaseMock = {
+        enableForSale: () => Rx.Observable.throw(new Error('enabled product must stay as it is'))
+      };
+
+      const newOrderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCaseMock)(enableProductUseCaseMock)(resetFormMock);
 
       const actions$ = newOrderProductFetchEpic(givenActions$);
 
@@ -150,6 +164,91 @@ describe('Order Epics', () => {
           () => done()
         );
 
+    });
+
+    it('enables a disabled product and adds it to the order', (done) => {
+      const givenBarcode = '0005';
+      const enabledProduct = {
+        barcode: givenBarcode,
+        name: 'Hidden',
+        isWeighted: false,
+        status: 'ENABLED'
+      };
+      const givenActions$ = Rx.Observable.of({
+        type: NEW_ORDER_PRODUCT_FETCH,
+        barcode: givenBarcode
+      });
+      const findProductUseCaseMock = {
+        findProductByBarcode: () => Rx.Observable.of({
+          barcode: givenBarcode,
+          name: 'Hidden',
+          isWeighted: false,
+          status: 'DISABLED'
+        })
+      };
+      let enabledBarcode = null;
+      const enableProductUseCaseMock = {
+        enableForSale: ({barcode}) => {
+          enabledBarcode = barcode;
+          return Rx.Observable.of(enabledProduct);
+        }
+      };
+      const resetFormMock = () => ({type: 'RESET_FORM_REDUX_WHATEVER'});
+      const actions$ = makeNewOrderProductFetchEpic(findProductUseCaseMock)(enableProductUseCaseMock)(resetFormMock)(givenActions$);
+
+      actions$
+        .toArray()
+        .subscribe(
+          actionsArray => {
+            expect(enabledBarcode).to.equal(givenBarcode);
+            expect(actionsArray).to.deep.equal([
+              {type: 'RESET_FORM_REDUX_WHATEVER'},
+              {
+                type: NEW_ORDER_PRODUCT_FETCHED,
+                payload: {product: enabledProduct, quantity: 1}
+              }
+            ]);
+          },
+          error => done(new Error(error)),
+          () => done()
+        );
+    });
+
+    it('enables a disabled weighted product and opens the weight dialog', (done) => {
+      const givenBarcode = '0006';
+      const enabledProduct = {
+        barcode: givenBarcode,
+        name: 'Apples',
+        isWeighted: true,
+        status: 'ENABLED'
+      };
+      const givenActions$ = Rx.Observable.of({
+        type: NEW_ORDER_PRODUCT_FETCH,
+        barcode: givenBarcode
+      });
+      const findProductUseCaseMock = {
+        findProductByBarcode: () => Rx.Observable.of({
+          barcode: givenBarcode,
+          isWeighted: true,
+          status: 'DISABLED'
+        })
+      };
+      const enableProductUseCaseMock = {
+        enableForSale: () => Rx.Observable.of(enabledProduct)
+      };
+      const resetFormMock = () => ({type: 'RESET_FORM_REDUX_WHATEVER'});
+      const actions$ = makeNewOrderProductFetchEpic(findProductUseCaseMock)(enableProductUseCaseMock)(resetFormMock)(givenActions$);
+
+      actions$
+        .toArray()
+        .subscribe(
+          actionsArray => expect(actionsArray).to.deep.equal([
+            {type: 'RESET_FORM_REDUX_WHATEVER'},
+            {type: SHOW_WEIGHTED_DIALOG, payload: enabledProduct}
+          ]),
+          error => done(new Error(error)),
+          () => done()
+        );
     });
   });
 
@@ -310,6 +409,39 @@ describe('Order Epics', () => {
         name: 'Water',
         stock: 0,
         stockMin: 5
+      }));
+    });
+  });
+
+  describe('Product enabled again', () => {
+    it('warns that the product is enabled and stock increased by 1', (done) => {
+      const bus = new DomainEventBus();
+      const warningNotification = options => ({
+        type: 'RNS_SHOW_NOTIFICATION',
+        title: options.title,
+        message: options.message,
+        position: options.position,
+        autoDismiss: options.autoDismiss
+      });
+      const actions$ = makeProductEnabledAgainEpic(bus)(warningNotification)();
+
+      actions$
+        .take(1)
+        .subscribe(
+          action => expect(action).to.deep.equal({
+            type: 'RNS_SHOW_NOTIFICATION',
+            title: 'Product enabled',
+            message: 'Coca-Cola Zero 42 has been enabled again and the stock was increased by +1.',
+            position: 'tr',
+            autoDismiss: 8
+          }),
+          error => done(new Error(error)),
+          () => done()
+        );
+
+      bus.publish(new ProductEnabledAgain({
+        barcode: '0005',
+        name: 'Coca-Cola Zero 42'
       }));
     });
   });

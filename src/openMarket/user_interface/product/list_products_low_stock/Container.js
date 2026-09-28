@@ -9,6 +9,7 @@ class Container extends Component {
   constructor(props,context) {
     super(props, context);
     this.handlePageChanged = this.handlePageChanged.bind(this);
+    this.renderActions = this.renderActions.bind(this);
     this.columns = [{
       Header: 'Image',
       accessor: 'imageSrc',
@@ -47,8 +48,28 @@ class Container extends Component {
         Header: 'Status',
         accessor: 'status',
         filterable: false
+      },
+      {
+        Header: 'Actions',
+        accessor: 'actions',
+        Cell: this.renderActions,
+        filterable: false
       }
     ];
+  }
+
+  renderActions (data) {
+    return (<a onClick={() => { this.disableProduct(data.row.barcode); }}>Disable</a>);
+  }
+
+  disableProduct (barcode) {
+    const { listProductDisable, products } = this.props;
+    listProductDisable({
+      barcode,
+      limit: products.filters.limit,
+      offset: products.current_page * products.filters.limit,
+      page: products.current_page
+    });
   }
 
   handlePageChanged (pageIndex) {
