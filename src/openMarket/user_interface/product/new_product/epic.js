@@ -3,8 +3,7 @@ import * as Rx from "rxjs";
 import { success, error } from 'react-notification-system-redux';
 import { LOCATION_CHANGE } from 'react-router-redux';
 import * as newProductActions from "./action";
-import {change, reset} from 'redux-form';
-import ProductStatus from "../../../domain/product/ProductStatus";
+import {reset} from 'redux-form';
 import {makeProductCloseEpic} from "./epicFactory";
 import {LIST_PRODUCTS_DETAIL_LOADED} from "../list_products/action";
 
@@ -25,7 +24,7 @@ const saveProductEpic = action$ =>
       status: action.product.status,
       imagePath: action.product.imagePath
     })
-      .map(() => newProductActions.newProductSaved())
+      .map(() => newProductActions.newProductSaved({ edition: action.product.edition }))
       .catch(saveError => Rx.Observable.of(error({
         title: 'Product was not saved',
         message: saveError && saveError.message ? saveError.message : 'Product was not saved',
@@ -33,41 +32,32 @@ const saveProductEpic = action$ =>
         autoDismiss: 4
       }))));
 
+const savedToast = edition => success(edition ? {
+  title: 'Changes applied',
+  message: 'Your changes were applied',
+  position: 'tr',
+  autoDismiss: 4
+} : {
+  title: 'Product saved!',
+  message: 'Product saved in database',
+  position: 'tr',
+  autoDismiss: 4
+});
+
 const savedProductEpic = action$ =>
   action$.ofType(newProductActions.NEW_PRODUCT_SAVED)
-    .map(action => reset('new_product'))
-    .mergeMap(resetAction =>
-      Rx.Observable.of(
-        resetAction,
+    .mergeMap(action => {
+      const toast = savedToast(action.edition);
+      if (action.edition) {
+        return Rx.Observable.of(toast);
+      }
+      return Rx.Observable.of(
+        reset('new_product'),
         newProductActions.newProductFetchCategories(),
         newProductActions.productFetchStatuses(),
-        success({
-          title: 'Product saved!',
-          message: 'Product saved in database',
-          position: 'tr',
-          autoDismiss: 4
-        })
-      )
-    );
-
-const disableProductEpic = action$ =>
-  action$.ofType(newProductActions.PRODUCT_DISABLE)
-    .flatMap(action => OpenMarket.get("products_disable_use_case").disable({barcode: action.payload})
-      .mergeMap(() => Rx.Observable.of(
-        change('new_product', 'status', ProductStatus.DISABLED),
-        success({
-          title: 'Product disabled',
-          message: 'It stays on the catalog and drops out of the low stock list.',
-          position: 'tr',
-          autoDismiss: 4
-        })
-      ))
-      .catch(disableError => Rx.Observable.of(error({
-        title: 'Product was not disabled',
-        message: disableError && disableError.message ? disableError.message : 'Product was not disabled',
-        position: 'tr',
-        autoDismiss: 4
-      }))));
+        toast
+      );
+    });
 
 const fetchCategoriesEpic = action$ =>
   action$.ofType(newProductActions.NEW_PRODUCT_FETCH_CATEGORIES)
@@ -125,7 +115,6 @@ export default action$ =>
   Rx.Observable.merge(
     saveProductEpic(action$),
     savedProductEpic(action$),
-    disableProductEpic(action$),
     fetchCategoriesEpic(action$),
     fetchStatusesEpic(action$),
     fetchProductEpic(action$),

@@ -9,8 +9,7 @@ const selector = formValueSelector('new_product')
 function mapStateToProps(state, ownProps) {
   return {
     ...state.newProduct,
-    barcode: selector(state, 'barcode'),
-    status: selector(state, 'status')
+    barcode: selector(state, 'barcode')
   };
 }
 
