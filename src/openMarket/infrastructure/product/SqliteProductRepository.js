@@ -19,6 +19,23 @@ function bit(value) {
   return value ? 1 : 0;
 }
 
+const RANK_SQL = 'CASE WHEN p.status = ? THEN 0 ELSE 1 END';
+
+function likeContains(text) {
+  return '%' + text.replace(/[\\%_]/g, (char) => '\\' + char) + '%';
+}
+
+function catalogCursor(after) {
+  if (after == null) {
+    return {rank: null, barcode: null};
+  }
+  const rank = Number(after.rank);
+  if ((rank !== 0 && rank !== 1) || typeof after.barcode !== 'string' || after.barcode === '') {
+    throw new Error('Invalid product page');
+  }
+  return {rank, barcode: after.barcode};
+}
+
 export default class SqliteProductRepository extends ProductRepository {
   constructor({connection, productMapper, images}) {
     super();
@@ -39,6 +56,48 @@ export default class SqliteProductRepository extends ProductRepository {
       PRODUCT_SELECT + ' WHERE p.name LIKE ?' + ORDER_ENABLED_FIRST + ' LIMIT ? OFFSET ?',
       ['%' + name + '%', ProductStatus.ENABLED, limit, offset]
     );
+  }
+
+  findCatalog({query, lowStock, enabledOnly, categoryId, after, limit}) {
+    return Rx.Observable.defer(() => {
+      const size = Number(limit);
+      if (!Number.isInteger(size) || size < 1) {
+        throw new Error('Invalid product page');
+      }
+      const cursor = catalogCursor(after);
+      const text = query == null ? '' : String(query).trim();
+      const pattern = likeContains(text);
+      const category = categoryId ? categoryId : null;
+      const sql = PRODUCT_SELECT +
+        ' WHERE (? IS NULL' +
+        ' OR ' + RANK_SQL + ' > ?' +
+        ' OR (' + RANK_SQL + ' = ? AND p.barcode > ?))' +
+        ' AND (? = 0 OR p.stock <= p.stock_min)' +
+        ' AND (? = 0 OR p.status = ?)' +
+        ' AND (? IS NULL OR p.category_id = ?)' +
+        ' AND (? = \'\' OR p.name LIKE ? ESCAPE \'\\\' OR p.barcode LIKE ? ESCAPE \'\\\')' +
+        ' ORDER BY ' + RANK_SQL + ', p.barcode' +
+        ' LIMIT ?';
+      const enabled = ProductStatus.ENABLED;
+      const params = [
+        cursor.rank,
+        enabled, cursor.rank,
+        enabled, cursor.rank, cursor.barcode,
+        lowStock ? 1 : 0,
+        enabledOnly ? 1 : 0, enabled,
+        category, category,
+        text, pattern, pattern,
+        enabled,
+        size + 1
+      ];
+      const rows = this._database.prepare(sql).all(...params);
+      const hasMore = rows.length > size;
+      const page = hasMore ? rows.slice(0, size) : rows;
+      return Rx.Observable.from(page)
+        .flatMap(row => this._productMapper.toDomain({persistenceProduct: row}))
+        .toArray()
+        .map(products => ({products, hasMore}));
+    });
   }
 
   findAllWithLowStock({limit, offset}) {

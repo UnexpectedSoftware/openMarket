@@ -1,4 +1,5 @@
 import * as Rx from 'rxjs';
+import {catalogLimit} from '../product/list_products/model';
 
 export function fetchImagesMessage(summary) {
   const products = summary.productsUpdated;
@@ -28,21 +29,14 @@ function refreshOpenList(observer, store, actions) {
   }
   if (pathname === '/list_products') {
     const page = state.listProducts || {};
-    const filters = page.filters || {limit: 20, offset: 0};
     observer.next(actions.listProductsFetch({
-      limit: filters.limit,
-      offset: filters.offset,
-      page: page.current_page || 0
-    }));
-    return;
-  }
-  if (pathname === '/list_products_low_stock') {
-    const page = state.listProductLowStock || {};
-    const filters = page.filters || {limit: 20, offset: 0};
-    observer.next(actions.listProductFetch({
-      limit: filters.limit,
-      offset: filters.offset,
-      page: page.current_page || 0
+      query: page.query || '',
+      lowStock: !!page.lowStock,
+      enabledOnly: !!page.enabledOnly,
+      categoryId: page.categoryId || null,
+      after: null,
+      append: false,
+      limit: catalogLimit
     }));
   }
 }
@@ -54,11 +48,10 @@ export function makeFetchImagesEpic({
   listen,
   categoriesPageLoaded,
   listProductsFetch,
-  listProductFetch,
   imageFetchProgressed,
   imageFetchFinished
 }) {
-  const actions = {categoriesPageLoaded, listProductsFetch, listProductFetch};
+  const actions = {categoriesPageLoaded, listProductsFetch};
   return (action$, store) => Rx.Observable.create(observer => {
     let running = false;
     const onFetch = () => {

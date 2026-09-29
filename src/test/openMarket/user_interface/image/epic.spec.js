@@ -21,15 +21,18 @@ function harness({pathname, execute}) {
     },
     categoriesPageLoaded: () => ({type: 'CATEGORIES_PAGE_LOADED'}),
     listProductsFetch: payload => ({type: 'LIST_PRODUCTS_FETCH', payload}),
-    listProductFetch: payload => ({type: 'LIST_PRODUCT_FETCH', payload}),
     imageFetchProgressed: percent => ({type: 'IMAGE_FETCH_PROGRESSED', percent}),
     imageFetchFinished: () => ({type: 'IMAGE_FETCH_FINISHED'})
   });
   const store = {
     getState: () => ({
       routing: {locationBeforeTransitions: {pathname}},
-      listProducts: {filters: {limit: 20, offset: 40}, current_page: 2},
-      listProductLowStock: {filters: {limit: 20, offset: 0}, current_page: 0}
+      listProducts: {
+        query: 'cola',
+        lowStock: true,
+        enabledOnly: false,
+        categoryId: '2'
+      }
     })
   };
   epic(Rx.Observable.empty(), store).subscribe(action => emitted.push(action));
@@ -102,11 +105,19 @@ describe('Fetch images epic', () => {
     expect(products.emitted[1]).to.deep.equal({type: 'IMAGE_FETCH_FINISHED'});
     expect(products.emitted[3]).to.deep.equal({
       type: 'LIST_PRODUCTS_FETCH',
-      payload: {limit: 20, offset: 40, page: 2}
+      payload: {
+        query: 'cola',
+        lowStock: true,
+        enabledOnly: false,
+        categoryId: '2',
+        after: null,
+        append: false,
+        limit: 20
+      }
     });
 
     const failed = harness({
-      pathname: '/list_products_low_stock',
+      pathname: '/',
       execute: () => Rx.Observable.throw(new Error('offline'))
     });
     failed.fetch();

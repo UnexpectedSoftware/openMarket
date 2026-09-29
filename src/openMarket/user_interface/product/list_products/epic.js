@@ -1,57 +1,143 @@
-import * as listProductsActions from "./action";
-import * as Rx from "rxjs";
+import * as listProductsActions from './action';
+import * as Rx from 'rxjs';
 import {push} from 'react-router-redux';
-import { success, error } from 'react-notification-system-redux';
-import OpenMarket from "../../../application/index";
-import {defaultLimit, defaultOffset} from "../../order/list_orders/model";
-import ImageStore, {imagesDirectory} from "../../../infrastructure/service/ImageStore";
+import {success, error} from 'react-notification-system-redux';
+import OpenMarket from '../../../application/index';
+import ProductStatus from '../../../domain/product/ProductStatus';
+import ImageStore, {imagesDirectory} from '../../../infrastructure/service/ImageStore';
+import {catalogLimit} from './model';
 
 const images = new ImageStore({directory: imagesDirectory('product-images')});
 
-function withImageSrc(products) {
-  return products.map(product => {
-    product.imageSrc = images.readDataUrl(product.imageName);
-    return product;
-  });
+function toCard(product) {
+  const category = product.category;
+  return {
+    barcode: product.barcode,
+    name: product.name,
+    price: product.price,
+    stock: product.stock,
+    status: product.status,
+    categoryName: category && category.name ? category.name : '',
+    imageSrc: images.readDataUrl(product.imageName)
+  };
 }
 
-const fetchProductsEpic = action$ =>
+function cursorFrom(product) {
+  return {
+    rank: product.status === ProductStatus.ENABLED ? 0 : 1,
+    barcode: product.barcode
+  };
+}
+
+function snapshot(page, {after, append}) {
+  return {
+    query: page.query || '',
+    lowStock: !!page.lowStock,
+    enabledOnly: !!page.enabledOnly,
+    categoryId: page.categoryId || null,
+    after,
+    append,
+    limit: catalogLimit
+  };
+}
+
+function loadPage(action) {
+  const filters = action.payload;
+  return OpenMarket.get('products_list_all_use_case').findCatalog({
+    query: filters.query,
+    lowStock: filters.lowStock,
+    enabledOnly: filters.enabledOnly,
+    categoryId: filters.categoryId,
+    after: filters.after,
+    limit: filters.limit
+  })
+    .map(page => {
+      const last = page.products[page.products.length - 1];
+      return listProductsActions.listProductsFetched({
+        query: filters.query,
+        lowStock: !!filters.lowStock,
+        enabledOnly: !!filters.enabledOnly,
+        categoryId: filters.categoryId || null,
+        products: page.products.map(toCard),
+        hasMore: page.hasMore,
+        nextCursor: page.hasMore && last ? cursorFrom(last) : null,
+        append: !!filters.append
+      });
+    })
+    .catch(fetchError => {
+      console.log(fetchError);
+      return Rx.Observable.of(listProductsActions.listProductsFetchFailed({
+        query: filters.query,
+        lowStock: !!filters.lowStock,
+        enabledOnly: !!filters.enabledOnly,
+        categoryId: filters.categoryId || null
+      }));
+    });
+}
+
+const fetchReplaceEpic = action$ =>
   action$.ofType(listProductsActions.LIST_PRODUCTS_FETCH)
-    .flatMap(action =>
-      Rx.Observable.zip(
-        OpenMarket.get("products_list_all_use_case").findAll({
-          limit: action.payload.limit,
-          offset: action.payload.offset
-        }),
-        OpenMarket.get("products_statistics_use_case").countProducts(),
-        (products, total) => ({products: withImageSrc(products), total:total, page: action.payload.page})
-      ))
-     .map(products => listProductsActions.listProductsFetched(products));
+    .filter(action => !action.payload.append)
+    .switchMap(loadPage);
+
+const fetchAppendEpic = action$ =>
+  action$.ofType(listProductsActions.LIST_PRODUCTS_FETCH)
+    .filter(action => action.payload.append)
+    .flatMap(loadPage);
 
 const pageLoadedEpic = action$ =>
   action$.ofType(listProductsActions.LIST_PRODUCTS_PAGE_LOADED)
-    .map(action => listProductsActions.listProductsFetch({
-      limit: action.payload.limit,
-      offset: action.payload.offset,
-      page: action.payload.page
-    }));
+    .flatMap(action => Rx.Observable.merge(
+      Rx.Observable.of(listProductsActions.listProductsFetch({
+        query: action.payload.query || '',
+        lowStock: !!action.payload.lowStock,
+        enabledOnly: !!action.payload.enabledOnly,
+        categoryId: action.payload.categoryId || null,
+        after: null,
+        append: false,
+        limit: action.payload.limit || catalogLimit
+      })),
+      OpenMarket.get('categories_list_all_use_case').findAll()
+        .map(categories => listProductsActions.listProductsCategoriesLoaded(
+          categories
+            .map(category => ({id: category.id, name: category.name}))
+            .sort((left, right) => left.name.localeCompare(right.name))
+        ))
+    ));
 
+const queryChangedEpic = (action$, store) =>
+  action$.ofType(listProductsActions.LIST_PRODUCTS_QUERY_CHANGED)
+    .debounceTime(300)
+    .map(() => listProductsActions.listProductsFetch(
+      snapshot(store.getState().listProducts, {after: null, append: false})
+    ));
 
-const pageChangedEpic = action$ =>
-  action$.ofType(listProductsActions.LIST_PRODUCTS_PAGE_CHANGED)
-    .map(action => listProductsActions.listProductsFetch({
-      page: action.payload.page,
-      limit: action.payload.limit,
-      offset: action.payload.offset
-    }));
+const filtersChangedEpic = (action$, store) =>
+  action$.ofType(listProductsActions.LIST_PRODUCTS_FILTERS_CHANGED)
+    .map(() => listProductsActions.listProductsFetch(
+      snapshot(store.getState().listProducts, {after: null, append: false})
+    ));
+
+const loadMoreEpic = (action$, store) =>
+  action$.ofType(listProductsActions.LIST_PRODUCTS_LOAD_MORE)
+    .map(() => {
+      const page = store.getState().listProducts;
+      if (!page.hasMore || !page.nextCursor) {
+        return null;
+      }
+      return listProductsActions.listProductsFetch(
+        snapshot(page, {after: page.nextCursor, append: true})
+      );
+    })
+    .filter(action => action);
 
 const listProductsDetailEpic = action$ =>
   action$.ofType(listProductsActions.LIST_PRODUCTS_DETAIL)
-    .flatMap(action => OpenMarket.get("products_find_use_case").findProductByBarcode({
+    .flatMap(action => OpenMarket.get('products_find_use_case').findProductByBarcode({
       barcode: action.payload
     }))
     .map(product => ({
-      barcode:  product.barcode,
+      barcode: product.barcode,
       basePrice: product.basePrice,
       description: product.description,
       name: product.name,
@@ -73,19 +159,6 @@ const listProductsDetailEpic = action$ =>
       )
     );
 
-
-const listProductsFilterChangedEpic = action$ =>
-  action$.debounceTime(300)
-    .ofType(listProductsActions.LIST_PRODUCTS_FILTER_CHANGED)
-    .flatMap(action => Rx.Observable.from(action.payload)
-      .map(filter => {
-        return (filter.id === 'barcode')?
-          listProductsActions.listProductsBarcodeFilterChanged(filter.value) :
-          listProductsActions.listProductsNameFilterChanged(filter.value)
-      })
-      .defaultIfEmpty(listProductsActions.listProductsFilterReseted())
-    );
-
 const disabledToast = () => success({
   title: 'Product disabled',
   message: 'It stays on the catalog and drops out of the low stock list.',
@@ -96,24 +169,11 @@ const disabledToast = () => success({
 const listProductsDisableEpic = action$ =>
   action$.ofType(listProductsActions.LIST_PRODUCTS_DISABLE)
     .flatMap(action =>
-      OpenMarket.get("products_disable_use_case").disable({barcode: action.payload.barcode})
-        .mergeMap(() => {
-          const toast = disabledToast();
-          if (action.payload.filterType === 'name') {
-            return Rx.Observable.of(
-              listProductsActions.listProductsDisabled(action.payload.barcode),
-              toast
-            );
-          }
-          return Rx.Observable.of(
-            listProductsActions.listProductsFetch({
-              limit: action.payload.limit,
-              offset: action.payload.offset,
-              page: action.payload.page
-            }),
-            toast
-          );
-        })
+      OpenMarket.get('products_disable_use_case').disable({barcode: action.payload.barcode})
+        .mergeMap(() => Rx.Observable.of(
+          listProductsActions.listProductsDisabled(action.payload.barcode),
+          disabledToast()
+        ))
         .catch(disableError => Rx.Observable.of(error({
           title: 'Product was not disabled',
           message: disableError && disableError.message ? disableError.message : 'Product was not disabled',
@@ -122,49 +182,14 @@ const listProductsDisableEpic = action$ =>
         })))
     );
 
-const listProductsFilterResetedEpic = action$ =>
-  action$.ofType(listProductsActions.LIST_PRODUCTS_FILTER_RESETED)
-    .map(action => listProductsActions.listProductsFetch({
-      limit: defaultLimit,
-      offset: defaultOffset,
-      page: 0
-    }));
-
-const listProductsBarcodeFilterChangedEpic = action$ =>
-  action$.ofType(listProductsActions.LIST_PRODUCTS_BARCODE_FILTER_CHANGED)
-    .flatMap(action =>
-      OpenMarket.get("products_find_use_case").findProductByBarcode({
-        barcode: action.payload
-      })
-        .toArray()
-    )
-    .map(products => ({products: withImageSrc(products), total:1, page: 0}))
-    .map(products => listProductsActions.listProductsFetched(products));
-
-const listProductsNameFilterChangedEpic = action$ =>
-  action$.ofType(listProductsActions.LIST_PRODUCTS_NAME_FILTER_CHANGED)
-    .flatMap(action =>
-      Rx.Observable.zip(
-        OpenMarket.get("products_list_all_use_case").findAllByName({
-          name: action.payload,
-          limit: 100,
-          offset: defaultOffset
-        }),
-        OpenMarket.get("products_statistics_use_case").countProductsByName({name: action.payload}),
-        (products, total) => ({products: withImageSrc(products), total:total, page: action.payload.page})
-      ))
-    .map(products => listProductsActions.listProductsFetched(products));
-
-
-export default action$ =>
+export default (action$, store) =>
   Rx.Observable.merge(
-    fetchProductsEpic(action$),
+    fetchReplaceEpic(action$),
+    fetchAppendEpic(action$),
     pageLoadedEpic(action$),
-    pageChangedEpic(action$),
+    queryChangedEpic(action$, store),
+    filtersChangedEpic(action$, store),
+    loadMoreEpic(action$, store),
     listProductsDetailEpic(action$),
-    listProductsFilterChangedEpic(action$),
-    listProductsDisableEpic(action$),
-    listProductsBarcodeFilterChangedEpic(action$),
-    listProductsNameFilterChangedEpic(action$),
-    listProductsFilterResetedEpic(action$)
-  ).do(data=>null,error=>console.log(error));
+    listProductsDisableEpic(action$)
+  ).do(() => null, (epicError) => console.log(epicError));

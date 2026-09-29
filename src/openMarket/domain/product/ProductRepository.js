@@ -27,6 +27,20 @@ export default class ProductRepository {
   }
 
   /**
+   * One catalog page, enabled products first then barcode.
+   * @param {string} query
+   * @param {boolean} lowStock
+   * @param {boolean} enabledOnly
+   * @param {?string} categoryId
+   * @param {?{rank: number, barcode: string}} after
+   * @param {number} limit
+   * @returns {Observable<{products: Array, hasMore: boolean}>}
+   */
+  findCatalog({query, lowStock, enabledOnly, categoryId, after, limit}) {
+    throw new Error('ProductRepository#findCatalog must be implemented');
+  }
+
+  /**
    *
    * @param {Product} product
    * @param {?string} imagePath absolute path of a file to copy, when the user picked one

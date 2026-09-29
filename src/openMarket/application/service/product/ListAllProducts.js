@@ -60,6 +60,26 @@ export default class ListAllProducts {
     });
   }
 
+  /**
+   * @param {string} query
+   * @param {boolean} lowStock
+   * @param {boolean} enabledOnly
+   * @param {?string} categoryId
+   * @param {?{rank: number, barcode: string}} after
+   * @param {number} limit
+   * @returns {Observable<{products: Array, hasMore: boolean}>}
+   */
+  findCatalog({query, lowStock, enabledOnly, categoryId, after, limit}) {
+    return this._productRepository.findCatalog({
+      query,
+      lowStock,
+      enabledOnly,
+      categoryId,
+      after,
+      limit
+    });
+  }
+
   findAllStatuses(){
     return this._productRepository.findAllStatuses();
   }

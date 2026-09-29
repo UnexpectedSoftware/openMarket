@@ -144,6 +144,68 @@ describe('Product list all with low stock use case', () => {
   });
 });
 
+describe('Product catalog cursor', () => {
+  const catalog = (extra) => observableFindAllProducts.findCatalog({
+    query: '',
+    lowStock: false,
+    enabledOnly: false,
+    categoryId: null,
+    after: null,
+    limit: 10,
+    ...extra
+  });
+
+  const barcodes = (page) => page.products.map(product => product.barcode).join();
+
+  it('lists enabled products before disabled ones and continues after the cursor', (done) => {
+    catalog({limit: 2}).subscribe((page) => {
+      la(barcodes(page) === '0001,0002', `first ${barcodes(page)}`);
+      la(page.hasMore === true, 'first page has more');
+      catalog({limit: 2, after: {rank: 0, barcode: '0002'}}).subscribe((next) => {
+        la(barcodes(next) === '0003,0004', `second ${barcodes(next)}`);
+        la(next.hasMore === true, 'second page has more');
+        catalog({limit: 2, after: {rank: 0, barcode: '0004'}}).subscribe((last) => {
+          la(barcodes(last) === '0005', `last ${barcodes(last)}`);
+          la(last.products[0].status === 'DISABLED', `status ${last.products[0].status}`);
+          la(last.hasMore === false, 'last page ends');
+        }, crash, done);
+      }, crash);
+    }, crash);
+  });
+
+  it('matches a name or a barcode and treats wildcards as literal text', (done) => {
+    catalog({query: 'Zero'}).subscribe((page) => {
+      la(barcodes(page) === '0002,0003,0004,0005', `name ${barcodes(page)}`);
+      catalog({query: '0004'}).subscribe((byBarcode) => {
+        la(barcodes(byBarcode) === '0004', `barcode ${barcodes(byBarcode)}`);
+        catalog({query: '%'}).subscribe((percent) => {
+          la(percent.products.length === 0, `percent ${percent.products.length}`);
+          catalog({query: '_'}).subscribe((underscore) => {
+            la(underscore.products.length === 0, `underscore ${underscore.products.length}`);
+          }, crash, done);
+        }, crash);
+      }, crash);
+    }, crash);
+  });
+
+  it('filters low stock, enabled products, and one category', (done) => {
+    catalog({lowStock: true}).subscribe((low) => {
+      la(barcodes(low) === '0004,0005', `low ${barcodes(low)}`);
+      catalog({lowStock: true, enabledOnly: true}).subscribe((both) => {
+        la(barcodes(both) === '0004', `both ${barcodes(both)}`);
+        catalog({categoryId: '2', limit: 1}).subscribe((first) => {
+          la(barcodes(first) === '0002', `category ${barcodes(first)}`);
+          la(first.hasMore === true, 'category has more');
+          catalog({categoryId: '2', limit: 1, after: {rank: 0, barcode: '0002'}}).subscribe((second) => {
+            la(barcodes(second) === '0003', `category next ${barcodes(second)}`);
+            la(second.hasMore === false, 'category ends');
+          }, crash, done);
+        }, crash);
+      }, crash);
+    }, crash);
+  });
+});
+
 
 
 describe('Product Find by barcode use case', () => {

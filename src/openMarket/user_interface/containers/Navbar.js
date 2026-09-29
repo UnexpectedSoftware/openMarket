@@ -53,7 +53,6 @@ class Navbar extends Component {
             <SubMenu key="2" title="Products">
               <MenuItem key="2-1"><Link to="/create_product">new Product!</Link></MenuItem>
               <MenuItem key="2-2"><Link to="/list_products">List Products!</Link></MenuItem>
-              <MenuItem key="2-3"><Link to="/list_products_low_stock">List Products with LOW stock!</Link></MenuItem>
             </SubMenu>
             <MenuItem key="3"><Link to="/categories">Categories</Link></MenuItem>
             <SubMenu key="4" title="Orders">
