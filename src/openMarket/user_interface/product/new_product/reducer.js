@@ -36,6 +36,9 @@ export default function reducer(state = initialState, action) {
       };
 
     case NEW_PRODUCT_SAVED:
+      if (action.edition) {
+        return state;
+      }
       return {
         ...initialState,
         formKey: state.formKey + 1

@@ -17,9 +17,8 @@ class Container extends Component {
   }
 
   handleSubmit = (values) => {
-    // Do something with the form values
-    const { newProductSave, initialValues } = this.props;
-    newProductSave({...values,id:initialValues.id});
+    const { newProductSave, initialValues, edition } = this.props;
+    newProductSave({...values, id: initialValues.id, edition});
   }
 
   componentWillUnmount() {
@@ -35,8 +34,7 @@ class Container extends Component {
   }
 
   render() {
-    const { categories, edition, initialValues, statuses, formKey, status, productDisable } = this.props;
-    const currentStatus = status || (initialValues && initialValues.status);
+    const { categories, edition, initialValues, statuses, formKey } = this.props;
     return (
       <div className="container-fluid">
         <h2>Let's {edition ? 'edit a':'create a new'} product!</h2>
@@ -45,8 +43,6 @@ class Container extends Component {
           edition={edition}
           loadProduct={this.loadProduct}
           onSubmit={this.handleSubmit}
-          onDisable={() => productDisable(initialValues.barcode)}
-          canDisable={edition && currentStatus !== 'DISABLED'}
           categoriesList={categories}
           initialValues={initialValues}
           statusesList={statuses}
