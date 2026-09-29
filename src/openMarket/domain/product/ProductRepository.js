@@ -30,13 +30,13 @@ export default class ProductRepository {
    * One catalog page, enabled products first then barcode.
    * @param {string} query
    * @param {boolean} lowStock
-   * @param {boolean} enabledOnly
+   * @param {boolean} disabledOnly
    * @param {?string} categoryId
    * @param {?{rank: number, barcode: string}} after
    * @param {number} limit
    * @returns {Observable<{products: Array, hasMore: boolean}>}
    */
-  findCatalog({query, lowStock, enabledOnly, categoryId, after, limit}) {
+  findCatalog({query, lowStock, disabledOnly, categoryId, after, limit}) {
     throw new Error('ProductRepository#findCatalog must be implemented');
   }
 

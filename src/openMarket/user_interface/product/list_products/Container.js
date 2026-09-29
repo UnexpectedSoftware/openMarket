@@ -14,7 +14,7 @@ class Container extends Component {
     this.props.listProductsPageLoaded({
       query: '',
       lowStock,
-      enabledOnly: false,
+      disabledOnly: false,
       categoryId: null,
       limit: catalogLimit
     });
@@ -95,7 +95,7 @@ class Container extends Component {
     const {products, listProductsFiltersChanged} = this.props;
     listProductsFiltersChanged({
       lowStock: products.lowStock,
-      enabledOnly: products.enabledOnly,
+      disabledOnly: products.disabledOnly,
       categoryId: products.categoryId,
       ...next
     });
@@ -105,8 +105,8 @@ class Container extends Component {
     this.changeFilters({lowStock: !this.props.products.lowStock});
   };
 
-  toggleEnabled = () => {
-    this.changeFilters({enabledOnly: !this.props.products.enabledOnly});
+  toggleDisabled = () => {
+    this.changeFilters({disabledOnly: !this.props.products.disabledOnly});
   };
 
   pickCategory = (categoryId) => {
@@ -162,8 +162,8 @@ class Container extends Component {
             <fieldset>
               <legend>Status</legend>
               <label>
-                <input type="checkbox" checked={products.enabledOnly} onChange={this.toggleEnabled} />
-                Enabled
+                <input type="checkbox" checked={products.disabledOnly} onChange={this.toggleDisabled} />
+                Disabled
               </label>
             </fieldset>
             <fieldset>

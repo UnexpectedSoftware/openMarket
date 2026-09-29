@@ -4,7 +4,7 @@ export const state = () => {
   return {
     query: '',
     lowStock: false,
-    enabledOnly: false,
+    disabledOnly: false,
     categoryId: null,
     categories: [],
     products: [],

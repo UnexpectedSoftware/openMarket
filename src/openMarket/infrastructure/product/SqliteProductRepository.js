@@ -58,7 +58,7 @@ export default class SqliteProductRepository extends ProductRepository {
     );
   }
 
-  findCatalog({query, lowStock, enabledOnly, categoryId, after, limit}) {
+  findCatalog({query, lowStock, disabledOnly, categoryId, after, limit}) {
     return Rx.Observable.defer(() => {
       const size = Number(limit);
       if (!Number.isInteger(size) || size < 1) {
@@ -79,12 +79,13 @@ export default class SqliteProductRepository extends ProductRepository {
         ' ORDER BY ' + RANK_SQL + ', p.barcode' +
         ' LIMIT ?';
       const enabled = ProductStatus.ENABLED;
+      const disabled = ProductStatus.DISABLED;
       const params = [
         cursor.rank,
         enabled, cursor.rank,
         enabled, cursor.rank, cursor.barcode,
         lowStock ? 1 : 0,
-        enabledOnly ? 1 : 0, enabled,
+        disabledOnly ? 1 : 0, disabled,
         category, category,
         text, pattern, pattern,
         enabled,

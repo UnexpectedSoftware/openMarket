@@ -19,7 +19,7 @@ function fetched(extra) {
   return listProductsFetched({
     query: '',
     lowStock: false,
-    enabledOnly: false,
+    disabledOnly: false,
     categoryId: null,
     products: [],
     hasMore: false,
@@ -70,16 +70,17 @@ describe('product catalog reducer', () => {
     expect(next.nextCursor).to.equal(cursor);
   });
 
-  it('removes a disabled product when the enabled filter is on', () => {
-    const cursor = {rank: 0, barcode: '0002'};
+  it('keeps a disabled product on the list when the disabled filter is on', () => {
+    const cursor = {rank: 1, barcode: '0002'};
     const current = {
       ...state(),
-      enabledOnly: true,
-      products: [card('0001', 'ENABLED'), card('0002', 'ENABLED')],
+      disabledOnly: true,
+      products: [card('0001', 'ENABLED'), card('0002', 'DISABLED')],
       nextCursor: cursor
     };
     const next = reducer(current, listProductsDisabled('0001'));
-    expect(next.products.map(product => product.barcode)).to.deep.equal(['0002']);
+    expect(next.products.map(product => product.barcode)).to.deep.equal(['0001', '0002']);
+    expect(next.products[0].status).to.equal('DISABLED');
     expect(next.nextCursor).to.equal(cursor);
   });
 });

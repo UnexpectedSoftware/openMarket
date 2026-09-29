@@ -33,7 +33,7 @@ function snapshot(page, {after, append}) {
   return {
     query: page.query || '',
     lowStock: !!page.lowStock,
-    enabledOnly: !!page.enabledOnly,
+    disabledOnly: !!page.disabledOnly,
     categoryId: page.categoryId || null,
     after,
     append,
@@ -46,7 +46,7 @@ function loadPage(action) {
   return OpenMarket.get('products_list_all_use_case').findCatalog({
     query: filters.query,
     lowStock: filters.lowStock,
-    enabledOnly: filters.enabledOnly,
+    disabledOnly: filters.disabledOnly,
     categoryId: filters.categoryId,
     after: filters.after,
     limit: filters.limit
@@ -56,7 +56,7 @@ function loadPage(action) {
       return listProductsActions.listProductsFetched({
         query: filters.query,
         lowStock: !!filters.lowStock,
-        enabledOnly: !!filters.enabledOnly,
+        disabledOnly: !!filters.disabledOnly,
         categoryId: filters.categoryId || null,
         products: page.products.map(toCard),
         hasMore: page.hasMore,
@@ -69,7 +69,7 @@ function loadPage(action) {
       return Rx.Observable.of(listProductsActions.listProductsFetchFailed({
         query: filters.query,
         lowStock: !!filters.lowStock,
-        enabledOnly: !!filters.enabledOnly,
+        disabledOnly: !!filters.disabledOnly,
         categoryId: filters.categoryId || null
       }));
     });
@@ -91,7 +91,7 @@ const pageLoadedEpic = action$ =>
       Rx.Observable.of(listProductsActions.listProductsFetch({
         query: action.payload.query || '',
         lowStock: !!action.payload.lowStock,
-        enabledOnly: !!action.payload.enabledOnly,
+        disabledOnly: !!action.payload.disabledOnly,
         categoryId: action.payload.categoryId || null,
         after: null,
         append: false,

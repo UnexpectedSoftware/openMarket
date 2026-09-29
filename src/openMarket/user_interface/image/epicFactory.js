@@ -32,7 +32,7 @@ function refreshOpenList(observer, store, actions) {
     observer.next(actions.listProductsFetch({
       query: page.query || '',
       lowStock: !!page.lowStock,
-      enabledOnly: !!page.enabledOnly,
+      disabledOnly: !!page.disabledOnly,
       categoryId: page.categoryId || null,
       after: null,
       append: false,

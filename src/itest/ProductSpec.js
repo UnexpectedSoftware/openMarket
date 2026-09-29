@@ -148,7 +148,7 @@ describe('Product catalog cursor', () => {
   const catalog = (extra) => observableFindAllProducts.findCatalog({
     query: '',
     lowStock: false,
-    enabledOnly: false,
+    disabledOnly: false,
     categoryId: null,
     after: null,
     limit: 10,
@@ -188,18 +188,21 @@ describe('Product catalog cursor', () => {
     }, crash);
   });
 
-  it('filters low stock, enabled products, and one category', (done) => {
+  it('filters low stock, disabled products, and one category', (done) => {
     catalog({lowStock: true}).subscribe((low) => {
       la(barcodes(low) === '0004,0005', `low ${barcodes(low)}`);
-      catalog({lowStock: true, enabledOnly: true}).subscribe((both) => {
-        la(barcodes(both) === '0004', `both ${barcodes(both)}`);
-        catalog({categoryId: '2', limit: 1}).subscribe((first) => {
-          la(barcodes(first) === '0002', `category ${barcodes(first)}`);
-          la(first.hasMore === true, 'category has more');
-          catalog({categoryId: '2', limit: 1, after: {rank: 0, barcode: '0002'}}).subscribe((second) => {
-            la(barcodes(second) === '0003', `category next ${barcodes(second)}`);
-            la(second.hasMore === false, 'category ends');
-          }, crash, done);
+      catalog({disabledOnly: true}).subscribe((disabled) => {
+        la(barcodes(disabled) === '0005', `disabled ${barcodes(disabled)}`);
+        catalog({lowStock: true, disabledOnly: true}).subscribe((both) => {
+          la(barcodes(both) === '0005', `both ${barcodes(both)}`);
+          catalog({categoryId: '2', limit: 1}).subscribe((first) => {
+            la(barcodes(first) === '0002', `category ${barcodes(first)}`);
+            la(first.hasMore === true, 'category has more');
+            catalog({categoryId: '2', limit: 1, after: {rank: 0, barcode: '0002'}}).subscribe((second) => {
+              la(barcodes(second) === '0003', `category next ${barcodes(second)}`);
+              la(second.hasMore === false, 'category ends');
+            }, crash, done);
+          }, crash);
         }, crash);
       }, crash);
     }, crash);
