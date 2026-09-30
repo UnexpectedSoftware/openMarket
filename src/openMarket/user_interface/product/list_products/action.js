@@ -1,28 +1,25 @@
-
 export const LIST_PRODUCTS_FETCH = 'LIST_PRODUCTS_FETCH';
 export const LIST_PRODUCTS_FETCHED = 'LIST_PRODUCTS_FETCHED';
+export const LIST_PRODUCTS_FETCH_FAILED = 'LIST_PRODUCTS_FETCH_FAILED';
 export const LIST_PRODUCTS_PAGE_LOADED = 'LIST_PRODUCTS_PAGE_LOADED';
-export const LIST_PRODUCTS_PAGE_CHANGED = 'LIST_PRODUCTS_PAGE_CHANGED';
+export const LIST_PRODUCTS_QUERY_CHANGED = 'LIST_PRODUCTS_QUERY_CHANGED';
+export const LIST_PRODUCTS_FILTERS_CHANGED = 'LIST_PRODUCTS_FILTERS_CHANGED';
+export const LIST_PRODUCTS_LOAD_MORE = 'LIST_PRODUCTS_LOAD_MORE';
+export const LIST_PRODUCTS_CATEGORIES_LOADED = 'LIST_PRODUCTS_CATEGORIES_LOADED';
 export const LIST_PRODUCTS_DETAIL = 'LIST_PRODUCTS_DETAIL';
 export const LIST_PRODUCTS_DETAIL_LOADED = 'LIST_PRODUCTS_DETAIL_LOADED';
-
-export const LIST_PRODUCTS_FILTER_CHANGED = 'LIST_PRODUCTS_FILTER_CHANGED';
-export const LIST_PRODUCTS_BARCODE_FILTER_CHANGED = 'LIST_PRODUCTS_BARCODE_FILTER_CHANGED';
-export const LIST_PRODUCTS_NAME_FILTER_CHANGED = 'LIST_PRODUCTS_NAME_FILTER_CHANGED';
-export const LIST_PRODUCTS_FILTER_RESETED = 'LIST_PRODUCTS_FILTER_RESETED';
 export const LIST_PRODUCTS_DISABLE = 'LIST_PRODUCTS_DISABLE';
 export const LIST_PRODUCTS_DISABLED = 'LIST_PRODUCTS_DISABLED';
 
-export const listProductsFetch = payload => ({ type: LIST_PRODUCTS_FETCH,payload });
-export const listProductsFetched = payload => ({ type: LIST_PRODUCTS_FETCHED,payload});
-export const listProductsPageLoaded = payload => ({ type: LIST_PRODUCTS_PAGE_LOADED,payload});
-export const listProductsPageChanged = payload => ({ type: LIST_PRODUCTS_PAGE_CHANGED,payload});
-
-export const listProductsDetail = payload => ({ type: LIST_PRODUCTS_DETAIL,payload});
-export const listProductsDetailLoaded = payload => ({ type: LIST_PRODUCTS_DETAIL_LOADED,payload});
-export const listProductsFilterChanged = payload => ({ type: LIST_PRODUCTS_FILTER_CHANGED,payload});
-export const listProductsBarcodeFilterChanged = payload => ({ type: LIST_PRODUCTS_BARCODE_FILTER_CHANGED,payload});
-export const listProductsNameFilterChanged = payload => ({ type: LIST_PRODUCTS_NAME_FILTER_CHANGED,payload});
-export const listProductsFilterReseted = () => ({ type: LIST_PRODUCTS_FILTER_RESETED});
-export const listProductsDisable = payload => ({ type: LIST_PRODUCTS_DISABLE, payload });
-export const listProductsDisabled = payload => ({ type: LIST_PRODUCTS_DISABLED, payload });
+export const listProductsFetch = payload => ({type: LIST_PRODUCTS_FETCH, payload});
+export const listProductsFetched = payload => ({type: LIST_PRODUCTS_FETCHED, payload});
+export const listProductsFetchFailed = payload => ({type: LIST_PRODUCTS_FETCH_FAILED, payload});
+export const listProductsPageLoaded = payload => ({type: LIST_PRODUCTS_PAGE_LOADED, payload});
+export const listProductsQueryChanged = payload => ({type: LIST_PRODUCTS_QUERY_CHANGED, payload});
+export const listProductsFiltersChanged = payload => ({type: LIST_PRODUCTS_FILTERS_CHANGED, payload});
+export const listProductsLoadMore = () => ({type: LIST_PRODUCTS_LOAD_MORE});
+export const listProductsCategoriesLoaded = payload => ({type: LIST_PRODUCTS_CATEGORIES_LOADED, payload});
+export const listProductsDetail = payload => ({type: LIST_PRODUCTS_DETAIL, payload});
+export const listProductsDetailLoaded = payload => ({type: LIST_PRODUCTS_DETAIL_LOADED, payload});
+export const listProductsDisable = payload => ({type: LIST_PRODUCTS_DISABLE, payload});
+export const listProductsDisabled = payload => ({type: LIST_PRODUCTS_DISABLED, payload});

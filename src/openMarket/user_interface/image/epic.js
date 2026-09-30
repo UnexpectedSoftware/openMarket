@@ -3,7 +3,6 @@ import {success, error} from 'react-notification-system-redux';
 import OpenMarket from '../../application/index';
 import {categoriesPageLoaded} from '../category/action';
 import {listProductsFetch} from '../product/list_products/action';
-import {listProductFetch} from '../product/list_products_low_stock/action';
 import {imageFetchFinished, imageFetchProgressed} from './action';
 import {FETCH_IMAGES_CHANNEL} from './channel';
 import {makeFetchImagesEpic} from './epicFactory';
@@ -18,7 +17,6 @@ const fetchImagesEpic = makeFetchImagesEpic({
   },
   categoriesPageLoaded,
   listProductsFetch,
-  listProductFetch,
   imageFetchProgressed,
   imageFetchFinished
 });
