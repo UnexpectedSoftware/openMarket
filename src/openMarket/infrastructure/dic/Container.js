@@ -34,6 +34,7 @@ import { createFixturesService } from "../dev";
 import OpenFoodFactsProductImageSource from "../image/OpenFoodFactsProductImageSource";
 import WikimediaCategoryImageSource from "../image/WikimediaCategoryImageSource";
 import FetchCatalogImages from "../../application/service/image/FetchCatalogImages";
+import FindProductImage from "../../application/service/image/FindProductImage";
 import DomainEventBus from "../../domain/service/DomainEventBus";
 const env = process.env.NODE_ENV
 
@@ -273,6 +274,15 @@ class Container {
       categoryRepository: this.getInstance({key: 'categoryRepository'}),
       productRepository: this.getInstance({key: 'productRepository'}),
       categoryImageSource: this.getInstance({key: 'categoryImageSource'}),
+      productImageSource: this.getInstance({key: 'productImageSource'})
+    });
+  }
+
+  /**
+   * @returns {FindProductImage}
+   */
+  _findProductImage() {
+    return new FindProductImage({
       productImageSource: this.getInstance({key: 'productImageSource'})
     });
   }

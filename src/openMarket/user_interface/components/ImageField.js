@@ -17,17 +17,23 @@ export default class ImageField extends Component {
     super(props, context);
     this.state = {
       file: null,
-      previewUrl: props.currentSrc || null,
+      previewUrl: props.remoteSrc || props.currentSrc || null,
       dragOver: false,
       fileError: null
     };
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.currentSrc === this.props.currentSrc || this.state.file) {
+    if (this.state.file) {
       return;
     }
-    this.setState({ previewUrl: nextProps.currentSrc || null });
+    const nextPreview = nextProps.remoteSrc || nextProps.currentSrc || null;
+    const preview = this.props.remoteSrc || this.props.currentSrc || null;
+    if (nextPreview === preview) {
+      return;
+    }
+    this.revokePreview();
+    this.setState({ previewUrl: nextPreview, fileError: null });
   }
 
   componentWillUnmount() {
@@ -91,6 +97,9 @@ export default class ImageField extends Component {
   readChosenPath() {
     const { file } = this.state;
     if (!file) {
+      if (this.props.remotePath) {
+        return { imagePath: this.props.remotePath, error: null };
+      }
       return { imagePath: null, error: null };
     }
     const imagePath = pathForImageFile(file);
