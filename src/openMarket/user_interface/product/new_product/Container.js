@@ -21,6 +21,14 @@ class Container extends Component {
     newProductSave({...values, id: initialValues.id, edition});
   }
 
+  findImage = () => {
+    const { findProductImage, barcode, edition, imageLookup } = this.props;
+    if (edition || (imageLookup && imageLookup.busy)) {
+      return;
+    }
+    findProductImage(barcode);
+  }
+
   componentWillUnmount() {
     window.removeEventListener('dragover', this.blockFileNavigation);
     window.removeEventListener('drop', this.blockFileNavigation);
@@ -34,7 +42,7 @@ class Container extends Component {
   }
 
   render() {
-    const { categories, edition, initialValues, statuses, formKey } = this.props;
+    const { categories, edition, initialValues, statuses, formKey, categoryId, imageLookup } = this.props;
     return (
       <div className="container-fluid">
         <h2>Let's {edition ? 'edit a':'create a new'} product!</h2>
@@ -43,7 +51,10 @@ class Container extends Component {
           edition={edition}
           loadProduct={this.loadProduct}
           onSubmit={this.handleSubmit}
+          onFindImage={this.findImage}
           categoriesList={categories}
+          categoryId={categoryId}
+          imageLookup={imageLookup}
           initialValues={initialValues}
           statusesList={statuses}
         />

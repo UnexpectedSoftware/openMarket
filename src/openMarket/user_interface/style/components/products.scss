@@ -226,6 +226,159 @@
   height: 1px;
 }
 
+.product-form-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: $sp-base;
+  align-items: start;
+}
+
+.product-block {
+  background: $c-white;
+  border: 1px solid $c-grey-light;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  padding: $sp-base;
+
+  h3 {
+    margin: 0 0 $sp-base;
+    color: $c-base;
+    font-size: 1.6rem;
+  }
+}
+
+.product-form-side {
+  display: flex;
+  flex-direction: column;
+  gap: $sp-base;
+  min-width: 0;
+}
+
+.product-form {
+  label {
+    display: block;
+    width: auto;
+    margin-bottom: 4px;
+    padding-top: 0;
+  }
+
+  input[type="text"],
+  textarea,
+  select {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  textarea {
+    width: 100%;
+  }
+
+  input[type="checkbox"] {
+    width: auto;
+    display: inline-block;
+    margin: 0;
+  }
+
+  .error {
+    margin-left: 0;
+  }
+
+  .SelectContainer {
+    display: block;
+
+    select {
+      width: 100%;
+    }
+  }
+}
+
+.product-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 $sp-base;
+}
+
+.product-image-row {
+  display: flex;
+  align-items: flex-end;
+  gap: $sp-base;
+  margin-bottom: $sp-base;
+
+  .image-drop {
+    width: 100%;
+    min-height: 120px;
+    margin-bottom: 0;
+
+    img {
+      max-width: 100%;
+      max-height: 160px;
+    }
+  }
+}
+
+.product-image-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.product-image-lookup {
+  float: none;
+  flex: 0 0 auto;
+  color: $c-primary-darkest;
+  background: $c-white;
+  border: 1px solid $c-primary;
+  white-space: nowrap;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: default;
+  }
+}
+
+.product-category-row {
+  display: flex;
+  align-items: center;
+  gap: $sp-base;
+
+  > div {
+    flex: 1;
+    min-width: 0;
+  }
+
+  img {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 8px;
+    background: $c-grey-lightest;
+    border: 1px solid $c-grey-light;
+  }
+}
+
+.product-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: $sp-base;
+
+  button {
+    float: none;
+  }
+}
+
+@media (max-width: 800px) {
+  .product-form-grid,
+  .product-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .product-image-lookup .fa-spin {
+    animation: none;
+  }
+}
+
 @media (max-width: 720px) {
   .catalog-layout {
     flex-direction: column;

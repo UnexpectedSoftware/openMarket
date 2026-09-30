@@ -1,18 +1,31 @@
-import { LOCATION_CHANGE } from 'react-router-redux';
 import {
-  EDIT_PRODUCT_FETCHED, NEW_PRODUCT_FETCHED_CATEGORIES, NEW_PRODUCT_SAVED, PRODUCT_CLOSE,
-  PRODUCT_FETCHED_STATUSES, PRODUCT_PAGE_LOADED
+  FIND_PRODUCT_IMAGE, NEW_PRODUCT_FETCHED_CATEGORIES, NEW_PRODUCT_SAVED, PRODUCT_CLOSE,
+  PRODUCT_FETCHED_STATUSES, PRODUCT_IMAGE_FOUND, PRODUCT_IMAGE_LOOKUP_FINISHED, PRODUCT_PAGE_LOADED
 } from './action';
 import {LIST_PRODUCTS_DETAIL_LOADED} from "../list_products/action";
+import ProductStatus from "../../../domain/product/ProductStatus";
 
+function idleImageLookup() {
+  return { busy: false, imagePath: null, imageSrc: null };
+}
 
 const initialState = {
   categories: [],
   statuses: [],
-  initialValues: {},
+  initialValues: { status: ProductStatus.ENABLED },
   edition: false,
-  formKey: 0
+  formKey: 0,
+  imageLookup: idleImageLookup(),
+  lookupGeneration: 0
 };
+
+function resetForm(state) {
+  return {
+    ...initialState,
+    formKey: state.formKey,
+    lookupGeneration: (state.lookupGeneration || 0) + 1
+  };
+}
 
 export default function reducer(state = initialState, action) {
 
@@ -28,27 +41,63 @@ export default function reducer(state = initialState, action) {
         statuses: action.payload
       };
 
-    case LIST_PRODUCTS_DETAIL_LOADED:
-      return {
-        ...state,
-        initialValues:action.payload,
-        edition:true
-      };
-
     case NEW_PRODUCT_SAVED:
       if (action.edition) {
         return state;
       }
       return {
-        ...initialState,
+        ...resetForm(state),
         formKey: state.formKey + 1
       };
 
+    case FIND_PRODUCT_IMAGE:
+      return {
+        ...state,
+        imageLookup: {
+          ...(state.imageLookup || idleImageLookup()),
+          busy: true
+        }
+      };
+
+    case PRODUCT_IMAGE_FOUND:
+      return {
+        ...state,
+        imageLookup: {
+          busy: false,
+          imagePath: action.imagePath,
+          imageSrc: action.imageSrc
+        }
+      };
+
+    case PRODUCT_IMAGE_LOOKUP_FINISHED:
+      return {
+        ...state,
+        imageLookup: {
+          ...(state.imageLookup || idleImageLookup()),
+          busy: false
+        }
+      };
+
     case PRODUCT_CLOSE:
-      return initialState;
+      return {
+        ...resetForm(state),
+        formKey: 0
+      };
 
     case PRODUCT_PAGE_LOADED:
-      return initialState;
+      return {
+        ...resetForm(state),
+        formKey: 0
+      };
+
+    case LIST_PRODUCTS_DETAIL_LOADED:
+      return {
+        ...state,
+        initialValues: action.payload,
+        edition: true,
+        imageLookup: idleImageLookup(),
+        lookupGeneration: (state.lookupGeneration || 0) + 1
+      };
 
     default:
       return state;
