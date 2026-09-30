@@ -1,6 +1,7 @@
 // @flow
 import React, {Component} from 'react';
 import placeholder from '../../resources/category-placeholder.svg';
+import {formatMoney} from '../../i18n/money';
 import {catalogLimit} from './model';
 
 class Container extends Component {
@@ -120,19 +121,32 @@ class Container extends Component {
   renderCard(product) {
     const {listProductsDetail} = this.props;
     const disabled = product.status === 'DISABLED';
-    const price = Number(product.price);
     return (
       <article className="product-card" key={product.barcode}>
         <img src={product.imageSrc || placeholder} alt={product.name} />
         <div className="product-card-body">
-          <h3 className="product-card-name">{product.name}</h3>
-          <p className="product-card-barcode">{product.barcode}</p>
-          <p className="product-card-price">{Number.isFinite(price) ? price.toFixed(2) : ''}</p>
-          <p className="product-card-meta">Stock {product.stock}</p>
-          <p className="product-card-meta">{product.categoryName}</p>
-          <p className={disabled ? 'product-card-status is-disabled' : 'product-card-status is-enabled'}>
-            {disabled ? 'Disabled' : 'Enabled'}
-          </p>
+          <div className="product-card-title">
+            <h3 className="product-card-name">{product.name}</h3>
+            {product.categoryName
+              ? <span className="product-card-category">{product.categoryName}</span>
+              : null}
+          </div>
+          <div className="product-card-facts">
+            <div className="product-card-details">
+              <p className="product-card-barcode">
+                <i className="fa fa-barcode" aria-hidden="true" title="Barcode" />
+                {product.barcode}
+              </p>
+              <p className="product-card-stock">
+                <i className="fa fa-cubes" aria-hidden="true" title="Stock" />
+                {product.stock}
+              </p>
+              <p className={disabled ? 'product-card-status is-disabled' : 'product-card-status is-enabled'}>
+                {disabled ? 'Disabled' : 'Enabled'}
+              </p>
+            </div>
+            <p className="product-card-price">{formatMoney(product.price)}</p>
+          </div>
           <div className="product-card-actions">
             <button type="button" className="product-card-view" onClick={() => listProductsDetail(product.barcode)}>View</button>
             {!disabled &&
