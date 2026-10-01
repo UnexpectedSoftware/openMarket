@@ -27,12 +27,14 @@ class OpenMarket {
     this.deps.set('products_disable_use_case', container.getInstance({key:'disableProduct'}));
     this.deps.set('products_enable_use_case', container.getInstance({key:'enableProduct'}));
     this.deps.set('products_statistics_use_case', container.getInstance({key:'productStatisticsUseCase'}));
+    this.deps.set('product_sale_statistics_use_case', container.getInstance({key:'productSaleStatisticsUseCase'}));
     this.deps.set('orders_create_use_case', container.getInstance({key:'createOrderUseCase'}));
     this.deps.set('domain_event_bus', container.getInstance({key:'domainEventBus'}));
     this.deps.set('orders_list_all_use_case', container.getInstance({key:'listAllOrdersUseCase'}));
     this.deps.set('orders_statistics_use_case', container.getInstance({key:'orderStatisticsUseCase'}));
     this.deps.set('images_fetch_use_case', container.getInstance({key:'fetchCatalogImages'}));
     this.deps.set('products_find_image_use_case', container.getInstance({key:'findProductImage'}));
+    container.getInstance({key:'recordProductSales'}).start();
   }
 
     /**

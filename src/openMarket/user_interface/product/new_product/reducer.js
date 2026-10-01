@@ -1,12 +1,23 @@
 import {
   FIND_PRODUCT_IMAGE, NEW_PRODUCT_FETCHED_CATEGORIES, NEW_PRODUCT_SAVED, PRODUCT_CLOSE,
-  PRODUCT_FETCHED_STATUSES, PRODUCT_IMAGE_FOUND, PRODUCT_IMAGE_LOOKUP_FINISHED, PRODUCT_PAGE_LOADED
+  PRODUCT_FETCHED_STATUSES, PRODUCT_IMAGE_FOUND, PRODUCT_IMAGE_LOOKUP_FINISHED, PRODUCT_PAGE_LOADED,
+  PRODUCT_SALES_LOADED, PRODUCT_SALES_WINDOW_SELECTED
 } from './action';
 import {LIST_PRODUCTS_DETAIL_LOADED} from "../list_products/action";
 import ProductStatus from "../../../domain/product/ProductStatus";
+import {DEFAULT_SALES_WINDOW} from "../../../application/service/product/salesWindows";
 
 function idleImageLookup() {
   return { busy: false, imagePath: null, imageSrc: null };
+}
+
+function emptySales() {
+  return {
+    window: DEFAULT_SALES_WINDOW,
+    quantity: 0,
+    amount: 0,
+    series: []
+  };
 }
 
 const initialState = {
@@ -16,7 +27,8 @@ const initialState = {
   edition: false,
   formKey: 0,
   imageLookup: idleImageLookup(),
-  lookupGeneration: 0
+  lookupGeneration: 0,
+  sales: emptySales()
 };
 
 function resetForm(state) {
@@ -96,7 +108,23 @@ export default function reducer(state = initialState, action) {
         initialValues: action.payload,
         edition: true,
         imageLookup: idleImageLookup(),
-        lookupGeneration: (state.lookupGeneration || 0) + 1
+        lookupGeneration: (state.lookupGeneration || 0) + 1,
+        sales: emptySales()
+      };
+
+    case PRODUCT_SALES_WINDOW_SELECTED:
+      return {
+        ...state,
+        sales: {
+          ...(state.sales || emptySales()),
+          window: action.window
+        }
+      };
+
+    case PRODUCT_SALES_LOADED:
+      return {
+        ...state,
+        sales: action.payload
       };
 
     default:

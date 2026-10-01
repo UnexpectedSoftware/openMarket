@@ -7,6 +7,8 @@ import FindCategoryById from "../../application/service/category/FindCategoryByI
 import CreateCategory from "../../application/service/category/CreateCategory";
 import UpdateCategory from "../../application/service/category/UpdateCategory";
 import ProductStatistics from "../../application/service/product/ProductStatistics";
+import ProductSaleStatistics from "../../application/service/product/ProductSaleStatistics";
+import RecordProductSales from "../../application/service/product/RecordProductSales";
 import ListAllProducts from "../../application/service/product/ListAllProducts";
 import AddStock from "../../application/service/product/AddStock";
 import CreateOrUpdateProduct from "../../application/service/product/CreateOrUpdateProduct";
@@ -29,6 +31,7 @@ import SqliteConnection from "../service/SqliteConnection";
 import SqliteCategoryRepository from "../category/SqliteCategoryRepository";
 import ImageStore, {imagesDirectory} from "../service/ImageStore";
 import SqliteProductRepository from "../product/SqliteProductRepository";
+import SqliteProductSaleStatisticsRepository from "../product/SqliteProductSaleStatisticsRepository";
 import SqliteOrderRepository from "../order/SqliteOrderRepository";
 import { createFixturesService } from "../dev";
 import OpenFoodFactsProductImageSource from "../image/OpenFoodFactsProductImageSource";
@@ -169,6 +172,25 @@ class Container {
   _productStatisticsUseCase(){
     return new ProductStatistics({
       repository: this.getInstance({key: 'productRepository'})
+    });
+  }
+
+  _productSaleStatisticsRepository() {
+    return new SqliteProductSaleStatisticsRepository({
+      connection: this.getInstance({key: 'sqliteConnection'})
+    });
+  }
+
+  _productSaleStatisticsUseCase() {
+    return new ProductSaleStatistics({
+      repository: this.getInstance({key: 'productSaleStatisticsRepository'})
+    });
+  }
+
+  _recordProductSales() {
+    return new RecordProductSales({
+      repository: this.getInstance({key: 'productSaleStatisticsRepository'}),
+      domainEventBus: this.getInstance({key: 'domainEventBus'})
     });
   }
 

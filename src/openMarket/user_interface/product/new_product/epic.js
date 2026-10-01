@@ -7,7 +7,7 @@ import { success, error } from 'react-notification-system-redux';
 import { LOCATION_CHANGE } from 'react-router-redux';
 import * as newProductActions from "./action";
 import {reset} from 'redux-form';
-import {makeProductCloseEpic} from "./epicFactory";
+import {makeProductCloseEpic, makeProductSalesEpic} from "./epicFactory";
 import {LIST_PRODUCTS_DETAIL_LOADED} from "../list_products/action";
 import ImageStore, {dataUrlForFile, imagesDirectory} from "../../../infrastructure/service/ImageStore";
 
@@ -200,6 +200,10 @@ const findProductImageEpic = (action$, store) =>
         ));
     });
 
+const productSalesEpic = makeProductSalesEpic(
+  ({barcode, window}) => OpenMarket.get('product_sale_statistics_use_case').salesOfProduct({barcode, window})
+);
+
 const releaseFetchedImageEpic = action$ =>
   action$.ofType(
     newProductActions.PRODUCT_CLOSE,
@@ -226,5 +230,6 @@ export default (action$, store) =>
     newProductLocationLoadedEpic(action$),
     listProductsDetailLoadedEpic(action$),
     findProductImageEpic(action$, store),
+    productSalesEpic(action$),
     releaseFetchedImageEpic(action$)
   ).do(() => null,error => console.log(error),()=> null);
