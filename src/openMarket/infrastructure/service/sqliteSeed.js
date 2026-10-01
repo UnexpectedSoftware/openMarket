@@ -77,6 +77,7 @@ export function replaceSqliteData(database, {categories = [], products = [], ord
   try {
     database.exec('DELETE FROM line');
     database.exec('DELETE FROM "order"');
+    database.exec('DELETE FROM product_sale_day');
     database.exec('DELETE FROM product');
     database.exec('DELETE FROM category');
     categories.forEach(category => inserter.insertCategory(category));

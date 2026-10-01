@@ -14,6 +14,8 @@ export const PRODUCT_FETCH_STATUSES = 'PRODUCT_FETCH_STATUSES';
 export const FIND_PRODUCT_IMAGE = 'FIND_PRODUCT_IMAGE';
 export const PRODUCT_IMAGE_FOUND = 'PRODUCT_IMAGE_FOUND';
 export const PRODUCT_IMAGE_LOOKUP_FINISHED = 'PRODUCT_IMAGE_LOOKUP_FINISHED';
+export const PRODUCT_SALES_WINDOW_SELECTED = 'PRODUCT_SALES_WINDOW_SELECTED';
+export const PRODUCT_SALES_LOADED = 'PRODUCT_SALES_LOADED';
 
 
 export const newProductSaved = ({ edition } = {}) => ({ type: NEW_PRODUCT_SAVED, edition: Boolean(edition) });
@@ -29,3 +31,9 @@ export const productPageLoaded = () => ({ type: PRODUCT_PAGE_LOADED});
 export const findProductImage = barcode => ({ type: FIND_PRODUCT_IMAGE, barcode });
 export const productImageFound = ({imagePath, imageSrc}) => ({ type: PRODUCT_IMAGE_FOUND, imagePath, imageSrc });
 export const productImageLookupFinished = () => ({ type: PRODUCT_IMAGE_LOOKUP_FINISHED });
+export const productSalesWindowSelected = ({barcode, window}) => ({
+  type: PRODUCT_SALES_WINDOW_SELECTED,
+  barcode,
+  window
+});
+export const productSalesLoaded = payload => ({ type: PRODUCT_SALES_LOADED, payload });

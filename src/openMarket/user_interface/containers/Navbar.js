@@ -49,7 +49,10 @@ class Navbar extends Component {
             openKeys={this.state.openKeys}
             defaultSelectedKeys={this.state.openKeys}
           >
-            <MenuItem key="1-1"><Link to="/">Dashboard</Link></MenuItem>
+            <SubMenu key="1" title="Dashboard">
+              <MenuItem key="1-1"><Link to="/">Most sold</Link></MenuItem>
+              <MenuItem key="1-2"><Link to="/takings">Takings</Link></MenuItem>
+            </SubMenu>
             <SubMenu key="2" title="Products">
               <MenuItem key="2-1"><Link to="/create_product">new Product!</Link></MenuItem>
               <MenuItem key="2-2"><Link to="/list_products">List Products!</Link></MenuItem>

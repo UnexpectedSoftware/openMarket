@@ -1,5 +1,7 @@
 import {Observable} from "rxjs/Observable";
+import "rxjs/add/operator/do";
 import "rxjs/add/operator/toArray";
+import OrderCreated from "../../../domain/event/OrderCreated";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
 
 /**
@@ -29,6 +31,11 @@ export default class CreateOrder {
   createOrder({lines}) {
       return this._buildOrder({lines})
       .flatMap(order => this._orderRepository.save({order}))
+      .do(order => this._domainEventBus.publish(new OrderCreated({
+        id: order.id,
+        createdAt: order.createdAt,
+        lines: order.lines
+      })))
       .flatMap(order => this._subtrackStock({order}));
 
   }

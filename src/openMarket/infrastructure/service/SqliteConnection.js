@@ -34,6 +34,15 @@ CREATE TABLE IF NOT EXISTS line (
   price REAL,
   quantity REAL
 );
+CREATE TABLE IF NOT EXISTS product_sale_day (
+  barcode TEXT NOT NULL,
+  name TEXT NOT NULL,
+  sold_on TEXT NOT NULL,
+  quantity REAL NOT NULL,
+  amount REAL NOT NULL,
+  PRIMARY KEY (barcode, sold_on)
+);
+CREATE INDEX IF NOT EXISTS product_sale_day_sold_on ON product_sale_day (sold_on);
 `;
 
 function ensureColumn(database, table, column, definition) {

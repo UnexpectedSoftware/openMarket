@@ -14,6 +14,88 @@
   font-weight: normal;
 }
 
+.dashboard-toolbar {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: $sp-base;
+
+  h2 {
+    flex: 1;
+  }
+}
+
+.sales-window-label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 $sp-base * 1.5;
+  color: $c-grey-darkest;
+  font-size: 1.2rem;
+  font-weight: normal;
+}
+
+.sales-window {
+  width: auto;
+  min-width: 12rem;
+}
+
+.most-sold {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+
+  li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr) auto auto auto;
+    gap: $sp-base;
+    align-items: center;
+    padding: ($sp-base / 2) 0;
+    border-bottom: 1px solid $c-grey-light;
+  }
+}
+
+.most-sold-rank {
+  color: $c-grey-darkest;
+  font-weight: bold;
+}
+
+.most-sold-name {
+  font-weight: bold;
+}
+
+.most-sold-barcode,
+.most-sold-empty {
+  color: $c-grey-darkest;
+}
+
+.most-sold-units {
+  white-space: nowrap;
+}
+
+.most-sold-amount {
+  color: $c-primary-darkest;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+  .dashboard-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .most-sold li {
+    grid-template-columns: 2rem minmax(0, 1fr);
+  }
+
+  .most-sold-units,
+  .most-sold-amount,
+  .most-sold-barcode {
+    grid-column: 2;
+  }
+}
+
 .dashboard-chart {
   position: relative;
   height: 280px;

@@ -356,6 +356,38 @@
   }
 }
 
+.product-sales {
+  margin-top: $sp-base;
+}
+
+.product-sales-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $sp-base;
+
+  h3 {
+    margin: 0;
+  }
+
+  .sales-window-label {
+    margin: 0;
+  }
+}
+
+.product-sales-totals {
+  display: flex;
+  gap: $sp-base * 2;
+  margin: $sp-base 0;
+  color: $c-primary-darkest;
+  font-size: 2.4rem;
+  font-weight: bold;
+
+  span:last-child {
+    color: $c-base;
+  }
+}
+
 .product-form-actions {
   display: flex;
   justify-content: flex-end;
@@ -370,6 +402,14 @@
   .product-form-grid,
   .product-fields {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .product-sales-heading,
+  .product-sales-totals {
+    flex-direction: column;
+    align-items: stretch;
   }
 }
 

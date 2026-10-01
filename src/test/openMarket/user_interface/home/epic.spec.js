@@ -1,9 +1,11 @@
 import { expect } from 'chai';
 import {
   HOME_PAGE_LOADED,
-  HOME_PAGE_STATISTICS_TOTAL_AMOUNT_BY_DAYS_LOADED
+  HOME_PAGE_STATISTICS_TOTAL_AMOUNT_BY_DAYS_LOADED,
+  MOST_SOLD_LOADED,
+  MOST_SOLD_REQUESTED
 } from "../../../../openMarket/user_interface/home/action";
-import {makeHomePageLoadedEpic} from "../../../../openMarket/user_interface/home/epicFactory";
+import {makeHomePageLoadedEpic, makeMostSoldEpic} from "../../../../openMarket/user_interface/home/epicFactory";
 import * as Rx from "rxjs";
 
 describe('Home Epics', () => {
@@ -55,6 +57,36 @@ describe('Home Epics', () => {
           () => done()
         );
 
+    });
+  });
+
+  describe('Most sold requested', () => {
+    it('should return the ranked products for the selected window', (done) => {
+      const givenActions$ = Rx.Observable.of({
+        type: MOST_SOLD_REQUESTED,
+        window: 'month'
+      });
+      const productSaleStatistics = {
+        mostSold: ({window}) => Rx.Observable.of({
+          window,
+          products: [{barcode: '0001', name: 'Cola', quantity: 4, amount: 2}]
+        })
+      };
+
+      makeMostSoldEpic(productSaleStatistics)(givenActions$)
+        .subscribe(
+          action => {
+            expect(action).to.deep.equal({
+              type: MOST_SOLD_LOADED,
+              payload: {
+                window: 'month',
+                products: [{barcode: '0001', name: 'Cola', quantity: 4, amount: 2}]
+              }
+            });
+          },
+          error => done(new Error(error)),
+          () => done()
+        );
     });
   });
 });
