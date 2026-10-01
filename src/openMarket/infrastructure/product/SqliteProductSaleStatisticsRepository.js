@@ -133,7 +133,7 @@ export default class SqliteProductSaleStatisticsRepository extends ProductSaleSt
   mostSold({startOn, endOn, limit}) {
     return this._database.prepare(
       'SELECT d.barcode AS barcode, COALESCE(MAX(p.name), MAX(d.name)) AS name, ' +
-      'SUM(d.quantity) AS quantity, SUM(d.amount) AS amount ' +
+      'MAX(p.image_name) AS imageName, SUM(d.quantity) AS quantity, SUM(d.amount) AS amount ' +
       'FROM product_sale_day d LEFT JOIN product p ON p.barcode = d.barcode ' +
       'WHERE d.sold_on >= ? AND d.sold_on <= ? ' +
       'GROUP BY d.barcode ' +
@@ -142,6 +142,7 @@ export default class SqliteProductSaleStatisticsRepository extends ProductSaleSt
     ).all(startOn, endOn, limit).map(row => ({
       barcode: row.barcode,
       name: row.name == null ? '' : row.name,
+      imageName: row.imageName || null,
       quantity: Number(row.quantity),
       amount: Number(row.amount)
     }));

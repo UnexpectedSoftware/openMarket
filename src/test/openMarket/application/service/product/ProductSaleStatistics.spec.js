@@ -137,6 +137,7 @@ describe('Product sale statistics', () => {
   });
 
   it('ranks by quantity, then amount, and keeps the current product name', (done) => {
+    connection.database.prepare('UPDATE product SET image_name = ? WHERE barcode = ?').run('0001.png', '0001');
     const today = at(moment().startOf('day'));
     repository.applyOrder({
       createdAt: today,
@@ -164,6 +165,8 @@ describe('Product sale statistics', () => {
           const cola = result.products.find(product => product.barcode === '0001');
           const water = result.products.find(product => product.barcode === '0002');
           expect(cola.name).to.equal('Current cola');
+          expect(cola.imageName).to.equal('0001.png');
+          expect(water.imageName).to.equal(null);
           expect(result.products.indexOf(water)).to.be.below(result.products.indexOf(cola));
           expect(result.products.map(product => product.quantity)).to.not.include(2);
           done();

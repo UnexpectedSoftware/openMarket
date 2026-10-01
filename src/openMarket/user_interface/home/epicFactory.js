@@ -15,12 +15,20 @@ export const makeHomePageLoadedEpic = ordersStatisticsUseCase => action$ =>
     })
     .map(data => homeActions.homePageStatisticsTotalAmountByDayLoaded(data));
 
-export const makeMostSoldEpic = productSaleStatistics => action$ =>
+export const makeMostSoldEpic = (productSaleStatistics, readDataUrl) => action$ =>
   action$
     .filter(action => action.type === homeActions.MOST_SOLD_REQUESTED)
     .switchMap(action =>
       productSaleStatistics.mostSold({window: action.window})
-        .map(data => homeActions.mostSoldLoaded(data))
+        .map(data => homeActions.mostSoldLoaded({
+          window: data.window,
+          products: (data.products || []).map(product => ({
+            barcode: product.barcode,
+            name: product.name,
+            quantity: product.quantity,
+            imageSrc: readDataUrl ? readDataUrl(product.imageName) : null
+          }))
+        }))
     );
 
 

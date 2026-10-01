@@ -69,18 +69,23 @@ describe('Home Epics', () => {
       const productSaleStatistics = {
         mostSold: ({window}) => Rx.Observable.of({
           window,
-          products: [{barcode: '0001', name: 'Cola', quantity: 4, amount: 2}]
+          products: [{barcode: '0001', name: 'Cola', quantity: 4, amount: 2, imageName: '0001.png'}]
         })
       };
 
-      makeMostSoldEpic(productSaleStatistics)(givenActions$)
+      makeMostSoldEpic(productSaleStatistics, () => 'data:image/png;base64,aa')(givenActions$)
         .subscribe(
           action => {
             expect(action).to.deep.equal({
               type: MOST_SOLD_LOADED,
               payload: {
                 window: 'month',
-                products: [{barcode: '0001', name: 'Cola', quantity: 4, amount: 2}]
+                products: [{
+                  barcode: '0001',
+                  name: 'Cola',
+                  quantity: 4,
+                  imageSrc: 'data:image/png;base64,aa'
+                }]
               }
             });
           },
