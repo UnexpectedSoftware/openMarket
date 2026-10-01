@@ -69,7 +69,14 @@ describe('Home Epics', () => {
       const productSaleStatistics = {
         mostSold: ({window}) => Rx.Observable.of({
           window,
-          products: [{barcode: '0001', name: 'Cola', quantity: 4, amount: 2, imageName: '0001.png'}]
+          products: [{
+            barcode: '0001',
+            name: 'Cola',
+            quantity: 4,
+            amount: 2,
+            previousQuantity: 2,
+            imageName: '0001.png'
+          }]
         })
       };
 
@@ -84,6 +91,7 @@ describe('Home Epics', () => {
                   barcode: '0001',
                   name: 'Cola',
                   quantity: 4,
+                  previousQuantity: 2,
                   imageSrc: 'data:image/png;base64,aa'
                 }]
               }

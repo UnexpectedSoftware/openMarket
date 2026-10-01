@@ -26,6 +26,7 @@ export const makeMostSoldEpic = (productSaleStatistics, readDataUrl) => action$ 
             barcode: product.barcode,
             name: product.name,
             quantity: product.quantity,
+            previousQuantity: product.previousQuantity || 0,
             imageSrc: readDataUrl ? readDataUrl(product.imageName) : null
           }))
         }))

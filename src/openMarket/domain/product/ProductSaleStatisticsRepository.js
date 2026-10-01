@@ -41,10 +41,20 @@ export default class ProductSaleStatisticsRepository {
    * @param {string} startOn
    * @param {string} endOn
    * @param {number} limit
-   * @returns {Array.<{barcode: string, name: string, quantity: number, amount: number}>}
+   * @returns {Array.<{barcode: string, name: string, imageName: ?string, quantity: number, amount: number}>}
    */
   mostSold({startOn, endOn, limit}) {
     throw new Error('ProductSaleStatisticsRepository#mostSold must be implemented');
+  }
+
+  /**
+   * @param {Array.<string>} barcodes
+   * @param {string} startOn
+   * @param {string} endOn
+   * @returns {Array.<{barcode: string, quantity: number}>}
+   */
+  quantities({barcodes, startOn, endOn}) {
+    throw new Error('ProductSaleStatisticsRepository#quantities must be implemented');
   }
 
 }

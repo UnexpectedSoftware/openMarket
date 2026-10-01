@@ -148,6 +148,22 @@ export default class SqliteProductSaleStatisticsRepository extends ProductSaleSt
     }));
   }
 
+  quantities({barcodes, startOn, endOn}) {
+    const ids = (barcodes || []).map(barcode => String(barcode));
+    if (ids.length === 0) {
+      return [];
+    }
+    const marks = ids.map(() => '?').join(', ');
+    return this._database.prepare(
+      'SELECT barcode, SUM(quantity) AS quantity FROM product_sale_day ' +
+      'WHERE sold_on >= ? AND sold_on <= ? AND barcode IN (' + marks + ') ' +
+      'GROUP BY barcode'
+    ).all(startOn, endOn, ...ids).map(row => ({
+      barcode: row.barcode,
+      quantity: Number(row.quantity)
+    }));
+  }
+
   _writeGroups(groups) {
     groups.forEach(group => {
       const existing = this._findDay.get(group.barcode, group.soldOn);

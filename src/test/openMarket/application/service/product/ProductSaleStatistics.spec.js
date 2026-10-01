@@ -3,7 +3,7 @@ import moment from 'moment';
 import SqliteConnection from '../../../../../openMarket/infrastructure/service/SqliteConnection';
 import SqliteProductSaleStatisticsRepository from '../../../../../openMarket/infrastructure/product/SqliteProductSaleStatisticsRepository';
 import ProductSaleStatistics from '../../../../../openMarket/application/service/product/ProductSaleStatistics';
-import {fillSeries, resolveSalesWindow} from '../../../../../openMarket/application/service/product/salesWindows';
+import {fillSeries, previousYearRange, resolveSalesWindow} from '../../../../../openMarket/application/service/product/salesWindows';
 
 describe('sales windows', () => {
   const now = moment('2026-10-01', 'YYYY-MM-DD');
@@ -20,6 +20,14 @@ describe('sales windows', () => {
     expect(resolveSalesWindow('three_months', now)).to.include({bucket: 'month', startOn: '2026-07-01'});
     expect(resolveSalesWindow('six_months', now)).to.include({bucket: 'month', startOn: '2026-04-01'});
     expect(resolveSalesWindow('year', now)).to.include({bucket: 'month', startOn: '2025-10-01'});
+    expect(previousYearRange(resolveSalesWindow('last_7_days', now))).to.deep.equal({
+      startOn: '2025-09-25',
+      endOn: '2025-10-01'
+    });
+    expect(previousYearRange(resolveSalesWindow('year', now))).to.deep.equal({
+      startOn: '2024-10-01',
+      endOn: '2025-10-01'
+    });
   });
 
   it('rejects an unknown window', () => {
@@ -166,9 +174,43 @@ describe('Product sale statistics', () => {
           const water = result.products.find(product => product.barcode === '0002');
           expect(cola.name).to.equal('Current cola');
           expect(cola.imageName).to.equal('0001.png');
+          expect(cola.previousQuantity).to.equal(0);
           expect(water.imageName).to.equal(null);
+          expect(water.previousQuantity).to.equal(0);
           expect(result.products.indexOf(water)).to.be.below(result.products.indexOf(cola));
           expect(result.products.map(product => product.quantity)).to.not.include(2);
+          done();
+        } catch (error) {
+          done(error);
+        }
+      },
+      error => done(error)
+    );
+  });
+
+  it('attaches the quantity sold in the same window last year', (done) => {
+    const today = moment().startOf('day');
+    repository.applyOrder({
+      createdAt: at(today),
+      lines: [
+        {barcode: '0001', name: 'Cola', price: 1, quantity: 10},
+        {barcode: '0002', name: 'Water', price: 1, quantity: 4}
+      ]
+    });
+    repository.applyOrder({
+      createdAt: at(today.clone().subtract(1, 'year')),
+      lines: [
+        {barcode: '0001', name: 'Cola', price: 1, quantity: 8},
+        {barcode: '0009', name: 'Gone', price: 1, quantity: 50}
+      ]
+    });
+
+    useCase.mostSold({window: 'day', limit: 10}).subscribe(
+      result => {
+        try {
+          expect(result.products.map(product => product.barcode)).to.deep.equal(['0001', '0002']);
+          expect(result.products[0].previousQuantity).to.equal(8);
+          expect(result.products[1].previousQuantity).to.equal(0);
           done();
         } catch (error) {
           done(error);

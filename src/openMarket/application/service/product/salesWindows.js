@@ -43,6 +43,18 @@ export function resolveSalesWindow(window, now = moment()) {
 }
 
 /**
+ * The same inclusive dates one year earlier.
+ * @param {{startOn: string, endOn: string}} range
+ * @returns {{startOn: string, endOn: string}}
+ */
+export function previousYearRange({startOn, endOn}) {
+  return {
+    startOn: moment(startOn, 'YYYY-MM-DD').subtract(1, 'year').format('YYYY-MM-DD'),
+    endOn: moment(endOn, 'YYYY-MM-DD').subtract(1, 'year').format('YYYY-MM-DD')
+  };
+}
+
+/**
  * Insert a zero for every day or month in the range that has no row.
  * @param {string} startOn
  * @param {string} endOn
