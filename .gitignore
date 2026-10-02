@@ -40,6 +40,8 @@ app/bundle.js.map
 app/style.css
 app/style.css.map
 dist
+test-results
+playwright-report
 main.js
 main.js.map
 

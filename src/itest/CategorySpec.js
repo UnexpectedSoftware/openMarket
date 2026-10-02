@@ -213,5 +213,44 @@ describe('Category update use case', () => {
       name: 'pepe'
     }).subscribe(noop, crash, noop);
   });
+
+  it('removes a stored image and keeps the name', (done) => {
+    const source = path.join(os.tmpdir(), `openmarket-category-${process.pid}-${Date.now()}-clear.png`);
+    const png = Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64'
+    );
+    fs.writeFileSync(source, png);
+    let stored = null;
+    const cleanup = () => {
+      fs.rmSync(source, {force: true});
+      if (stored) {
+        fs.rmSync(stored, {force: true});
+      }
+    };
+    observableCreateCategory.createCategory({
+      name: 'Clear me',
+      imagePath: source
+    })
+      .flatMap(() => observableCategories.findAll())
+      .flatMap((categories) => {
+        const created = categories.filter(category => category.name === 'Clear me')[0];
+        la(created && created.imageName, 'created with an image');
+        stored = path.join(imagesDirectory('category-images'), created.imageName);
+        return observableUpdateCategory.removeImage({id: created.id}).map(() => created.id);
+      })
+      .flatMap(id => observableFindByIdCategory.findById({id}))
+      .subscribe((category) => {
+        la(category.name === 'Clear me', 'name kept');
+        la(category.imageName == null, `image ${category.imageName}`);
+        la(stored && !fs.existsSync(stored), 'file removed');
+      }, (err) => {
+        cleanup();
+        crash(err);
+      }, () => {
+        cleanup();
+        done();
+      });
+  });
 });
 

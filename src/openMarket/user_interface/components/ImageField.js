@@ -8,6 +8,33 @@ export function pathForImageFile(file) {
 }
 
 /**
+ * @param {?File} file
+ * @returns {?string} error message when the browser type is not an allowed image
+ */
+export function imageTypeError(file) {
+  if (file && file.type && ALLOWED_TYPES.indexOf(file.type) === -1) {
+    return 'Use a JPEG, PNG, GIF, or WebP image';
+  }
+  return null;
+}
+
+/**
+ * @param {File} file
+ * @returns {{imagePath: ?string, error: ?string}}
+ */
+export function chosenImagePath(file) {
+  const typeError = imageTypeError(file);
+  if (typeError) {
+    return {imagePath: null, error: typeError};
+  }
+  const imagePath = pathForImageFile(file);
+  if (!imagePath) {
+    return {imagePath: null, error: 'Could not read the selected file'};
+  }
+  return {imagePath, error: null};
+}
+
+/**
  * Optional image picker. A file can be chosen or dropped.
  * readChosenPath() returns the absolute path when a file is selected.
  */
@@ -51,10 +78,11 @@ export default class ImageField extends Component {
       this.setState({ dragOver: false });
       return;
     }
-    if (file.type && ALLOWED_TYPES.indexOf(file.type) === -1) {
+    const typeError = imageTypeError(file);
+    if (typeError) {
       this.setState({
         dragOver: false,
-        fileError: 'Use a JPEG, PNG, GIF, or WebP image'
+        fileError: typeError
       });
       return;
     }

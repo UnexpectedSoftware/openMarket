@@ -14,8 +14,16 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
       - run: npm run test-all
       - run: npm run build
+      - name: Install Electron libraries
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb libgtk-3-0 libnotify4 libnss3 libxss1 libxtst6 libatspi2.0-0 libsecret-1-0 libasound2t64 libgbm1 libdrm2 libxkbcommon0 libxcomposite1 libxdamage1 libxrandr2 libxfixes3 libcups2
+      - name: Categories UI
+        run: xvfb-run -a npm run test:ui
 
   version-decision:
     if: github.event_name == 'pull_request'

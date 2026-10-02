@@ -1,7 +1,7 @@
 // @flow
 import React, {Component} from "react";
-import CategoryForm from './ReduxForm';
-import placeholder from '../resources/category-placeholder.svg';
+import CategoryCard from './CategoryCard';
+import CategoryDraft from './CategoryDraft';
 
 class Container extends Component {
 
@@ -26,23 +26,39 @@ class Container extends Component {
     window.removeEventListener('drop', this.blockFileNavigation);
   }
 
-  handleSubmit = (values) => {
-    const { categoriesSave } = this.props;
-    categoriesSave(values);
-  };
-
   render() {
-    const { categories, formKey } = this.props.categoriesPage;
+    const {
+      categories,
+      draftKey,
+      savingId,
+      savingDraft,
+      changeError
+    } = this.props.categoriesPage;
+    const {
+      categoriesSave,
+      categoriesRename,
+      categoriesImageReplace,
+      categoriesImageClear
+    } = this.props;
     return (
       <div className="container-fluid">
         <h2>Categories</h2>
-        <CategoryForm key={formKey} onSubmit={this.handleSubmit}/>
         <div className="category-cards">
+          <CategoryDraft
+            key={draftKey}
+            saving={savingDraft}
+            onSave={categoriesSave}
+          />
           {categories.map(category => (
-            <article className="category-card" key={category.id}>
-              <img src={category.imageSrc || placeholder} alt="" />
-              <p title={category.name}>{category.name}</p>
-            </article>
+            <CategoryCard
+              key={category.id}
+              category={category}
+              saving={savingId === category.id}
+              failure={changeError && changeError.id === category.id ? changeError : null}
+              onRename={categoriesRename}
+              onReplaceImage={categoriesImageReplace}
+              onClearImage={categoriesImageClear}
+            />
           ))}
         </div>
       </div>

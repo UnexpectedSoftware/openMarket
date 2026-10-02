@@ -41,4 +41,13 @@ export default class CategoryRepository {
   updateCategory({id, imagePath}) {
     throw new Error('CategoryRepository#updateCategory must be implemented');
   }
+
+  /**
+   * Drop the stored photo and leave the category on the default image.
+   * @param {string} id
+   * @returns {Observable<null>}
+   */
+  clearImage({id}) {
+    throw new Error('CategoryRepository#clearImage must be implemented');
+  }
 }
