@@ -215,6 +215,65 @@ describe('category images', () => {
       );
   });
 
+  it('clears a stored image and deletes the file', (done) => {
+    const {directory, connection, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    repository.save({name: 'Fruit', imagePath: source})
+      .flatMap(() => repository.findAll())
+      .flatMap(categories => repository.clearImage({id: categories[0].id}).map(() => categories[0]))
+      .flatMap(original => repository.findById({id: original.id}).map(category => ({category, original})))
+      .subscribe(
+        ({category, original}) => {
+          expect(category.name).to.equal('Fruit');
+          expect(category.imageName).to.equal(null);
+          expect(fs.existsSync(path.join(directory, original.imageName))).to.equal(false);
+          const row = connection.database.prepare('SELECT image_name FROM category WHERE id = ?').get(original.id);
+          expect(row).to.deep.equal({image_name: null});
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        },
+        error => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(error);
+        }
+      );
+  });
+
+  it('leaves an empty image empty', (done) => {
+    const {directory, connection, repository} = setup();
+    repository.save({name: 'Fruit'})
+      .flatMap(() => repository.findAll())
+      .flatMap(categories => repository.clearImage({id: categories[0].id}).map(() => categories[0].id))
+      .subscribe(
+        id => {
+          const row = connection.database.prepare('SELECT name, image_name FROM category WHERE id = ?').get(id);
+          expect(row).to.deep.equal({name: 'Fruit', image_name: null});
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        },
+        error => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(error);
+        }
+      );
+  });
+
+  it('rejects clearing an image for an unknown category', (done) => {
+    const {directory, repository} = setup();
+    repository.clearImage({id: 'missing'})
+      .subscribe(
+        () => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(new Error('expected a missing category'));
+        },
+        error => {
+          expect(error.message).to.match(/category not found/);
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        }
+      );
+  });
+
   it('rejects an image update for an unknown category', (done) => {
     const {directory, repository} = setup();
     const source = writePng(directory, 'source.png');

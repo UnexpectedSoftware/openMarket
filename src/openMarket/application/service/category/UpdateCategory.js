@@ -26,4 +26,21 @@ export default class UpdateCategory {
       name
     });
   }
+
+  /**
+   * @param {string} id
+   * @param {string} imagePath absolute path of a file to copy
+   * @returns {Observable.<null>}
+   */
+  replaceImage({id, imagePath}) {
+    return this.repository.updateCategory({id, imagePath});
+  }
+
+  /**
+   * @param {string} id
+   * @returns {Observable.<null>}
+   */
+  removeImage({id}) {
+    return this.repository.clearImage({id});
+  }
 }

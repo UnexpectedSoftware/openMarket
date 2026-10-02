@@ -1,14 +1,3 @@
-.category-add {
-  margin-bottom: $sp-base * 2;
-  overflow: hidden;
-}
-
-.category-add-label {
-  margin-bottom: $sp-base;
-  color: $c-grey-darkest;
-  font-size: 1.4rem;
-}
-
 .image-drop {
   width: 70%;
   min-height: 88px;
@@ -63,6 +52,21 @@
   overflow: hidden;
   @include border-radius;
 
+  &.is-draft {
+    border-style: dashed;
+
+    &::after {
+      content: '';
+      display: block;
+      clear: both;
+    }
+  }
+}
+
+.category-card-photo {
+  position: relative;
+  background: $c-grey-lightest;
+
   img {
     display: block;
     width: 100%;
@@ -71,12 +75,87 @@
     background: $c-grey-lightest;
   }
 
-  p {
-    margin: 0;
-    padding: $sp-base / 2;
-    line-height: 1.4;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+  &.is-over img {
+    outline: 2px solid $c-primary;
+    outline-offset: -2px;
+  }
+}
+
+.category-card.is-draft .category-card-photo {
+  cursor: pointer;
+}
+
+.category-card-icons {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+
+.category-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  float: none;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.92);
+  color: $c-base;
+  font-size: 1.3rem;
+  line-height: 1;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+
+  .fa {
+    padding-right: 0;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+}
+
+.category-card .category-card-name {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: $sp-base / 2;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: $c-base;
+  font: inherit;
+  line-height: 1.4;
+
+  &:focus {
+    background: $c-primary-lightest;
+  }
+
+  &:disabled {
+    opacity: 0.45;
+  }
+}
+
+.category-card-error {
+  display: block;
+  margin: 0;
+  padding: 0 $sp-base / 2 $sp-base / 4;
+  color: $c-warning;
+  font-size: 1.2rem;
+}
+
+.category-card-save {
+  float: right;
+  margin: 0 $sp-base / 2 $sp-base / 2;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: default;
   }
 }
