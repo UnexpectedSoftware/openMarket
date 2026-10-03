@@ -21,7 +21,15 @@ export default class Order {
    * */
     this._createdAt = date;
 
-    if(0 === lines.length || undefined === lines || null === lines) throw Error("Lines must not be empty",id);
+    if (lines == null || lines.length === 0) {
+      throw new Error('Lines must not be empty');
+    }
+    lines.forEach(line => {
+      const quantity = Number(line && line.quantity);
+      if (!Number.isFinite(quantity) || quantity <= 0) {
+        throw new Error('Quantity must be greater than 0');
+      }
+    });
 
     /**
      *

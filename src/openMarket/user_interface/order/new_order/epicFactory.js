@@ -26,20 +26,24 @@ export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => errorNoti
       orderCreateUseCase.createOrder({lines:action.order.lines})
         .map(savedOrder => newOrderActions.newOrderSaved(savedOrder))
         .mergeMap(action => Rx.Observable.of(successNotification({
+          // Date.now() alone matches a low-stock toast created in the same turn.
+          uid: `order-saved-${action.payload.id}`,
           title: 'Order saved!',
           message: 'Order is saved in database',
           position: 'tr',
           autoDismiss: 4
         }),resetForm('new_order'),action))
-        .catch(err =>
-          Rx.Observable.of(errorNotification({
-            title: 'Empty lines!',
-            message: err.message,
+        .catch(err => {
+          const message = err && err.message ? err.message : 'Order was not saved';
+          return Rx.Observable.of(errorNotification({
+            uid: `order-not-saved-${Date.now()}`,
+            title: message === 'Lines must not be empty' ? 'Empty lines!' : 'Order was not saved',
+            message,
             position: 'tr',
-            autoDismiss:5
+            autoDismiss: 5
           }))
-            .mergeMap(action => Rx.Observable.of(resetForm('new_order'),action))
-        )
+            .mergeMap(action => Rx.Observable.of(resetForm('new_order'), action));
+        })
     );
 
 export const makePrinterDialogEpic = orderPrinterService => action$ =>
@@ -68,6 +72,7 @@ export const makeNewOrderSavedEpic = action$ =>
 export const makeLowStockWarningEpic = domainEventBus => warningNotification => () =>
   domainEventBus.ofType(ProductWithLowStock)
     .map(event => warningNotification({
+      uid: `low-stock-${event.barcode}-${event.stock}`,
       title: 'Stock is low',
       message: `${event.name} has ${event.stock} left (minimum ${event.stockMin}).`,
       position: 'tr',
@@ -77,6 +82,7 @@ export const makeLowStockWarningEpic = domainEventBus => warningNotification => 
 export const makeProductEnabledAgainEpic = domainEventBus => warningNotification => () =>
   domainEventBus.ofType(ProductEnabledAgain)
     .map(event => warningNotification({
+      uid: `product-enabled-${event.barcode}`,
       title: 'Product enabled',
       message: `${event.name} has been enabled again and the stock was increased by +1.`,
       position: 'tr',
