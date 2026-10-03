@@ -1,15 +1,6 @@
-const {test, expect, _electron: electron} = require('@playwright/test');
-const {createRequire} = require('module');
-const fs = require('fs');
-const os = require('os');
+const {test, expect} = require('@playwright/test');
 const path = require('path');
-
-const electronPath = createRequire(__filename)('electron');
-const root = path.join(__dirname, '..');
-const PNG = Buffer.from(
-  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
-  'base64'
-);
+const {root, assertDist, launchApp, closeApp} = require('./launch');
 
 async function cardNamed(window, name) {
   let match = -1;
@@ -23,33 +14,11 @@ async function cardNamed(window, name) {
   return window.locator('.category-card:not(.is-draft)').nth(match);
 }
 
-async function launchApp() {
-  const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
-  fs.writeFileSync(path.join(userData, 'pixel.png'), PNG);
-  fs.writeFileSync(path.join(userData, 'note.txt'), 'hello');
-  const app = await electron.launch({
-    executablePath: electronPath,
-    args: [
-      '--no-sandbox',
-      '--disable-gpu',
-      `--user-data-dir=${userData}`,
-      path.join(root, 'dist/main.js')
-    ]
-  });
-  const window = await app.firstWindow();
-  return {app, window, userData};
-}
-
 test.beforeAll(() => {
-  const main = path.join(root, 'dist/main.js');
-  const page = path.join(root, 'dist/app.html');
-  if (!fs.existsSync(main) || !fs.existsSync(page)) {
-    throw new Error('Run npm run build before npm run test:ui');
-  }
-  fs.mkdirSync(path.join(root, 'test-results'), {recursive: true});
+  assertDist();
 });
 
-test('edits categories on the card', async () => {
+test('creates a category from the blank card', async () => {
   const {app, window, userData} = await launchApp();
   const image = path.join(userData, 'pixel.png');
   const text = path.join(userData, 'note.txt');
@@ -83,6 +52,36 @@ test('edits categories on the card', async () => {
     const photo = await cardNamed(window, 'Inline Photo');
     await expect(photo.locator('img')).toHaveAttribute('src', /^data:image\/png/);
     await expect(draft.getByRole('textbox', {name: 'Category name'})).toHaveValue('');
+
+    await window.reload();
+    await window.getByRole('link', {name: 'Categories'}).click();
+    await expect((await cardNamed(window, 'Inline Plain')).locator('img')).not.toHaveAttribute('src', /^data:image/);
+    await expect((await cardNamed(window, 'Inline Photo')).locator('img')).toHaveAttribute('src', /^data:image\/png/);
+    await expect(draft.getByRole('textbox', {name: 'Category name'})).toHaveValue('');
+
+    await window.evaluate(() => {
+      location.hash = '#/create_product';
+    });
+    await expect(window.locator('select option', {hasText: 'Inline Plain'})).toHaveCount(1);
+    await expect(window.locator('select option', {hasText: 'Inline Photo'})).toHaveCount(1);
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
+test('edits a category on the card', async () => {
+  const {app, window, userData} = await launchApp();
+  const image = path.join(userData, 'pixel.png');
+  try {
+    await window.getByRole('link', {name: 'Categories'}).click();
+    const draft = window.locator('.category-card.is-draft');
+    await draft.getByRole('textbox', {name: 'Category name'}).fill('Inline Plain');
+    await draft.getByRole('button', {name: 'Save'}).click();
+    await draft.locator('input[type="file"]').setInputFiles(image);
+    await draft.getByRole('textbox', {name: 'Category name'}).fill('Inline Photo');
+    await draft.getByRole('button', {name: 'Save'}).click();
+    const photo = await cardNamed(window, 'Inline Photo');
+    await expect(photo.locator('img')).toHaveAttribute('src', /^data:image\/png/);
 
     const plain = await cardNamed(window, 'Inline Plain');
     await plain.locator('.category-card-name').fill('Inline Plain renamed');
@@ -123,13 +122,6 @@ test('edits categories on the card', async () => {
     await window.getByRole('link', {name: 'Categories'}).click();
     await expect((await cardNamed(window, 'Inline Plain renamed')).locator('img')).toHaveAttribute('src', /^data:image\/png/);
     await expect((await cardNamed(window, 'Inline Photo')).locator('img')).not.toHaveAttribute('src', /^data:image/);
-    await expect(draft.getByRole('textbox', {name: 'Category name'})).toHaveValue('');
-
-    await window.evaluate(() => {
-      location.hash = '#/create_product';
-    });
-    await expect(window.locator('select option', {hasText: 'Inline Plain renamed'})).toHaveCount(1);
-    await expect(window.locator('select option', {hasText: 'Inline Photo'})).toHaveCount(1);
 
     await app.evaluate(({BrowserWindow}) => {
       BrowserWindow.getAllWindows()[0].setContentSize(380, 720);
@@ -148,7 +140,6 @@ test('edits categories on the card', async () => {
     expect(narrowChange.x + narrowChange.width).toBeLessThanOrEqual(narrowImage.x + narrowImage.width + 1);
     await window.screenshot({path: path.join(root, 'test-results/categories-narrow.png')});
   } finally {
-    await app.close();
-    fs.rmSync(userData, {recursive: true, force: true});
+    await closeApp(app, userData);
   }
 });
