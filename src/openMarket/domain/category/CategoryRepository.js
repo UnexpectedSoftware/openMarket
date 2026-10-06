@@ -24,11 +24,10 @@ export default class CategoryRepository {
   }
 
     /**
-     *
-     * @param {string} name
+     * @param {Category} category
      * @param {?string} imagePath absolute path of a file to copy, when the user picked one
      */
-  save({ name, imagePath }) {
+  save({ category, imagePath }) {
     throw new Error('CategoryRepository#category must be implemented');
   }
 

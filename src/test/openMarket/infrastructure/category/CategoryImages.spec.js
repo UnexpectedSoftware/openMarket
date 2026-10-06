@@ -34,11 +34,16 @@ function writePng(directory, filename) {
   return filePath;
 }
 
+function newCategory(name, imagePath) {
+  const category = categoryFactory.createWith({name});
+  return imagePath ? {category, imagePath} : {category};
+}
+
 describe('category images', () => {
   it('copies an image under the category id and reads it back', (done) => {
     const {directory, images, repository} = setup();
     const source = writePng(directory, 'source.png');
-    repository.save({name: 'Fruit', imagePath: source})
+    repository.save(newCategory('Fruit', source))
       .flatMap(() => repository.findAll())
       .subscribe(
         categories => {
@@ -62,7 +67,7 @@ describe('category images', () => {
 
   it('leaves image_name empty when no file is chosen', (done) => {
     const {directory, repository} = setup();
-    repository.save({name: 'Fruit'})
+    repository.save(newCategory('Fruit'))
       .flatMap(() => repository.findById({id: 'missing'}).defaultIfEmpty(null))
       .flatMap(() => repository.findAll())
       .subscribe(
@@ -82,7 +87,7 @@ describe('category images', () => {
   it('keeps the file when the category is renamed', (done) => {
     const {directory, repository} = setup();
     const source = writePng(directory, 'source.png');
-    repository.save({name: 'Fruit', imagePath: source})
+    repository.save(newCategory('Fruit', source))
       .flatMap(() => repository.findAll())
       .flatMap(categories => repository.update({
         id: categories[0].id,
@@ -114,14 +119,14 @@ describe('category images', () => {
     expect(() => images.store({id: '1', sourcePath: textFile})).to.throw(/JPEG, PNG, GIF, or WebP/);
     expect(() => images.store({id: '2', sourcePath: hugeFile})).to.throw(/5 MB/);
 
-    repository.save({name: 'Bad', imagePath: textFile})
+    repository.save(newCategory('Bad', textFile))
       .subscribe(
         () => {
           fs.rmSync(directory, {recursive: true, force: true});
           done(new Error('expected the text file to be rejected'));
         },
         () => {
-          repository.save({name: 'Huge', imagePath: hugeFile}).subscribe(
+          repository.save(newCategory('Huge', hugeFile)).subscribe(
             () => {
               fs.rmSync(directory, {recursive: true, force: true});
               done(new Error('expected the oversized file to be rejected'));
@@ -145,7 +150,7 @@ describe('category images', () => {
     connection.database.exec(
       "CREATE TRIGGER category_fail BEFORE INSERT ON category BEGIN SELECT RAISE(ABORT, 'category failed'); END"
     );
-    repository.save({name: 'Fruit', imagePath: source})
+    repository.save(newCategory('Fruit', source))
       .subscribe(
         () => {
           fs.rmSync(directory, {recursive: true, force: true});
@@ -195,7 +200,7 @@ describe('category images', () => {
   it('updates only the image of an existing category', (done) => {
     const {directory, connection, repository} = setup();
     const source = writePng(directory, 'source.png');
-    repository.save({name: 'Fruit'})
+    repository.save(newCategory('Fruit'))
       .flatMap(() => {
         const row = connection.database.prepare('SELECT id, name FROM category').get();
         return repository.updateCategory({id: row.id, imagePath: source}).map(() => row);
@@ -218,7 +223,7 @@ describe('category images', () => {
   it('clears a stored image and deletes the file', (done) => {
     const {directory, connection, repository} = setup();
     const source = writePng(directory, 'source.png');
-    repository.save({name: 'Fruit', imagePath: source})
+    repository.save(newCategory('Fruit', source))
       .flatMap(() => repository.findAll())
       .flatMap(categories => repository.clearImage({id: categories[0].id}).map(() => categories[0]))
       .flatMap(original => repository.findById({id: original.id}).map(category => ({category, original})))
@@ -241,7 +246,7 @@ describe('category images', () => {
 
   it('leaves an empty image empty', (done) => {
     const {directory, connection, repository} = setup();
-    repository.save({name: 'Fruit'})
+    repository.save(newCategory('Fruit'))
       .flatMap(() => repository.findAll())
       .flatMap(categories => repository.clearImage({id: categories[0].id}).map(() => categories[0].id))
       .subscribe(

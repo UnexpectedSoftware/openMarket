@@ -99,10 +99,9 @@ export default class SqliteCategoryRepository extends CategoryRepository {
     });
   }
 
-  save({name, imagePath}) {
+  save({category, imagePath}) {
     return Rx.Observable.defer(() => {
-      const category = this._categoryFactory.createWith({name});
-      let imageName = null;
+      let imageName = category.imageName || null;
       if (imagePath) {
         imageName = this._images.store({id: category.id, sourcePath: imagePath});
       }
@@ -111,7 +110,7 @@ export default class SqliteCategoryRepository extends CategoryRepository {
           'INSERT INTO category (id, name, image_name) VALUES (?, ?, ?)'
         ).run(category.id, category.name, imageName);
       } catch (insertError) {
-        if (imageName) {
+        if (imageName && imageName !== category.imageName) {
           this._images.remove(imageName);
         }
         throw insertError;

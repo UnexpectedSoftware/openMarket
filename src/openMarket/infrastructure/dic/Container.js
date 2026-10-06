@@ -132,7 +132,10 @@ class Container {
    * @returns {CreateCategory}
    */
   _createCategory() {
-    return new CreateCategory({ repository: this.getInstance({key: 'categoryRepository'}) });
+    return new CreateCategory({
+      repository: this.getInstance({key: 'categoryRepository'}),
+      categoryFactory: this.getInstance({key: 'categoryFactory'})
+    });
   }
 
   /**
