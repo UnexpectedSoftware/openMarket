@@ -1,5 +1,7 @@
 import React, {Component} from 'react';
 import {chosenImagePath} from '../components/ImageField';
+import {formatMoney} from '../i18n/money';
+import {formatUnits} from '../sales/formatUnits';
 import placeholder from '../resources/category-placeholder.svg';
 
 export default class CategoryCard extends Component {
@@ -129,6 +131,18 @@ export default class CategoryCard extends Component {
     this.props.onClearImage(this.props.category.id);
   };
 
+  deleteCategory = (event) => {
+    event.preventDefault();
+    if (this.props.saving) {
+      return;
+    }
+    const name = this.props.category.name;
+    if (!window.confirm(`Delete ${name}?`)) {
+      return;
+    }
+    this.props.onDelete(this.props.category.id);
+  };
+
   render() {
     const {category, saving} = this.props;
     const {name, nameError, fileError, previewUrl, dragOver} = this.state;
@@ -195,6 +209,43 @@ export default class CategoryCard extends Component {
           onKeyDown={this.onNameKeyDown}
         />
         {fileError || nameError ? <span className="category-card-error">{fileError || nameError}</span> : null}
+        <dl className="category-card-facts">
+          <div>
+            <dt>Products</dt>
+            <dd>{category.productCount}</dd>
+          </div>
+          <div>
+            <dt>Value</dt>
+            <dd title="Sum of base prices">{formatMoney(category.basePriceTotal)}</dd>
+          </div>
+          <div>
+            <dt>Stock</dt>
+            <dd>{formatUnits(category.stockTotal)}</dd>
+          </div>
+          <div>
+            <dt>Most sold</dt>
+            <dd title={category.mostSold ? category.mostSold.name : null}>
+              {category.mostSold ? (
+                <span className="category-card-most-sold-name">{category.mostSold.name}</span>
+              ) : '—'}
+              {category.mostSold ? (
+                <span className="category-card-most-sold-qty">{formatUnits(category.mostSold.quantity)}</span>
+              ) : null}
+            </dd>
+          </div>
+        </dl>
+        {Number(category.productCount) === 0 ? (
+          <button
+            type="button"
+            className="category-card-delete"
+            aria-label="Delete category"
+            disabled={saving}
+            onClick={this.deleteCategory}
+          >
+            <i className="fa fa-trash" />
+            Delete
+          </button>
+        ) : null}
       </article>
     );
   }

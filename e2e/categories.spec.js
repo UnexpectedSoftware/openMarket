@@ -1,6 +1,24 @@
 const {test, expect} = require('@playwright/test');
 const path = require('path');
-const {root, assertDist, launchApp, closeApp} = require('./launch');
+const {
+  root,
+  assertDist,
+  launchApp,
+  closeApp,
+  euros,
+  chooseMenu,
+  createCategory,
+  createProduct,
+  orderRow,
+  scanBarcode,
+  dismissTicket
+} = require('./launch');
+
+function fact(card, label) {
+  return card.locator('.category-card-facts div', {
+    hasText: new RegExp(`^${label}`)
+  }).locator('dd');
+}
 
 async function cardNamed(window, name) {
   let match = -1;
@@ -139,6 +157,84 @@ test('edits a category on the card', async () => {
     expect(narrowChange.y).toBeGreaterThanOrEqual(narrowImage.y);
     expect(narrowChange.x + narrowChange.width).toBeLessThanOrEqual(narrowImage.x + narrowImage.width + 1);
     await window.screenshot({path: path.join(root, 'test-results/categories-narrow.png')});
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
+test('shows totals and deletes an empty category', async () => {
+  test.setTimeout(120000);
+  const {app, window, userData} = await launchApp();
+  try {
+    await createCategory(window, 'Empty Shelf');
+    await createCategory(window, 'Stocked');
+    const empty = await cardNamed(window, 'Empty Shelf');
+    await expect(fact(empty, 'Products')).toHaveText('0');
+    await expect(fact(empty, 'Value')).toHaveText(euros(0));
+    await expect(fact(empty, 'Stock')).toHaveText('0');
+    await expect(fact(empty, 'Most sold')).toHaveText('—');
+
+    const photo = await empty.locator('img').boundingBox();
+    const change = await empty.getByRole('button', {name: 'Change image'}).boundingBox();
+    const nameBox = await empty.locator('.category-card-name').boundingBox();
+    const deleteButton = empty.getByRole('button', {name: 'Delete category'});
+    const deleteBox = await deleteButton.boundingBox();
+    expect(change.y).toBeGreaterThanOrEqual(photo.y);
+    expect(change.x + change.width).toBeLessThanOrEqual(photo.x + photo.width + 1);
+    expect(deleteBox.y).toBeGreaterThanOrEqual(photo.y + photo.height - 1);
+    expect(deleteBox.y).toBeGreaterThanOrEqual(nameBox.y + nameBox.height - 1);
+
+    await createProduct(window, {
+      name: 'Milk',
+      barcode: '8400000000011',
+      price: 2,
+      basePrice: 1.5,
+      stock: 4,
+      stockMin: 1,
+      category: 'Stocked'
+    });
+    await window.getByRole('link', {name: 'Categories'}).click();
+    const stocked = await cardNamed(window, 'Stocked');
+    await expect(fact(stocked, 'Products')).toHaveText('1');
+    await expect(fact(stocked, 'Value')).toHaveText(euros(1.5));
+    await expect(fact(stocked, 'Stock')).toHaveText('4');
+    await expect(fact(stocked, 'Most sold')).toHaveText('—');
+    await expect(stocked.getByRole('button', {name: 'Delete category'})).toHaveCount(0);
+
+    await chooseMenu(window, 'Orders', 'new Order!');
+    await expect(window.getByRole('heading', {name: "Let's create a new order!"})).toBeVisible();
+    await scanBarcode(window, '8400000000011');
+    await expect(orderRow(window, 'Milk').locator('input')).toHaveValue('1');
+    await window.locator('h3 a.button', {hasText: 'Save'}).click();
+    await dismissTicket(window);
+
+    await window.getByRole('link', {name: 'Categories'}).click();
+    const sold = await cardNamed(window, 'Stocked');
+    await expect(fact(sold, 'Products')).toHaveText('1');
+    await expect(fact(sold, 'Value')).toHaveText(euros(1.5));
+    await expect(fact(sold, 'Stock')).toHaveText('3');
+    await expect(fact(sold, 'Most sold')).toContainText('Milk');
+    await expect(fact(sold, 'Most sold')).toContainText('1');
+
+    const emptyAgain = await cardNamed(window, 'Empty Shelf');
+    window.once('dialog', async (dialog) => {
+      expect(dialog.message()).toBe('Delete Empty Shelf?');
+      await dialog.accept();
+    });
+    await emptyAgain.getByRole('button', {name: 'Delete category'}).click();
+    await expect(window.getByRole('heading', {name: 'Category deleted'})).toBeVisible();
+    await expect.poll(async () => {
+      const values = await window.locator('.category-card:not(.is-draft) .category-card-name').evaluateAll(
+        nodes => nodes.map(node => node.value)
+      );
+      return values.includes('Empty Shelf');
+    }).toBe(false);
+
+    await window.evaluate(() => {
+      location.hash = '#/create_product';
+    });
+    await expect(window.locator('select option', {hasText: 'Empty Shelf'})).toHaveCount(0);
+    await expect(window.locator('select option', {hasText: 'Stocked'})).toHaveCount(1);
   } finally {
     await closeApp(app, userData);
   }

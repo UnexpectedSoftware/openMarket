@@ -26,15 +26,34 @@ function failureActions(id, saveError) {
   );
 }
 
+function deleteFailureActions(id, saveError) {
+  const message = saveError && saveError.message ? saveError.message : 'Category was not deleted';
+  return Rx.Observable.of(
+    categoryActions.categoriesChangeFailed(id, message),
+    error({
+      title: 'Category was not deleted',
+      message,
+      position: 'tr',
+      autoDismiss: 4
+    })
+  );
+}
+
 const loadCategoriesEpic = action$ =>
   action$.ofType(categoryActions.CATEGORIES_PAGE_LOADED)
-    .flatMap(() => OpenMarket.get("categories_list_all_use_case").findAll())
+    .flatMap(() => OpenMarket.get("categories_list_all_use_case").findAllWithStats())
     .map(categories => categoryActions.categoriesFetched(
       categories
         .map(category => ({
           id: category.id,
           name: category.name,
-          imageSrc: images.readDataUrl(category.imageName)
+          imageSrc: images.readDataUrl(category.imageName),
+          productCount: category.productCount,
+          stockTotal: category.stockTotal,
+          basePriceTotal: category.basePriceTotal,
+          mostSold: category.mostSold
+            ? {name: category.mostSold.name, quantity: category.mostSold.quantity}
+            : null
         }))
         .sort((left, right) => left.name.localeCompare(right.name))
     ));
@@ -93,6 +112,26 @@ const updatedCategoryEpic = action$ =>
       applied()
     ));
 
+const deleteCategoryEpic = action$ =>
+  action$.ofType(categoryActions.CATEGORIES_DELETE)
+    .flatMap(action => OpenMarket.get("categories_delete_use_case").deleteCategory({
+      id: action.id
+    })
+      .map(() => categoryActions.categoriesDeleted())
+      .catch(saveError => deleteFailureActions(action.id, saveError)));
+
+const deletedCategoryEpic = action$ =>
+  action$.ofType(categoryActions.CATEGORIES_DELETED)
+    .flatMap(() => Rx.Observable.of(
+      categoryActions.categoriesPageLoaded(),
+      success({
+        title: 'Category deleted',
+        message: 'Category deleted from database',
+        position: 'tr',
+        autoDismiss: 4
+      })
+    ));
+
 export default action$ =>
   Rx.Observable.merge(
     loadCategoriesEpic(action$),
@@ -101,5 +140,7 @@ export default action$ =>
     renameCategoryEpic(action$),
     replaceImageEpic(action$),
     clearImageEpic(action$),
-    updatedCategoryEpic(action$)
+    updatedCategoryEpic(action$),
+    deleteCategoryEpic(action$),
+    deletedCategoryEpic(action$)
   );

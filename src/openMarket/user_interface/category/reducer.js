@@ -3,6 +3,7 @@ import {
   CATEGORIES_FETCHED,
   CATEGORIES_IMAGE_CLEAR,
   CATEGORIES_IMAGE_REPLACE,
+  CATEGORIES_DELETE,
   CATEGORIES_RENAME,
   CATEGORIES_SAVE,
   CATEGORIES_SAVED
@@ -41,6 +42,7 @@ export default function reducer(state = initialState, action) {
     case CATEGORIES_RENAME:
     case CATEGORIES_IMAGE_REPLACE:
     case CATEGORIES_IMAGE_CLEAR:
+    case CATEGORIES_DELETE:
       return {
         ...state,
         savingId: action.id,

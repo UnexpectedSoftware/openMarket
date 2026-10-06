@@ -97,7 +97,7 @@ const pageLoadedEpic = action$ =>
         append: false,
         limit: action.payload.limit || catalogLimit
       })),
-      OpenMarket.get('categories_list_all_use_case').findAll()
+      OpenMarket.get('categories_list_all_use_case').findAllWithStats()
         .map(categories => listProductsActions.listProductsCategoriesLoaded(
           categories
             .map(category => ({id: category.id, name: category.name}))

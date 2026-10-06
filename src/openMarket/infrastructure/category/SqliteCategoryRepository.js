@@ -1,5 +1,61 @@
 import CategoryRepository from "../../domain/category/CategoryRepository";
+import CategorySummary from "../../domain/category/CategorySummary";
 import * as Rx from "rxjs";
+
+const SUMMARIES_SQL = `
+WITH product_totals AS (
+  SELECT category_id,
+         COUNT(*) AS product_count,
+         COALESCE(SUM(stock), 0) AS stock_total,
+         COALESCE(SUM(base_price), 0) AS base_price_total
+  FROM product
+  WHERE category_id IS NOT NULL
+  GROUP BY category_id
+),
+sales AS (
+  SELECT p.category_id AS category_id,
+         p.barcode AS barcode,
+         COALESCE(p.name, '') AS name,
+         SUM(s.quantity) AS quantity,
+         SUM(s.amount) AS amount
+  FROM product_sale_day s
+  INNER JOIN product p ON p.barcode = s.barcode
+  WHERE p.category_id IS NOT NULL
+  GROUP BY p.category_id, p.barcode, COALESCE(p.name, '')
+),
+ranked AS (
+  SELECT category_id, name, quantity, amount,
+         ROW_NUMBER() OVER (
+           PARTITION BY category_id
+           ORDER BY quantity DESC, amount DESC, name ASC
+         ) AS rank
+  FROM sales
+)
+SELECT c.id, c.name, c.image_name,
+       COALESCE(t.product_count, 0) AS product_count,
+       COALESCE(t.stock_total, 0) AS stock_total,
+       COALESCE(t.base_price_total, 0) AS base_price_total,
+       r.name AS most_sold_name,
+       r.quantity AS most_sold_quantity
+FROM category c
+LEFT JOIN product_totals t ON t.category_id = c.id
+LEFT JOIN ranked r ON r.category_id = c.id AND r.rank = 1
+`;
+
+function summaryFrom(row) {
+  return new CategorySummary({
+    id: row.id,
+    name: row.name,
+    imageName: row.image_name,
+    productCount: Number(row.product_count),
+    stockTotal: Number(row.stock_total),
+    basePriceTotal: Number(row.base_price_total),
+    mostSold: row.most_sold_name == null ? null : {
+      name: row.most_sold_name,
+      quantity: Number(row.most_sold_quantity)
+    }
+  });
+}
 
 export default class SqliteCategoryRepository extends CategoryRepository {
   constructor({connection, categoryFactory, images}) {
@@ -7,6 +63,7 @@ export default class SqliteCategoryRepository extends CategoryRepository {
     this._database = connection.database;
     this._categoryFactory = categoryFactory;
     this._images = images;
+    this._summaries = this._database.prepare(SUMMARIES_SQL);
   }
 
   findAll() {
@@ -20,6 +77,12 @@ export default class SqliteCategoryRepository extends CategoryRepository {
         }))
         .toArray();
     });
+  }
+
+  findAllWithStats() {
+    return Rx.Observable.defer(() => Rx.Observable.of(
+      this._summaries.all().map(summaryFrom)
+    ));
   }
 
   findById({id}) {
@@ -111,6 +174,47 @@ export default class SqliteCategoryRepository extends CategoryRepository {
       ).run(key);
       if (previous.image_name) {
         this._images.remove(previous.image_name);
+      }
+      return Rx.Observable.of(null);
+    });
+  }
+
+  remove({id}) {
+    return Rx.Observable.defer(() => {
+      const key = String(id);
+      let imageName = null;
+      this._database.exec('BEGIN IMMEDIATE');
+      try {
+        const row = this._database.prepare(
+          'SELECT image_name FROM category WHERE id = ?'
+        ).get(key);
+        if (!row) {
+          throw new Error('category not found');
+        }
+        const countRow = this._database.prepare(
+          'SELECT COUNT(*) AS total FROM product WHERE category_id = ?'
+        ).get(key);
+        if (Number(countRow.total) > 0) {
+          throw new Error('Category still has products');
+        }
+        const result = this._database.prepare(
+          'DELETE FROM category WHERE id = ?'
+        ).run(key);
+        if (Number(result.changes) === 0) {
+          throw new Error('category not found');
+        }
+        imageName = row.image_name;
+        this._database.exec('COMMIT');
+      } catch (error) {
+        try {
+          this._database.exec('ROLLBACK');
+        } catch (rollbackError) {
+          // A failed statement can already have ended the transaction.
+        }
+        return Rx.Observable.throw(error);
+      }
+      if (imageName) {
+        this._images.remove(imageName);
       }
       return Rx.Observable.of(null);
     });
