@@ -107,7 +107,7 @@ const savedProductEpic = action$ =>
 
 const fetchCategoriesEpic = action$ =>
   action$.ofType(newProductActions.NEW_PRODUCT_FETCH_CATEGORIES)
-    .flatMap(action => OpenMarket.get("categories_list_all_use_case").findAll())
+    .flatMap(action => OpenMarket.get("categories_list_all_use_case").findAllWithStats())
     .map(categories => newProductActions.newProductFetchedCategories(
       (categories || [])
         .map(category => ({

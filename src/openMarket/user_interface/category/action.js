@@ -7,6 +7,8 @@ export const CATEGORIES_RENAME = 'CATEGORIES_RENAME';
 export const CATEGORIES_IMAGE_REPLACE = 'CATEGORIES_IMAGE_REPLACE';
 export const CATEGORIES_IMAGE_CLEAR = 'CATEGORIES_IMAGE_CLEAR';
 export const CATEGORIES_UPDATED = 'CATEGORIES_UPDATED';
+export const CATEGORIES_DELETE = 'CATEGORIES_DELETE';
+export const CATEGORIES_DELETED = 'CATEGORIES_DELETED';
 export const CATEGORIES_CHANGE_FAILED = 'CATEGORIES_CHANGE_FAILED';
 
 export const categoriesPageLoaded = () => ({ type: CATEGORIES_PAGE_LOADED });
@@ -17,4 +19,6 @@ export const categoriesRename = (id, name) => ({ type: CATEGORIES_RENAME, id, na
 export const categoriesImageReplace = (id, imagePath) => ({ type: CATEGORIES_IMAGE_REPLACE, id, imagePath });
 export const categoriesImageClear = id => ({ type: CATEGORIES_IMAGE_CLEAR, id });
 export const categoriesUpdated = () => ({ type: CATEGORIES_UPDATED });
+export const categoriesDelete = id => ({ type: CATEGORIES_DELETE, id });
+export const categoriesDeleted = () => ({ type: CATEGORIES_DELETED });
 export const categoriesChangeFailed = (id, message) => ({ type: CATEGORIES_CHANGE_FAILED, id, message });

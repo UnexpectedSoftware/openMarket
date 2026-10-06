@@ -6,6 +6,7 @@ import ListAllCategories from "../../application/service/category/ListAllCategor
 import FindCategoryById from "../../application/service/category/FindCategoryById";
 import CreateCategory from "../../application/service/category/CreateCategory";
 import UpdateCategory from "../../application/service/category/UpdateCategory";
+import DeleteCategory from "../../application/service/category/DeleteCategory";
 import ProductStatistics from "../../application/service/product/ProductStatistics";
 import ProductSaleStatistics from "../../application/service/product/ProductSaleStatistics";
 import RecordProductSales from "../../application/service/product/RecordProductSales";
@@ -131,7 +132,10 @@ class Container {
    * @returns {CreateCategory}
    */
   _createCategory() {
-    return new CreateCategory({ repository: this.getInstance({key: 'categoryRepository'}) });
+    return new CreateCategory({
+      repository: this.getInstance({key: 'categoryRepository'}),
+      categoryFactory: this.getInstance({key: 'categoryFactory'})
+    });
   }
 
   /**
@@ -140,6 +144,14 @@ class Container {
    */
   _updateCategory() {
     return new UpdateCategory({ repository: this.getInstance({key: 'categoryRepository'}) });
+  }
+
+  /**
+   *
+   * @returns {DeleteCategory}
+   */
+  _deleteCategory() {
+    return new DeleteCategory({ repository: this.getInstance({key: 'categoryRepository'}) });
   }
 
   /**

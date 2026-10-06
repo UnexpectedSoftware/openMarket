@@ -5,13 +5,19 @@ export default class CreateCategory {
     /**
      * @constructs CreateCategory
      * @param {CategoryRepository} repository
+     * @param {CategoryFactory} categoryFactory
      */
-  constructor({ repository }) {
+  constructor({ repository, categoryFactory }) {
         /**
          * @type CategoryRepository
          * @member CreateCategory#repository
          */
     this.repository = repository;
+        /**
+         * @type CategoryFactory
+         * @member CreateCategory#categoryFactory
+         */
+    this.categoryFactory = categoryFactory;
   }
 
     /**
@@ -21,6 +27,7 @@ export default class CreateCategory {
      * @returns {*|Observable.<null>}
      */
   createCategory({ name, imagePath }) {
-    return this.repository.save({ name, imagePath });
+    const category = this.categoryFactory.createWith({ name });
+    return this.repository.save({ category, imagePath });
   }
 }

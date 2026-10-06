@@ -20,6 +20,7 @@ class OpenMarket {
     this.deps.set('categories_find_by_id_use_case', container.getInstance({key:'findCategoryById'}));
     this.deps.set('categories_create_use_case', container.getInstance({key:'createCategory'}));
     this.deps.set('categories_update_use_case', container.getInstance({key:'updateCategory'}));
+    this.deps.set('categories_delete_use_case', container.getInstance({key:'deleteCategory'}));
     this.deps.set('products_list_all_use_case', container.getInstance({key:'listAllProductsUseCase'}));
     this.deps.set('products_find_use_case', container.getInstance({key:'findProductsUseCase'}));
     this.deps.set('products_create_or_update_use_case', container.getInstance({key:'createProduct'}));

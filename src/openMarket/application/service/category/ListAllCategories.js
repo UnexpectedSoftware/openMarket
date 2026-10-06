@@ -17,9 +17,9 @@ export default class ListAllCategories {
 
     /**
      *
-     * @returns {Observable.<Array.<Category>>}
+     * @returns {Observable.<Array.<CategorySummary>>}
      */
-  findAll() {
-    return this.repository.findAll();
+  findAllWithStats() {
+    return this.repository.findAllWithStats();
   }
 }
