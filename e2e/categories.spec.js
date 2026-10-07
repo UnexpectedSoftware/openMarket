@@ -213,8 +213,11 @@ test('shows totals and deletes an empty category', async () => {
     await expect(fact(sold, 'Products')).toHaveText('1');
     await expect(fact(sold, 'Value')).toHaveText(euros(1.5));
     await expect(fact(sold, 'Stock')).toHaveText('3');
-    await expect(fact(sold, 'Most sold')).toContainText('Milk');
-    await expect(fact(sold, 'Most sold')).toContainText('1');
+    await expect(fact(sold, 'Most sold')).toHaveText('Milk');
+    await fact(sold, 'Most sold').getByRole('link', {name: 'Milk'}).click();
+    await expect(window.getByRole('heading', {name: "Let's edit a product!"})).toBeVisible();
+    await expect(window.locator('input[name="name"]')).toHaveValue('Milk');
+    await window.getByRole('link', {name: 'Categories'}).click();
 
     const emptyAgain = await cardNamed(window, 'Empty Shelf');
     window.once('dialog', async (dialog) => {

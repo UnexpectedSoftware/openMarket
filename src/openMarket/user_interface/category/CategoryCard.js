@@ -224,13 +224,20 @@ export default class CategoryCard extends Component {
           </div>
           <div>
             <dt>Most sold</dt>
-            <dd title={category.mostSold ? category.mostSold.name : null}>
+            <dd>
               {category.mostSold ? (
-                <span className="category-card-most-sold-name">{category.mostSold.name}</span>
+                <a
+                  href="#/create_product?edition=true"
+                  className="category-card-most-sold-name"
+                  title={category.mostSold.name}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    this.props.onOpenProduct(category.mostSold.barcode);
+                  }}
+                >
+                  {category.mostSold.name}
+                </a>
               ) : '—'}
-              {category.mostSold ? (
-                <span className="category-card-most-sold-qty">{formatUnits(category.mostSold.quantity)}</span>
-              ) : null}
             </dd>
           </div>
         </dl>

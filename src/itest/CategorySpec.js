@@ -297,6 +297,7 @@ describe('Category summaries', () => {
       la(odin.stockTotal === 2.5, `odin stock ${odin.stockTotal}`);
       la(odin.basePriceTotal === 4, `odin value ${odin.basePriceTotal}`);
       la(odin.mostSold.name === 'Pear', `odin most sold ${odin.mostSold && odin.mostSold.name}`);
+      la(odin.mostSold.barcode === '1002', `odin barcode ${odin.mostSold && odin.mostSold.barcode}`);
       la(odin.mostSold.quantity === 4, `odin quantity ${odin.mostSold && odin.mostSold.quantity}`);
       la(odin.imageName == null, 'image name still present');
 
@@ -305,6 +306,7 @@ describe('Category summaries', () => {
       la(thor.stockTotal === 11, `thor stock ${thor.stockTotal}`);
       la(thor.basePriceTotal === 2, `thor value ${thor.basePriceTotal}`);
       la(thor.mostSold.name === 'Cheese', `thor most sold ${thor.mostSold && thor.mostSold.name}`);
+      la(thor.mostSold.barcode === '2002', `thor barcode ${thor.mostSold && thor.mostSold.barcode}`);
       la(thor.mostSold.quantity === 5, `thor quantity ${thor.mostSold.quantity}`);
 
       const heimdall = byName(categories, 'Heimdall');

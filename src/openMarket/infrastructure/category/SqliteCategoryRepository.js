@@ -24,7 +24,7 @@ sales AS (
   GROUP BY p.category_id, p.barcode, COALESCE(p.name, '')
 ),
 ranked AS (
-  SELECT category_id, name, quantity, amount,
+  SELECT category_id, barcode, name, quantity, amount,
          ROW_NUMBER() OVER (
            PARTITION BY category_id
            ORDER BY quantity DESC, amount DESC, name ASC
@@ -35,6 +35,7 @@ SELECT c.id, c.name, c.image_name,
        COALESCE(t.product_count, 0) AS product_count,
        COALESCE(t.stock_total, 0) AS stock_total,
        COALESCE(t.base_price_total, 0) AS base_price_total,
+       r.barcode AS most_sold_barcode,
        r.name AS most_sold_name,
        r.quantity AS most_sold_quantity
 FROM category c
@@ -51,6 +52,7 @@ function summaryFrom(row) {
     stockTotal: Number(row.stock_total),
     basePriceTotal: Number(row.base_price_total),
     mostSold: row.most_sold_name == null ? null : {
+      barcode: row.most_sold_barcode,
       name: row.most_sold_name,
       quantity: Number(row.most_sold_quantity)
     }
