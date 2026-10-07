@@ -10,7 +10,7 @@ export default class CategorySummary {
    * @param {number} productCount
    * @param {number} stockTotal
    * @param {number} basePriceTotal
-   * @param {?{name: string, quantity: number}} mostSold
+   * @param {?{barcode: string, name: string, quantity: number}} mostSold
    */
   constructor({
     id,

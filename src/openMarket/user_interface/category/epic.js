@@ -52,7 +52,7 @@ const loadCategoriesEpic = action$ =>
           stockTotal: category.stockTotal,
           basePriceTotal: category.basePriceTotal,
           mostSold: category.mostSold
-            ? {name: category.mostSold.name, quantity: category.mostSold.quantity}
+            ? {name: category.mostSold.name, barcode: category.mostSold.barcode}
             : null
         }))
         .sort((left, right) => left.name.localeCompare(right.name))

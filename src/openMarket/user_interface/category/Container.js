@@ -39,7 +39,8 @@ class Container extends Component {
       categoriesRename,
       categoriesImageReplace,
       categoriesImageClear,
-      categoriesDelete
+      categoriesDelete,
+      listProductsDetail
     } = this.props;
     return (
       <div className="container-fluid">
@@ -60,6 +61,7 @@ class Container extends Component {
               onReplaceImage={categoriesImageReplace}
               onClearImage={categoriesImageClear}
               onDelete={categoriesDelete}
+              onOpenProduct={listProductsDetail}
             />
           ))}
         </div>
