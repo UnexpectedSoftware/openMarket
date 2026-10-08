@@ -118,6 +118,7 @@ test('filters the catalog and disables a product', async () => {
       category: 'Bakery'
     });
     await openProductList(window);
+    await expect(window.getByRole('button', {name: 'Print product list'})).toBeVisible();
     await expect(window.locator('.product-card')).toHaveCount(2);
 
     const search = window.getByPlaceholder('Search products');
@@ -139,7 +140,7 @@ test('filters the catalog and disables a product', async () => {
     await window.getByRole('radio', {name: 'Dairy'}).check();
     await expect(productCard(window, 'Milk')).toBeVisible();
     await expect(productCard(window, 'Bread')).toHaveCount(0);
-    await window.getByRole('radio', {name: 'All'}).check();
+    await window.getByRole('group', {name: 'Category'}).getByRole('radio', {name: 'All'}).check();
     await expect(window.locator('.product-card')).toHaveCount(2);
 
     const milk = productCard(window, 'Milk');
@@ -150,9 +151,29 @@ test('filters the catalog and disables a product', async () => {
     await expect(milk.getByRole('button', {name: 'Disable'})).toHaveCount(0);
     await expect(window.locator('.product-card-name')).toHaveText(['Bread', 'Milk']);
 
-    await window.getByRole('checkbox', {name: 'Disabled'}).check();
+    const status = window.getByRole('group', {name: 'Status'});
+    await status.getByRole('radio', {name: 'Enabled'}).check();
+    await expect(productCard(window, 'Bread')).toBeVisible();
+    await expect(productCard(window, 'Milk')).toHaveCount(0);
+
+    await status.getByRole('radio', {name: 'Disabled'}).check();
     await expect(productCard(window, 'Milk')).toBeVisible();
     await expect(productCard(window, 'Bread')).toHaveCount(0);
+
+    await status.getByRole('radio', {name: 'All'}).check();
+    await expect(window.locator('.product-card')).toHaveCount(2);
+
+    await productCard(window, 'Bread').getByRole('button', {name: 'Disable'}).click();
+    await expect(productCard(window, 'Bread').locator('.product-card-status')).toHaveText('Disabled');
+    await window.getByRole('checkbox', {name: 'Low stock'}).check();
+    await expect(productCard(window, 'Bread')).toBeVisible();
+    await expect(productCard(window, 'Milk')).toHaveCount(0);
+    await status.getByRole('radio', {name: 'Enabled'}).check();
+    await expect(productCard(window, 'Bread')).toHaveCount(0);
+    await expect(productCard(window, 'Milk')).toHaveCount(0);
+    await expect(window.getByText('No products match these filters')).toBeVisible();
+    await status.getByRole('radio', {name: 'All'}).check();
+    await window.getByRole('checkbox', {name: 'Low stock'}).uncheck();
 
     await chooseMenu(window, 'Orders', 'new Order!');
     await expect(window.getByRole('heading', {name: "Let's create a new order!"})).toBeVisible();

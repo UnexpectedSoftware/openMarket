@@ -14,6 +14,7 @@ import printerDialogReducer from '../order/printer_dialog/reducer';
 import newProductDialogReducer from '../order/new_product_dialog/reducer';
 import homeReducer from '../home/reducer';
 import imageFetchReducer from '../image/reducer';
+import catalogPrintReducer from '../product/list_products/printReducer';
 import {reducer as notifications} from 'react-notification-system-redux';
 
 
@@ -29,6 +30,7 @@ export const rootReducer = combineReducers({
   newProductDialog: newProductDialogReducer,
   statistics: homeReducer,
   imageFetch: imageFetchReducer,
+  catalogPrint: catalogPrintReducer,
   notifications,
   form: formReducer,
   routing

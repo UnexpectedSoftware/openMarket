@@ -30,14 +30,25 @@ export default class ProductRepository {
    * One catalog page, enabled products first then barcode.
    * @param {string} query
    * @param {boolean} lowStock
-   * @param {boolean} disabledOnly
+   * @param {?string} status ENABLED, DISABLED, or null for both
    * @param {?string} categoryId
    * @param {?{rank: number, barcode: string}} after
    * @param {number} limit
    * @returns {Observable<{products: Array, hasMore: boolean}>}
    */
-  findCatalog({query, lowStock, disabledOnly, categoryId, after, limit}) {
+  findCatalog({query, lowStock, status, categoryId, after, limit}) {
     throw new Error('ProductRepository#findCatalog must be implemented');
+  }
+
+  /**
+   * @param {string} query
+   * @param {boolean} lowStock
+   * @param {?string} status
+   * @param {?string} categoryId
+   * @returns {Observable<number>}
+   */
+  countCatalog({query, lowStock, status, categoryId}) {
+    throw new Error('ProductRepository#countCatalog must be implemented');
   }
 
   /**
