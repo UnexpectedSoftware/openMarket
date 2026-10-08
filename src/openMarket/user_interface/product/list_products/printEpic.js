@@ -20,6 +20,7 @@ function filtersFrom(store) {
     lowStock: !!page.lowStock,
     status: page.status || null,
     categoryId: page.categoryId || null,
+    sort: page.sort || 'name_asc',
     categoryName: category ? category.name : '',
     printedAt: new Date().toLocaleString('es-ES')
   };

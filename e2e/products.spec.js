@@ -121,6 +121,18 @@ test('filters the catalog and disables a product', async () => {
     await expect(window.getByRole('button', {name: 'Print product list'})).toBeVisible();
     await expect(window.locator('.product-card')).toHaveCount(2);
 
+    const sort = window.getByLabel('Sort by');
+    await expect(sort).toHaveValue('name_asc');
+    await expect(window.locator('.product-card-name')).toHaveText(['Bread', 'Milk']);
+    await sort.selectOption({label: 'Stock: Low to High'});
+    await expect(window.locator('.product-card-name')).toHaveText(['Bread', 'Milk']);
+    await sort.selectOption({label: 'Stock: High to Low'});
+    await expect(window.locator('.product-card-name')).toHaveText(['Milk', 'Bread']);
+    await sort.selectOption({label: 'Name: Z to A'});
+    await expect(window.locator('.product-card-name')).toHaveText(['Milk', 'Bread']);
+    await sort.selectOption({label: 'Name: A to Z'});
+    await expect(window.locator('.product-card-name')).toHaveText(['Bread', 'Milk']);
+
     const search = window.getByPlaceholder('Search products');
     await search.fill('Mil');
     await expect(productCard(window, 'Milk')).toBeVisible();

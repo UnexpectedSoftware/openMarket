@@ -1,5 +1,5 @@
 import * as Rx from 'rxjs';
-import {catalogLimit} from '../product/list_products/model';
+import {catalogLimit, defaultCatalogSort} from '../product/list_products/model';
 
 export function fetchImagesMessage(summary) {
   const products = summary.productsUpdated;
@@ -34,6 +34,7 @@ function refreshOpenList(observer, store, actions) {
       lowStock: !!page.lowStock,
       status: page.status || null,
       categoryId: page.categoryId || null,
+      sort: page.sort || defaultCatalogSort,
       after: null,
       append: false,
       limit: catalogLimit

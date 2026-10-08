@@ -2,7 +2,7 @@
 import React, {Component} from 'react';
 import placeholder from '../../resources/category-placeholder.svg';
 import {formatMoney} from '../../i18n/money';
-import {catalogLimit} from './model';
+import {catalogLimit, defaultCatalogSort, NAME_ASC, NAME_DESC, STOCK_ASC, STOCK_DESC} from './model';
 import ProductStatus from '../../../domain/product/ProductStatus';
 
 class Container extends Component {
@@ -18,6 +18,7 @@ class Container extends Component {
       lowStock,
       status: null,
       categoryId: null,
+      sort: defaultCatalogSort,
       limit: catalogLimit
     });
   }
@@ -99,6 +100,7 @@ class Container extends Component {
       lowStock: products.lowStock,
       status: products.status,
       categoryId: products.categoryId,
+      sort: products.sort,
       ...next
     });
   }
@@ -113,6 +115,10 @@ class Container extends Component {
 
   pickCategory = (categoryId) => {
     this.changeFilters({categoryId});
+  };
+
+  pickSort = (event) => {
+    this.changeFilters({sort: event.target.value});
   };
 
   disableProduct(barcode) {
@@ -239,14 +245,29 @@ class Container extends Component {
             </fieldset>
           </aside>
           <div className="catalog-main">
-            <div className="catalog-search">
-              <i className="fa fa-search" />
-              <input
-                type="text"
-                placeholder="Search products"
-                value={products.query}
-                onChange={this.handleQuery}
-              />
+            <div className="catalog-toolbar">
+              <div className="catalog-search">
+                <i className="fa fa-search" />
+                <input
+                  type="text"
+                  placeholder="Search products"
+                  value={products.query}
+                  onChange={this.handleQuery}
+                />
+              </div>
+              <div className="catalog-sort">
+                <label>
+                  Sort by
+                  <span className="catalog-sort-control">
+                    <select value={products.sort || defaultCatalogSort} onChange={this.pickSort}>
+                      <option value={NAME_ASC}>Name: A to Z</option>
+                      <option value={NAME_DESC}>Name: Z to A</option>
+                      <option value={STOCK_ASC}>Stock: Low to High</option>
+                      <option value={STOCK_DESC}>Stock: High to Low</option>
+                    </select>
+                  </span>
+                </label>
+              </div>
             </div>
             <div className="product-cards">
               {cards.map(product => this.renderCard(product))}

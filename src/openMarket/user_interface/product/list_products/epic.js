@@ -3,9 +3,8 @@ import * as Rx from 'rxjs';
 import {push} from 'react-router-redux';
 import {success, error} from 'react-notification-system-redux';
 import OpenMarket from '../../../application/index';
-import ProductStatus from '../../../domain/product/ProductStatus';
 import ImageStore, {imagesDirectory} from '../../../infrastructure/service/ImageStore';
-import {catalogLimit} from './model';
+import {catalogLimit, defaultCatalogSort} from './model';
 import {makePrintCatalogEpic} from './printEpic';
 
 const images = new ImageStore({directory: imagesDirectory('product-images')});
@@ -24,8 +23,10 @@ function toCard(product) {
 }
 
 function cursorFrom(product) {
+  const stock = product.stock;
   return {
-    rank: product.status === ProductStatus.ENABLED ? 0 : 1,
+    name: product.name == null ? '' : String(product.name),
+    stock: stock == null || !Number.isFinite(Number(stock)) ? null : Number(stock),
     barcode: product.barcode
   };
 }
@@ -36,6 +37,7 @@ function snapshot(page, {after, append}) {
     lowStock: !!page.lowStock,
     status: page.status || null,
     categoryId: page.categoryId || null,
+    sort: page.sort || defaultCatalogSort,
     after,
     append,
     limit: catalogLimit
@@ -49,6 +51,7 @@ function loadPage(action) {
     lowStock: filters.lowStock,
     status: filters.status || null,
     categoryId: filters.categoryId,
+    sort: filters.sort || defaultCatalogSort,
     after: filters.after,
     limit: filters.limit
   })
@@ -59,6 +62,7 @@ function loadPage(action) {
         lowStock: !!filters.lowStock,
         status: filters.status || null,
         categoryId: filters.categoryId || null,
+        sort: filters.sort || defaultCatalogSort,
         products: page.products.map(toCard),
         hasMore: page.hasMore,
         nextCursor: page.hasMore && last ? cursorFrom(last) : null,
@@ -71,7 +75,8 @@ function loadPage(action) {
         query: filters.query,
         lowStock: !!filters.lowStock,
         status: filters.status || null,
-        categoryId: filters.categoryId || null
+        categoryId: filters.categoryId || null,
+        sort: filters.sort || defaultCatalogSort
       }));
     });
 }
@@ -94,6 +99,7 @@ const pageLoadedEpic = action$ =>
         lowStock: !!action.payload.lowStock,
         status: action.payload.status || null,
         categoryId: action.payload.categoryId || null,
+        sort: action.payload.sort || defaultCatalogSort,
         after: null,
         append: false,
         limit: action.payload.limit || catalogLimit

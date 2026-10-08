@@ -48,6 +48,7 @@ describe('PrintProductCatalog', () => {
       lowStock: true,
       status: 'ENABLED',
       categoryId: '2',
+      sort: 'stock_desc',
       categoryName: 'Dairy',
       printedAt: 'today'
     }).toArray().toPromise();
@@ -56,13 +57,14 @@ describe('PrintProductCatalog', () => {
     expect(values[3]).to.deep.equal({printed: 3});
     expect(lookups.map(filters => filters.after)).to.deep.equal([
       null,
-      {rank: 0, barcode: '2'}
+      {name: 'Bread', stock: 1, barcode: '2'}
     ]);
     expect(lookups[0]).to.include({
       query: 'mi',
       lowStock: true,
       status: 'ENABLED',
       categoryId: '2',
+      sort: 'stock_desc',
       limit: 20
     });
     expect(batches).to.deep.equal([
