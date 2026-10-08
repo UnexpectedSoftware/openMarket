@@ -19,21 +19,74 @@ function bit(value) {
   return value ? 1 : 0;
 }
 
-const RANK_SQL = 'CASE WHEN p.status = ? THEN 0 ELSE 1 END';
+const NAME_KEY = "COALESCE(p.name, '')";
+const STOCK_MISSING = '(p.stock IS NULL)';
 
 function likeContains(text) {
   return '%' + text.replace(/[\\%_]/g, (char) => '\\' + char) + '%';
 }
 
+function catalogSort(sort) {
+  if (sort === 'name_asc' || sort === 'name_desc' || sort === 'stock_asc' || sort === 'stock_desc') {
+    return sort;
+  }
+  return 'name_asc';
+}
+
 function catalogCursor(after) {
   if (after == null) {
-    return {rank: null, barcode: null};
+    return null;
   }
-  const rank = Number(after.rank);
-  if ((rank !== 0 && rank !== 1) || typeof after.barcode !== 'string' || after.barcode === '') {
+  if (typeof after.barcode !== 'string' || after.barcode === '' || typeof after.name !== 'string') {
     throw new Error('Invalid product page');
   }
-  return {rank, barcode: after.barcode};
+  if (after.stock == null) {
+    return {name: after.name, stock: null, barcode: after.barcode};
+  }
+  const stock = Number(after.stock);
+  if (!Number.isFinite(stock)) {
+    throw new Error('Invalid product page');
+  }
+  return {name: after.name, stock, barcode: after.barcode};
+}
+
+function catalogOrder(sort) {
+  if (sort === 'name_desc') {
+    return NAME_KEY + ' COLLATE NOCASE DESC, p.barcode ASC';
+  }
+  if (sort === 'stock_asc') {
+    return STOCK_MISSING + ' ASC, p.stock ASC, p.barcode ASC';
+  }
+  if (sort === 'stock_desc') {
+    return STOCK_MISSING + ' ASC, p.stock DESC, p.barcode ASC';
+  }
+  return NAME_KEY + ' COLLATE NOCASE ASC, p.barcode ASC';
+}
+
+function catalogAfter(sort, cursor) {
+  if (cursor == null) {
+    return {sql: '', params: []};
+  }
+  if (sort === 'name_asc' || sort === 'name_desc') {
+    const direction = sort === 'name_desc' ? '<' : '>';
+    return {
+      sql: ' AND (' + NAME_KEY + ' COLLATE NOCASE ' + direction + ' ?' +
+        ' OR (' + NAME_KEY + ' COLLATE NOCASE = ? AND p.barcode > ?))',
+      params: [cursor.name, cursor.name, cursor.barcode]
+    };
+  }
+  const missing = cursor.stock == null ? 1 : 0;
+  const direction = sort === 'stock_desc' ? '<' : '>';
+  return {
+    sql: ' AND (' + STOCK_MISSING + ' > ?' +
+      ' OR (' + STOCK_MISSING + ' = ? AND ? = 0 AND (p.stock ' + direction + ' ? OR (p.stock = ? AND p.barcode > ?)))' +
+      ' OR (' + STOCK_MISSING + ' = ? AND ? = 1 AND p.barcode > ?))',
+    params: [
+      missing,
+      missing, missing, cursor.stock, cursor.stock, cursor.barcode,
+      missing, missing, cursor.barcode
+    ]
+  };
 }
 
 function catalogStatus(status) {
@@ -84,28 +137,25 @@ export default class SqliteProductRepository extends ProductRepository {
     );
   }
 
-  findCatalog({query, lowStock, status, categoryId, after, limit}) {
+  findCatalog({query, lowStock, status, categoryId, sort, after, limit}) {
     return Rx.Observable.defer(() => {
       const size = Number(limit);
       if (!Number.isInteger(size) || size < 1) {
         throw new Error('Invalid product page');
       }
+      const order = catalogSort(sort);
       const cursor = catalogCursor(after);
+      const pageAfter = catalogAfter(order, cursor);
       const filters = catalogFilterSql({query, lowStock, status, categoryId});
       const sql = PRODUCT_SELECT +
-        ' WHERE (? IS NULL' +
-        ' OR ' + RANK_SQL + ' > ?' +
-        ' OR (' + RANK_SQL + ' = ? AND p.barcode > ?))' +
+        ' WHERE 1 = 1' +
+        pageAfter.sql +
         filters.where +
-        ' ORDER BY ' + RANK_SQL + ', p.barcode' +
+        ' ORDER BY ' + catalogOrder(order) +
         ' LIMIT ?';
-      const enabled = ProductStatus.ENABLED;
       const params = [
-        cursor.rank,
-        enabled, cursor.rank,
-        enabled, cursor.rank, cursor.barcode,
+        ...pageAfter.params,
         ...filters.params,
-        enabled,
         size + 1
       ];
       const rows = this._database.prepare(sql).all(...params);

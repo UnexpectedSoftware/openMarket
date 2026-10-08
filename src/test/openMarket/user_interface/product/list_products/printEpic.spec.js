@@ -25,6 +25,7 @@ function harness(execute) {
         lowStock: true,
         status: 'ENABLED',
         categoryId: '2',
+        sort: 'stock_asc',
         categories: [{id: '2', name: 'Dairy'}]
       }
     })
@@ -54,6 +55,7 @@ describe('Print catalog epic', () => {
       lowStock: true,
       status: 'ENABLED',
       categoryId: '2',
+      sort: 'stock_asc',
       categoryName: 'Dairy'
     });
     expect(seen.printedAt).to.be.a('string');

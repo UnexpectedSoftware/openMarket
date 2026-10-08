@@ -157,25 +157,102 @@ describe('Product catalog cursor', () => {
 
   const barcodes = (page) => page.products.map(product => product.barcode).join();
 
-  it('lists enabled products before disabled ones and continues after the cursor', (done) => {
+  it('lists products by name and continues after the cursor', (done) => {
     catalog({limit: 2}).subscribe((page) => {
       la(barcodes(page) === '0001,0002', `first ${barcodes(page)}`);
       la(page.hasMore === true, 'first page has more');
-      catalog({limit: 2, after: {rank: 0, barcode: '0002'}}).subscribe((next) => {
-        la(barcodes(next) === '0003,0004', `second ${barcodes(next)}`);
+      catalog({limit: 2, after: {name: 'Coca-Cola Zero', stock: 1500, barcode: '0002'}}).subscribe((next) => {
+        la(barcodes(next) === '0005,0003', `second ${barcodes(next)}`);
+        la(next.products[0].status === 'DISABLED', `status ${next.products[0].status}`);
         la(next.hasMore === true, 'second page has more');
-        catalog({limit: 2, after: {rank: 0, barcode: '0004'}}).subscribe((last) => {
-          la(barcodes(last) === '0005', `last ${barcodes(last)}`);
-          la(last.products[0].status === 'DISABLED', `status ${last.products[0].status}`);
+        catalog({limit: 2, after: {name: 'Coca-Cola Zero sin cafeina', stock: 1000, barcode: '0003'}}).subscribe((last) => {
+          la(barcodes(last) === '0004', `last ${barcodes(last)}`);
           la(last.hasMore === false, 'last page ends');
         }, crash, done);
       }, crash);
     }, crash);
   });
 
+  it('sorts by name descending and by stock in both directions', (done) => {
+    catalog({sort: 'name_desc', limit: 2}).subscribe((page) => {
+      la(barcodes(page) === '0004,0003', `name desc ${barcodes(page)}`);
+      catalog({
+        sort: 'name_desc',
+        limit: 2,
+        after: {name: 'Coca-Cola Zero sin cafeina', stock: 1000, barcode: '0003'}
+      }).subscribe((next) => {
+        la(barcodes(next) === '0005,0002', `name desc next ${barcodes(next)}`);
+        catalog({sort: 'stock_asc', limit: 2}).subscribe((low) => {
+          la(barcodes(low) === '0004,0005', `stock asc ${barcodes(low)}`);
+          catalog({
+            sort: 'stock_asc',
+            limit: 2,
+            after: {name: 'Coca-Cola Zero 42', stock: 10, barcode: '0005'}
+          }).subscribe((lowNext) => {
+            la(barcodes(lowNext) === '0001,0003', `stock asc next ${barcodes(lowNext)}`);
+            catalog({sort: 'stock_desc', limit: 2}).subscribe((high) => {
+              la(barcodes(high) === '0002,0003', `stock desc ${barcodes(high)}`);
+              catalog({sort: 'not-a-sort'}).subscribe((fallback) => {
+                la(barcodes(fallback) === '0001,0002,0005,0003,0004', `fallback ${barcodes(fallback)}`);
+              }, crash, done);
+            }, crash);
+          }, crash);
+        }, crash);
+      }, crash);
+    }, crash);
+  });
+
+  it('breaks equal names and equal stock by barcode', (done) => {
+    observableCreateProducts.createOrUpdate({
+      barcode: '0000',
+      name: 'Coca-Cola',
+      description: '',
+      price: 1,
+      stock: 100,
+      categoryId: '1'
+    }).flatMap(() => catalog({limit: 2})).subscribe((byName) => {
+      la(barcodes(byName) === '0000,0001', `name tie ${barcodes(byName)}`);
+      catalog({
+        sort: 'stock_asc',
+        limit: 2,
+        after: {name: 'Coca-Cola Zero 42', stock: 10, barcode: '0005'}
+      }).subscribe((byStock) => {
+        la(barcodes(byStock) === '0000,0001', `stock tie ${barcodes(byStock)}`);
+      }, crash, done);
+    }, crash);
+  });
+
+  it('sorts a missing stock after numbered stock', (done) => {
+    database.prepare('UPDATE product SET stock = NULL WHERE barcode = ?').run('0001');
+    catalog({sort: 'stock_asc'}).subscribe((page) => {
+      la(barcodes(page) === '0004,0005,0003,0002,0001', `asc ${barcodes(page)}`);
+      catalog({
+        sort: 'stock_asc',
+        limit: 1,
+        after: {name: 'Coca-Cola Zero', stock: 1500, barcode: '0002'}
+      }).subscribe((next) => {
+        la(barcodes(next) === '0001', `asc next ${barcodes(next)}`);
+        la(next.products[0].stock == null, `stock ${next.products[0].stock}`);
+        catalog({sort: 'stock_desc'}).subscribe((desc) => {
+          la(barcodes(desc) === '0002,0003,0005,0004,0001', `desc ${barcodes(desc)}`);
+        }, crash, done);
+      }, crash);
+    }, crash);
+  });
+
+  it('rejects a cursor without a barcode', (done) => {
+    catalog({after: {name: 'Coca-Cola', stock: 1, barcode: ''}}).subscribe(
+      () => { throw new Error('should have failed'); },
+      (error) => {
+        la(error.message === 'Invalid product page', error.message);
+        done();
+      }
+    );
+  });
+
   it('matches a name or a barcode and treats wildcards as literal text', (done) => {
     catalog({query: 'Zero'}).subscribe((page) => {
-      la(barcodes(page) === '0002,0003,0004,0005', `name ${barcodes(page)}`);
+      la(barcodes(page) === '0002,0005,0003,0004', `name ${barcodes(page)}`);
       catalog({query: '0004'}).subscribe((byBarcode) => {
         la(barcodes(byBarcode) === '0004', `barcode ${barcodes(byBarcode)}`);
         catalog({query: '%'}).subscribe((percent) => {
@@ -220,7 +297,7 @@ describe('Product catalog cursor', () => {
 
   it('filters low stock, disabled products, and one category', (done) => {
     catalog({lowStock: true}).subscribe((low) => {
-      la(barcodes(low) === '0004,0005', `low ${barcodes(low)}`);
+      la(barcodes(low) === '0005,0004', `low ${barcodes(low)}`);
       catalog({status: 'DISABLED'}).subscribe((disabled) => {
         la(barcodes(disabled) === '0005', `disabled ${barcodes(disabled)}`);
         catalog({lowStock: true, status: 'DISABLED'}).subscribe((both) => {
@@ -228,7 +305,7 @@ describe('Product catalog cursor', () => {
           catalog({categoryId: '2', limit: 1}).subscribe((first) => {
             la(barcodes(first) === '0002', `category ${barcodes(first)}`);
             la(first.hasMore === true, 'category has more');
-            catalog({categoryId: '2', limit: 1, after: {rank: 0, barcode: '0002'}}).subscribe((second) => {
+            catalog({categoryId: '2', limit: 1, after: {name: 'Coca-Cola Zero', stock: 1500, barcode: '0002'}}).subscribe((second) => {
               la(barcodes(second) === '0003', `category next ${barcodes(second)}`);
               la(second.hasMore === false, 'category ends');
             }, crash, done);

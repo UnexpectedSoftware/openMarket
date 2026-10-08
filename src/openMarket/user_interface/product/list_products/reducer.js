@@ -10,28 +10,14 @@ import {
   LIST_PRODUCTS_QUERY_CHANGED
 } from './action';
 import ProductStatus from '../../../domain/product/ProductStatus';
-import {state as initialCatalog} from './model';
-
-function byEnabledThenBarcode(left, right) {
-  const leftRank = left.status === ProductStatus.ENABLED ? 0 : 1;
-  const rightRank = right.status === ProductStatus.ENABLED ? 0 : 1;
-  if (leftRank !== rightRank) {
-    return leftRank - rightRank;
-  }
-  if (left.barcode < right.barcode) {
-    return -1;
-  }
-  if (left.barcode > right.barcode) {
-    return 1;
-  }
-  return 0;
-}
+import {defaultCatalogSort, state as initialCatalog} from './model';
 
 function sameFilters(current, payload) {
   return current.query === payload.query
     && current.lowStock === payload.lowStock
     && current.status === payload.status
-    && current.categoryId === payload.categoryId;
+    && current.categoryId === payload.categoryId
+    && current.sort === payload.sort;
 }
 
 function appendProducts(current, incoming) {
@@ -53,6 +39,7 @@ export default function reducer(state = initialState, action) {
         lowStock: !!action.payload.lowStock,
         status: action.payload.status || null,
         categoryId: action.payload.categoryId || null,
+        sort: action.payload.sort || defaultCatalogSort,
         products: [],
         nextCursor: null,
         hasMore: true,
@@ -72,6 +59,7 @@ export default function reducer(state = initialState, action) {
         lowStock: !!action.payload.lowStock,
         status: action.payload.status || null,
         categoryId: action.payload.categoryId || null,
+        sort: action.payload.sort || defaultCatalogSort,
         loading: true
       };
 
@@ -122,11 +110,9 @@ export default function reducer(state = initialState, action) {
     case LIST_PRODUCTS_DISABLED:
       return {
         ...state,
-        products: state.products
-          .map(product => (product.barcode === action.payload
-            ? {...product, status: ProductStatus.DISABLED}
-            : product))
-          .sort(byEnabledThenBarcode)
+        products: state.products.map(product => (product.barcode === action.payload
+          ? {...product, status: ProductStatus.DISABLED}
+          : product))
       };
 
     default:

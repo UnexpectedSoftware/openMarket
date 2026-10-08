@@ -31,7 +31,8 @@ function harness({pathname, execute}) {
         query: 'cola',
         lowStock: true,
         status: null,
-        categoryId: '2'
+        categoryId: '2',
+        sort: 'stock_asc'
       }
     })
   };
@@ -110,6 +111,7 @@ describe('Fetch images epic', () => {
         lowStock: true,
         status: null,
         categoryId: '2',
+        sort: 'stock_asc',
         after: null,
         append: false,
         limit: 20

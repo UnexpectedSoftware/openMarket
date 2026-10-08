@@ -27,16 +27,18 @@ export default class ProductRepository {
   }
 
   /**
-   * One catalog page, enabled products first then barcode.
+   * One catalog page. sort is name_asc (default), name_desc, stock_asc, or stock_desc.
+   * The cursor is the last product's name, stock, and barcode.
    * @param {string} query
    * @param {boolean} lowStock
    * @param {?string} status ENABLED, DISABLED, or null for both
    * @param {?string} categoryId
-   * @param {?{rank: number, barcode: string}} after
+   * @param {?string} sort
+   * @param {?{name: string, stock: ?number, barcode: string}} after
    * @param {number} limit
    * @returns {Observable<{products: Array, hasMore: boolean}>}
    */
-  findCatalog({query, lowStock, status, categoryId, after, limit}) {
+  findCatalog({query, lowStock, status, categoryId, sort, after, limit}) {
     throw new Error('ProductRepository#findCatalog must be implemented');
   }
 

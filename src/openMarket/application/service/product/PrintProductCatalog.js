@@ -1,11 +1,12 @@
 import * as Rx from 'rxjs';
-import ProductStatus from '../../../domain/product/ProductStatus';
 
 export const CATALOG_PRINT_PAGE_SIZE = 20;
 
 function cursorFrom(product) {
+  const stock = product.stock;
   return {
-    rank: product.status === ProductStatus.ENABLED ? 0 : 1,
+    name: product.name == null ? '' : String(product.name),
+    stock: stock == null || !Number.isFinite(Number(stock)) ? null : Number(stock),
     barcode: product.barcode
   };
 }
@@ -20,13 +21,14 @@ export default class PrintProductCatalog {
     this._catalogPrinter = catalogPrinter;
   }
 
-  execute({query, lowStock, status, categoryId, categoryName, printedAt}) {
+  execute({query, lowStock, status, categoryId, sort, categoryName, printedAt}) {
     return Rx.Observable.create(observer => {
       const filters = {
         query: query || '',
         lowStock: !!lowStock,
         status: status || null,
         categoryId: categoryId || null,
+        sort: sort || 'name_asc',
         categoryName: categoryName || '',
         printedAt
       };
@@ -62,6 +64,7 @@ export default class PrintProductCatalog {
           lowStock: filters.lowStock,
           status: filters.status,
           categoryId: filters.categoryId,
+          sort: filters.sort,
           after,
           limit: CATALOG_PRINT_PAGE_SIZE
         }).toPromise();
