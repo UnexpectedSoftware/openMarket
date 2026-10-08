@@ -148,7 +148,7 @@ describe('Product catalog cursor', () => {
   const catalog = (extra) => observableFindAllProducts.findCatalog({
     query: '',
     lowStock: false,
-    disabledOnly: false,
+    status: null,
     categoryId: null,
     after: null,
     limit: 10,
@@ -188,12 +188,42 @@ describe('Product catalog cursor', () => {
     }, crash);
   });
 
+  it('hides disabled products when status is enabled, including low stock', (done) => {
+    const repository = container.getInstance({key: 'productRepository'});
+    const count = (extra) => repository.countCatalog({
+      query: '',
+      lowStock: false,
+      status: null,
+      categoryId: null,
+      ...extra
+    });
+    catalog({status: 'ENABLED'}).subscribe((enabled) => {
+      la(barcodes(enabled) === '0001,0002,0003,0004', `enabled ${barcodes(enabled)}`);
+      la(enabled.products.every(product => product.status === 'ENABLED'), 'enabled statuses');
+      catalog({status: 'ENABLED', lowStock: true}).subscribe((low) => {
+        la(barcodes(low) === '0004', `enabled low stock ${barcodes(low)}`);
+        count({status: 'ENABLED'}).subscribe((enabledTotal) => {
+          la(enabledTotal === 4, `enabled count ${enabledTotal}`);
+          count({status: 'ENABLED', lowStock: true}).subscribe((lowTotal) => {
+            la(lowTotal === 1, `enabled low stock count ${lowTotal}`);
+            count({lowStock: true}).subscribe((allLow) => {
+              la(allLow === 2, `all low stock count ${allLow}`);
+              count({status: 'DISABLED'}).subscribe((disabledTotal) => {
+                la(disabledTotal === 1, `disabled count ${disabledTotal}`);
+              }, crash, done);
+            }, crash);
+          }, crash);
+        }, crash);
+      }, crash);
+    }, crash);
+  });
+
   it('filters low stock, disabled products, and one category', (done) => {
     catalog({lowStock: true}).subscribe((low) => {
       la(barcodes(low) === '0004,0005', `low ${barcodes(low)}`);
-      catalog({disabledOnly: true}).subscribe((disabled) => {
+      catalog({status: 'DISABLED'}).subscribe((disabled) => {
         la(barcodes(disabled) === '0005', `disabled ${barcodes(disabled)}`);
-        catalog({lowStock: true, disabledOnly: true}).subscribe((both) => {
+        catalog({lowStock: true, status: 'DISABLED'}).subscribe((both) => {
           la(barcodes(both) === '0005', `both ${barcodes(both)}`);
           catalog({categoryId: '2', limit: 1}).subscribe((first) => {
             la(barcodes(first) === '0002', `category ${barcodes(first)}`);

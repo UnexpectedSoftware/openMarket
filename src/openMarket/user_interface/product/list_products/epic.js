@@ -6,6 +6,7 @@ import OpenMarket from '../../../application/index';
 import ProductStatus from '../../../domain/product/ProductStatus';
 import ImageStore, {imagesDirectory} from '../../../infrastructure/service/ImageStore';
 import {catalogLimit} from './model';
+import {makePrintCatalogEpic} from './printEpic';
 
 const images = new ImageStore({directory: imagesDirectory('product-images')});
 
@@ -33,7 +34,7 @@ function snapshot(page, {after, append}) {
   return {
     query: page.query || '',
     lowStock: !!page.lowStock,
-    disabledOnly: !!page.disabledOnly,
+    status: page.status || null,
     categoryId: page.categoryId || null,
     after,
     append,
@@ -46,7 +47,7 @@ function loadPage(action) {
   return OpenMarket.get('products_list_all_use_case').findCatalog({
     query: filters.query,
     lowStock: filters.lowStock,
-    disabledOnly: filters.disabledOnly,
+    status: filters.status || null,
     categoryId: filters.categoryId,
     after: filters.after,
     limit: filters.limit
@@ -56,7 +57,7 @@ function loadPage(action) {
       return listProductsActions.listProductsFetched({
         query: filters.query,
         lowStock: !!filters.lowStock,
-        disabledOnly: !!filters.disabledOnly,
+        status: filters.status || null,
         categoryId: filters.categoryId || null,
         products: page.products.map(toCard),
         hasMore: page.hasMore,
@@ -69,7 +70,7 @@ function loadPage(action) {
       return Rx.Observable.of(listProductsActions.listProductsFetchFailed({
         query: filters.query,
         lowStock: !!filters.lowStock,
-        disabledOnly: !!filters.disabledOnly,
+        status: filters.status || null,
         categoryId: filters.categoryId || null
       }));
     });
@@ -91,7 +92,7 @@ const pageLoadedEpic = action$ =>
       Rx.Observable.of(listProductsActions.listProductsFetch({
         query: action.payload.query || '',
         lowStock: !!action.payload.lowStock,
-        disabledOnly: !!action.payload.disabledOnly,
+        status: action.payload.status || null,
         categoryId: action.payload.categoryId || null,
         after: null,
         append: false,
@@ -166,6 +167,14 @@ const disabledToast = () => success({
   autoDismiss: 4
 });
 
+const printCatalogEpic = makePrintCatalogEpic({
+  printProductCatalog: OpenMarket.get('products_print_catalog_use_case'),
+  successNotification: success,
+  errorNotification: error,
+  catalogPrintProgressed: listProductsActions.catalogPrintProgressed,
+  catalogPrintFinished: listProductsActions.catalogPrintFinished
+});
+
 const listProductsDisableEpic = action$ =>
   action$.ofType(listProductsActions.LIST_PRODUCTS_DISABLE)
     .flatMap(action =>
@@ -191,5 +200,6 @@ export default (action$, store) =>
     filtersChangedEpic(action$, store),
     loadMoreEpic(action$, store),
     listProductsDetailEpic(action$),
-    listProductsDisableEpic(action$)
+    listProductsDisableEpic(action$),
+    printCatalogEpic(action$, store)
   ).do(() => null, (epicError) => console.log(epicError));

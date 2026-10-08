@@ -19,7 +19,7 @@ function fetched(extra) {
   return listProductsFetched({
     query: '',
     lowStock: false,
-    disabledOnly: false,
+    status: null,
     categoryId: null,
     products: [],
     hasMore: false,
@@ -74,7 +74,7 @@ describe('product catalog reducer', () => {
     const cursor = {rank: 1, barcode: '0002'};
     const current = {
       ...state(),
-      disabledOnly: true,
+      status: 'DISABLED',
       products: [card('0001', 'ENABLED'), card('0002', 'DISABLED')],
       nextCursor: cursor
     };

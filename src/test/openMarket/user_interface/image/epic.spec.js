@@ -30,7 +30,7 @@ function harness({pathname, execute}) {
       listProducts: {
         query: 'cola',
         lowStock: true,
-        disabledOnly: false,
+        status: null,
         categoryId: '2'
       }
     })
@@ -108,7 +108,7 @@ describe('Fetch images epic', () => {
       payload: {
         query: 'cola',
         lowStock: true,
-        disabledOnly: false,
+        status: null,
         categoryId: '2',
         after: null,
         append: false,

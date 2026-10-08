@@ -1,3 +1,28 @@
+.catalog-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: $sp-base/2 0 $sp-base*1.5;
+  border-bottom: 1px solid $c-base;
+  padding-bottom: $sp-base/4;
+
+  h2 {
+    margin: 0;
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+}
+
+.catalog-print {
+  border: 0;
+  background: transparent;
+  color: $c-primary;
+  font-size: 2rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: $sp-base/4 $sp-base/2;
+}
+
 .catalog-layout {
   display: flex;
   align-items: flex-start;

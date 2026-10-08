@@ -63,17 +63,17 @@ export default class ListAllProducts {
   /**
    * @param {string} query
    * @param {boolean} lowStock
-   * @param {boolean} disabledOnly
+   * @param {?string} status ENABLED, DISABLED, or null for both
    * @param {?string} categoryId
    * @param {?{rank: number, barcode: string}} after
    * @param {number} limit
    * @returns {Observable<{products: Array, hasMore: boolean}>}
    */
-  findCatalog({query, lowStock, disabledOnly, categoryId, after, limit}) {
+  findCatalog({query, lowStock, status, categoryId, after, limit}) {
     return this._productRepository.findCatalog({
       query,
       lowStock,
-      disabledOnly,
+      status,
       categoryId,
       after,
       limit

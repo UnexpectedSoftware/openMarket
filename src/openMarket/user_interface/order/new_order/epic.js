@@ -26,8 +26,8 @@ const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(e
 const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset)(error)(success);
 const lowStockWarningEpic = makeLowStockWarningEpic(domainEventBus)(warning);
 const productEnabledAgainEpic = makeProductEnabledAgainEpic(domainEventBus)(warning);
-const printerDialogEpic = makePrinterDialogEpic(orderPrinterService);
-const printButtonClickedEpic = makePrintButtonClickedEpic(orderPrinterService);
+const printerDialogEpic = makePrinterDialogEpic(orderPrinterService)(error);
+const printButtonClickedEpic = makePrintButtonClickedEpic(orderPrinterService)(error);
 const weightedDialogEpic  = makeWeightedDialogEpic(reset)
 
 export default action$ =>

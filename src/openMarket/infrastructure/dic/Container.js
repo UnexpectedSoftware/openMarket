@@ -1,5 +1,6 @@
 import PrinterConnection from "../printer/PrinterConnection";
 import OrderPrinterService from "../printer/OrderPrinterService";
+import CatalogPrinterService from "../printer/CatalogPrinterService";
 import CategoryFactoryImpl from "../category/CategoryFactoryImpl";
 import UUIDIdentity from "../service/UUIDIdentity";
 import ListAllCategories from "../../application/service/category/ListAllCategories";
@@ -39,6 +40,7 @@ import OpenFoodFactsProductImageSource from "../image/OpenFoodFactsProductImageS
 import WikimediaCategoryImageSource from "../image/WikimediaCategoryImageSource";
 import FetchCatalogImages from "../../application/service/image/FetchCatalogImages";
 import FindProductImage from "../../application/service/image/FindProductImage";
+import PrintProductCatalog from "../../application/service/product/PrintProductCatalog";
 import DomainEventBus from "../../domain/service/DomainEventBus";
 const env = process.env.NODE_ENV
 
@@ -80,6 +82,17 @@ class Container {
 
   _orderPrinterService(){
     return new OrderPrinterService({printerConnection: this.getInstance({key: 'printerConnection'})});
+  }
+
+  _catalogPrinterService(){
+    return new CatalogPrinterService({printerConnection: this.getInstance({key: 'printerConnection'})});
+  }
+
+  _printProductCatalog(){
+    return new PrintProductCatalog({
+      productRepository: this.getInstance({key: 'productRepository'}),
+      catalogPrinter: this.getInstance({key: 'catalogPrinterService'})
+    });
   }
 
   _categoryImageStore() {

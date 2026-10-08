@@ -30,7 +30,7 @@ function byEnabledThenBarcode(left, right) {
 function sameFilters(current, payload) {
   return current.query === payload.query
     && current.lowStock === payload.lowStock
-    && current.disabledOnly === payload.disabledOnly
+    && current.status === payload.status
     && current.categoryId === payload.categoryId;
 }
 
@@ -51,7 +51,7 @@ export default function reducer(state = initialState, action) {
         ...state,
         query: action.payload.query || '',
         lowStock: !!action.payload.lowStock,
-        disabledOnly: !!action.payload.disabledOnly,
+        status: action.payload.status || null,
         categoryId: action.payload.categoryId || null,
         products: [],
         nextCursor: null,
@@ -70,7 +70,7 @@ export default function reducer(state = initialState, action) {
       return {
         ...state,
         lowStock: !!action.payload.lowStock,
-        disabledOnly: !!action.payload.disabledOnly,
+        status: action.payload.status || null,
         categoryId: action.payload.categoryId || null,
         loading: true
       };

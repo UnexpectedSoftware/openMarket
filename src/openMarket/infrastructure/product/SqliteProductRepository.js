@@ -36,6 +36,32 @@ function catalogCursor(after) {
   return {rank, barcode: after.barcode};
 }
 
+function catalogStatus(status) {
+  if (status === ProductStatus.ENABLED || status === ProductStatus.DISABLED) {
+    return status;
+  }
+  return null;
+}
+
+function catalogFilterSql({query, lowStock, status, categoryId}) {
+  const text = query == null ? '' : String(query).trim();
+  const pattern = likeContains(text);
+  const category = categoryId ? categoryId : null;
+  const selected = catalogStatus(status);
+  return {
+    where: ' AND (? = 0 OR p.stock <= p.stock_min)' +
+      ' AND (? IS NULL OR p.status = ?)' +
+      ' AND (? IS NULL OR p.category_id = ?)' +
+      ' AND (? = \'\' OR p.name LIKE ? ESCAPE \'\\\' OR p.barcode LIKE ? ESCAPE \'\\\')',
+    params: [
+      lowStock ? 1 : 0,
+      selected, selected,
+      category, category,
+      text, pattern, pattern
+    ]
+  };
+}
+
 export default class SqliteProductRepository extends ProductRepository {
   constructor({connection, productMapper, images}) {
     super();
@@ -58,36 +84,27 @@ export default class SqliteProductRepository extends ProductRepository {
     );
   }
 
-  findCatalog({query, lowStock, disabledOnly, categoryId, after, limit}) {
+  findCatalog({query, lowStock, status, categoryId, after, limit}) {
     return Rx.Observable.defer(() => {
       const size = Number(limit);
       if (!Number.isInteger(size) || size < 1) {
         throw new Error('Invalid product page');
       }
       const cursor = catalogCursor(after);
-      const text = query == null ? '' : String(query).trim();
-      const pattern = likeContains(text);
-      const category = categoryId ? categoryId : null;
+      const filters = catalogFilterSql({query, lowStock, status, categoryId});
       const sql = PRODUCT_SELECT +
         ' WHERE (? IS NULL' +
         ' OR ' + RANK_SQL + ' > ?' +
         ' OR (' + RANK_SQL + ' = ? AND p.barcode > ?))' +
-        ' AND (? = 0 OR p.stock <= p.stock_min)' +
-        ' AND (? = 0 OR p.status = ?)' +
-        ' AND (? IS NULL OR p.category_id = ?)' +
-        ' AND (? = \'\' OR p.name LIKE ? ESCAPE \'\\\' OR p.barcode LIKE ? ESCAPE \'\\\')' +
+        filters.where +
         ' ORDER BY ' + RANK_SQL + ', p.barcode' +
         ' LIMIT ?';
       const enabled = ProductStatus.ENABLED;
-      const disabled = ProductStatus.DISABLED;
       const params = [
         cursor.rank,
         enabled, cursor.rank,
         enabled, cursor.rank, cursor.barcode,
-        lowStock ? 1 : 0,
-        disabledOnly ? 1 : 0, disabled,
-        category, category,
-        text, pattern, pattern,
+        ...filters.params,
         enabled,
         size + 1
       ];
@@ -185,6 +202,14 @@ export default class SqliteProductRepository extends ProductRepository {
     return this._count(
       'SELECT count(*) AS total FROM product WHERE stock <= stock_min AND status = ?',
       [ProductStatus.ENABLED]
+    );
+  }
+
+  countCatalog({query, lowStock, status, categoryId}) {
+    const filters = catalogFilterSql({query, lowStock, status, categoryId});
+    return this._count(
+      'SELECT count(*) AS total FROM product p WHERE 1 = 1' + filters.where,
+      filters.params
     );
   }
 

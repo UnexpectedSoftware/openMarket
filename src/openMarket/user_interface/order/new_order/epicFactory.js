@@ -46,16 +46,28 @@ export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => errorNoti
         })
     );
 
-export const makePrinterDialogEpic = orderPrinterService => action$ =>
-  action$.ofType(HIDE_PRINTER_DIALOG)
-    .filter(action => true === action.payload.print)
-    .flatMap(action => orderPrinterService.print({order: action.payload.order}))
-    .map(result => newOrderActions.printOrderFinished());
+function printFailed(errorNotification, err) {
+  return errorNotification({
+    uid: `print-failed-${Date.now()}`,
+    title: 'Print failed',
+    message: err && err.message ? err.message : 'Print failed',
+    position: 'tr',
+    autoDismiss: 4
+  });
+}
 
-export const makePrintButtonClickedEpic = orderPrinterService => action$ =>
-  action$.ofType(newOrderActions.PRINT_ORDER_BUTTON_CLICKED)
-    .flatMap(action => orderPrinterService.print({order: action.payload}))
-    .map(result => newOrderActions.printOrderFinished());
+export const makePrinterDialogEpic = orderPrinterService => errorNotification => action$ =>
+  action$.filter(action => action.type === HIDE_PRINTER_DIALOG)
+    .filter(action => true === action.payload.print)
+    .flatMap(action => orderPrinterService.print({order: action.payload.order})
+      .map(() => newOrderActions.printOrderFinished())
+      .catch(err => Rx.Observable.of(printFailed(errorNotification, err))));
+
+export const makePrintButtonClickedEpic = orderPrinterService => errorNotification => action$ =>
+  action$.filter(action => action.type === newOrderActions.PRINT_ORDER_BUTTON_CLICKED)
+    .flatMap(action => orderPrinterService.print({order: action.payload})
+      .map(() => newOrderActions.printOrderFinished())
+      .catch(err => Rx.Observable.of(printFailed(errorNotification, err))));
 
 export const makeWeightedDialogEpic = resetForm => action$ =>
   action$.ofType(weightedDialogActions.HIDE_WEIGHTED_DIALOG)

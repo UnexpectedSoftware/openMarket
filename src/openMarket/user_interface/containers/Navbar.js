@@ -27,7 +27,7 @@ class Navbar extends Component {
 
 
   render() {
-    const {imageFetch} = this.props;
+    const {imageFetch, catalogPrint} = this.props;
     return (
       <div>
         <div className={"header"}>
@@ -38,6 +38,12 @@ class Navbar extends Component {
                 <span className="fetch-progress">
                   <span className="fetch-progress-spinner" />
                   Fetching images {imageFetch.percent}%
+                </span>
+              ) : null}
+              {catalogPrint ? (
+                <span className="fetch-progress">
+                  <span className="fetch-progress-spinner" />
+                  Printing products {catalogPrint.percent}%
                 </span>
               ) : null}
               {this.state.version ? <span className="app-version">{this.state.version}</span> : null}
@@ -70,5 +76,8 @@ class Navbar extends Component {
 }
 
 export default connect(
-  state => ({imageFetch: state.imageFetch})
+  state => ({
+    imageFetch: state.imageFetch,
+    catalogPrint: state.catalogPrint
+  })
 )(Navbar);

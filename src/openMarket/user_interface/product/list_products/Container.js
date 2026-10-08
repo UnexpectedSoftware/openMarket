@@ -3,6 +3,7 @@ import React, {Component} from 'react';
 import placeholder from '../../resources/category-placeholder.svg';
 import {formatMoney} from '../../i18n/money';
 import {catalogLimit} from './model';
+import ProductStatus from '../../../domain/product/ProductStatus';
 
 class Container extends Component {
 
@@ -15,7 +16,7 @@ class Container extends Component {
     this.props.listProductsPageLoaded({
       query: '',
       lowStock,
-      disabledOnly: false,
+      status: null,
       categoryId: null,
       limit: catalogLimit
     });
@@ -96,7 +97,7 @@ class Container extends Component {
     const {products, listProductsFiltersChanged} = this.props;
     listProductsFiltersChanged({
       lowStock: products.lowStock,
-      disabledOnly: products.disabledOnly,
+      status: products.status,
       categoryId: products.categoryId,
       ...next
     });
@@ -106,8 +107,8 @@ class Container extends Component {
     this.changeFilters({lowStock: !this.props.products.lowStock});
   };
 
-  toggleDisabled = () => {
-    this.changeFilters({disabledOnly: !this.props.products.disabledOnly});
+  pickStatus = (status) => {
+    this.changeFilters({status});
   };
 
   pickCategory = (categoryId) => {
@@ -163,7 +164,17 @@ class Container extends Component {
     const cards = products.products;
     return (
       <div className="container-fluid">
-        <h2>List Products</h2>
+        <div className="catalog-heading">
+          <h2>List Products</h2>
+          <button
+            type="button"
+            className="catalog-print"
+            aria-label="Print product list"
+            onClick={() => this.props.listProductsPrint()}
+          >
+            <i className="fa fa-print" aria-hidden="true" />
+          </button>
+        </div>
         <div className="catalog-layout">
           <aside className="catalog-filters">
             <fieldset>
@@ -176,7 +187,30 @@ class Container extends Component {
             <fieldset>
               <legend>Status</legend>
               <label>
-                <input type="checkbox" checked={products.disabledOnly} onChange={this.toggleDisabled} />
+                <input
+                  type="radio"
+                  name="catalog-status"
+                  checked={!products.status}
+                  onChange={() => this.pickStatus(null)}
+                />
+                All
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="catalog-status"
+                  checked={products.status === ProductStatus.ENABLED}
+                  onChange={() => this.pickStatus(ProductStatus.ENABLED)}
+                />
+                Enabled
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="catalog-status"
+                  checked={products.status === ProductStatus.DISABLED}
+                  onChange={() => this.pickStatus(ProductStatus.DISABLED)}
+                />
                 Disabled
               </label>
             </fieldset>

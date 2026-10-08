@@ -10,6 +10,9 @@ export const LIST_PRODUCTS_DETAIL = 'LIST_PRODUCTS_DETAIL';
 export const LIST_PRODUCTS_DETAIL_LOADED = 'LIST_PRODUCTS_DETAIL_LOADED';
 export const LIST_PRODUCTS_DISABLE = 'LIST_PRODUCTS_DISABLE';
 export const LIST_PRODUCTS_DISABLED = 'LIST_PRODUCTS_DISABLED';
+export const LIST_PRODUCTS_PRINT = 'LIST_PRODUCTS_PRINT';
+export const CATALOG_PRINT_PROGRESSED = 'CATALOG_PRINT_PROGRESSED';
+export const CATALOG_PRINT_FINISHED = 'CATALOG_PRINT_FINISHED';
 
 export const listProductsFetch = payload => ({type: LIST_PRODUCTS_FETCH, payload});
 export const listProductsFetched = payload => ({type: LIST_PRODUCTS_FETCHED, payload});
@@ -23,3 +26,6 @@ export const listProductsDetail = payload => ({type: LIST_PRODUCTS_DETAIL, paylo
 export const listProductsDetailLoaded = payload => ({type: LIST_PRODUCTS_DETAIL_LOADED, payload});
 export const listProductsDisable = payload => ({type: LIST_PRODUCTS_DISABLE, payload});
 export const listProductsDisabled = payload => ({type: LIST_PRODUCTS_DISABLED, payload});
+export const listProductsPrint = () => ({type: LIST_PRODUCTS_PRINT});
+export const catalogPrintProgressed = percent => ({type: CATALOG_PRINT_PROGRESSED, percent});
+export const catalogPrintFinished = () => ({type: CATALOG_PRINT_FINISHED});
