@@ -59,6 +59,53 @@ function summaryFrom(row) {
   });
 }
 
+const UPDATE_CATEGORY_NAME_SQL = 'UPDATE category SET name = ? WHERE id = ? RETURNING id';
+
+const SELECT_CATEGORY_IMAGE_SQL = 'SELECT image_name FROM category WHERE id = ?';
+
+// RETURNING reads image_name after the assignment. MATERIALIZED keeps the
+// previous name, and the WHERE clause reads that copy before the write.
+const CLEAR_CATEGORY_IMAGE_SQL = `
+WITH previous AS MATERIALIZED (
+  SELECT id, image_name AS old_image_name
+  FROM category
+  WHERE id = ?
+)
+UPDATE category
+SET image_name = NULL
+WHERE id = (SELECT id FROM previous)
+RETURNING (SELECT old_image_name FROM previous) AS previous_image_name
+`;
+
+const UPDATE_CATEGORY_IMAGE_SQL = `
+WITH previous AS MATERIALIZED (
+  SELECT id, image_name AS old_image_name
+  FROM category
+  WHERE id = ?
+)
+UPDATE category
+SET image_name = ?
+WHERE id = (SELECT id FROM previous)
+RETURNING (SELECT old_image_name FROM previous) AS previous_image_name
+`;
+
+const DELETE_EMPTY_CATEGORY_SQL = `
+DELETE FROM category
+WHERE id = ?
+  AND NOT EXISTS (
+    SELECT 1 FROM product WHERE category_id = category.id
+  )
+RETURNING image_name
+`;
+
+const CATEGORY_STILL_THERE_SQL = 'SELECT 1 AS present FROM category WHERE id = ?';
+
+const BEGIN_IMMEDIATE_SQL = 'BEGIN IMMEDIATE';
+
+const COMMIT_SQL = 'COMMIT';
+
+const ROLLBACK_SQL = 'ROLLBACK';
+
 export default class SqliteCategoryRepository extends CategoryRepository {
   constructor({connection, categoryFactory, images}) {
     super();
@@ -123,9 +170,9 @@ export default class SqliteCategoryRepository extends CategoryRepository {
 
   update({id, name}) {
     return Rx.Observable.defer(() => {
-      const result = this._database.prepare('UPDATE category SET name = ? WHERE id = ?').run(name, String(id));
-      if (Number(result.changes) === 0) {
-        return Rx.Observable.throw(new Error('category not found'));
+      const updated = this._database.prepare(UPDATE_CATEGORY_NAME_SQL).get(name, String(id));
+      if (!updated) {
+        throw new Error('category not found');
       }
       return Rx.Observable.of(null);
     });
@@ -133,29 +180,21 @@ export default class SqliteCategoryRepository extends CategoryRepository {
 
   updateCategory({id, imagePath}) {
     return Rx.Observable.defer(() => {
-      const previous = this._database.prepare(
-        'SELECT name, image_name FROM category WHERE id = ?'
-      ).get(String(id));
-      if (!previous) {
-        return Rx.Observable.throw(new Error('category not found'));
-      }
-      const imageName = this._images.store({id, sourcePath: imagePath});
+      const key = String(id);
+      const imageName = this._images.store({id: key, sourcePath: imagePath});
       try {
-        const result = this._database.prepare(
-          'UPDATE category SET image_name = ? WHERE id = ?'
-        ).run(imageName, String(id));
-        if (Number(result.changes) === 0) {
-          this._images.remove(imageName);
-          return Rx.Observable.throw(new Error('category not found'));
-        }
-      } catch (updateError) {
-        if (imageName !== previous.image_name) {
-          this._images.remove(imageName);
-        }
-        return Rx.Observable.throw(updateError);
-      }
-      if (previous.image_name && previous.image_name !== imageName) {
-        this._images.remove(previous.image_name);
+        this._inTransaction(() => {
+          const updated = this._database.prepare(UPDATE_CATEGORY_IMAGE_SQL).get(key, imageName);
+          if (!updated) {
+            throw new Error('category not found');
+          }
+          if (updated.previous_image_name && updated.previous_image_name !== imageName) {
+            this._images.remove(updated.previous_image_name);
+          }
+        });
+      } catch (error) {
+        this._discardCopiedImage(key, imageName);
+        throw error;
       }
       return Rx.Observable.of(null);
     });
@@ -164,18 +203,15 @@ export default class SqliteCategoryRepository extends CategoryRepository {
   clearImage({id}) {
     return Rx.Observable.defer(() => {
       const key = String(id);
-      const previous = this._database.prepare(
-        'SELECT image_name FROM category WHERE id = ?'
-      ).get(key);
-      if (!previous) {
-        return Rx.Observable.throw(new Error('category not found'));
-      }
-      this._database.prepare(
-        'UPDATE category SET image_name = NULL WHERE id = ?'
-      ).run(key);
-      if (previous.image_name) {
-        this._images.remove(previous.image_name);
-      }
+      this._inTransaction(() => {
+        const cleared = this._database.prepare(CLEAR_CATEGORY_IMAGE_SQL).get(key);
+        if (!cleared) {
+          throw new Error('category not found');
+        }
+        if (cleared.previous_image_name) {
+          this._images.remove(cleared.previous_image_name);
+        }
+      });
       return Rx.Observable.of(null);
     });
   }
@@ -183,41 +219,44 @@ export default class SqliteCategoryRepository extends CategoryRepository {
   remove({id}) {
     return Rx.Observable.defer(() => {
       const key = String(id);
-      let imageName = null;
-      this._database.exec('BEGIN IMMEDIATE');
-      try {
-        const row = this._database.prepare(
-          'SELECT image_name FROM category WHERE id = ?'
-        ).get(key);
-        if (!row) {
-          throw new Error('category not found');
+      this._inTransaction(() => {
+        const deleted = this._database.prepare(DELETE_EMPTY_CATEGORY_SQL).get(key);
+        if (!deleted) {
+          // The guarded delete matched nothing. A remaining row still has products.
+          const stillThere = this._database.prepare(CATEGORY_STILL_THERE_SQL).get(key);
+          throw new Error(stillThere ? 'Category still has products' : 'category not found');
         }
-        const countRow = this._database.prepare(
-          'SELECT COUNT(*) AS total FROM product WHERE category_id = ?'
-        ).get(key);
-        if (Number(countRow.total) > 0) {
-          throw new Error('Category still has products');
+        if (deleted.image_name) {
+          this._images.remove(deleted.image_name);
         }
-        const result = this._database.prepare(
-          'DELETE FROM category WHERE id = ?'
-        ).run(key);
-        if (Number(result.changes) === 0) {
-          throw new Error('category not found');
-        }
-        imageName = row.image_name;
-        this._database.exec('COMMIT');
-      } catch (error) {
-        try {
-          this._database.exec('ROLLBACK');
-        } catch (rollbackError) {
-          // A failed statement can already have ended the transaction.
-        }
-        return Rx.Observable.throw(error);
-      }
-      if (imageName) {
-        this._images.remove(imageName);
-      }
+      });
       return Rx.Observable.of(null);
     });
+  }
+
+  _inTransaction(work) {
+    this._database.exec(BEGIN_IMMEDIATE_SQL);
+    try {
+      work();
+      this._database.exec(COMMIT_SQL);
+    } catch (error) {
+      try {
+        this._database.exec(ROLLBACK_SQL);
+      } catch (rollbackError) {
+        // A failed statement can already have ended the transaction.
+      }
+      throw error;
+    }
+  }
+
+  _discardCopiedImage(id, imageName) {
+    try {
+      const current = this._database.prepare(SELECT_CATEGORY_IMAGE_SQL).get(id);
+      if (!current || current.image_name !== imageName) {
+        this._images.remove(imageName);
+      }
+    } catch (cleanupError) {
+      // The category change was already rolled back. Keep the original error.
+    }
   }
 }
