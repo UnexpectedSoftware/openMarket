@@ -5,6 +5,7 @@ import {expect} from 'chai';
 import {DatabaseSync} from 'node:sqlite';
 import SqliteConnection from '../../../../openMarket/infrastructure/service/SqliteConnection';
 import SqliteCategoryRepository from '../../../../openMarket/infrastructure/category/SqliteCategoryRepository';
+import SqliteCategoryQueryService from '../../../../openMarket/infrastructure/category/SqliteCategoryQueryService';
 import CategoryFactoryImpl from '../../../../openMarket/infrastructure/category/CategoryFactoryImpl';
 import ImageStore, {IMAGE_MAX_BYTES} from '../../../../openMarket/infrastructure/service/ImageStore';
 import UUIDIdentity from '../../../../openMarket/infrastructure/service/UUIDIdentity';
@@ -23,7 +24,8 @@ function setup() {
   const repository = new SqliteCategoryRepository({
     connection,
     categoryFactory,
-    images
+    images,
+    queryService: new SqliteCategoryQueryService()
   });
   return {directory, images, connection, repository};
 }
@@ -290,9 +292,227 @@ describe('category images', () => {
         },
         error => {
           expect(error.message).to.match(/category not found/);
+          const copied = fs.readdirSync(directory).filter(name => name !== 'source.png');
+          expect(copied).to.deep.equal([]);
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        }
+      );
+  });
+
+  it('rejects a rename for an unknown category', (done) => {
+    const {directory, repository} = setup();
+    repository.update({id: 'missing', name: 'Nope'})
+      .subscribe(
+        () => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(new Error('expected a missing category'));
+        },
+        error => {
+          expect(error.message).to.match(/category not found/);
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        }
+      );
+  });
+
+  it('replaces a stored image and deletes the previous file', (done) => {
+    const {directory, connection, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    const next = writePng(directory, 'next.jpg');
+    repository.save(newCategory('Fruit', source))
+      .flatMap(() => repository.findAll())
+      .flatMap(categories => repository.updateCategory({
+        id: categories[0].id,
+        imagePath: next
+      }).map(() => categories[0].id))
+      .subscribe(
+        id => {
+          const row = connection.database.prepare('SELECT image_name FROM category WHERE id = ?').get(id);
+          expect(row).to.deep.equal({image_name: id + '.jpg'});
+          expect(fs.existsSync(path.join(directory, id + '.jpg'))).to.equal(true);
+          expect(fs.existsSync(path.join(directory, id + '.png'))).to.equal(false);
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        },
+        error => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(error);
+        }
+      );
+  });
+
+  it('keeps the stored image when deleting the previous file fails', (done) => {
+    const {directory, images, connection, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    const next = writePng(directory, 'next.jpg');
+    const originalRemove = images.remove.bind(images);
+    repository.save(newCategory('Fruit', source))
+      .flatMap(() => repository.findAll())
+      .flatMap(categories => {
+        images.remove = (imageName) => {
+          if (String(imageName).endsWith('.png')) {
+            throw new Error('disk full');
+          }
+          originalRemove(imageName);
+        };
+        return repository.updateCategory({
+          id: categories[0].id,
+          imagePath: next
+        }).map(() => categories[0].id);
+      })
+      .subscribe(
+        () => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(new Error('expected the previous file delete to fail'));
+        },
+        error => {
+          expect(error.message).to.match(/disk full/);
+          const row = connection.database.prepare('SELECT id, image_name FROM category').get();
+          expect(row.image_name).to.equal(row.id + '.png');
+          expect(fs.existsSync(path.join(directory, row.id + '.png'))).to.equal(true);
+          expect(fs.existsSync(path.join(directory, row.id + '.jpg'))).to.equal(false);
+          expect(transactionIsOpen(connection)).to.equal(false);
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        }
+      );
+  });
+
+  it('removes an empty category and its image', (done) => {
+    const {directory, connection, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    repository.save(newCategory('Fruit', source))
+      .flatMap(() => repository.findAll())
+      .flatMap(categories => {
+        const id = categories[0].id;
+        return repository.remove({id}).map(() => id);
+      })
+      .flatMap(id => repository.findById({id}).defaultIfEmpty(null).map(found => ({id, found})))
+      .subscribe(
+        ({id, found}) => {
+          expect(found).to.equal(null);
+          expect(fs.existsSync(path.join(directory, id + '.png'))).to.equal(false);
+          const total = Number(connection.database.prepare('SELECT count(*) AS total FROM category').get().total);
+          expect(total).to.equal(0);
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        },
+        error => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(error);
+        }
+      );
+  });
+
+  it('keeps a category that still has products', (done) => {
+    const {directory, connection, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    repository.save(newCategory('Fruit', source))
+      .flatMap(() => repository.findAll())
+      .flatMap(categories => {
+        const id = categories[0].id;
+        connection.database.prepare(
+          'INSERT INTO product (barcode, name, status, category_id) VALUES (?, ?, ?, ?)'
+        ).run('1001', 'Apple', 'DISABLED', id);
+        return repository.remove({id}).map(() => id);
+      })
+      .subscribe(
+        () => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(new Error('expected the category to be kept'));
+        },
+        error => {
+          expect(error.message).to.equal('Category still has products');
+          const row = connection.database.prepare('SELECT id, image_name FROM category').get();
+          expect(row.image_name).to.equal(row.id + '.png');
+          expect(fs.existsSync(path.join(directory, row.image_name))).to.equal(true);
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        }
+      );
+  });
+
+  it('reports a missing category when remove matches nothing', (done) => {
+    const {directory, repository} = setup();
+    repository.remove({id: 'missing'})
+      .subscribe(
+        () => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(new Error('expected a missing category'));
+        },
+        error => {
+          expect(error.message).to.equal('category not found');
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        }
+      );
+  });
+
+  it('puts the category back when its image cannot be deleted', (done) => {
+    const {directory, images, connection, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    repository.save(newCategory('Fruit', source))
+      .flatMap(() => repository.findAll())
+      .flatMap(categories => {
+        images.remove = () => {
+          throw new Error('disk full');
+        };
+        return repository.remove({id: categories[0].id});
+      })
+      .subscribe(
+        () => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(new Error('expected image deletion to fail'));
+        },
+        error => {
+          expect(error.message).to.match(/disk full/);
+          const row = connection.database.prepare('SELECT id, name, image_name FROM category').get();
+          expect(row.name).to.equal('Fruit');
+          expect(row.image_name).to.equal(row.id + '.png');
+          expect(fs.existsSync(path.join(directory, row.image_name))).to.equal(true);
+          expect(transactionIsOpen(connection)).to.equal(false);
+          fs.rmSync(directory, {recursive: true, force: true});
+          done();
+        }
+      );
+  });
+
+  it('puts the image name back when clearing the file fails', (done) => {
+    const {directory, images, connection, repository} = setup();
+    const source = writePng(directory, 'source.png');
+    repository.save(newCategory('Fruit', source))
+      .flatMap(() => repository.findAll())
+      .flatMap(categories => {
+        images.remove = () => {
+          throw new Error('disk full');
+        };
+        return repository.clearImage({id: categories[0].id});
+      })
+      .subscribe(
+        () => {
+          fs.rmSync(directory, {recursive: true, force: true});
+          done(new Error('expected image deletion to fail'));
+        },
+        error => {
+          expect(error.message).to.match(/disk full/);
+          const row = connection.database.prepare('SELECT id, image_name FROM category').get();
+          expect(row.image_name).to.equal(row.id + '.png');
+          expect(fs.existsSync(path.join(directory, row.image_name))).to.equal(true);
+          expect(transactionIsOpen(connection)).to.equal(false);
           fs.rmSync(directory, {recursive: true, force: true});
           done();
         }
       );
   });
 });
+
+function transactionIsOpen(connection) {
+  try {
+    connection.database.exec('BEGIN');
+    connection.database.exec('ROLLBACK');
+    return false;
+  } catch (error) {
+    return true;
+  }
+}

@@ -5,6 +5,7 @@ import {expect} from 'chai';
 import {DatabaseSync} from 'node:sqlite';
 import SqliteConnection from '../../../../openMarket/infrastructure/service/SqliteConnection';
 import SqliteProductRepository from '../../../../openMarket/infrastructure/product/SqliteProductRepository';
+import SqliteProductQueryService from '../../../../openMarket/infrastructure/product/SqliteProductQueryService';
 import SqlProductMapper from '../../../../openMarket/infrastructure/product/SqlProductMapper';
 import ProductFactoryImpl from '../../../../openMarket/infrastructure/product/ProductFactoryImpl';
 import CategoryFactoryImpl from '../../../../openMarket/infrastructure/category/CategoryFactoryImpl';
@@ -29,7 +30,8 @@ function setup() {
   const repository = new SqliteProductRepository({
     connection,
     productMapper: new SqlProductMapper({productFactory, categoryFactory}),
-    images
+    images,
+    queryService: new SqliteProductQueryService()
   });
   return {directory, images, connection, repository};
 }

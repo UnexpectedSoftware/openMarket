@@ -2,7 +2,9 @@ import {expect} from 'chai';
 import moment from 'moment';
 import SqliteConnection from '../../../../openMarket/infrastructure/service/SqliteConnection';
 import SqliteProductRepository from '../../../../openMarket/infrastructure/product/SqliteProductRepository';
+import SqliteProductQueryService from '../../../../openMarket/infrastructure/product/SqliteProductQueryService';
 import SqliteOrderRepository from '../../../../openMarket/infrastructure/order/SqliteOrderRepository';
+import SqliteOrderQueryService from '../../../../openMarket/infrastructure/order/SqliteOrderQueryService';
 import SqlProductMapper from '../../../../openMarket/infrastructure/product/SqlProductMapper';
 import SqlOrderMapper from '../../../../openMarket/infrastructure/order/SqlOrderMapper';
 import ProductFactoryImpl from '../../../../openMarket/infrastructure/product/ProductFactoryImpl';
@@ -24,10 +26,15 @@ function repositories() {
   });
   return {
     connection,
-    products: new SqliteProductRepository({connection, productMapper}),
+    products: new SqliteProductRepository({
+      connection,
+      productMapper,
+      queryService: new SqliteProductQueryService()
+    }),
     orders: new SqliteOrderRepository({
       connection,
-      objectMapper: new SqlOrderMapper({orderFactory})
+      objectMapper: new SqlOrderMapper({orderFactory}),
+      queryService: new SqliteOrderQueryService()
     })
   };
 }
