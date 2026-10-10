@@ -35,7 +35,7 @@ export default class CreateOrder {
   createOrder({lines}) {
     return this._transaction.run(() => this._buildOrder({lines})
       .flatMap(order => this._orderRepository.save({order})
-        .flatMap(saved => this._subtrackStock({order: saved}))))
+        .flatMap(saved => this._subtrackStock({order: saved})))
       .do(({order, lowStockProducts}) => {
         this._domainEventBus.publish(new OrderCreated({
           id: order.id,
@@ -48,7 +48,7 @@ export default class CreateOrder {
           stock: product.stock,
           stockMin: product.stockMin
         })));
-      })
+      }))
       .map(({order}) => order);
   }
 

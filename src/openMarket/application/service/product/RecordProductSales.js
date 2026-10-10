@@ -2,7 +2,8 @@ import OrderCreated from '../../../domain/event/OrderCreated';
 import {record} from '../../../infrastructure/logging/ErrorLog';
 
 /**
- * Keeps product_sale_day in step with sales. Started once, with the app, because the bus does not replay.
+ * Keeps product_sale_day in step with sales.
+ * Started once, with the app. Live listeners do not replay a sale that was missed.
  */
 export default class RecordProductSales {
 

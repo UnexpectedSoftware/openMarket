@@ -38,6 +38,7 @@ class OpenMarket {
     this.deps.set('images_fetch_use_case', container.getInstance({key:'fetchCatalogImages'}));
     this.deps.set('products_find_image_use_case', container.getInstance({key:'findProductImage'}));
     this.deps.set('products_print_catalog_use_case', container.getInstance({key:'printProductCatalog'}));
+    container.getInstance({key:'domainEventBus'}).start();
     container.getInstance({key:'recordProductSales'}).start();
   }
 

@@ -5,15 +5,18 @@ import 'rxjs/add/operator/catch';
 
 /**
  * Commits only after the work observable completes, then emits its values.
- * Subscribers, including sale events, therefore run with the transaction closed.
+ * Synchronous domain-event handlers run during the work, so a throw rolls it back.
+ * Live listeners are released after COMMIT, with the transaction closed.
  */
 export default class SqliteTransaction {
 
   /**
    * @param {SqliteConnection} connection
+   * @param {DomainEventBus} [domainEventBus]
    */
-  constructor({connection}) {
+  constructor({connection, domainEventBus = null}) {
     this._database = connection.database;
+    this._domainEventBus = domainEventBus;
   }
 
   /**
@@ -30,6 +33,9 @@ export default class SqliteTransaction {
           .flatMap(values => {
             this._database.exec('COMMIT');
             committed = true;
+            if (this._domainEventBus) {
+              this._domainEventBus.transactionCommitted();
+            }
             return Rx.Observable.from(values);
           })
           .catch(error => {
@@ -51,6 +57,9 @@ export default class SqliteTransaction {
       this._database.exec('ROLLBACK');
     } catch (rollbackError) {
       // A trigger abort can roll the transaction back before we do.
+    }
+    if (this._domainEventBus) {
+      this._domainEventBus.transactionRolledBack();
     }
   }
 

@@ -46,6 +46,7 @@ import FetchCatalogImages from "../../application/service/image/FetchCatalogImag
 import FindProductImage from "../../application/service/image/FindProductImage";
 import PrintProductCatalog from "../../application/service/product/PrintProductCatalog";
 import DomainEventBus from "../../domain/service/DomainEventBus";
+import SqliteDomainEventStore from "../service/SqliteDomainEventStore";
 import SqliteTransaction from "../service/SqliteTransaction";
 const env = process.env.NODE_ENV
 
@@ -305,13 +306,22 @@ class Container {
     });
   }
 
+  _domainEventStore() {
+    return new SqliteDomainEventStore({
+      connection: this.getInstance({key: 'sqliteConnection'})
+    });
+  }
+
   _domainEventBus() {
-    return new DomainEventBus();
+    return new DomainEventBus({
+      store: this.getInstance({key: 'domainEventStore'})
+    });
   }
 
   _transaction() {
     return new SqliteTransaction({
-      connection: this.getInstance({key: 'sqliteConnection'})
+      connection: this.getInstance({key: 'sqliteConnection'}),
+      domainEventBus: this.getInstance({key: 'domainEventBus'})
     });
   }
 

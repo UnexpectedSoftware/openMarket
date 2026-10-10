@@ -3,6 +3,10 @@
  */
 export default class OrderCreated {
 
+  static get type() {
+    return 'OrderCreated';
+  }
+
   /**
    * @param {string} id
    * @param {string} createdAt

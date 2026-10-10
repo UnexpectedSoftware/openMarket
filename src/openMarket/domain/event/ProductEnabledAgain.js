@@ -3,6 +3,10 @@
  */
 export default class ProductEnabledAgain {
 
+  static get type() {
+    return 'ProductEnabledAgain';
+  }
+
   /**
    * @param {string} barcode
    * @param {string} name

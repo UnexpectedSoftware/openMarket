@@ -4,6 +4,8 @@ Desktop application to administrate a generic market: stock, products, categorie
 
 The domain is organized as DDD with a hexagonal layout: `domain/`, `application/`, `infrastructure/`, and `user_interface/`.
 
+Sales and product changes publish domain events on `DomainEventBus`. A listener is live (`ofType`), synchronous inside the current transaction, or durable across restarts. The event tables, the delivery rules, and the public events are described in [docs/domain-event-bus.md](docs/domain-event-bus.md).
+
 ## Requirements
 
 Node.js 24 or newer (the app also runs on the current Node 26) and npm. Electron 44 ships its own Node for the window.
