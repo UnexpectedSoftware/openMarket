@@ -9,6 +9,7 @@ import ProductFactoryImpl from '../../../../openMarket/infrastructure/product/Pr
 import CategoryFactoryImpl from '../../../../openMarket/infrastructure/category/CategoryFactoryImpl';
 import OrderFactoryImpl from '../../../../openMarket/infrastructure/order/OrderFactoryImpl';
 import UUIDIdentity from '../../../../openMarket/infrastructure/service/UUIDIdentity';
+import SqliteTransaction from '../../../../openMarket/infrastructure/service/SqliteTransaction';
 
 const identity = new UUIDIdentity();
 const categoryFactory = new CategoryFactoryImpl({identity});
@@ -110,8 +111,9 @@ describe('SQLite repositories', () => {
       );
   });
 
-  it('rolls back the order when a line insert fails', (done) => {
+  it('rolls the order back when a line insert fails inside the sale transaction', (done) => {
     const {connection, orders} = repositories();
+    const transaction = new SqliteTransaction({connection});
     connection.database.exec(
       "CREATE TRIGGER line_fail BEFORE INSERT ON line " +
       "WHEN new.barcode = 'fail' BEGIN SELECT RAISE(ABORT, 'line failed'); END"
@@ -128,7 +130,7 @@ describe('SQLite repositories', () => {
     });
 
     orders.save({order: kept})
-      .flatMap(() => orders.save({order: rejected}))
+      .flatMap(() => transaction.run(() => orders.save({order: rejected})))
       .subscribe(
         () => done(new Error('the rejected order was saved')),
         () => {

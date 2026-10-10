@@ -42,6 +42,7 @@ import FetchCatalogImages from "../../application/service/image/FetchCatalogImag
 import FindProductImage from "../../application/service/image/FindProductImage";
 import PrintProductCatalog from "../../application/service/product/PrintProductCatalog";
 import DomainEventBus from "../../domain/service/DomainEventBus";
+import SqliteTransaction from "../service/SqliteTransaction";
 const env = process.env.NODE_ENV
 
 class Container {
@@ -284,12 +285,19 @@ class Container {
     return new DomainEventBus();
   }
 
+  _transaction() {
+    return new SqliteTransaction({
+      connection: this.getInstance({key: 'sqliteConnection'})
+    });
+  }
+
   _createOrderUseCase() {
     return new CreateOrder({
       orderRepository: this.getInstance({key: 'orderRepository'}),
       productRepository: this.getInstance({key: 'productRepository'}),
       orderFactory: this.getInstance({key: 'orderFactory'}),
-      domainEventBus: this.getInstance({key: 'domainEventBus'})
+      domainEventBus: this.getInstance({key: 'domainEventBus'}),
+      transaction: this.getInstance({key: 'transaction'})
     });
   }
 

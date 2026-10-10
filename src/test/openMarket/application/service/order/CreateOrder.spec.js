@@ -65,7 +65,12 @@ describe('CreateOrder domain events', () => {
           return new Order({id: 'order-1', lines: orderLines, date: date || '02/07/2017 10:00:00'});
         }
       },
-      domainEventBus: bus
+      domainEventBus: bus,
+      transaction: {
+        run(work) {
+          return work().toArray().flatMap(values => Rx.Observable.from(values));
+        }
+      }
     });
   }
 
@@ -86,12 +91,12 @@ describe('CreateOrder domain events', () => {
       );
   });
 
-  it('publishes OrderCreated when stock cannot be updated', (done) => {
+  it('publishes no OrderCreated when stock cannot be updated', (done) => {
     createOrder({failStock: true}).createOrder({lines})
       .subscribe(
         () => done(new Error('should not emit an order')),
         () => {
-          expect(events).to.have.lengthOf(1);
+          expect(events).to.have.lengthOf(0);
           done();
         }
       );

@@ -3,9 +3,11 @@ import openMarket from '../openMarket/application/index';
 import moment from "moment";
 import { expect } from 'chai';
 import sinon from 'sinon';
+import * as Rx from 'rxjs';
 import container from '../openMarket/infrastructure/dic/Container';
 import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
 import ProductWithLowStock from '../openMarket/domain/event/ProductWithLowStock';
+import OrderCreated from '../openMarket/domain/event/OrderCreated';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 
@@ -138,6 +140,107 @@ describe('Order create use case', () => {
           () => {
             subscription.unsubscribe();
             done();
+          }
+        );
+    });
+  });
+
+  describe('When the sale commits', () => {
+    it('publishes OrderCreated after the transaction commits', (done) => {
+      const seen = [];
+      const publish = domainEventBus.publish.bind(domainEventBus);
+      const restore = () => {
+        domainEventBus.publish = publish;
+      };
+      domainEventBus.publish = function publishEvent(event) {
+        if (event instanceof OrderCreated) {
+          seen.push(database.isTransaction);
+        }
+        return publish(event);
+      };
+      const lines = [{
+        barcode: "0001",
+        name: "Coca-Cola",
+        price: 0.55,
+        quantity: 5
+      }];
+      const ordersBefore = Number(database.prepare('SELECT count(*) AS total FROM "order"').get().total);
+      let failed = false;
+
+      observableCreateOrder.createOrder({lines})
+        .subscribe(
+          () => {
+            try {
+              expect(seen).to.deep.equal([false]);
+              expect(Number(database.prepare('SELECT count(*) AS total FROM "order"').get().total)).to.equal(ordersBefore + 1);
+              expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(95);
+            } catch (error) {
+              failed = true;
+              restore();
+              done(error);
+            }
+          },
+          (error) => {
+            restore();
+            done(error);
+          },
+          () => {
+            restore();
+            if (!failed) {
+              done();
+            }
+          }
+        );
+    });
+  });
+
+  describe('When the stock write fails', () => {
+    let productRepository;
+    let originalSave;
+
+    beforeEach(() => {
+      productRepository = container.getInstance({key: 'productRepository'});
+      originalSave = productRepository.save;
+      productRepository.save = function save({product}) {
+        return originalSave.call(productRepository, {product})
+          .flatMap(() => Rx.Observable.throw(new Error('stock write failed')));
+      };
+    });
+
+    afterEach(() => {
+      productRepository.save = originalSave;
+    });
+
+    it('rolls the order and the stock change back', (done) => {
+      const lines = [{
+        barcode: "0001",
+        name: "Coca-Cola",
+        price: 0.55,
+        quantity: 5
+      }];
+      const ordersBefore = Number(database.prepare('SELECT count(*) AS total FROM "order"').get().total);
+      const linesBefore = Number(database.prepare('SELECT count(*) AS total FROM line').get().total);
+      const events = [];
+      const subscription = domainEventBus.ofType(OrderCreated).subscribe(event => events.push(event));
+
+      observableCreateOrder.createOrder({lines})
+        .subscribe(
+          () => {
+            subscription.unsubscribe();
+            done(new Error('should not emit an order'));
+          },
+          () => {
+            subscription.unsubscribe();
+            try {
+              expect(Number(database.prepare('SELECT count(*) AS total FROM "order"').get().total)).to.equal(ordersBefore);
+              expect(Number(database.prepare('SELECT count(*) AS total FROM line').get().total)).to.equal(linesBefore);
+              expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(100);
+              expect(database.isTransaction).to.equal(false);
+              expect(events).to.have.lengthOf(0);
+              done();
+            } catch (error) {
+              done(error);
+            }
           }
         );
     });

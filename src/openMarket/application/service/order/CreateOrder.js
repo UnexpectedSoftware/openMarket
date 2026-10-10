@@ -1,5 +1,6 @@
 import {Observable} from "rxjs/Observable";
 import "rxjs/add/operator/do";
+import "rxjs/add/operator/map";
 import "rxjs/add/operator/toArray";
 import OrderCreated from "../../../domain/event/OrderCreated";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
@@ -15,12 +16,14 @@ export default class CreateOrder {
    * @param {ProductRepository} productRepository
    * @param {OrderFactory} orderFactory
    * @param {DomainEventBus} domainEventBus
+   * @param {Transaction} transaction
    */
-  constructor({ orderRepository, productRepository, orderFactory, domainEventBus}) {
+  constructor({ orderRepository, productRepository, orderFactory, domainEventBus, transaction}) {
     this._orderRepository = orderRepository;
     this._productRepository = productRepository;
     this._orderFactory = orderFactory;
     this._domainEventBus = domainEventBus;
+    this._transaction = transaction;
   }
 
   /**
@@ -29,15 +32,23 @@ export default class CreateOrder {
    * @returns {Observable.<Order>}
    */
   createOrder({lines}) {
-      return this._buildOrder({lines})
-      .flatMap(order => this._orderRepository.save({order}))
-      .do(order => this._domainEventBus.publish(new OrderCreated({
-        id: order.id,
-        createdAt: order.createdAt,
-        lines: order.lines
-      })))
-      .flatMap(order => this._subtrackStock({order}));
-
+    return this._transaction.run(() => this._buildOrder({lines})
+      .flatMap(order => this._orderRepository.save({order})
+        .flatMap(saved => this._subtrackStock({order: saved}))))
+      .do(({order, lowStockProducts}) => {
+        this._domainEventBus.publish(new OrderCreated({
+          id: order.id,
+          createdAt: order.createdAt,
+          lines: order.lines
+        }));
+        lowStockProducts.forEach(product => this._domainEventBus.publish(new ProductWithLowStock({
+          barcode: product.barcode,
+          name: product.name,
+          stock: product.stock,
+          stockMin: product.stockMin
+        })));
+      })
+      .map(({order}) => order);
   }
 
   _buildOrder({lines})  {
@@ -59,17 +70,10 @@ export default class CreateOrder {
         .flatMap(product => this._productRepository.save({product}).map(() => product))
       )
       .toArray()
-      .map(products => {
-        products
-          .filter(product => product.isStockLow())
-          .forEach(product => this._domainEventBus.publish(new ProductWithLowStock({
-            barcode: product.barcode,
-            name: product.name,
-            stock: product.stock,
-            stockMin: product.stockMin
-          })));
-        return order;
-      });
+      .map(products => ({
+        order,
+        lowStockProducts: products.filter(product => product.isStockLow())
+      }));
   }
 
 }
