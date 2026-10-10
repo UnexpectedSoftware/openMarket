@@ -1,5 +1,4 @@
 import CategoryRepository from "../../domain/category/CategoryRepository";
-import CategorySummary from "../../domain/category/CategorySummary";
 import * as Rx from "rxjs";
 
 const SUMMARIES_SQL = `
@@ -43,34 +42,45 @@ LEFT JOIN product_totals t ON t.category_id = c.id
 LEFT JOIN ranked r ON r.category_id = c.id AND r.rank = 1
 `;
 
-function summaryFrom(row) {
-  return new CategorySummary({
-    id: row.id,
-    name: row.name,
-    imageName: row.image_name,
-    productCount: Number(row.product_count),
-    stockTotal: Number(row.stock_total),
-    basePriceTotal: Number(row.base_price_total),
-    mostSold: row.most_sold_name == null ? null : {
-      barcode: row.most_sold_barcode,
-      name: row.most_sold_name,
-      quantity: Number(row.most_sold_quantity)
-    }
-  });
-}
+const FIND_ALL_SQL = 'SELECT id, name, image_name FROM category';
+
+const FIND_BY_ID_SQL = 'SELECT id, name, image_name FROM category WHERE id = ?';
+
+const INSERT_CATEGORY_SQL = 'INSERT INTO category (id, name, image_name) VALUES (?, ?, ?)';
+
+const UPDATE_CATEGORY_NAME_SQL = 'UPDATE category SET name = ? WHERE id = ?';
+
+const SELECT_CATEGORY_NAME_AND_IMAGE_SQL = 'SELECT name, image_name FROM category WHERE id = ?';
+
+const UPDATE_CATEGORY_IMAGE_SQL = 'UPDATE category SET image_name = ? WHERE id = ?';
+
+const SELECT_CATEGORY_IMAGE_SQL = 'SELECT image_name FROM category WHERE id = ?';
+
+const CLEAR_CATEGORY_IMAGE_SQL = 'UPDATE category SET image_name = NULL WHERE id = ?';
+
+const COUNT_PRODUCTS_IN_CATEGORY_SQL = 'SELECT COUNT(*) AS total FROM product WHERE category_id = ?';
+
+const DELETE_CATEGORY_SQL = 'DELETE FROM category WHERE id = ?';
+
+const BEGIN_IMMEDIATE_SQL = 'BEGIN IMMEDIATE';
+
+const COMMIT_SQL = 'COMMIT';
+
+const ROLLBACK_SQL = 'ROLLBACK';
 
 export default class SqliteCategoryRepository extends CategoryRepository {
-  constructor({connection, categoryFactory, images}) {
+  constructor({connection, categoryFactory, images, queryService}) {
     super();
     this._database = connection.database;
     this._categoryFactory = categoryFactory;
     this._images = images;
+    this._queryService = queryService;
     this._summaries = this._database.prepare(SUMMARIES_SQL);
   }
 
   findAll() {
     return Rx.Observable.defer(() => {
-      const rows = this._database.prepare('SELECT id, name, image_name FROM category').all();
+      const rows = this._database.prepare(FIND_ALL_SQL).all();
       return Rx.Observable.from(rows)
         .map(row => this._categoryFactory.createWithId({
           id: row.id,
@@ -83,13 +93,13 @@ export default class SqliteCategoryRepository extends CategoryRepository {
 
   findAllWithStats() {
     return Rx.Observable.defer(() => Rx.Observable.of(
-      this._summaries.all().map(summaryFrom)
+      this._summaries.all().map(row => this._queryService.summaryFrom(row))
     ));
   }
 
   findById({id}) {
     return Rx.Observable.defer(() => {
-      const row = this._database.prepare('SELECT id, name, image_name FROM category WHERE id = ?').get(String(id));
+      const row = this._database.prepare(FIND_BY_ID_SQL).get(String(id));
       if (!row) {
         return Rx.Observable.empty();
       }
@@ -108,9 +118,7 @@ export default class SqliteCategoryRepository extends CategoryRepository {
         imageName = this._images.store({id: category.id, sourcePath: imagePath});
       }
       try {
-        this._database.prepare(
-          'INSERT INTO category (id, name, image_name) VALUES (?, ?, ?)'
-        ).run(category.id, category.name, imageName);
+        this._database.prepare(INSERT_CATEGORY_SQL).run(category.id, category.name, imageName);
       } catch (insertError) {
         if (imageName && imageName !== category.imageName) {
           this._images.remove(imageName);
@@ -123,7 +131,7 @@ export default class SqliteCategoryRepository extends CategoryRepository {
 
   update({id, name}) {
     return Rx.Observable.defer(() => {
-      const result = this._database.prepare('UPDATE category SET name = ? WHERE id = ?').run(name, String(id));
+      const result = this._database.prepare(UPDATE_CATEGORY_NAME_SQL).run(name, String(id));
       if (Number(result.changes) === 0) {
         return Rx.Observable.throw(new Error('category not found'));
       }
@@ -133,17 +141,13 @@ export default class SqliteCategoryRepository extends CategoryRepository {
 
   updateCategory({id, imagePath}) {
     return Rx.Observable.defer(() => {
-      const previous = this._database.prepare(
-        'SELECT name, image_name FROM category WHERE id = ?'
-      ).get(String(id));
+      const previous = this._database.prepare(SELECT_CATEGORY_NAME_AND_IMAGE_SQL).get(String(id));
       if (!previous) {
         return Rx.Observable.throw(new Error('category not found'));
       }
       const imageName = this._images.store({id, sourcePath: imagePath});
       try {
-        const result = this._database.prepare(
-          'UPDATE category SET image_name = ? WHERE id = ?'
-        ).run(imageName, String(id));
+        const result = this._database.prepare(UPDATE_CATEGORY_IMAGE_SQL).run(imageName, String(id));
         if (Number(result.changes) === 0) {
           this._images.remove(imageName);
           return Rx.Observable.throw(new Error('category not found'));
@@ -164,15 +168,11 @@ export default class SqliteCategoryRepository extends CategoryRepository {
   clearImage({id}) {
     return Rx.Observable.defer(() => {
       const key = String(id);
-      const previous = this._database.prepare(
-        'SELECT image_name FROM category WHERE id = ?'
-      ).get(key);
+      const previous = this._database.prepare(SELECT_CATEGORY_IMAGE_SQL).get(key);
       if (!previous) {
         return Rx.Observable.throw(new Error('category not found'));
       }
-      this._database.prepare(
-        'UPDATE category SET image_name = NULL WHERE id = ?'
-      ).run(key);
+      this._database.prepare(CLEAR_CATEGORY_IMAGE_SQL).run(key);
       if (previous.image_name) {
         this._images.remove(previous.image_name);
       }
@@ -184,31 +184,25 @@ export default class SqliteCategoryRepository extends CategoryRepository {
     return Rx.Observable.defer(() => {
       const key = String(id);
       let imageName = null;
-      this._database.exec('BEGIN IMMEDIATE');
+      this._database.exec(BEGIN_IMMEDIATE_SQL);
       try {
-        const row = this._database.prepare(
-          'SELECT image_name FROM category WHERE id = ?'
-        ).get(key);
+        const row = this._database.prepare(SELECT_CATEGORY_IMAGE_SQL).get(key);
         if (!row) {
           throw new Error('category not found');
         }
-        const countRow = this._database.prepare(
-          'SELECT COUNT(*) AS total FROM product WHERE category_id = ?'
-        ).get(key);
+        const countRow = this._database.prepare(COUNT_PRODUCTS_IN_CATEGORY_SQL).get(key);
         if (Number(countRow.total) > 0) {
           throw new Error('Category still has products');
         }
-        const result = this._database.prepare(
-          'DELETE FROM category WHERE id = ?'
-        ).run(key);
+        const result = this._database.prepare(DELETE_CATEGORY_SQL).run(key);
         if (Number(result.changes) === 0) {
           throw new Error('category not found');
         }
         imageName = row.image_name;
-        this._database.exec('COMMIT');
+        this._database.exec(COMMIT_SQL);
       } catch (error) {
         try {
-          this._database.exec('ROLLBACK');
+          this._database.exec(ROLLBACK_SQL);
         } catch (rollbackError) {
           // A failed statement can already have ended the transaction.
         }

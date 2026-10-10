@@ -31,10 +31,14 @@ import pro from '../../../resources/application-pro.json'
 import SqlOrderMapper from "../order/SqlOrderMapper";
 import SqliteConnection from "../service/SqliteConnection";
 import SqliteCategoryRepository from "../category/SqliteCategoryRepository";
+import SqliteCategoryQueryService from "../category/SqliteCategoryQueryService";
 import ImageStore, {imagesDirectory} from "../service/ImageStore";
 import SqliteProductRepository from "../product/SqliteProductRepository";
+import SqliteProductQueryService from "../product/SqliteProductQueryService";
 import SqliteProductSaleStatisticsRepository from "../product/SqliteProductSaleStatisticsRepository";
+import SqliteProductSaleQueryService from "../product/SqliteProductSaleQueryService";
 import SqliteOrderRepository from "../order/SqliteOrderRepository";
+import SqliteOrderQueryService from "../order/SqliteOrderQueryService";
 import { createFixturesService } from "../dev";
 import OpenFoodFactsProductImageSource from "../image/OpenFoodFactsProductImageSource";
 import WikimediaCategoryImageSource from "../image/WikimediaCategoryImageSource";
@@ -104,11 +108,16 @@ class Container {
     return new ImageStore({directory: imagesDirectory('product-images')});
   }
 
+  _sqliteCategoryQueryService() {
+    return new SqliteCategoryQueryService();
+  }
+
   _categoryRepository() {
     return new SqliteCategoryRepository({
       connection: this.getInstance({key: 'sqliteConnection'}),
       categoryFactory: this.getInstance({key: 'categoryFactory'}),
-      images: this.getInstance({key: 'categoryImageStore'})
+      images: this.getInstance({key: 'categoryImageStore'}),
+      queryService: this.getInstance({key: 'sqliteCategoryQueryService'})
     });
   }
 
@@ -176,11 +185,16 @@ class Container {
     return new ProductFilterFactoryImpl();
   }
 
+  _sqliteProductQueryService() {
+    return new SqliteProductQueryService();
+  }
+
   _productRepository() {
     return new SqliteProductRepository({
       connection: this.getInstance({key: 'sqliteConnection'}),
       productMapper: this.getInstance({key: 'productMapper'}),
-      images: this.getInstance({key: 'productImageStore'})
+      images: this.getInstance({key: 'productImageStore'}),
+      queryService: this.getInstance({key: 'sqliteProductQueryService'})
     });
   }
 
@@ -201,9 +215,14 @@ class Container {
     });
   }
 
+  _sqliteProductSaleQueryService() {
+    return new SqliteProductSaleQueryService();
+  }
+
   _productSaleStatisticsRepository() {
     return new SqliteProductSaleStatisticsRepository({
-      connection: this.getInstance({key: 'sqliteConnection'})
+      connection: this.getInstance({key: 'sqliteConnection'}),
+      queryService: this.getInstance({key: 'sqliteProductSaleQueryService'})
     });
   }
 
@@ -268,10 +287,15 @@ class Container {
     });
   }
 
+  _sqliteOrderQueryService() {
+    return new SqliteOrderQueryService();
+  }
+
   _orderRepository() {
     return new SqliteOrderRepository({
       connection: this.getInstance({key: 'sqliteConnection'}),
-      objectMapper: this.getInstance({key: 'orderMapper'})
+      objectMapper: this.getInstance({key: 'orderMapper'}),
+      queryService: this.getInstance({key: 'sqliteOrderQueryService'})
     });
   }
 

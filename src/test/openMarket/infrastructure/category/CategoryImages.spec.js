@@ -5,6 +5,7 @@ import {expect} from 'chai';
 import {DatabaseSync} from 'node:sqlite';
 import SqliteConnection from '../../../../openMarket/infrastructure/service/SqliteConnection';
 import SqliteCategoryRepository from '../../../../openMarket/infrastructure/category/SqliteCategoryRepository';
+import SqliteCategoryQueryService from '../../../../openMarket/infrastructure/category/SqliteCategoryQueryService';
 import CategoryFactoryImpl from '../../../../openMarket/infrastructure/category/CategoryFactoryImpl';
 import ImageStore, {IMAGE_MAX_BYTES} from '../../../../openMarket/infrastructure/service/ImageStore';
 import UUIDIdentity from '../../../../openMarket/infrastructure/service/UUIDIdentity';
@@ -23,7 +24,8 @@ function setup() {
   const repository = new SqliteCategoryRepository({
     connection,
     categoryFactory,
-    images
+    images,
+    queryService: new SqliteCategoryQueryService()
   });
   return {directory, images, connection, repository};
 }

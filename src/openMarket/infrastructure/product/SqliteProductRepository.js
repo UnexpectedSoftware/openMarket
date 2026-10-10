@@ -8,160 +8,98 @@ const PRODUCT_SELECT = 'SELECT p.barcode, p.name, p.description, p.stock_min, p.
 
 const ORDER_ENABLED_FIRST = ' ORDER BY CASE WHEN p.status = ? THEN 0 ELSE 1 END, p.barcode';
 
-function sqlValue(value) {
-  return value === undefined ? null : value;
-}
+const LIMIT_OFFSET_SQL = ' LIMIT ? OFFSET ?';
 
-function bit(value) {
-  if (value == null) {
-    return null;
-  }
-  return value ? 1 : 0;
-}
+const FIND_ALL_SQL = PRODUCT_SELECT + ORDER_ENABLED_FIRST + LIMIT_OFFSET_SQL;
 
-const NAME_KEY = "COALESCE(p.name, '')";
-const STOCK_MISSING = '(p.stock IS NULL)';
+const FIND_ALL_BY_NAME_SQL = PRODUCT_SELECT + ' WHERE p.name LIKE ?' + ORDER_ENABLED_FIRST + LIMIT_OFFSET_SQL;
 
-function likeContains(text) {
-  return '%' + text.replace(/[\\%_]/g, (char) => '\\' + char) + '%';
-}
+const FIND_ALL_WITH_LOW_STOCK_SQL = PRODUCT_SELECT +
+  ' WHERE p.stock <= p.stock_min AND p.status = ? ORDER BY p.barcode LIMIT ? OFFSET ?';
 
-function catalogSort(sort) {
-  if (sort === 'name_asc' || sort === 'name_desc' || sort === 'stock_asc' || sort === 'stock_desc') {
-    return sort;
-  }
-  return 'name_asc';
-}
+const FIND_CATALOG_SQL = PRODUCT_SELECT + ' WHERE 1 = 1';
 
-function catalogCursor(after) {
-  if (after == null) {
-    return null;
-  }
-  if (typeof after.barcode !== 'string' || after.barcode === '' || typeof after.name !== 'string') {
-    throw new Error('Invalid product page');
-  }
-  if (after.stock == null) {
-    return {name: after.name, stock: null, barcode: after.barcode};
-  }
-  const stock = Number(after.stock);
-  if (!Number.isFinite(stock)) {
-    throw new Error('Invalid product page');
-  }
-  return {name: after.name, stock, barcode: after.barcode};
-}
+const CATALOG_FILTER_SQL = ' AND (? = 0 OR p.stock <= p.stock_min)' +
+  ' AND (? IS NULL OR p.status = ?)' +
+  ' AND (? IS NULL OR p.category_id = ?)' +
+  ' AND (? = \'\' OR p.name LIKE ? ESCAPE \'\\\' OR p.barcode LIKE ? ESCAPE \'\\\')';
 
-function catalogOrder(sort) {
-  if (sort === 'name_desc') {
-    return NAME_KEY + ' COLLATE NOCASE DESC, p.barcode ASC';
-  }
-  if (sort === 'stock_asc') {
-    return STOCK_MISSING + ' ASC, p.stock ASC, p.barcode ASC';
-  }
-  if (sort === 'stock_desc') {
-    return STOCK_MISSING + ' ASC, p.stock DESC, p.barcode ASC';
-  }
-  return NAME_KEY + ' COLLATE NOCASE ASC, p.barcode ASC';
-}
+const CATALOG_ORDER_BY_SQL = ' ORDER BY ';
 
-function catalogAfter(sort, cursor) {
-  if (cursor == null) {
-    return {sql: '', params: []};
-  }
-  if (sort === 'name_asc' || sort === 'name_desc') {
-    const direction = sort === 'name_desc' ? '<' : '>';
-    return {
-      sql: ' AND (' + NAME_KEY + ' COLLATE NOCASE ' + direction + ' ?' +
-        ' OR (' + NAME_KEY + ' COLLATE NOCASE = ? AND p.barcode > ?))',
-      params: [cursor.name, cursor.name, cursor.barcode]
-    };
-  }
-  const missing = cursor.stock == null ? 1 : 0;
-  const direction = sort === 'stock_desc' ? '<' : '>';
-  return {
-    sql: ' AND (' + STOCK_MISSING + ' > ?' +
-      ' OR (' + STOCK_MISSING + ' = ? AND ? = 0 AND (p.stock ' + direction + ' ? OR (p.stock = ? AND p.barcode > ?)))' +
-      ' OR (' + STOCK_MISSING + ' = ? AND ? = 1 AND p.barcode > ?))',
-    params: [
-      missing,
-      missing, missing, cursor.stock, cursor.stock, cursor.barcode,
-      missing, missing, cursor.barcode
-    ]
-  };
-}
+const CATALOG_LIMIT_SQL = ' LIMIT ?';
 
-function catalogStatus(status) {
-  if (status === ProductStatus.ENABLED || status === ProductStatus.DISABLED) {
-    return status;
-  }
-  return null;
-}
+const FIND_BY_BARCODE_SQL = PRODUCT_SELECT + ' WHERE p.barcode = ?';
 
-function catalogFilterSql({query, lowStock, status, categoryId}) {
-  const text = query == null ? '' : String(query).trim();
-  const pattern = likeContains(text);
-  const category = categoryId ? categoryId : null;
-  const selected = catalogStatus(status);
-  return {
-    where: ' AND (? = 0 OR p.stock <= p.stock_min)' +
-      ' AND (? IS NULL OR p.status = ?)' +
-      ' AND (? IS NULL OR p.category_id = ?)' +
-      ' AND (? = \'\' OR p.name LIKE ? ESCAPE \'\\\' OR p.barcode LIKE ? ESCAPE \'\\\')',
-    params: [
-      lowStock ? 1 : 0,
-      selected, selected,
-      category, category,
-      text, pattern, pattern
-    ]
-  };
-}
+const FIND_PAGE_SQL = PRODUCT_SELECT + ' ORDER BY p.barcode' + LIMIT_OFFSET_SQL;
+
+const COUNT_PRODUCTS_SQL = 'SELECT count(*) AS total FROM product';
+
+const COUNT_PRODUCTS_BY_NAME_SQL = 'SELECT count(*) AS total FROM product WHERE name LIKE ?';
+
+const COUNT_PRODUCTS_WITH_LOW_STOCK_SQL =
+  'SELECT count(*) AS total FROM product WHERE stock <= stock_min AND status = ?';
+
+const COUNT_CATALOG_SQL = 'SELECT count(*) AS total FROM product p WHERE 1 = 1' + CATALOG_FILTER_SQL;
+
+const COUNT_WITHOUT_IMAGE_SQL = 'SELECT count(*) AS total FROM product ' +
+  'WHERE (image_name IS NULL OR image_name = \'\') ' +
+  'AND length(barcode) IN (8, 12, 13) ' +
+  'AND barcode GLOB \'[0-9]*\' ' +
+  'AND barcode NOT GLOB \'*[^0-9]*\'';
+
+const SELECT_PRODUCT_IMAGE_SQL = 'SELECT image_name FROM product WHERE barcode = ?';
+
+const UPSERT_PRODUCT_SQL = 'INSERT INTO product (barcode, base_price, category_id, description, name, price, status, stock, stock_min, weighted, image_name) ' +
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ' +
+  'ON CONFLICT(barcode) DO UPDATE SET base_price=excluded.base_price, category_id=excluded.category_id, ' +
+  'description=excluded.description, name=excluded.name, price=excluded.price, status=excluded.status, ' +
+  'stock=excluded.stock, stock_min=excluded.stock_min, weighted=excluded.weighted, ' +
+  'image_name=COALESCE(excluded.image_name, product.image_name)';
+
+const UPDATE_PRODUCT_IMAGE_SQL = 'UPDATE product SET image_name = ? WHERE barcode = ?';
 
 export default class SqliteProductRepository extends ProductRepository {
-  constructor({connection, productMapper, images}) {
+  constructor({connection, productMapper, images, queryService}) {
     super();
     this._database = connection.database;
     this._productMapper = productMapper;
     this._images = images;
+    this._queryService = queryService;
   }
 
   findAll({productFilter}) {
     return this._query(
-      PRODUCT_SELECT + ORDER_ENABLED_FIRST + ' LIMIT ? OFFSET ?',
+      FIND_ALL_SQL,
       [ProductStatus.ENABLED, productFilter.limit, productFilter.offset]
     );
   }
 
   findAllByName({name, limit, offset}) {
     return this._query(
-      PRODUCT_SELECT + ' WHERE p.name LIKE ?' + ORDER_ENABLED_FIRST + ' LIMIT ? OFFSET ?',
+      FIND_ALL_BY_NAME_SQL,
       ['%' + name + '%', ProductStatus.ENABLED, limit, offset]
     );
   }
 
   findCatalog({query, lowStock, status, categoryId, sort, after, limit}) {
     return Rx.Observable.defer(() => {
-      const size = Number(limit);
-      if (!Number.isInteger(size) || size < 1) {
-        throw new Error('Invalid product page');
-      }
-      const order = catalogSort(sort);
-      const cursor = catalogCursor(after);
-      const pageAfter = catalogAfter(order, cursor);
-      const filters = catalogFilterSql({query, lowStock, status, categoryId});
-      const sql = PRODUCT_SELECT +
-        ' WHERE 1 = 1' +
-        pageAfter.sql +
-        filters.where +
-        ' ORDER BY ' + catalogOrder(order) +
-        ' LIMIT ?';
-      const params = [
-        ...pageAfter.params,
-        ...filters.params,
-        size + 1
-      ];
-      const rows = this._database.prepare(sql).all(...params);
-      const hasMore = rows.length > size;
-      const page = hasMore ? rows.slice(0, size) : rows;
-      return Rx.Observable.from(page)
+      const page = this._queryService.catalogPage({
+        statement: FIND_CATALOG_SQL,
+        filterSql: CATALOG_FILTER_SQL,
+        orderBySql: CATALOG_ORDER_BY_SQL,
+        limitSql: CATALOG_LIMIT_SQL,
+        query,
+        lowStock,
+        status,
+        categoryId,
+        sort,
+        after,
+        limit
+      });
+      const rows = this._database.prepare(page.sql).all(...page.params);
+      const hasMore = rows.length > page.size;
+      const visible = hasMore ? rows.slice(0, page.size) : rows;
+      return Rx.Observable.from(visible)
         .flatMap(row => this._productMapper.toDomain({persistenceProduct: row}))
         .toArray()
         .map(products => ({products, hasMore}));
@@ -170,40 +108,31 @@ export default class SqliteProductRepository extends ProductRepository {
 
   findAllWithLowStock({limit, offset}) {
     return this._query(
-      PRODUCT_SELECT + ' WHERE p.stock <= p.stock_min AND p.status = ? ORDER BY p.barcode LIMIT ? OFFSET ?',
+      FIND_ALL_WITH_LOW_STOCK_SQL,
       [ProductStatus.ENABLED, limit, offset]
     );
   }
 
   save({product, imagePath}) {
     return Rx.Observable.defer(() => {
-      const previous = this._database.prepare(
-        'SELECT image_name FROM product WHERE barcode = ?'
-      ).get(product.barcode);
+      const previous = this._database.prepare(SELECT_PRODUCT_IMAGE_SQL).get(product.barcode);
       const previousName = previous ? previous.image_name : null;
       let imageName = null;
       if (imagePath) {
         imageName = this._images.store({id: product.barcode, sourcePath: imagePath});
       }
       try {
-        this._database.prepare(
-          'INSERT INTO product (barcode, base_price, category_id, description, name, price, status, stock, stock_min, weighted, image_name) ' +
-          'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ' +
-          'ON CONFLICT(barcode) DO UPDATE SET base_price=excluded.base_price, category_id=excluded.category_id, ' +
-          'description=excluded.description, name=excluded.name, price=excluded.price, status=excluded.status, ' +
-          'stock=excluded.stock, stock_min=excluded.stock_min, weighted=excluded.weighted, ' +
-          'image_name=COALESCE(excluded.image_name, product.image_name)'
-        ).run(
-          sqlValue(product.barcode),
-          sqlValue(product.basePrice),
-          sqlValue(product.category.id),
-          sqlValue(product.description),
-          sqlValue(product.name),
-          sqlValue(product.price),
-          sqlValue(product.status),
-          sqlValue(product.stock),
-          sqlValue(product.stockMin),
-          bit(product.isWeighted),
+        this._database.prepare(UPSERT_PRODUCT_SQL).run(
+          this._queryService.sqlValue(product.barcode),
+          this._queryService.sqlValue(product.basePrice),
+          this._queryService.sqlValue(product.category.id),
+          this._queryService.sqlValue(product.description),
+          this._queryService.sqlValue(product.name),
+          this._queryService.sqlValue(product.price),
+          this._queryService.sqlValue(product.status),
+          this._queryService.sqlValue(product.stock),
+          this._queryService.sqlValue(product.stockMin),
+          this._queryService.bit(product.isWeighted),
           imageName
         );
       } catch (insertError) {
@@ -221,7 +150,7 @@ export default class SqliteProductRepository extends ProductRepository {
 
   findByBarcode({barcode}) {
     return Rx.Observable.defer(() => {
-      const row = this._database.prepare(PRODUCT_SELECT + ' WHERE p.barcode = ?').get(barcode);
+      const row = this._database.prepare(FIND_BY_BARCODE_SQL).get(barcode);
       if (!row) {
         return Rx.Observable.empty();
       }
@@ -238,40 +167,32 @@ export default class SqliteProductRepository extends ProductRepository {
   }
 
   countProducts() {
-    return this._count('SELECT count(*) AS total FROM product', []);
+    return this._count(COUNT_PRODUCTS_SQL, []);
   }
 
   countProductsByName({name}) {
     return this._count(
-      'SELECT count(*) AS total FROM product WHERE name LIKE ?',
+      COUNT_PRODUCTS_BY_NAME_SQL,
       ['%' + name + '%']
     );
   }
 
   countProductsWithLowStock() {
     return this._count(
-      'SELECT count(*) AS total FROM product WHERE stock <= stock_min AND status = ?',
+      COUNT_PRODUCTS_WITH_LOW_STOCK_SQL,
       [ProductStatus.ENABLED]
     );
   }
 
   countCatalog({query, lowStock, status, categoryId}) {
-    const filters = catalogFilterSql({query, lowStock, status, categoryId});
     return this._count(
-      'SELECT count(*) AS total FROM product p WHERE 1 = 1' + filters.where,
-      filters.params
+      COUNT_CATALOG_SQL,
+      this._queryService.catalogFilterParams({query, lowStock, status, categoryId})
     );
   }
 
   countWithoutImage() {
-    return this._count(
-      'SELECT count(*) AS total FROM product ' +
-      'WHERE (image_name IS NULL OR image_name = \'\') ' +
-      'AND length(barcode) IN (8, 12, 13) ' +
-      'AND barcode GLOB \'[0-9]*\' ' +
-      'AND barcode NOT GLOB \'*[^0-9]*\'',
-      []
-    );
+    return this._count(COUNT_WITHOUT_IMAGE_SQL, []);
   }
 
   findPage({limit, offset}) {
@@ -280,25 +201,18 @@ export default class SqliteProductRepository extends ProductRepository {
     if (!Number.isInteger(size) || size < 1 || !Number.isInteger(start) || start < 0) {
       return Rx.Observable.throw(new Error('Invalid product page'));
     }
-    return this._query(
-      PRODUCT_SELECT + ' ORDER BY p.barcode LIMIT ? OFFSET ?',
-      [size, start]
-    );
+    return this._query(FIND_PAGE_SQL, [size, start]);
   }
 
   updateProduct({barcode, imagePath}) {
     return Rx.Observable.defer(() => {
-      const previous = this._database.prepare(
-        'SELECT image_name FROM product WHERE barcode = ?'
-      ).get(barcode);
+      const previous = this._database.prepare(SELECT_PRODUCT_IMAGE_SQL).get(barcode);
       if (!previous) {
         return Rx.Observable.throw(new Error('product not found'));
       }
       const imageName = this._images.store({id: barcode, sourcePath: imagePath});
       try {
-        const result = this._database.prepare(
-          'UPDATE product SET image_name = ? WHERE barcode = ?'
-        ).run(imageName, barcode);
+        const result = this._database.prepare(UPDATE_PRODUCT_IMAGE_SQL).run(imageName, barcode);
         if (Number(result.changes) === 0) {
           this._images.remove(imageName);
           return Rx.Observable.throw(new Error('product not found'));

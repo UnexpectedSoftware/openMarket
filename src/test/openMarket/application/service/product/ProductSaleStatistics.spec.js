@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import moment from 'moment';
 import SqliteConnection from '../../../../../openMarket/infrastructure/service/SqliteConnection';
 import SqliteProductSaleStatisticsRepository from '../../../../../openMarket/infrastructure/product/SqliteProductSaleStatisticsRepository';
+import SqliteProductSaleQueryService from '../../../../../openMarket/infrastructure/product/SqliteProductSaleQueryService';
 import ProductSaleStatistics from '../../../../../openMarket/application/service/product/ProductSaleStatistics';
 import {fillSeries, previousYearRange, resolveSalesWindow} from '../../../../../openMarket/application/service/product/salesWindows';
 
@@ -67,7 +68,10 @@ describe('Product sale statistics', () => {
   beforeEach(() => {
     connection = new SqliteConnection({filename: ':memory:'});
     connection.database.prepare('INSERT INTO product (barcode, name) VALUES (?, ?)').run('0001', 'Current cola');
-    repository = new SqliteProductSaleStatisticsRepository({connection});
+    repository = new SqliteProductSaleStatisticsRepository({
+      connection,
+      queryService: new SqliteProductSaleQueryService()
+    });
     useCase = new ProductSaleStatistics({repository});
   });
 
