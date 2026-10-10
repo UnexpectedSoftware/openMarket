@@ -74,6 +74,8 @@ export default merge(baseConfig, {
 
   externals: {
     electron: 'commonjs electron',
+    'electron-log/main': 'commonjs electron-log/main',
+    'electron-log/renderer': 'commonjs electron-log/renderer',
     'node:sqlite': 'commonjs node:sqlite'
   },
 

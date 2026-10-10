@@ -1,5 +1,6 @@
 import * as Rx from 'rxjs';
 import {LIST_PRODUCTS_PRINT} from './action';
+import {record, userText} from '../../../infrastructure/logging/ErrorLog';
 
 function toast(title, message) {
   return {
@@ -27,7 +28,7 @@ function filtersFrom(store) {
 }
 
 function failureMessage(printError) {
-  const detail = printError && printError.message ? printError.message : 'Could not print products';
+  const detail = userText(printError, 'Could not print products');
   if (printError && printError.printed > 0) {
     return `Printed ${printError.printed} of ${printError.total}. ${detail}`;
   }
@@ -78,6 +79,7 @@ export function makePrintCatalogEpic({
           )));
         },
         printError => {
+          record(printError);
           running = false;
           observer.next(catalogPrintFinished());
           observer.next(errorNotification(toast(

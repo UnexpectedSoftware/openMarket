@@ -261,7 +261,9 @@ describe('product images', () => {
           done(new Error('expected a missing product'));
         },
         error => {
-          expect(error.message).to.match(/product not found/);
+          expect(error.code).to.equal('PRODUCT_NOT_FOUND');
+          expect(error.userMessage).to.equal('product not found');
+          expect(error.context).to.deep.equal({barcode: 'missing', operation: 'updateImage'});
           cleanup(directory);
           done();
         }

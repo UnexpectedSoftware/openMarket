@@ -1,6 +1,11 @@
 import ProductRepository from "../../domain/product/ProductRepository";
 import * as Rx from "rxjs";
 import ProductStatus from "../../domain/product/ProductStatus";
+import ProductNotFoundError from "../../domain/product/ProductNotFoundError";
+import InvalidProductPageError from "../../domain/product/InvalidProductPageError";
+import UnexpectedFailure from "../../domain/error/UnexpectedFailure";
+import observableError from "../logging/observableError";
+import {rethrow} from "../logging/ErrorLog";
 
 const PRODUCT_SELECT = 'SELECT p.barcode, p.name, p.description, p.stock_min, p.price, p.stock, p.base_price, p.status, p.weighted, p.image_name, ' +
   'p.category_id as category_id, c.name as category_name ' +
@@ -139,7 +144,10 @@ export default class SqliteProductRepository extends ProductRepository {
         if (imageName && imageName !== previousName) {
           this._images.remove(imageName);
         }
-        throw insertError;
+        rethrow(insertError, {
+          message: 'Could not save the product',
+          context: {barcode: product.barcode, name: product.name, operation: 'save'}
+        });
       }
       if (imageName && previousName && previousName !== imageName) {
         this._images.remove(previousName);
@@ -199,7 +207,11 @@ export default class SqliteProductRepository extends ProductRepository {
     const size = Number(limit);
     const start = Number(offset);
     if (!Number.isInteger(size) || size < 1 || !Number.isInteger(start) || start < 0) {
-      return Rx.Observable.throw(new Error('Invalid product page'));
+      return observableError(new InvalidProductPageError({
+        limit: size,
+        offset: start,
+        operation: 'findPage'
+      }));
     }
     return this._query(FIND_PAGE_SQL, [size, start]);
   }
@@ -208,20 +220,25 @@ export default class SqliteProductRepository extends ProductRepository {
     return Rx.Observable.defer(() => {
       const previous = this._database.prepare(SELECT_PRODUCT_IMAGE_SQL).get(barcode);
       if (!previous) {
-        return Rx.Observable.throw(new Error('product not found'));
+        return observableError(new ProductNotFoundError({barcode, operation: 'updateImage'}));
       }
       const imageName = this._images.store({id: barcode, sourcePath: imagePath});
       try {
         const result = this._database.prepare(UPDATE_PRODUCT_IMAGE_SQL).run(imageName, barcode);
         if (Number(result.changes) === 0) {
           this._images.remove(imageName);
-          return Rx.Observable.throw(new Error('product not found'));
+          return observableError(new ProductNotFoundError({barcode, operation: 'updateImage'}));
         }
       } catch (updateError) {
         if (imageName !== previous.image_name) {
           this._images.remove(imageName);
         }
-        return Rx.Observable.throw(updateError);
+        return observableError(new UnexpectedFailure({
+          message: `Could not update the product image: ${updateError.message}`,
+          userMessage: updateError.message,
+          context: {barcode, operation: 'updateImage'},
+          cause: updateError
+        }));
       }
       if (previous.image_name && previous.image_name !== imageName) {
         this._images.remove(previous.image_name);

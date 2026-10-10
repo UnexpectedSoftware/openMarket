@@ -10,6 +10,7 @@ import {reset} from 'redux-form';
 import {makeProductCloseEpic, makeProductSalesEpic} from "./epicFactory";
 import {LIST_PRODUCTS_DETAIL_LOADED} from "../list_products/action";
 import ImageStore, {dataUrlForFile, imagesDirectory} from "../../../infrastructure/service/ImageStore";
+import {record, userText} from "../../../infrastructure/logging/ErrorLog";
 
 const categoryImages = new ImageStore({directory: imagesDirectory('category-images')});
 
@@ -71,12 +72,15 @@ const saveProductEpic = action$ =>
       imagePath: action.product.imagePath
     })
       .map(() => newProductActions.newProductSaved({ edition: action.product.edition }))
-      .catch(saveError => Rx.Observable.of(error({
-        title: 'Product was not saved',
-        message: saveError && saveError.message ? saveError.message : 'Product was not saved',
-        position: 'tr',
-        autoDismiss: 4
-      }))));
+      .catch(saveError => {
+        record(saveError);
+        return Rx.Observable.of(error({
+          title: 'Product was not saved',
+          message: userText(saveError, 'Product was not saved'),
+          position: 'tr',
+          autoDismiss: 4
+        }));
+      }));
 
 const savedToast = edition => success(edition ? {
   title: 'Changes applied',
@@ -194,10 +198,13 @@ const findProductImageEpic = (action$, store) =>
           rememberFetched(imagePath);
           return Rx.Observable.of(newProductActions.productImageFound({imagePath, imageSrc}));
         })
-        .catch(() => Rx.Observable.of(
-          lookupError('Image lookup failed', 'Could not look up the image'),
-          newProductActions.productImageLookupFinished()
-        ));
+        .catch(lookupFailure => {
+          record(lookupFailure);
+          return Rx.Observable.of(
+            lookupError('Image lookup failed', 'Could not look up the image'),
+            newProductActions.productImageLookupFinished()
+          );
+        });
     });
 
 const productSalesEpic = makeProductSalesEpic(
@@ -232,4 +239,4 @@ export default (action$, store) =>
     findProductImageEpic(action$, store),
     productSalesEpic(action$),
     releaseFetchedImageEpic(action$)
-  ).do(() => null,error => console.log(error),()=> null);
+  ).do(() => null, error => record(error), () => null);

@@ -3,6 +3,7 @@ import * as Rx from "rxjs";
 import { success, error } from 'react-notification-system-redux';
 import * as categoryActions from "./action";
 import ImageStore, {imagesDirectory} from "../../infrastructure/service/ImageStore";
+import {record, userText} from "../../infrastructure/logging/ErrorLog";
 
 const images = new ImageStore({directory: imagesDirectory('category-images')});
 
@@ -14,7 +15,8 @@ const applied = () => success({
 });
 
 function failureActions(id, saveError) {
-  const message = saveError && saveError.message ? saveError.message : 'Category was not saved';
+  record(saveError);
+  const message = userText(saveError, 'Category was not saved');
   return Rx.Observable.of(
     categoryActions.categoriesChangeFailed(id, message),
     error({
@@ -27,7 +29,8 @@ function failureActions(id, saveError) {
 }
 
 function deleteFailureActions(id, saveError) {
-  const message = saveError && saveError.message ? saveError.message : 'Category was not deleted';
+  record(saveError);
+  const message = userText(saveError, 'Category was not deleted');
   return Rx.Observable.of(
     categoryActions.categoriesChangeFailed(id, message),
     error({

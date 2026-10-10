@@ -1,5 +1,8 @@
 import * as Rx from "rxjs";
+import "rxjs/add/operator/defaultIfEmpty";
 import ProductEnabledAgain from "../../../domain/event/ProductEnabledAgain";
+import ProductNotFoundError from "../../../domain/product/ProductNotFoundError";
+import observableError from "../../../infrastructure/logging/observableError";
 
 /**
  * Puts a disabled product back on sale when a cashier scans it.
@@ -29,7 +32,11 @@ export default class EnableProduct {
    */
   enableForSale({ barcode }) {
     return this._productRepository.findByBarcode({ barcode })
+      .defaultIfEmpty(null)
       .flatMap(product => {
+        if (!product) {
+          return observableError(new ProductNotFoundError({barcode, operation: 'enable'}));
+        }
         if (!product.isDisabled()) {
           return Rx.Observable.of(product);
         }

@@ -3,6 +3,8 @@
  */
 import moment from "moment";
 import {add, multiply} from "../../infrastructure/service/floatCalculatorService";
+import EmptyOrderLinesError from "./EmptyOrderLinesError";
+import InvalidOrderQuantityError from "./InvalidOrderQuantityError";
 export default class Order {
 
   /**
@@ -22,12 +24,15 @@ export default class Order {
     this._createdAt = date;
 
     if (lines == null || lines.length === 0) {
-      throw new Error('Lines must not be empty');
+      throw new EmptyOrderLinesError();
     }
     lines.forEach(line => {
       const quantity = Number(line && line.quantity);
       if (!Number.isFinite(quantity) || quantity <= 0) {
-        throw new Error('Quantity must be greater than 0');
+        throw new InvalidOrderQuantityError({
+          quantity: line && line.quantity,
+          barcode: line && line.barcode
+        });
       }
     });
 

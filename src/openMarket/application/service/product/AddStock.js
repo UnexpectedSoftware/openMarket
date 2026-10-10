@@ -1,3 +1,8 @@
+import "rxjs/add/operator/defaultIfEmpty";
+import "rxjs/add/operator/mergeMap";
+import ProductNotFoundError from "../../../domain/product/ProductNotFoundError";
+import observableError from "../../../infrastructure/logging/observableError";
+
 /**
  * @class AddStock
  */
@@ -25,11 +30,14 @@ export default class AddStock {
   addStock({ barcode, quantity }) {
 
     return this._productRepository.findByBarcode({ barcode })
-      .map(product => {
+      .defaultIfEmpty(null)
+      .flatMap(product => {
+        if (!product) {
+          return observableError(new ProductNotFoundError({barcode, operation: 'addStock'}));
+        }
         // TODO Pattern state for product and use setter
         product._stock += quantity;
-        return product;
-      })
-      .flatMap(product => this._productRepository.save({ product }));
+        return this._productRepository.save({ product });
+      });
   }
 }

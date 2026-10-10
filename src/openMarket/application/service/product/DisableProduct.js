@@ -1,3 +1,8 @@
+import "rxjs/add/operator/defaultIfEmpty";
+import "rxjs/add/operator/mergeMap";
+import ProductNotFoundError from "../../../domain/product/ProductNotFoundError";
+import observableError from "../../../infrastructure/logging/observableError";
+
 /**
  * @class DisableProduct
  */
@@ -22,8 +27,13 @@ export default class DisableProduct {
    */
   disable({ barcode }) {
     return this._productRepository.findByBarcode({ barcode })
-      .map(product => product.disable())
-      .flatMap(product => this._productRepository.save({ product }));
+      .defaultIfEmpty(null)
+      .flatMap(product => {
+        if (!product) {
+          return observableError(new ProductNotFoundError({barcode, operation: 'disable'}));
+        }
+        return this._productRepository.save({product: product.disable()});
+      });
   }
 
 }

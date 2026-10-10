@@ -274,7 +274,9 @@ describe('category images', () => {
           done(new Error('expected a missing category'));
         },
         error => {
-          expect(error.message).to.match(/category not found/);
+          expect(error.code).to.equal('CATEGORY_NOT_FOUND');
+          expect(error.userMessage).to.equal('category not found');
+          expect(error.context.operation).to.equal('clearImage');
           fs.rmSync(directory, {recursive: true, force: true});
           done();
         }
@@ -291,7 +293,9 @@ describe('category images', () => {
           done(new Error('expected a missing category'));
         },
         error => {
-          expect(error.message).to.match(/category not found/);
+          expect(error.code).to.equal('CATEGORY_NOT_FOUND');
+          expect(error.userMessage).to.equal('category not found');
+          expect(error.context.operation).to.equal('replaceImage');
           const copied = fs.readdirSync(directory).filter(name => name !== 'source.png');
           expect(copied).to.deep.equal([]);
           fs.rmSync(directory, {recursive: true, force: true});
@@ -309,7 +313,9 @@ describe('category images', () => {
           done(new Error('expected a missing category'));
         },
         error => {
-          expect(error.message).to.match(/category not found/);
+          expect(error.code).to.equal('CATEGORY_NOT_FOUND');
+          expect(error.userMessage).to.equal('category not found');
+          expect(error.context.operation).to.equal('rename');
           fs.rmSync(directory, {recursive: true, force: true});
           done();
         }
@@ -423,7 +429,8 @@ describe('category images', () => {
           done(new Error('expected the category to be kept'));
         },
         error => {
-          expect(error.message).to.equal('Category still has products');
+          expect(error.code).to.equal('CATEGORY_NOT_EMPTY');
+          expect(error.userMessage).to.equal('Category still has products');
           const row = connection.database.prepare('SELECT id, image_name FROM category').get();
           expect(row.image_name).to.equal(row.id + '.png');
           expect(fs.existsSync(path.join(directory, row.image_name))).to.equal(true);
@@ -442,7 +449,9 @@ describe('category images', () => {
           done(new Error('expected a missing category'));
         },
         error => {
-          expect(error.message).to.equal('category not found');
+          expect(error.code).to.equal('CATEGORY_NOT_FOUND');
+          expect(error.userMessage).to.equal('category not found');
+          expect(error.context.operation).to.equal('delete');
           fs.rmSync(directory, {recursive: true, force: true});
           done();
         }

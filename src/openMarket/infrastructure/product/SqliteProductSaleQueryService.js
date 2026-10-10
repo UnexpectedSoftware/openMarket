@@ -1,5 +1,7 @@
 import moment from 'moment';
 import {add, multiply} from '../service/floatCalculatorService';
+import UnrecognisedDateError from '../../domain/error/UnrecognisedDateError';
+import {raise} from '../logging/ErrorLog';
 
 const SOLD_ON_FORMATS = ['DD/MM/YYYY HH:mm:ss', 'YYYY-MM-DD HH:mm:ss', 'YYYY-MM-DD'];
 
@@ -15,7 +17,7 @@ export default class SqliteProductSaleQueryService {
   soldOnFrom(createdAt) {
     const parsed = moment(createdAt, SOLD_ON_FORMATS, true);
     if (!parsed.isValid()) {
-      throw new Error('Unrecognised date ' + createdAt);
+      raise(new UnrecognisedDateError({value: createdAt}));
     }
     return parsed.format('YYYY-MM-DD');
   }

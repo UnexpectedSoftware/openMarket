@@ -2,6 +2,8 @@
  * @class OpenMarket
  */
 import container from '../infrastructure/dic/Container';
+import UnsupportedUseCaseError from '../domain/error/UnsupportedUseCaseError';
+import {raise} from '../infrastructure/logging/ErrorLog';
 class OpenMarket {
 
     /**
@@ -46,8 +48,7 @@ class OpenMarket {
      */
   get(key) {
     if (!this.deps.has(key)) {
-      console.log(key);
-      throw new Error(`Unsupported UseCase ${key}`);
+      raise(new UnsupportedUseCaseError({key}));
     }
     return this.deps.get(key);
   }

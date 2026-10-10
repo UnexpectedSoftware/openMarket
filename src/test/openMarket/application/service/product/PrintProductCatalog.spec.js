@@ -114,7 +114,9 @@ describe('PrintProductCatalog', () => {
       await useCase.execute({query: ''}).toArray().toPromise();
       throw new Error('should have failed');
     } catch (error) {
+      expect(error.code).to.equal('PRINT_FAILED');
       expect(error.message).to.equal('Printer is busy');
+      expect(error.cause.message).to.equal('Printer is busy');
       expect(error.printed).to.equal(1);
       expect(error.total).to.equal(2);
     }

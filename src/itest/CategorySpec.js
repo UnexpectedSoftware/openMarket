@@ -367,7 +367,7 @@ describe('Category delete use case', () => {
     observableDeleteCategory.deleteCategory({id: '1'}).subscribe(() => {
       done(new Error('expected the category to be kept'));
     }, (err) => {
-      la(err.message === 'Category still has products', err.message);
+      la(err.code === 'CATEGORY_NOT_EMPTY' && err.userMessage === 'Category still has products', err.message);
       observableCategories.findAllWithStats().subscribe((categories) => {
         const odin = byName(categories, 'Odin');
         la(odin && odin.productCount === 1, 'category remains');
@@ -380,7 +380,7 @@ describe('Category delete use case', () => {
     observableDeleteCategory.deleteCategory({id: 'missing'}).subscribe(() => {
       done(new Error('expected a missing category to fail'));
     }, (err) => {
-      la(err.message === 'category not found', err.message);
+      la(err.code === 'CATEGORY_NOT_FOUND' && err.userMessage === 'category not found', err.message);
       done();
     });
   });

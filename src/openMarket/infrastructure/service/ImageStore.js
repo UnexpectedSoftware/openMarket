@@ -1,6 +1,10 @@
 import fs from 'fs';
 import path from 'path';
 import sqliteDatabasePath from './sqliteDatabasePath';
+import ErrorCode from '../../domain/error/ErrorCode';
+import InvalidImageError from '../../domain/image/InvalidImageError';
+import ImageStoreMisconfiguredError from '../../domain/image/ImageStoreMisconfiguredError';
+import {raise, rethrow} from '../logging/ErrorLog';
 
 export const IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
@@ -48,7 +52,7 @@ export function dataUrlForFile(filePath) {
 export default class ImageStore {
   constructor({directory}) {
     if (!directory) {
-      throw new Error('ImageStore requires a directory');
+      raise(new ImageStoreMisconfiguredError());
     }
     this._directory = directory;
   }
@@ -63,25 +67,53 @@ export default class ImageStore {
     try {
       stat = fs.statSync(sourcePath);
     } catch (error) {
-      throw new Error('Choose an image file');
+      raise(new InvalidImageError({
+        code: ErrorCode.IMAGE_FILE_INVALID,
+        userMessage: 'Choose an image file',
+        context: {id, sourcePath, operation: 'store'},
+        cause: error
+      }));
     }
     if (!stat.isFile() || stat.size <= 0) {
-      throw new Error('Choose an image file');
+      raise(new InvalidImageError({
+        code: ErrorCode.IMAGE_FILE_INVALID,
+        userMessage: 'Choose an image file',
+        context: {id, sourcePath, operation: 'store'}
+      }));
     }
     if (stat.size > IMAGE_MAX_BYTES) {
-      throw new Error('Image must be 5 MB or smaller');
+      raise(new InvalidImageError({
+        code: ErrorCode.IMAGE_FILE_TOO_LARGE,
+        userMessage: 'Image must be 5 MB or smaller',
+        context: {id, sourcePath, operation: 'store'}
+      }));
     }
     const extension = path.extname(sourcePath).toLowerCase();
     if (!TYPES[extension]) {
-      throw new Error('Use a JPEG, PNG, GIF, or WebP image');
+      raise(new InvalidImageError({
+        code: ErrorCode.IMAGE_TYPE_UNSUPPORTED,
+        userMessage: 'Use a JPEG, PNG, GIF, or WebP image',
+        context: {id, sourcePath, operation: 'store'}
+      }));
     }
     const safeId = path.basename(String(id));
     if (!safeId || safeId === '.' || safeId === '..') {
-      throw new Error('Choose an image file');
+      raise(new InvalidImageError({
+        code: ErrorCode.IMAGE_FILE_INVALID,
+        userMessage: 'Choose an image file',
+        context: {id, operation: 'store'}
+      }));
     }
     const imageName = safeId + extension;
-    fs.mkdirSync(this._directory, {recursive: true});
-    fs.copyFileSync(sourcePath, path.join(this._directory, imageName));
+    try {
+      fs.mkdirSync(this._directory, {recursive: true});
+      fs.copyFileSync(sourcePath, path.join(this._directory, imageName));
+    } catch (error) {
+      rethrow(error, {
+        message: 'Could not store the image',
+        context: {id: safeId, operation: 'store'}
+      });
+    }
     return imageName;
   }
 

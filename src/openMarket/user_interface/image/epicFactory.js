@@ -1,5 +1,6 @@
 import * as Rx from 'rxjs';
 import {catalogLimit, defaultCatalogSort} from '../product/list_products/model';
+import {record, userText} from '../../infrastructure/logging/ErrorLog';
 
 export function fetchImagesMessage(summary) {
   const products = summary.productsUpdated;
@@ -89,11 +90,12 @@ export function makeFetchImagesEpic({
           refreshOpenList(observer, store, actions);
         },
         fetchError => {
+          record(fetchError);
           running = false;
           observer.next(imageFetchFinished());
           observer.next(errorNotification({
             title: 'Could not fetch images',
-            message: fetchError && fetchError.message ? fetchError.message : 'Could not fetch images',
+            message: userText(fetchError, 'Could not fetch images'),
             position: 'tr',
             autoDismiss: 4
           }));

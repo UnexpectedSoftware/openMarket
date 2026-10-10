@@ -244,7 +244,7 @@ describe('Product catalog cursor', () => {
     catalog({after: {name: 'Coca-Cola', stock: 1, barcode: ''}}).subscribe(
       () => { throw new Error('should have failed'); },
       (error) => {
-        la(error.message === 'Invalid product page', error.message);
+        la(error.code === 'INVALID_PRODUCT_PAGE' && error.userMessage === 'Invalid product page', error.message);
         done();
       }
     );

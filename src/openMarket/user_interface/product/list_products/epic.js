@@ -4,6 +4,7 @@ import {push} from 'react-router-redux';
 import {success, error} from 'react-notification-system-redux';
 import OpenMarket from '../../../application/index';
 import ImageStore, {imagesDirectory} from '../../../infrastructure/service/ImageStore';
+import {record, userText} from '../../../infrastructure/logging/ErrorLog';
 import {catalogLimit, defaultCatalogSort} from './model';
 import {makePrintCatalogEpic} from './printEpic';
 
@@ -70,7 +71,7 @@ function loadPage(action) {
       });
     })
     .catch(fetchError => {
-      console.log(fetchError);
+      record(fetchError);
       return Rx.Observable.of(listProductsActions.listProductsFetchFailed({
         query: filters.query,
         lowStock: !!filters.lowStock,
@@ -189,12 +190,15 @@ const listProductsDisableEpic = action$ =>
           listProductsActions.listProductsDisabled(action.payload.barcode),
           disabledToast()
         ))
-        .catch(disableError => Rx.Observable.of(error({
-          title: 'Product was not disabled',
-          message: disableError && disableError.message ? disableError.message : 'Product was not disabled',
-          position: 'tr',
-          autoDismiss: 4
-        })))
+        .catch(disableError => {
+          record(disableError);
+          return Rx.Observable.of(error({
+            title: 'Product was not disabled',
+            message: userText(disableError, 'Product was not disabled'),
+            position: 'tr',
+            autoDismiss: 4
+          }));
+        })
     );
 
 export default (action$, store) =>
@@ -208,4 +212,4 @@ export default (action$, store) =>
     listProductsDetailEpic(action$),
     listProductsDisableEpic(action$),
     printCatalogEpic(action$, store)
-  ).do(() => null, (epicError) => console.log(epicError));
+  ).do(() => null, (epicError) => record(epicError));

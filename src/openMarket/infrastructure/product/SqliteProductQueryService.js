@@ -1,4 +1,6 @@
 import ProductStatus from '../../domain/product/ProductStatus';
+import InvalidProductPageError from '../../domain/product/InvalidProductPageError';
+import {raise} from '../logging/ErrorLog';
 
 const NAME_KEY = "COALESCE(p.name, '')";
 const STOCK_MISSING = '(p.stock IS NULL)';
@@ -55,7 +57,7 @@ export default class SqliteProductQueryService {
   }) {
     const size = Number(limit);
     if (!Number.isInteger(size) || size < 1) {
-      throw new Error('Invalid product page');
+      raise(new InvalidProductPageError({limit: size, operation: 'findCatalog'}));
     }
     const order = this._sort(sort);
     const cursor = this._cursor(after);
@@ -96,14 +98,22 @@ export default class SqliteProductQueryService {
       return null;
     }
     if (typeof after.barcode !== 'string' || after.barcode === '' || typeof after.name !== 'string') {
-      throw new Error('Invalid product page');
+      raise(new InvalidProductPageError({
+        operation: 'findCatalog',
+        barcode: after.barcode,
+        name: after.name
+      }));
     }
     if (after.stock == null) {
       return {name: after.name, stock: null, barcode: after.barcode};
     }
     const stock = Number(after.stock);
     if (!Number.isFinite(stock)) {
-      throw new Error('Invalid product page');
+      raise(new InvalidProductPageError({
+        operation: 'findCatalog',
+        barcode: after.barcode,
+        name: after.name
+      }));
     }
     return {name: after.name, stock, barcode: after.barcode};
   }

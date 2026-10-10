@@ -6,6 +6,8 @@ import {showPrinterDialog} from "../printer_dialog/action";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
 import ProductEnabledAgain from "../../../domain/event/ProductEnabledAgain";
 import ProductStatus from "../../../domain/product/ProductStatus";
+import ErrorCode from "../../../domain/error/ErrorCode";
+import {record, userText} from "../../../infrastructure/logging/ErrorLog";
 
 export const makeNewOrderProductFetchEpic = findProductUseCase => enableProductUseCase => resetForm => action$ =>
   action$
@@ -34,10 +36,11 @@ export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => errorNoti
           autoDismiss: 4
         }),resetForm('new_order'),action))
         .catch(err => {
-          const message = err && err.message ? err.message : 'Order was not saved';
+          record(err);
+          const message = userText(err, 'Order was not saved');
           return Rx.Observable.of(errorNotification({
             uid: `order-not-saved-${Date.now()}`,
-            title: message === 'Lines must not be empty' ? 'Empty lines!' : 'Order was not saved',
+            title: err && err.code === ErrorCode.ORDER_LINES_EMPTY ? 'Empty lines!' : 'Order was not saved',
             message,
             position: 'tr',
             autoDismiss: 5
@@ -47,10 +50,11 @@ export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => errorNoti
     );
 
 function printFailed(errorNotification, err) {
+  record(err);
   return errorNotification({
     uid: `print-failed-${Date.now()}`,
     title: 'Print failed',
-    message: err && err.message ? err.message : 'Print failed',
+    message: userText(err, 'Print failed'),
     position: 'tr',
     autoDismiss: 4
   });

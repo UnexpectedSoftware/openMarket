@@ -3,6 +3,7 @@ import OpenMarket from "../../../application/index";
 import * as Rx from "rxjs";
 import {push} from 'react-router-redux';
 import {listOrderDetailLoaded} from "./action";
+import {record} from "../../../infrastructure/logging/ErrorLog";
 
 const listOrderFetchWithFilters = action$ =>
   action$.ofType(listOrderActions.LIST_ORDER_FETCH_WITH_FILTERS)
@@ -50,6 +51,6 @@ export default action$ =>
   Rx.Observable.merge(
     listOrderFetchWithFilters(action$),
     listOrderDetailEpic(action$)
-  ).do(() => null,error => console.log(error),()=> null)
+  ).do(() => null, error => record(error), () => null)
 
 
