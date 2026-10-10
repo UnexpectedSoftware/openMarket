@@ -85,27 +85,16 @@ export default class SqliteOrderRepository extends OrderRepository {
 
   save({order}) {
     return Rx.Observable.defer(() => {
-      this._database.exec('BEGIN');
-      try {
-        this._database.prepare(
-          'INSERT INTO "order" (id, created_at, total) VALUES (?, ?, ?)'
-        ).run(String(order.id), toStoredBound(order.createdAt), order.total);
-        const insertLine = this._database.prepare(
-          'INSERT INTO line (order_id, barcode, name, price, quantity) VALUES (?, ?, ?, ?, ?)'
-        );
-        order.lines.forEach(line => {
-          insertLine.run(String(order.id), line.barcode, line.name, line.price, line.quantity);
-        });
-        this._database.exec('COMMIT');
-        return Rx.Observable.of(order);
-      } catch (error) {
-        try {
-          this._database.exec('ROLLBACK');
-        } catch (rollbackError) {
-          // A trigger abort can roll the transaction back before we do.
-        }
-        return Rx.Observable.throw(error);
-      }
+      this._database.prepare(
+        'INSERT INTO "order" (id, created_at, total) VALUES (?, ?, ?)'
+      ).run(String(order.id), toStoredBound(order.createdAt), order.total);
+      const insertLine = this._database.prepare(
+        'INSERT INTO line (order_id, barcode, name, price, quantity) VALUES (?, ?, ?, ?, ?)'
+      );
+      order.lines.forEach(line => {
+        insertLine.run(String(order.id), line.barcode, line.name, line.price, line.quantity);
+      });
+      return Rx.Observable.of(order);
     });
   }
 }
