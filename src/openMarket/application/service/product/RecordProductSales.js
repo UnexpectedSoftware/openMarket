@@ -1,4 +1,5 @@
 import OrderCreated from '../../../domain/event/OrderCreated';
+import {record} from '../../../infrastructure/logging/ErrorLog';
 
 /**
  * Keeps product_sale_day in step with sales. Started once, with the app, because the bus does not replay.
@@ -24,7 +25,7 @@ export default class RecordProductSales {
       try {
         this._repository.rebuildFromOrders();
       } catch (error) {
-        console.error(error);
+        record(error);
       }
     }
     this._domainEventBus.ofType(OrderCreated).subscribe(event => {
@@ -34,7 +35,7 @@ export default class RecordProductSales {
           lines: event.lines
         });
       } catch (error) {
-        console.error(error);
+        record(error);
       }
     });
   }

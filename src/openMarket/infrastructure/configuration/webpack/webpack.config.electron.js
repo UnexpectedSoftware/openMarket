@@ -29,6 +29,8 @@ export default merge(baseConfig, {
     electron: 'commonjs electron',
     'electron-debug': 'commonjs electron-debug',
     'electron-devtools-installer': 'commonjs electron-devtools-installer',
+    'electron-log/main': 'commonjs electron-log/main',
+    'electron-log/renderer': 'commonjs electron-log/renderer',
     'source-map-support': 'commonjs source-map-support'
   },
 

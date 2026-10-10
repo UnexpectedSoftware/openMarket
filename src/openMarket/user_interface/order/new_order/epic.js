@@ -3,6 +3,7 @@ import {reset} from 'redux-form';
 import OpenMarket from "../../../application/index";
 import * as Rx from "rxjs";
 import container from '../../../infrastructure/dic/Container'
+import {record} from '../../../infrastructure/logging/ErrorLog'
 
 import {
   makeNewOrderProductFetchEpic,
@@ -40,4 +41,4 @@ export default action$ =>
     weightedDialogEpic(action$),
     lowStockWarningEpic(),
     productEnabledAgainEpic()
-  ).do(()=> null,(error) => console.log(error));
+  ).do(() => null, (error) => record(error));

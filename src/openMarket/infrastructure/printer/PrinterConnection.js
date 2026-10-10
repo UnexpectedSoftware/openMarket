@@ -1,5 +1,6 @@
 import printer from 'node-thermal-printer';
 import * as Rx from 'rxjs';
+import PrinterBusyError from '../../domain/error/PrinterBusyError';
 
 export default class PrinterConnection {
   constructor({device} = {}) {
@@ -28,7 +29,7 @@ export default class PrinterConnection {
    */
   print(fill) {
     if (this._busy) {
-      return Rx.Observable.throw(new Error('Printer is busy'));
+      return Rx.Observable.throw(new PrinterBusyError());
     }
     this._busy = true;
     return Rx.Observable.create(observer => {

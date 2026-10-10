@@ -1,4 +1,5 @@
 import {Observable} from "rxjs/Observable";
+import {record} from "../../../infrastructure/logging/ErrorLog";
 import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/toArray";
@@ -57,7 +58,7 @@ export default class CreateOrder {
         const order = this._orderFactory.createWith({lines});
         observer.next(order);
       } catch (error) {
-        observer.error(error);
+        observer.error(record(error));
       }
       observer.complete();
     })

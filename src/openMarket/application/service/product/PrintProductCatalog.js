@@ -1,4 +1,6 @@
 import * as Rx from 'rxjs';
+import PrintFailedError from '../../../domain/error/PrintFailedError';
+import {record} from '../../../infrastructure/logging/ErrorLog';
 
 export const CATALOG_PRINT_PAGE_SIZE = 20;
 
@@ -88,10 +90,11 @@ export default class PrintProductCatalog {
         after = cursorFrom(products[products.length - 1]);
       }
     } catch (error) {
-      const failure = new Error(error && error.message ? error.message : 'Could not print products');
-      failure.printed = completed;
-      failure.total = total;
-      throw failure;
+      throw record(new PrintFailedError({
+        cause: error,
+        printed: completed,
+        total
+      }));
     }
     observer.next({printed: completed});
   }

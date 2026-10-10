@@ -1,15 +1,26 @@
 import {expect} from 'chai';
 import Order from '../../../../openMarket/domain/order/Order';
+import ErrorCode from '../../../../openMarket/domain/error/ErrorCode';
+import EmptyOrderLinesError from '../../../../openMarket/domain/order/EmptyOrderLinesError';
+import InvalidOrderQuantityError from '../../../../openMarket/domain/order/InvalidOrderQuantityError';
 
 const line = quantity => ({barcode: '1', name: 'Milk', price: 2, quantity});
 
 describe('Order', () => {
   it('rejects an empty line list', () => {
-    expect(() => new Order({id: '1', lines: []})).to.throw('Lines must not be empty');
+    expect(() => new Order({id: '1', lines: []}))
+      .to.throw(EmptyOrderLinesError, 'Lines must not be empty');
   });
 
   it('rejects a line with quantity 0', () => {
-    expect(() => new Order({id: '1', lines: [line(0)]})).to.throw('Quantity must be greater than 0');
+    expect(() => new Order({id: '1', lines: [line(0)]})).to.throw(InvalidOrderQuantityError);
+    try {
+      new Order({id: '1', lines: [line(0)]});
+    } catch (error) {
+      expect(error.code).to.equal(ErrorCode.ORDER_QUANTITY_INVALID);
+      expect(error.context.quantity).to.equal(0);
+      expect(error.context.barcode).to.equal('1');
+    }
     expect(() => new Order({id: '1', lines: [line('0')]})).to.throw('Quantity must be greater than 0');
   });
 

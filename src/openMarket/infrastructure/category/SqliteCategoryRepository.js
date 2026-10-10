@@ -1,5 +1,8 @@
 import CategoryRepository from "../../domain/category/CategoryRepository";
 import * as Rx from "rxjs";
+import CategoryNotFoundError from "../../domain/category/CategoryNotFoundError";
+import CategoryNotEmptyError from "../../domain/category/CategoryNotEmptyError";
+import {raise, rethrow} from "../logging/ErrorLog";
 
 const SUMMARIES_SQL = `
 WITH product_totals AS (
@@ -150,7 +153,10 @@ export default class SqliteCategoryRepository extends CategoryRepository {
         if (imageName && imageName !== category.imageName) {
           this._images.remove(imageName);
         }
-        throw insertError;
+        rethrow(insertError, {
+          message: 'Could not save the category',
+          context: {id: category.id, name: category.name, operation: 'save'}
+        });
       }
       return Rx.Observable.of(null);
     });
@@ -160,7 +166,7 @@ export default class SqliteCategoryRepository extends CategoryRepository {
     return Rx.Observable.defer(() => {
       const updated = this._database.prepare(UPDATE_CATEGORY_NAME_SQL).get(name, String(id));
       if (!updated) {
-        throw new Error('category not found');
+        raise(new CategoryNotFoundError({id: String(id), operation: 'rename'}));
       }
       return Rx.Observable.of(null);
     });
@@ -174,7 +180,7 @@ export default class SqliteCategoryRepository extends CategoryRepository {
         this._inTransaction(() => {
           const updated = this._database.prepare(UPDATE_CATEGORY_IMAGE_SQL).get(key, imageName);
           if (!updated) {
-            throw new Error('category not found');
+            raise(new CategoryNotFoundError({id: key, operation: 'replaceImage'}));
           }
           if (updated.previous_image_name && updated.previous_image_name !== imageName) {
             this._images.remove(updated.previous_image_name);
@@ -182,7 +188,10 @@ export default class SqliteCategoryRepository extends CategoryRepository {
         });
       } catch (error) {
         this._discardCopiedImage(key, imageName);
-        throw error;
+        rethrow(error, {
+          message: 'Could not replace the category image',
+          context: {id: key, operation: 'replaceImage'}
+        });
       }
       return Rx.Observable.of(null);
     });
@@ -191,15 +200,22 @@ export default class SqliteCategoryRepository extends CategoryRepository {
   clearImage({id}) {
     return Rx.Observable.defer(() => {
       const key = String(id);
-      this._inTransaction(() => {
-        const cleared = this._database.prepare(CLEAR_CATEGORY_IMAGE_SQL).get(key);
-        if (!cleared) {
-          throw new Error('category not found');
-        }
-        if (cleared.previous_image_name) {
-          this._images.remove(cleared.previous_image_name);
-        }
-      });
+      try {
+        this._inTransaction(() => {
+          const cleared = this._database.prepare(CLEAR_CATEGORY_IMAGE_SQL).get(key);
+          if (!cleared) {
+            raise(new CategoryNotFoundError({id: key, operation: 'clearImage'}));
+          }
+          if (cleared.previous_image_name) {
+            this._images.remove(cleared.previous_image_name);
+          }
+        });
+      } catch (error) {
+        rethrow(error, {
+          message: 'Could not clear the category image',
+          context: {id: key, operation: 'clearImage'}
+        });
+      }
       return Rx.Observable.of(null);
     });
   }
@@ -207,17 +223,27 @@ export default class SqliteCategoryRepository extends CategoryRepository {
   remove({id}) {
     return Rx.Observable.defer(() => {
       const key = String(id);
-      this._inTransaction(() => {
-        const deleted = this._database.prepare(DELETE_EMPTY_CATEGORY_SQL).get(key);
-        if (!deleted) {
-          // The guarded delete matched nothing. A remaining row still has products.
-          const stillThere = this._database.prepare(CATEGORY_STILL_THERE_SQL).get(key);
-          throw new Error(stillThere ? 'Category still has products' : 'category not found');
-        }
-        if (deleted.image_name) {
-          this._images.remove(deleted.image_name);
-        }
-      });
+      try {
+        this._inTransaction(() => {
+          const deleted = this._database.prepare(DELETE_EMPTY_CATEGORY_SQL).get(key);
+          if (!deleted) {
+            // The guarded delete matched nothing. A remaining row still has products.
+            const stillThere = this._database.prepare(CATEGORY_STILL_THERE_SQL).get(key);
+            if (stillThere) {
+              raise(new CategoryNotEmptyError({id: key}));
+            }
+            raise(new CategoryNotFoundError({id: key, operation: 'delete'}));
+          }
+          if (deleted.image_name) {
+            this._images.remove(deleted.image_name);
+          }
+        });
+      } catch (error) {
+        rethrow(error, {
+          message: 'Could not delete the category',
+          context: {id: key, operation: 'delete'}
+        });
+      }
       return Rx.Observable.of(null);
     });
   }

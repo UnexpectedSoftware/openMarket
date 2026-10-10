@@ -2,7 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { app, BrowserWindow, Menu, shell } from 'electron';
+import electronLog from 'electron-log/main';
 import { FETCH_IMAGES_CHANNEL } from './image/channel.js';
+import { bindLogger, record } from '../infrastructure/logging/ErrorLog.js';
+
+const log = electronLog && typeof electronLog.error === 'function'
+  ? electronLog
+  : electronLog.default;
+bindLogger(log, {processType: 'main'});
 
 const sourceDirectory = typeof __dirname === 'undefined'
   ? path.dirname(fileURLToPath(import.meta.url))
@@ -17,7 +24,7 @@ let template;
 let mainWindow = null;
 
 const openExternal = url => {
-  shell.openExternal(url).catch(error => console.log(error));
+  shell.openExternal(url).catch(error => record(error));
 };
 
 function sendFetchImages() {
@@ -36,7 +43,7 @@ async function enableProcessHelpers() {
       const electronDebug = await import('electron-debug');
       electronDebug.default();
     } catch (error) {
-      console.log('electron-debug is unavailable', error);
+      record(error);
     }
   }
 }
@@ -58,7 +65,7 @@ const installExtensions = async () => {
     ].filter(Boolean);
     await installer.installExtension(extensions);
   } catch (error) {
-    console.log('DevTools extensions were not installed', error);
+    record(error);
   }
 };
 

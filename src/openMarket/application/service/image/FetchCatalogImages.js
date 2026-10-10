@@ -1,6 +1,7 @@
 import fs from 'fs';
 import * as Rx from 'rxjs';
 import {isProductBarcode} from '../../../domain/image/barcode';
+import {record} from '../../../infrastructure/logging/ErrorLog';
 
 export const PRODUCT_BATCH_SIZE = 20;
 
@@ -108,6 +109,7 @@ export default class FetchCatalogImages {
       await update(imagePath).toPromise();
       return 1;
     } catch (error) {
+      record(error);
       return 0;
     } finally {
       removeFile(imagePath);

@@ -1,4 +1,6 @@
 import moment from 'moment';
+import UnknownSalesWindowError from '../../../domain/error/UnknownSalesWindowError';
+import {raise} from '../../../infrastructure/logging/ErrorLog';
 
 export const DEFAULT_SALES_WINDOW = 'last_7_days';
 
@@ -19,7 +21,7 @@ export const SALES_WINDOWS = [
 export function resolveSalesWindow(window, now = moment()) {
   const spec = SALES_WINDOWS.find(item => item.id === window);
   if (!spec) {
-    throw new Error('Unknown sales window ' + window);
+    raise(new UnknownSalesWindowError({window}));
   }
   const end = now.clone().startOf('day');
   let start = end.clone();

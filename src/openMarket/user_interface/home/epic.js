@@ -2,6 +2,7 @@ import OpenMarket from "../../application/index";
 import * as Rx from "rxjs";
 import {push} from 'react-router-redux';
 import ImageStore, {imagesDirectory} from '../../infrastructure/service/ImageStore';
+import {record} from '../../infrastructure/logging/ErrorLog';
 import {makeHomePageLoadedEpic, makeMostSoldEpic} from './epicFactory';
 
 const productImages = new ImageStore({directory: imagesDirectory('product-images')});
@@ -18,6 +19,6 @@ export default action$ =>
   Rx.Observable.merge(
     homePageLoadedEpic(action$),
     mostSoldEpic(action$)
-  ).do(() => null,error => console.log(error),()=> null)
+  ).do(() => null, error => record(error), () => null)
 
 
