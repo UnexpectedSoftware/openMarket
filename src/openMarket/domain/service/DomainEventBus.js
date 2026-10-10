@@ -1,7 +1,7 @@
 import {Subject} from 'rxjs/Subject';
 import 'rxjs/add/operator/filter';
 import {aggregateId, hydrate, typeName} from '../event/registry';
-import {DEAD, PENDING} from './domainEventStatus';
+import {DEAD, DONE, FAILED, PENDING, PROCESSING} from './domainEventStatus';
 
 const DEFAULT_MAX_ATTEMPTS = 5;
 const DEFAULT_INTERVAL_MS = 1000;
@@ -12,19 +12,30 @@ const ERROR_LIMIT = 500;
  * Live listeners (ofType) see an event only after the publishing transaction commits.
  * Synchronous handlers run inside that transaction: a throw rolls it back.
  * Durable handlers are recorded as PENDING and retried until they succeed or are dead-lettered.
- * Without a store the bus stays in memory: synchronous throws still propagate, and durable handlers run once.
+ * Without a repository the bus stays in memory: synchronous throws still propagate, and durable handlers run once.
  */
 export default class DomainEventBus {
 
   /**
-   * @param {DomainEventStore} [store]
+   * @param {DomainEventRepository} [repository]
+   * @param {Transaction} [transaction]
+   * @param {Identity} [identity]
    * @param {function(): string} [now]
    * @param {number} [maxAttempts]
    * @param {number} [intervalMs]
    */
-  constructor({store = null, now = null, maxAttempts = DEFAULT_MAX_ATTEMPTS, intervalMs = DEFAULT_INTERVAL_MS} = {}) {
+  constructor({
+    repository = null,
+    transaction = null,
+    identity = null,
+    now = null,
+    maxAttempts = DEFAULT_MAX_ATTEMPTS,
+    intervalMs = DEFAULT_INTERVAL_MS
+  } = {}) {
     this._events = new Subject();
-    this._store = store;
+    this._repository = repository;
+    this._transaction = transaction;
+    this._identity = identity;
     this._now = now || (() => new Date().toISOString());
     this._maxAttempts = maxAttempts;
     this._intervalMs = intervalMs;
@@ -37,7 +48,7 @@ export default class DomainEventBus {
   }
 
   /**
-   * Persists the event when a store is configured, then runs synchronous handlers.
+   * Persists the event when a repository is configured, then runs synchronous handlers.
    * A synchronous throw propagates to the caller.
    * @param {*} event
    */
@@ -45,45 +56,43 @@ export default class DomainEventBus {
     if (event == null || typeof event !== 'object') {
       throw new Error('DomainEventBus#publish expects an event');
     }
-    if (!this._store) {
+    if (!this._repository) {
       this._runSync(event);
       this._runDurableInline(event);
       this._events.next(event);
       return;
     }
     const record = {
-      id: globalThis.crypto.randomUUID(),
+      id: this._identity.generate(),
       type: typeName(event),
       payload: JSON.stringify(event),
       aggregateId: aggregateId(event),
       createdAt: this._now()
     };
     const subscriberNames = this._durableNames(event);
-    const owns = !this._store.inTransaction();
-    if (owns) {
-      this._store.begin();
-    }
+    const joined = this._transaction.inTransaction();
     const mark = this._deferred.length;
     try {
-      this._store.insertEvent(record);
-      this._runSync(event);
-      this._store.insertPending({
-        eventId: record.id,
-        subscriberNames,
-        updatedAt: record.createdAt
+      this._transaction.execute(() => {
+        this._repository.save(record);
+        this._runSync(event);
+        subscriberNames.forEach(subscriberName => {
+          this._repository.saveProcessing({
+            eventId: record.id,
+            subscriberName,
+            status: PENDING,
+            attempts: 0,
+            lastError: null,
+            updatedAt: record.createdAt
+          });
+        });
+        this._deferred.push(event);
       });
-      this._deferred.push(event);
-      if (owns) {
-        this._store.commit();
-      }
     } catch (error) {
       this._deferred.splice(mark);
-      if (owns) {
-        this._store.rollback();
-      }
       throw error;
     }
-    if (owns) {
+    if (!joined) {
       this._emit(this._deferred.splice(mark));
     }
   }
@@ -214,7 +223,7 @@ export default class DomainEventBus {
       try {
         subscriber.handler(event);
       } catch (error) {
-        // No store means there is nowhere to retry. Live delivery still happens.
+        // No repository means there is nowhere to retry. Live delivery still happens.
       }
     });
   }
@@ -230,26 +239,27 @@ export default class DomainEventBus {
   }
 
   _recover() {
-    if (!this._store) {
+    if (!this._repository) {
       return;
     }
     const updatedAt = this._now();
-    this._store.listProcessing().forEach(row => {
+    this._repository.findProcessingByStatus({status: PROCESSING}).forEach(row => {
       const subscriber = this._durable.get(row.subscriberName);
       const maxAttempts = subscriber ? subscriber.maxAttempts : this._maxAttempts;
       const dead = row.attempts >= maxAttempts;
-      this._store.finishInterrupted({
+      this._repository.saveProcessing({
         eventId: row.eventId,
         subscriberName: row.subscriberName,
         status: dead ? DEAD : PENDING,
-        lastError: dead ? 'stopped while processing' : null,
+        attempts: row.attempts,
+        lastError: dead ? 'stopped while processing' : row.lastError,
         updatedAt
       });
     });
   }
 
   _ensureTimer() {
-    if (this._timer || this._durable.size === 0 || !this._store) {
+    if (this._timer || this._durable.size === 0 || !this._repository) {
       return;
     }
     this._timer = setInterval(() => {
@@ -265,10 +275,10 @@ export default class DomainEventBus {
   }
 
   _pump({retry}) {
-    if (!this._store) {
+    if (!this._repository) {
       return;
     }
-    if (this._store.inTransaction()) {
+    if (this._transaction.inTransaction()) {
       return;
     }
     if (this._draining) {
@@ -301,31 +311,30 @@ export default class DomainEventBus {
   }
 
   _dispatchNext(subscriber, {retry}) {
-    const row = this._store.nextFor({
-      subscriberName: subscriber.name,
-      ordered: subscriber.ordered,
-      retry
-    });
+    const row = this._nextProcessing(subscriber, {retry});
     if (!row) {
       return null;
     }
-    const attempts = this._store.markProcessing({
+    const attempts = row.attempts + 1;
+    const updatedAt = this._now();
+    this._repository.saveProcessing({
       eventId: row.eventId,
       subscriberName: subscriber.name,
-      updatedAt: this._now()
+      status: PROCESSING,
+      attempts,
+      lastError: null,
+      updatedAt
     });
-    if (attempts == null) {
-      return null;
-    }
     let event;
     try {
       event = hydrate(row.type, JSON.parse(row.payload));
     } catch (error) {
-      this._store.markFailed({
+      this._repository.saveProcessing({
         eventId: row.eventId,
         subscriberName: subscriber.name,
+        status: DEAD,
+        attempts,
         lastError: messageOf(error),
-        dead: true,
         updatedAt: this._now()
       });
       return 'dead';
@@ -334,21 +343,52 @@ export default class DomainEventBus {
       subscriber.handler(event);
     } catch (error) {
       const dead = attempts >= subscriber.maxAttempts;
-      this._store.markFailed({
+      this._repository.saveProcessing({
         eventId: row.eventId,
         subscriberName: subscriber.name,
+        status: dead ? DEAD : FAILED,
+        attempts,
         lastError: messageOf(error),
-        dead,
         updatedAt: this._now()
       });
       return dead ? 'dead' : 'failed';
     }
-    this._store.markDone({
+    this._repository.saveProcessing({
       eventId: row.eventId,
       subscriberName: subscriber.name,
+      status: DONE,
+      attempts,
+      lastError: null,
       updatedAt: this._now()
     });
     return 'done';
+  }
+
+  _nextProcessing(subscriber, {retry}) {
+    if (subscriber.ordered) {
+      const row = this._repository.findFirstProcessing({
+        subscriberName: subscriber.name,
+        statuses: [PENDING, FAILED]
+      });
+      if (!row || (row.status === FAILED && !retry)) {
+        return null;
+      }
+      return row;
+    }
+    const pending = this._repository.findFirstProcessing({
+      subscriberName: subscriber.name,
+      statuses: [PENDING]
+    });
+    if (pending) {
+      return pending;
+    }
+    if (!retry) {
+      return null;
+    }
+    return this._repository.findFirstProcessing({
+      subscriberName: subscriber.name,
+      statuses: [FAILED]
+    });
   }
 
   _assertSubscriber(name, EventType, handler) {

@@ -9,8 +9,9 @@ import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
 import {replaceSqliteData} from '../openMarket/infrastructure/service/sqliteSeed';
 import SqliteConnection from '../openMarket/infrastructure/service/SqliteConnection';
-import SqliteDomainEventStore from '../openMarket/infrastructure/service/SqliteDomainEventStore';
+import SqliteDomainEventRepository from '../openMarket/infrastructure/event/SqliteDomainEventRepository';
 import SqliteTransaction from '../openMarket/infrastructure/service/SqliteTransaction';
+import RandomUUIDIdentity from '../openMarket/domain/RandomUUIDIdentity';
 import DomainEventBus from '../openMarket/domain/service/DomainEventBus';
 import OrderCreated from '../openMarket/domain/event/OrderCreated';
 import ProductEnabledAgain from '../openMarket/domain/event/ProductEnabledAgain';
@@ -72,11 +73,15 @@ function sale(createdAt) {
 
 function openBus(filename) {
   const connection = new SqliteConnection({filename});
+  const transaction = new SqliteTransaction({connection});
   const bus = new DomainEventBus({
-    store: new SqliteDomainEventStore({connection}),
+    repository: new SqliteDomainEventRepository({connection}),
+    transaction,
+    identity: new RandomUUIDIdentity(),
     intervalMs: 60000
   });
-  return {connection, database: connection.database, bus};
+  transaction.setDomainEventBus(bus);
+  return {connection, database: connection.database, bus, transaction};
 }
 
 function temporaryDirectory() {
@@ -289,7 +294,7 @@ describe('Domain event bus', () => {
   });
 });
 
-describe('Domain event store', () => {
+describe('Domain event repository', () => {
   let directory;
 
   afterEach(() => {
@@ -314,10 +319,7 @@ describe('Domain event store', () => {
   it('propagates a synchronous throw from inside the work observable and rolls the write back', () => {
     directory = temporaryDirectory();
     const opened = openBus(path.join(directory, 'events.sqlite'));
-    const transaction = new SqliteTransaction({
-      connection: opened.connection,
-      domainEventBus: opened.bus
-    });
+    const transaction = opened.transaction;
     const live = [];
     opened.bus.ofType(OrderCreated).subscribe(() => live.push(opened.database.isTransaction));
     opened.bus.subscribeSync('guard', OrderCreated, () => {
@@ -355,10 +357,7 @@ describe('Domain event store', () => {
   it('propagates a synchronous throw from the work function itself', () => {
     directory = temporaryDirectory();
     const opened = openBus(path.join(directory, 'events.sqlite'));
-    const transaction = new SqliteTransaction({
-      connection: opened.connection,
-      domainEventBus: opened.bus
-    });
+    const transaction = opened.transaction;
     opened.bus.subscribeSync('guard', OrderCreated, () => {
       throw new Error('sync failed');
     });
@@ -391,10 +390,7 @@ describe('Domain event store', () => {
   it('keeps the synchronous write and calls the durable subscriber after commit', () => {
     directory = temporaryDirectory();
     const opened = openBus(path.join(directory, 'events.sqlite'));
-    const transaction = new SqliteTransaction({
-      connection: opened.connection,
-      domainEventBus: opened.bus
-    });
+    const transaction = opened.transaction;
     const seen = {sync: [], live: [], durable: []};
     opened.bus.subscribeSync('audit', OrderCreated, event => {
       seen.sync.push(opened.database.isTransaction);

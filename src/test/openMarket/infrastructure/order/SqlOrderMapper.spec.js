@@ -2,10 +2,10 @@ import {expect} from 'chai';
 import sinon from 'sinon';
 import OrderFactoryImpl from "../../../../openMarket/infrastructure/order/OrderFactoryImpl";
 import SqlOrderMapper from "../../../../openMarket/infrastructure/order/SqlOrderMapper";
-import UUIDIdentity from "../../../../openMarket/infrastructure/service/UUIDIdentity";
+import RandomUUIDIdentity from "../../../../openMarket/domain/RandomUUIDIdentity";
 
 
-const orderFactory = new OrderFactoryImpl({identity: new UUIDIdentity()});
+const orderFactory = new OrderFactoryImpl({identity: new RandomUUIDIdentity()});
 
 describe('Sql Order Mapper', () => {
   describe('Given Order rows data from sql', () => {

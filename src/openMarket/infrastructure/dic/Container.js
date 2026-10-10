@@ -2,7 +2,7 @@ import PrinterConnection from "../printer/PrinterConnection";
 import OrderPrinterService from "../printer/OrderPrinterService";
 import CatalogPrinterService from "../printer/CatalogPrinterService";
 import CategoryFactoryImpl from "../category/CategoryFactoryImpl";
-import UUIDIdentity from "../service/UUIDIdentity";
+import RandomUUIDIdentity from "../../domain/RandomUUIDIdentity";
 import ListAllCategories from "../../application/service/category/ListAllCategories";
 import FindCategoryById from "../../application/service/category/FindCategoryById";
 import CreateCategory from "../../application/service/category/CreateCategory";
@@ -46,7 +46,7 @@ import FetchCatalogImages from "../../application/service/image/FetchCatalogImag
 import FindProductImage from "../../application/service/image/FindProductImage";
 import PrintProductCatalog from "../../application/service/product/PrintProductCatalog";
 import DomainEventBus from "../../domain/service/DomainEventBus";
-import SqliteDomainEventStore from "../service/SqliteDomainEventStore";
+import SqliteDomainEventRepository from "../event/SqliteDomainEventRepository";
 import SqliteTransaction from "../service/SqliteTransaction";
 const env = process.env.NODE_ENV
 
@@ -139,8 +139,8 @@ class Container {
   }
 
 
-  _uuidIdentity() {
-    return new UUIDIdentity();
+  _randomUUIDIdentity() {
+    return new RandomUUIDIdentity();
   }
 
   /**
@@ -148,7 +148,7 @@ class Container {
    * @returns {CategoryFactoryImpl}
    */
   _categoryFactory() {
-    return new CategoryFactoryImpl({ identity: this.getInstance({key: 'uuidIdentity'}) });
+    return new CategoryFactoryImpl({ identity: this.getInstance({key: 'randomUUIDIdentity'}) });
   }
 
   /**
@@ -245,7 +245,7 @@ class Container {
    * @returns {ProductFactoryImpl}
    */
   _productFactory() {
-    return new ProductFactoryImpl({ identity: this.getInstance({key: 'uuidIdentity'}) });
+    return new ProductFactoryImpl({ identity: this.getInstance({key: 'randomUUIDIdentity'}) });
   }
 
   _findProductsUseCase() {
@@ -306,23 +306,27 @@ class Container {
     });
   }
 
-  _domainEventStore() {
-    return new SqliteDomainEventStore({
+  _domainEventRepository() {
+    return new SqliteDomainEventRepository({
       connection: this.getInstance({key: 'sqliteConnection'})
-    });
-  }
-
-  _domainEventBus() {
-    return new DomainEventBus({
-      store: this.getInstance({key: 'domainEventStore'})
     });
   }
 
   _transaction() {
     return new SqliteTransaction({
-      connection: this.getInstance({key: 'sqliteConnection'}),
-      domainEventBus: this.getInstance({key: 'domainEventBus'})
+      connection: this.getInstance({key: 'sqliteConnection'})
     });
+  }
+
+  _domainEventBus() {
+    const transaction = this.getInstance({key: 'transaction'});
+    const bus = new DomainEventBus({
+      repository: this.getInstance({key: 'domainEventRepository'}),
+      transaction,
+      identity: this.getInstance({key: 'randomUUIDIdentity'})
+    });
+    transaction.setDomainEventBus(bus);
+    return bus;
   }
 
   _createOrderUseCase() {
@@ -336,7 +340,7 @@ class Container {
   }
 
   _orderFactory() {
-    return new OrderFactoryImpl({ identity: this.getInstance({key: 'uuidIdentity'})});
+    return new OrderFactoryImpl({ identity: this.getInstance({key: 'randomUUIDIdentity'})});
   }
 
   _listAllOrdersUseCase() {

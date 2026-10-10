@@ -138,7 +138,9 @@ describe('DomainEventBus', () => {
   });
 });
 
-describe('DomainEventBus with a store', () => {
+describe('DomainEventBus with a repository', () => {
+  const identity = {generate: () => 'event-1'};
+
   function order() {
     return new OrderCreated({
       id: 'sale-1',
@@ -156,72 +158,75 @@ describe('DomainEventBus with a store', () => {
     });
   }
 
-  function joinedStore() {
+  function recordingTransaction({joined}) {
+    let open = joined;
     const calls = [];
     return {
       calls,
-      inTransaction: () => true,
-      begin() {
-        throw new Error('begin');
+      inTransaction() {
+        return open;
       },
-      commit() {
-        throw new Error('commit');
+      execute(work) {
+        if (open) {
+          calls.push('join');
+          return work();
+        }
+        open = true;
+        calls.push('begin');
+        try {
+          const result = work();
+          open = false;
+          calls.push('commit');
+          return result;
+        } catch (error) {
+          open = false;
+          calls.push('rollback');
+          throw error;
+        }
+      }
+    };
+  }
+
+  function recordingRepository() {
+    const events = [];
+    const processing = [];
+    return {
+      events,
+      processing,
+      save(event) {
+        events.push(event);
       },
-      rollback() {
-        throw new Error('rollback');
+      saveProcessing(row) {
+        processing.push(row);
       },
-      insertEvent() {
-        calls.push('event');
+      findProcessingByStatus() {
+        return [];
       },
-      insertPending() {
-        calls.push('pending');
-      },
-      nextFor() {
+      findFirstProcessing() {
         return null;
       }
     };
   }
 
-  function ownedStore() {
-    let open = false;
-    const calls = [];
-    return {
-      calls,
-      inTransaction: () => open,
-      begin() {
-        open = true;
-        calls.push('begin');
-      },
-      commit() {
-        open = false;
-        calls.push('commit');
-      },
-      rollback() {
-        open = false;
-        calls.push('rollback');
-      },
-      insertEvent() {
-        calls.push('event');
-      },
-      insertPending() {
-        calls.push('pending');
-      },
-      nextFor() {
-        return null;
-      }
-    };
+  function busWith({joined}) {
+    const transaction = recordingTransaction({joined});
+    const repository = recordingRepository();
+    const bus = new DomainEventBus({repository, transaction, identity});
+    return {bus, transaction, repository};
   }
 
   it('joins the open transaction and waits to notify live listeners', () => {
-    const store = joinedStore();
-    const bus = new DomainEventBus({store});
+    const {bus, transaction, repository} = busWith({joined: true});
     const seen = [];
     bus.subscribeSync('audit', OrderCreated, () => seen.push('sync'));
     bus.ofType(OrderCreated).subscribe(() => seen.push('live'));
 
     bus.publish(order());
 
-    expect(store.calls).to.deep.equal(['event', 'pending']);
+    expect(transaction.calls).to.deep.equal(['join']);
+    expect(repository.events).to.have.lengthOf(1);
+    expect(repository.events[0].id).to.equal('event-1');
+    expect(repository.processing).to.have.lengthOf(0);
     expect(seen).to.deep.equal(['sync']);
 
     bus.transactionCommitted();
@@ -230,8 +235,7 @@ describe('DomainEventBus with a store', () => {
   });
 
   it('drops live notifications when the open transaction rolls back', () => {
-    const store = joinedStore();
-    const bus = new DomainEventBus({store});
+    const {bus, transaction, repository} = busWith({joined: true});
     const seen = [];
     bus.ofType(OrderCreated).subscribe(() => seen.push('order'));
     bus.ofType(ProductWithLowStock).subscribe(() => seen.push('low'));
@@ -245,12 +249,13 @@ describe('DomainEventBus with a store', () => {
     bus.transactionCommitted();
 
     expect(seen).to.deep.equal([]);
-    expect(store.calls).to.deep.equal(['event', 'pending', 'event']);
+    expect(transaction.calls).to.deep.equal(['join', 'join']);
+    expect(repository.events).to.have.lengthOf(2);
+    expect(repository.processing).to.have.lengthOf(0);
   });
 
   it('rolls its own transaction back when a synchronous handler throws', () => {
-    const store = ownedStore();
-    const bus = new DomainEventBus({store});
+    const {bus, transaction, repository} = busWith({joined: false});
     const seen = [];
     bus.ofType(OrderCreated).subscribe(() => seen.push('live'));
     bus.subscribeSync('boom', OrderCreated, () => {
@@ -259,22 +264,27 @@ describe('DomainEventBus with a store', () => {
 
     expect(() => bus.publish(order())).to.throw('sync failed');
 
-    expect(store.calls).to.deep.equal(['begin', 'event', 'rollback']);
+    expect(transaction.calls).to.deep.equal(['begin', 'rollback']);
+    expect(repository.events).to.have.lengthOf(1);
+    expect(repository.events[0].id).to.equal('event-1');
+    expect(repository.processing).to.have.lengthOf(0);
     expect(seen).to.deep.equal([]);
-    expect(store.inTransaction()).to.equal(false);
+    expect(transaction.inTransaction()).to.equal(false);
   });
 
   it('commits, then notifies live listeners, when it owns the transaction', () => {
-    const store = ownedStore();
-    const bus = new DomainEventBus({store});
+    const {bus, transaction, repository} = busWith({joined: false});
     const seen = [];
     bus.subscribeSync('audit', OrderCreated, () => seen.push('sync'));
     bus.ofType(OrderCreated).subscribe(() => seen.push('live'));
 
     bus.publish(order());
 
-    expect(store.calls).to.deep.equal(['begin', 'event', 'pending', 'commit']);
+    expect(transaction.calls).to.deep.equal(['begin', 'commit']);
+    expect(repository.events).to.have.lengthOf(1);
+    expect(repository.events[0].id).to.equal('event-1');
+    expect(repository.processing).to.have.lengthOf(0);
     expect(seen).to.deep.equal(['sync', 'live']);
-    expect(store.inTransaction()).to.equal(false);
+    expect(transaction.inTransaction()).to.equal(false);
   });
 });

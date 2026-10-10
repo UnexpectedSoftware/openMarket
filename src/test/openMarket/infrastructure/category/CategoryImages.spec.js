@@ -8,14 +8,14 @@ import SqliteCategoryRepository from '../../../../openMarket/infrastructure/cate
 import SqliteCategoryQueryService from '../../../../openMarket/infrastructure/category/SqliteCategoryQueryService';
 import CategoryFactoryImpl from '../../../../openMarket/infrastructure/category/CategoryFactoryImpl';
 import ImageStore, {IMAGE_MAX_BYTES} from '../../../../openMarket/infrastructure/service/ImageStore';
-import UUIDIdentity from '../../../../openMarket/infrastructure/service/UUIDIdentity';
+import RandomUUIDIdentity from '../../../../openMarket/domain/RandomUUIDIdentity';
 
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
   'base64'
 );
 
-const categoryFactory = new CategoryFactoryImpl({identity: new UUIDIdentity()});
+const categoryFactory = new CategoryFactoryImpl({identity: new RandomUUIDIdentity()});
 
 function setup() {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-category-images-'));

@@ -2,21 +2,60 @@ import * as Rx from 'rxjs';
 import 'rxjs/add/operator/toArray';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/catch';
+import Transaction from '../../domain/service/Transaction';
 
 /**
  * Commits only after the work observable completes, then emits its values.
  * Synchronous domain-event handlers run during the work, so a throw rolls it back.
  * Live listeners are released after COMMIT, with the transaction closed.
  */
-export default class SqliteTransaction {
+export default class SqliteTransaction extends Transaction {
 
   /**
    * @param {SqliteConnection} connection
    * @param {DomainEventBus} [domainEventBus]
    */
   constructor({connection, domainEventBus = null}) {
+    super();
     this._database = connection.database;
     this._domainEventBus = domainEventBus;
+  }
+
+  /**
+   * @param {DomainEventBus} domainEventBus
+   */
+  setDomainEventBus(domainEventBus) {
+    this._domainEventBus = domainEventBus;
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  inTransaction() {
+    return this._database.isTransaction;
+  }
+
+  /**
+   * @param {function(): *} work
+   * @returns {*}
+   */
+  execute(work) {
+    if (this.inTransaction()) {
+      return work();
+    }
+    this._database.exec('BEGIN');
+    try {
+      const result = work();
+      this._database.exec('COMMIT');
+      return result;
+    } catch (error) {
+      try {
+        this._database.exec('ROLLBACK');
+      } catch (rollbackError) {
+        // A failed statement can already have ended the transaction.
+      }
+      throw error;
+    }
   }
 
   /**

@@ -10,10 +10,10 @@ import SqlOrderMapper from '../../../../openMarket/infrastructure/order/SqlOrder
 import ProductFactoryImpl from '../../../../openMarket/infrastructure/product/ProductFactoryImpl';
 import CategoryFactoryImpl from '../../../../openMarket/infrastructure/category/CategoryFactoryImpl';
 import OrderFactoryImpl from '../../../../openMarket/infrastructure/order/OrderFactoryImpl';
-import UUIDIdentity from '../../../../openMarket/infrastructure/service/UUIDIdentity';
+import RandomUUIDIdentity from '../../../../openMarket/domain/RandomUUIDIdentity';
 import SqliteTransaction from '../../../../openMarket/infrastructure/service/SqliteTransaction';
 
-const identity = new UUIDIdentity();
+const identity = new RandomUUIDIdentity();
 const categoryFactory = new CategoryFactoryImpl({identity});
 const productFactory = new ProductFactoryImpl({identity});
 const orderFactory = new OrderFactoryImpl({identity});
