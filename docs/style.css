@@ -41,7 +41,6 @@ nav a {
     margin: 10px 0 0;
 }
 .hero .pitch { font-size: 1.2em; margin: 10px auto; max-width: 700px; }
-.hero .version { color: #ff00ff; }
 .content {
     max-width: 860px;
     margin: 0 auto;
@@ -55,33 +54,6 @@ nav a {
     padding-bottom: 4px;
     margin-top: 40px;
 }
-.features {
-    list-style: none;
-    padding: 0;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 14px;
-}
-.features li {
-    background: #222;
-    border: 1px solid #ff00ff;
-    box-shadow: 0 0 8px rgba(255, 0, 255, 0.35);
-    padding: 12px 14px;
-}
-.features strong { color: #00ffff; display: block; margin-bottom: 4px; }
-.downloads {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 14px;
-}
-.os {
-    background: #222;
-    border: 1px solid #00ffff;
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.35);
-    padding: 14px;
-    text-align: center;
-}
-.os h3 { margin: 0 0 10px; color: #ff00ff; }
 .button {
     display: inline-block;
     background: #ff00ff;
@@ -94,17 +66,10 @@ nav a {
 .button:hover { background: #00ffff; color: #000; text-shadow: none; }
 .button.alt { background: transparent; border: 1px solid #ff00ff; }
 .button.alt:hover { background: #00ffff; border-color: #00ffff; }
-.note { font-size: 0.9em; color: #bbb; }
-.placeholder {
-    border: 2px dashed #ff00ff;
-    color: #bbb;
-    padding: 30px;
-    text-align: center;
-}
-code { color: #00ffff; }
 .footer {
     background: #333;
     padding: 10px;
     font-size: 0.8em;
     margin-top: 40px;
 }
+.content ul { font-size: 1.1em; }

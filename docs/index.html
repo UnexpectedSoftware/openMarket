@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenMarket - Unexpected Software</title>
-    <meta name="description" content="OpenMarket: a free desktop point-of-sale app for small shops. Products, stock, categories, orders, takings and thermal receipts, stored in a local SQLite file.">
+    <meta name="description" content="OpenMarket: a desktop point-of-sale app for small shops.">
     <link rel="icon" type="image/png" href="assets/openmarket-icon.png">
     <link rel="stylesheet" href="style.css">
 </head>
@@ -12,64 +12,24 @@
 <div class="header"><a href="https://unexpectedsoftware.com/">Unexpected Software</a></div>
 <nav>
     <a href="https://unexpectedsoftware.com/">Home</a>
-    <a href="#features">Features</a>
-    <a href="#download">Download</a>
     <a href="https://github.com/UnexpectedSoftware/openMarket">GitHub</a>
 </nav>
 
 <div class="hero">
     <img src="assets/openmarket-icon.png" alt="OpenMarket icon">
     <h1>OpenMarket</h1>
-    <p class="pitch">A desktop point-of-sale app for small shops: ring up sales by barcode, keep stock in check and see your takings, all from one local database.</p>
-    <p class="version">Latest release: v1.14.0 &middot; Windows &middot; macOS &middot; Linux</p>
-    <a class="button" href="#download">Download</a>
-    <a class="button alt" href="https://github.com/UnexpectedSoftware/openMarket">View source</a>
+    <p class="pitch">A desktop point-of-sale app for small shops: products, stock, orders and receipts, stored locally. For Windows, macOS and Linux.</p>
+    <a class="button" href="https://github.com/UnexpectedSoftware/openMarket/releases/latest">Download latest release</a>
+    <a class="button alt" href="https://github.com/UnexpectedSoftware/openMarket">View on GitHub</a>
 </div>
 
 <div class="content">
-    <h2 id="features">Features</h2>
-    <ul class="features">
-        <li><strong>Sell by barcode</strong>Scan or type a barcode to add a product to the order. Weighted products ask for the quantity before they go on the ticket.</li>
-        <li><strong>Thermal receipts</strong>Print the order ticket on an Epson-compatible ESC/POS thermal printer, and print product lists straight from the catalog.</li>
-        <li><strong>Products &amp; stock</strong>Create and edit products with price, stock and minimum stock. Enable or disable products, search the list and filter it to low-stock items.</li>
-        <li><strong>Low-stock alerts</strong>When a sale takes a product below its minimum stock, OpenMarket tells you right away.</li>
-        <li><strong>Categories</strong>Organise the catalog into categories, each with its own picture.</li>
-        <li><strong>Photos fetched for you</strong>Empty product photos are filled from Open Food Facts by barcode, and category pictures from Wikimedia Commons.</li>
-        <li><strong>Dashboard</strong>See your most-sold products and a takings chart over the last 7 days, a month, 3 or 6 months, or a year.</li>
-        <li><strong>Order history</strong>Browse past orders by date range and open any order to see its lines.</li>
-        <li><strong>Local &amp; private</strong>Everything lives in one embedded SQLite file on your computer. No server, no account.</li>
+    <h2>Coming soon</h2>
+    <ul>
+        <li>Plugin system (first plugin: Verifactu)</li>
+        <li>Templating system</li>
+        <li>Redesigned UI</li>
     </ul>
-
-    <h2 id="screenshots">Screenshots</h2>
-    <!-- SCREENSHOTS: add images to docs/assets/ and replace this placeholder with <img> tags. -->
-    <div class="placeholder">Screenshots coming soon.</div>
-
-    <h2 id="download">Download</h2>
-    <div class="downloads">
-        <div class="os">
-            <h3>Windows</h3>
-            <a class="button" href="https://github.com/UnexpectedSoftware/openMarket/releases/download/v1.14.0/OpenMarket-1.14.0-win-x64.exe">Installer (.exe)</a>
-            <p class="note">Windows x64</p>
-        </div>
-        <div class="os">
-            <h3>macOS</h3>
-            <a class="button" href="https://github.com/UnexpectedSoftware/openMarket/releases/download/v1.14.0/OpenMarket-1.14.0-mac-universal.dmg">Disk image (.dmg)</a>
-            <a class="button alt" href="https://github.com/UnexpectedSoftware/openMarket/releases/download/v1.14.0/OpenMarket-1.14.0-mac-universal.zip">.zip</a>
-            <p class="note">Universal: Intel and Apple Silicon</p>
-        </div>
-        <div class="os">
-            <h3>Linux</h3>
-            <a class="button" href="https://github.com/UnexpectedSoftware/openMarket/releases/download/v1.14.0/OpenMarket-1.14.0-linux-x86_64.AppImage">AppImage</a>
-            <a class="button alt" href="https://github.com/UnexpectedSoftware/openMarket/releases/download/v1.14.0/OpenMarket-1.14.0-linux-amd64.deb">.deb</a>
-            <p class="note">x64. The AppImage does not need FUSE 2.</p>
-        </div>
-    </div>
-    <p class="note">The builds are unsigned, so Windows SmartScreen and macOS Gatekeeper warn on first launch.
-        All versions and release notes: <a href="https://github.com/UnexpectedSoftware/openMarket/releases/latest">latest release on GitHub</a>.</p>
-
-    <h2 id="source">Open source</h2>
-    <p>OpenMarket is built with Electron, React and Redux, and stores data with SQLite. The code, issue tracker and build instructions are on
-        <a href="https://github.com/UnexpectedSoftware/openMarket">GitHub</a>.</p>
 </div>
 
 <div class="footer"><a href="https://unexpectedsoftware.com/">&larr; Back to Unexpected Software</a> &middot; &copy; 2026 Unexpected Software</div>
