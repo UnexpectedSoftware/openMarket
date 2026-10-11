@@ -22,7 +22,7 @@ Every event published through the wired bus is inserted into `domain_event`:
 | `type` | Stable name, such as `OrderCreated` |
 | `payload` | JSON snapshot of the event fields |
 | `aggregate_id` | Order id, otherwise barcode. Empty when the event has neither |
-| `created_at` | UTC timestamp of the insert, ISO-8601 |
+| `created_at` | ISO-8601 UTC timestamp from the injected clock |
 
 Durable subscribers also get a row in `domain_event_processing`:
 
@@ -33,7 +33,7 @@ Durable subscribers also get a row in `domain_event_processing`:
 | `status` | `PENDING`, `PROCESSING`, `DONE`, `FAILED`, or `DEAD` |
 | `attempts` | How many times the handler has been claimed |
 | `last_error` | Message from the latest failure |
-| `updated_at` | UTC timestamp of the last status change |
+| `updated_at` | ISO-8601 UTC timestamp from the injected clock |
 
 `PENDING` is waiting. `PROCESSING` is claimed. `DONE` finished. `FAILED` will be tried again. `DEAD` will not.
 
@@ -111,7 +111,7 @@ A subscriber registered after an event was published does not receive that event
 5. Notify `ofType` listeners.
 6. Run durable handlers that are still `PENDING`.
 
-`new DomainEventBus()` with no repository keeps the in-memory behaviour used by unit tests. Synchronous handlers still run first and their errors still propagate. Durable handlers run once, in process, and a throw from them does not stop live delivery. Nothing is written to SQLite.
+The constructor requires a repository, a transaction, an identity, and a clock. There is no in-memory bus. `created_at` and each processing `updated_at` are whatever `clock.now()` returns. The container passes `SystemClock`, which returns the current time as an ISO-8601 UTC string. A test passes a clock that returns a chosen time.
 
 ## Public events
 
@@ -155,4 +155,4 @@ Published by `EnableProduct` when a cashier scans a disabled product. The produc
 
 ## What stays unaware of the tables
 
-Use cases, entities, and `ofType` listeners do not import the repository. They publish or subscribe through `DomainEventBus`. `SqliteDomainEventRepository` only saves and finds rows in the two tables. Retries, dead letters, and transaction boundaries stay on the bus and on `Transaction`. `SqliteTransaction` extends that port. The container is the only place that wires the repository, the transaction, and `RandomUUIDIdentity` in.
+Use cases, entities, and `ofType` listeners do not import the repository. They publish or subscribe through `DomainEventBus`. `SqliteDomainEventRepository` only saves and finds rows in the two tables. Retries, dead letters, and transaction boundaries stay on the bus and on `Transaction`. `SqliteTransaction` extends that port. The container is the only place that wires the repository, the transaction, `RandomUUIDIdentity`, and `SystemClock` in.

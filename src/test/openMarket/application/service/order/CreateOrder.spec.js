@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import * as Rx from 'rxjs';
 import Order from '../../../../../openMarket/domain/order/Order';
 import OrderCreated from '../../../../../openMarket/domain/event/OrderCreated';
-import DomainEventBus from '../../../../../openMarket/domain/service/DomainEventBus';
+import {deliveringDomainEventBus} from '../../../support/domainEventBus';
 import CreateOrder from '../../../../../openMarket/application/service/order/CreateOrder';
 import RecordProductSales from '../../../../../openMarket/application/service/product/RecordProductSales';
 
@@ -32,7 +32,7 @@ describe('CreateOrder domain events', () => {
   let events;
 
   beforeEach(() => {
-    bus = new DomainEventBus();
+    bus = deliveringDomainEventBus();
     events = [];
     bus.ofType(OrderCreated).subscribe(event => events.push(event));
   });
@@ -124,7 +124,7 @@ describe('CreateOrder domain events', () => {
 
 describe('RecordProductSales', () => {
   it('rebuilds an empty table once, then keeps listening', () => {
-    const bus = new DomainEventBus();
+    const bus = deliveringDomainEventBus();
     let rebuilt = 0;
     let applied = 0;
     const recorder = new RecordProductSales({
@@ -151,7 +151,7 @@ describe('RecordProductSales', () => {
   });
 
   it('subscribes even when the backfill fails', () => {
-    const bus = new DomainEventBus();
+    const bus = deliveringDomainEventBus();
     let applied = false;
     const errorLog = console.error;
     console.error = () => {};

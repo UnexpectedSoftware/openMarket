@@ -48,6 +48,7 @@ import PrintProductCatalog from "../../application/service/product/PrintProductC
 import DomainEventBus from "../../domain/service/DomainEventBus";
 import SqliteDomainEventRepository from "../event/SqliteDomainEventRepository";
 import SqliteTransaction from "../service/SqliteTransaction";
+import SystemClock from "../service/SystemClock";
 const env = process.env.NODE_ENV
 
 class Container {
@@ -318,12 +319,17 @@ class Container {
     });
   }
 
+  _systemClock() {
+    return new SystemClock();
+  }
+
   _domainEventBus() {
     const transaction = this.getInstance({key: 'transaction'});
     const bus = new DomainEventBus({
       repository: this.getInstance({key: 'domainEventRepository'}),
       transaction,
-      identity: this.getInstance({key: 'randomUUIDIdentity'})
+      identity: this.getInstance({key: 'randomUUIDIdentity'}),
+      clock: this.getInstance({key: 'systemClock'})
     });
     transaction.setDomainEventBus(bus);
     return bus;

@@ -71,6 +71,8 @@ function sale(createdAt) {
   });
 }
 
+const STORED_AT = '2026-10-11T12:00:00.000Z';
+
 function openBus(filename) {
   const connection = new SqliteConnection({filename});
   const transaction = new SqliteTransaction({connection});
@@ -78,6 +80,7 @@ function openBus(filename) {
     repository: new SqliteDomainEventRepository({connection}),
     transaction,
     identity: new RandomUUIDIdentity(),
+    clock: {now: () => STORED_AT},
     intervalMs: 60000
   });
   transaction.setDomainEventBus(bus);
@@ -429,6 +432,10 @@ describe('Domain event repository', () => {
         attempts: 1,
         lastError: null
       }]);
+      expect(opened.database.prepare('SELECT created_at AS createdAt FROM domain_event').get().createdAt)
+        .to.equal(STORED_AT);
+      expect(opened.database.prepare('SELECT updated_at AS updatedAt FROM domain_event_processing').get().updatedAt)
+        .to.equal(STORED_AT);
     } finally {
       opened.bus.stop();
       opened.database.close();

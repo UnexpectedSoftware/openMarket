@@ -5,7 +5,7 @@ import {
   makeLowStockWarningEpic,
   makeProductEnabledAgainEpic
 } from '../../../../../openMarket/user_interface/order/new_order/epicFactory';
-import DomainEventBus from '../../../../../openMarket/domain/service/DomainEventBus';
+import {deliveringDomainEventBus} from '../../../support/domainEventBus';
 import ProductWithLowStock from '../../../../../openMarket/domain/event/ProductWithLowStock';
 import ProductEnabledAgain from '../../../../../openMarket/domain/event/ProductEnabledAgain';
 import {
@@ -370,7 +370,7 @@ describe('Order Epics', () => {
 
   describe('Low stock warning', () => {
     it('shows one warning for each ProductWithLowStock event', (done) => {
-      const bus = new DomainEventBus();
+      const bus = deliveringDomainEventBus();
       const warningNotification = options => ({
         type: 'RNS_SHOW_NOTIFICATION',
         title: options.title,
@@ -415,7 +415,7 @@ describe('Order Epics', () => {
 
   describe('Product enabled again', () => {
     it('warns that the product is enabled and stock increased by 1', (done) => {
-      const bus = new DomainEventBus();
+      const bus = deliveringDomainEventBus();
       const warningNotification = options => ({
         type: 'RNS_SHOW_NOTIFICATION',
         title: options.title,

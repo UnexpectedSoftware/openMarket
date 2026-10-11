@@ -12,31 +12,33 @@ const ERROR_LIMIT = 500;
  * Live listeners (ofType) see an event only after the publishing transaction commits.
  * Synchronous handlers run inside that transaction: a throw rolls it back.
  * Durable handlers are recorded as PENDING and retried until they succeed or are dead-lettered.
- * Without a repository the bus stays in memory: synchronous throws still propagate, and durable handlers run once.
  */
 export default class DomainEventBus {
 
   /**
-   * @param {DomainEventRepository} [repository]
-   * @param {Transaction} [transaction]
-   * @param {Identity} [identity]
-   * @param {function(): string} [now]
+   * @param {DomainEventRepository} repository
+   * @param {Transaction} transaction
+   * @param {Identity} identity
+   * @param {Clock} clock
    * @param {number} [maxAttempts]
    * @param {number} [intervalMs]
    */
   constructor({
-    repository = null,
-    transaction = null,
-    identity = null,
-    now = null,
+    repository,
+    transaction,
+    identity,
+    clock,
     maxAttempts = DEFAULT_MAX_ATTEMPTS,
     intervalMs = DEFAULT_INTERVAL_MS
   } = {}) {
+    if (!repository || !transaction || !identity || !clock) {
+      throw new Error('DomainEventBus requires a repository, a transaction, an identity, and a clock');
+    }
     this._events = new Subject();
     this._repository = repository;
     this._transaction = transaction;
     this._identity = identity;
-    this._now = now || (() => new Date().toISOString());
+    this._clock = clock;
     this._maxAttempts = maxAttempts;
     this._intervalMs = intervalMs;
     this._sync = new Map();
@@ -48,26 +50,20 @@ export default class DomainEventBus {
   }
 
   /**
-   * Persists the event when a repository is configured, then runs synchronous handlers.
-   * A synchronous throw propagates to the caller.
+   * Persists the event, then runs synchronous handlers.
+   * A synchronous throw propagates to the caller and rolls the transaction back.
    * @param {*} event
    */
   publish(event) {
     if (event == null || typeof event !== 'object') {
       throw new Error('DomainEventBus#publish expects an event');
     }
-    if (!this._repository) {
-      this._runSync(event);
-      this._runDurableInline(event);
-      this._events.next(event);
-      return;
-    }
     const record = {
       id: this._identity.generate(),
       type: typeName(event),
       payload: JSON.stringify(event),
       aggregateId: aggregateId(event),
-      createdAt: this._now()
+      createdAt: this._clock.now()
     };
     const subscriberNames = this._durableNames(event);
     const joined = this._transaction.inTransaction();
@@ -215,19 +211,6 @@ export default class DomainEventBus {
     });
   }
 
-  _runDurableInline(event) {
-    this._durable.forEach(subscriber => {
-      if (!(event instanceof subscriber.EventType)) {
-        return;
-      }
-      try {
-        subscriber.handler(event);
-      } catch (error) {
-        // No repository means there is nowhere to retry. Live delivery still happens.
-      }
-    });
-  }
-
   _durableNames(event) {
     const names = [];
     this._durable.forEach(subscriber => {
@@ -239,10 +222,7 @@ export default class DomainEventBus {
   }
 
   _recover() {
-    if (!this._repository) {
-      return;
-    }
-    const updatedAt = this._now();
+    const updatedAt = this._clock.now();
     this._repository.findProcessingByStatus({status: PROCESSING}).forEach(row => {
       const subscriber = this._durable.get(row.subscriberName);
       const maxAttempts = subscriber ? subscriber.maxAttempts : this._maxAttempts;
@@ -259,7 +239,7 @@ export default class DomainEventBus {
   }
 
   _ensureTimer() {
-    if (this._timer || this._durable.size === 0 || !this._repository) {
+    if (this._timer || this._durable.size === 0) {
       return;
     }
     this._timer = setInterval(() => {
@@ -275,9 +255,6 @@ export default class DomainEventBus {
   }
 
   _pump({retry}) {
-    if (!this._repository) {
-      return;
-    }
     if (this._transaction.inTransaction()) {
       return;
     }
@@ -316,7 +293,7 @@ export default class DomainEventBus {
       return null;
     }
     const attempts = row.attempts + 1;
-    const updatedAt = this._now();
+    const updatedAt = this._clock.now();
     this._repository.saveProcessing({
       eventId: row.eventId,
       subscriberName: subscriber.name,
@@ -335,7 +312,7 @@ export default class DomainEventBus {
         status: DEAD,
         attempts,
         lastError: messageOf(error),
-        updatedAt: this._now()
+        updatedAt: this._clock.now()
       });
       return 'dead';
     }
@@ -349,7 +326,7 @@ export default class DomainEventBus {
         status: dead ? DEAD : FAILED,
         attempts,
         lastError: messageOf(error),
-        updatedAt: this._now()
+        updatedAt: this._clock.now()
       });
       return dead ? 'dead' : 'failed';
     }
@@ -359,7 +336,7 @@ export default class DomainEventBus {
       status: DONE,
       attempts,
       lastError: null,
-      updatedAt: this._now()
+      updatedAt: this._clock.now()
     });
     return 'done';
   }
