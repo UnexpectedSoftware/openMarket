@@ -1,0 +1,75 @@
+/* OpenMarket product page: same retro neon look as unexpectedsoftware.com */
+body {
+    background: #1a1a1a;
+    color: #fff;
+    font-family: 'Courier New', monospace;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    line-height: 1.5;
+}
+a { color: #00ffff; }
+a:hover { text-shadow: 0 0 5px #ff00ff; }
+.header {
+    background: linear-gradient(45deg, #ff00ff, #00ffff);
+    padding: 20px;
+    font-size: 2em;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px #ff00ff;
+}
+.header a { color: #fff; text-decoration: none; }
+nav {
+    background: #333;
+    padding: 10px;
+}
+nav a {
+    color: #00ffff;
+    margin: 0 15px;
+    text-decoration: none;
+    font-size: 1.2em;
+}
+.hero { margin: 30px 20px 10px; }
+.hero img {
+    width: 128px;
+    height: 128px;
+    filter: drop-shadow(0 0 12px #00ffff);
+}
+.hero h1 {
+    color: #00ffff;
+    text-shadow: 0 0 8px #ff00ff;
+    font-size: 2.4em;
+    margin: 10px 0 0;
+}
+.hero .pitch { font-size: 1.2em; margin: 10px auto; max-width: 700px; }
+.content {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 20px;
+    text-align: left;
+}
+.content h2 {
+    color: #00ffff;
+    text-shadow: 0 0 5px #ff00ff;
+    border-bottom: 1px solid #ff00ff;
+    padding-bottom: 4px;
+    margin-top: 40px;
+}
+.button {
+    display: inline-block;
+    background: #ff00ff;
+    color: #fff;
+    text-decoration: none;
+    padding: 10px 18px;
+    font-size: 1.05em;
+    margin: 5px;
+}
+.button:hover { background: #00ffff; color: #000; text-shadow: none; }
+.button.alt { background: transparent; border: 1px solid #ff00ff; }
+.button.alt:hover { background: #00ffff; border-color: #00ffff; }
+.footer {
+    background: #333;
+    padding: 10px;
+    font-size: 0.8em;
+    margin-top: 40px;
+}
+.content ul { font-size: 1.1em; }
