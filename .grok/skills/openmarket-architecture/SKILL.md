@@ -316,14 +316,14 @@ Integration test (`src/itest/SupplierSpec.js`): get the adapter with `container.
 
 **The current convention (already in the code):**
 - Event class in `domain/event/<PastTense>.js`. It's a plain snapshot of primitives, with a static `type` and no behaviour. Register it in `domain/event/registry.js`.
-- Inside the caller's transaction, `domainEventBus.save(event)` inserts the row and queues the event on the bus. After `transaction.run` emits (that is after `COMMIT`), `domainEventBus.raise()` notifies every queued event. On the error path, `discard()` drops the queue. The caller does not keep its own list. Look at `CreateOrder.createOrder`.
+- Inside the caller's transaction, `domainEventBus.record(event)` queues a live notification, and `domainEventBus.save(event)` inserts a row and queues a fact that has to last. `save` accepts a type marked `static get durable()` or a type that already has a durable subscriber. Anything else throws. After `transaction.run` emits (that is after `COMMIT`), `domainEventBus.raise()` notifies every queued event. On the error path, `discard()` drops the queue. The caller does not keep its own list. Look at `CreateOrder.createOrder`.
 - The bus does not take a `Transaction`, and `SqliteTransaction` does not take the bus. `save` joins whatever transaction is already open on the shared connection.
-- `ofType` is the hot stream for toasts. It does not replay. `subscribeSync` also runs from `raise`; a throw cannot roll the fact back.
-- A durable handler uses `subscribeDurable`. `DomainEventDispatcher` claims the event later and inserts one `PENDING` row per subscriber. A subscriber does not see events stored before its registration time. `RecordProductSales` is durable and idempotent on the order id. Start handlers before `domainEventDispatcher.start()` in `application/index.js`.
+- `ofType` is the hot stream for toasts. It does not replay. A throw is logged and does not unsubscribe the listener or fail `raise`.
+- A durable handler uses `subscribeDurable`. `DomainEventDispatcher` claims the stored event and inserts one `PENDING` row per subscriber. A subscriber does not see events stored before its registration time. `RecordProductSales` is durable and idempotent on the order id. `CreateOrder` calls `dispatcher.dispatch()` right after `raise()`. The timer only retries and recovers. Start handlers before `domainEventDispatcher.start()` in `application/index.js`.
 - The UI listens through an epic on `OpenMarket.get('domain_event_bus').ofType(Event)`. See `user_interface/order/new_order/epicFactory.js`.
 - Delivery rules are in `docs/domain-event-bus.md`.
 
-Checklist: event class and registry → `save` inside the transaction and `raise` after it → (optional) handler + container factory + `.start()` in `application/index.js` before the dispatcher → unit test that the event is raised once and is not raised when the transaction fails (copy `src/test/openMarket/application/service/order/CreateOrder.spec.js`).
+Checklist: event class and registry → `record` (live) or `save` (durable) inside the transaction and `raise` after it → (optional) durable handler + container factory + `.start()` in `application/index.js` before the dispatcher → unit test that the event is raised once and is not raised when the transaction fails (copy `src/test/openMarket/application/service/order/CreateOrder.spec.js`).
 
 ```js
 // src/openMarket/domain/event/StockAdjusted.js
@@ -341,9 +341,10 @@ export default class StockAdjusted {
 }
 ```
 ```js
-// save inside the transaction; raise() drains the bus queue after run emits
+// record a live event inside the transaction; raise() drains the bus queue after run emits.
+// save() is for a type marked durable, or one that already has a durable subscriber.
 return this._transaction.run(() => this._productRepository.save({product}).do(() => {
-  this._domainEventBus.save(new StockAdjusted({barcode, previous, counted: quantity, at}));
+  this._domainEventBus.record(new StockAdjusted({barcode, previous, counted: quantity, at}));
 })).do(
   () => this._domainEventBus.raise(),
   () => this._domainEventBus.discard()
@@ -474,7 +475,7 @@ export default function register({container, domainEventBus}) {
 - [ ] Repository methods are collection-like. No business decision inside SQL or adapter code.
 - [ ] Behaviour is on aggregates. Use cases load → call → save. No `obj._field =` from outside.
 - [ ] Use cases depend on ports via the constructor, with multiple writes in `transaction.run`
-- [ ] Events are saved inside the caller's transaction. `raise()` after commit drains the bus queue, and `discard()` runs when the transaction fails. The bus and `SqliteTransaction` do not reference each other
+- [ ] Durable events are saved, and live events are recorded, inside the caller's transaction. `raise()` after commit drains the bus queue, and `discard()` runs when the transaction fails. The bus and `SqliteTransaction` do not reference each other
 - [ ] Typed `AppError` with an `ErrorCode`, and no `new Error('…')` for shop failures
 - [ ] Container factory added. Facade key added if the UI needs it.
 - [ ] JSDoc: destructured params, `@import`, `@implements` on adapters, no `.ts` files

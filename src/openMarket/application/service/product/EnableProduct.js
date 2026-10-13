@@ -1,5 +1,6 @@
 import * as Rx from "rxjs";
 import "rxjs/add/operator/defaultIfEmpty";
+import "rxjs/add/operator/do";
 import ProductEnabledAgain from "../../../domain/event/ProductEnabledAgain";
 import ProductNotFoundError from "../../../domain/product/ProductNotFoundError";
 import observableError from "../../../infrastructure/logging/observableError";
@@ -11,8 +12,9 @@ export default class EnableProduct {
   /**
    * @param {ProductRepository} repository
    * @param {DomainEventBus} domainEventBus
+   * @param {Transaction} transaction
    */
-  constructor({ repository, domainEventBus }) {
+  constructor({ repository, domainEventBus, transaction }) {
     /**
      * @type {ProductRepository}
      * @private
@@ -23,6 +25,11 @@ export default class EnableProduct {
      * @private
      */
     this._domainEventBus = domainEventBus;
+    /**
+     * @type {Transaction}
+     * @private
+     */
+    this._transaction = transaction;
   }
 
   /**
@@ -31,7 +38,7 @@ export default class EnableProduct {
    * @returns {Observable<Product>}
    */
   enableForSale({ barcode }) {
-    return this._productRepository.findByBarcode({ barcode })
+    return this._transaction.run(() => this._productRepository.findByBarcode({ barcode })
       .defaultIfEmpty(null)
       .flatMap(product => {
         if (!product) {
@@ -43,16 +50,18 @@ export default class EnableProduct {
         product.enable();
         product.addStock({ quantity: 1 });
         return this._productRepository.save({ product })
-          .map(() => {
-            const event = new ProductEnabledAgain({
+          .do(() => {
+            this._domainEventBus.record(new ProductEnabledAgain({
               barcode: product.barcode,
               name: product.name
-            });
-            this._domainEventBus.record(event);
-            this._domainEventBus.raise();
-            return product;
-          });
-      });
+            }));
+          })
+          .map(() => product);
+      }))
+      .do(
+        () => this._domainEventBus.raise(),
+        () => this._domainEventBus.discard()
+      );
   }
 
 }

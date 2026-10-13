@@ -36,7 +36,6 @@ export default class DomainEventBus {
     this._clock = clock;
     this._maxAttempts = maxAttempts;
     this._recordError = typeof recordError === 'function' ? recordError : () => {};
-    this._sync = new Map();
     this._durable = new Map();
     this._live = [];
     this._queued = [];
@@ -77,9 +76,8 @@ export default class DomainEventBus {
   }
 
   /**
-   * Notifies synchronous handlers and ofType listeners for every event saved since
-   * the last raise. The facts have already committed, so a synchronous throw stays
-   * on that handler and does not stop the others.
+   * Notifies ofType listeners for every event queued since the last raise.
+   * A listener that throws is logged and does not stop the others.
    */
   raise() {
     const events = this._queued.splice(0);
@@ -95,16 +93,6 @@ export default class DomainEventBus {
   }
 
   _notify(event) {
-    this._sync.forEach(subscriber => {
-      if (!(event instanceof subscriber.EventType)) {
-        return;
-      }
-      try {
-        subscriber.handler(event);
-      } catch (error) {
-        this._recordError(error);
-      }
-    });
     this._live.slice().forEach(listener => {
       try {
         listener(event);
@@ -154,24 +142,6 @@ export default class DomainEventBus {
       return subscribe(guardListener(observerOrNext, recordError), error, complete);
     };
     return observable;
-  }
-
-  /**
-   * Runs from raise, after the fact has committed.
-   * @param {string} name
-   * @param {Function} EventType
-   * @param {function(*): void} handler
-   * @returns {function(): void}
-   */
-  subscribeSync(name, EventType, handler) {
-    this._assertSubscriber(name, EventType, handler);
-    this._sync.set(name, {name, EventType, handler});
-    return () => {
-      const current = this._sync.get(name);
-      if (current && current.handler === handler) {
-        this._sync.delete(name);
-      }
-    };
   }
 
   /**

@@ -241,42 +241,6 @@ describe('DomainEventBus', () => {
     expect(seen).to.deep.equal([]);
   });
 
-  it('runs synchronous handlers before live listeners', () => {
-    const order = [];
-    bus.subscribeSync('audit', ProductWithLowStock, () => order.push('sync'));
-    bus.events().subscribe(() => order.push('live'));
-
-    bus.record(lowStock());
-    bus.raise();
-
-    expect(order).to.deep.equal(['sync', 'live']);
-  });
-
-  it('keeps a synchronous failure on that handler', () => {
-    const seen = [];
-    bus.subscribeSync('first', ProductWithLowStock, () => {
-      throw new Error('sync failed');
-    });
-    bus.subscribeSync('second', ProductWithLowStock, () => seen.push('second'));
-    bus.events().subscribe(() => seen.push('live'));
-    bus.record(lowStock());
-
-    expect(() => bus.raise()).not.to.throw();
-    expect(seen).to.deep.equal(['second', 'live']);
-    expect(repository.processing).to.deep.equal([]);
-  });
-
-  it('stops a synchronous handler after unsubscribe', () => {
-    const seen = [];
-    const unsubscribe = bus.subscribeSync('audit', ProductWithLowStock, () => seen.push('sync'));
-    unsubscribe();
-
-    bus.record(lowStock());
-    bus.raise();
-
-    expect(seen).to.deep.equal([]);
-  });
-
   it('does not run a durable handler from raise', () => {
     const seen = [];
     bus.subscribeDurable('stats', ProductWithLowStock, () => seen.push('durable'));

@@ -1,27 +1,32 @@
 # Domain event bus
 
-`DomainEventBus` stores facts and notifies in-memory listeners after those facts have committed. A use case does not call the UI, the statistics writer, or a plugin itself.
+`DomainEventBus` stores facts that have to last and notifies in-memory listeners after those facts have committed. A use case does not call the UI, the statistics writer, or a plugin itself.
 
-The container builds one bus on the shared SQLite connection and stores it as `domainEventBus`. The UI reads that same instance with `OpenMarket.get('domain_event_bus')`. `DomainEventDispatcher` claims durable work on a timer. The bus does not take a `Transaction`, and `SqliteTransaction` does not take the bus.
+The container builds one bus on the shared SQLite connection and stores it as `domainEventBus`. The UI reads that same instance with `OpenMarket.get('domain_event_bus')`. `DomainEventDispatcher` claims durable work. `CreateOrder` calls `dispatch()` as soon as the sale commits. The one-second timer only retries a failed handler and recovers work left by a crash. The bus does not take a `Transaction`, and `SqliteTransaction` does not take the bus.
 
-A use case saves inside its transaction and raises on the observable that comes out of `transaction.run`. That observable emits only after `COMMIT`.
+A use case queues the event inside its transaction and raises on the observable that comes out of `transaction.run`. That observable emits only after `COMMIT`.
 
 ```js
 return transaction.run(() => work.do(() => {
   domainEventBus.save(new OrderCreated({id, createdAt, lines}));
 })).do(
-  () => domainEventBus.raise(),
+  () => {
+    domainEventBus.raise();
+    domainEventDispatcher.dispatch();
+  },
   () => domainEventBus.discard()
 );
 ```
 
-`save` inserts the row and holds the event on the bus. `raise()` takes no argument: it notifies every event saved since the last `raise`. `discard()` drops that queue when the transaction rolls back, so a later `raise` cannot announce a fact that was undone. The caller does not keep its own list of events.
+`save` inserts a `domain_event` row and holds the event on the bus. `record` holds the event without inserting a row. `raise()` takes no argument: it notifies every event queued since the last `raise`. `discard()` drops that queue when the transaction rolls back, so a later `raise` cannot announce a fact that was undone. The caller does not keep its own list of events.
 
-`EnableProduct` has no surrounding transaction. `save` inserts one row, which commits on its own, and `raise()` runs immediately after.
+`save` persists a type that is marked durable (`static get durable()` returns true, as `OrderCreated` does) or that already has a durable subscriber. Any other type throws `Domain event <type> is not durable`. Use `record` for a toast or another live notification, as `CreateOrder` does for `ProductWithLowStock` and `EnableProduct` does for `ProductEnabledAgain`.
+
+`EnableProduct` wraps the product write in `transaction.run`, records the event inside that transaction, and raises after commit.
 
 ## What gets stored
 
-`save` inserts one row into `domain_event`:
+`save` inserts one row into `domain_event`. `record` does not:
 
 | Column | Meaning |
 | --- | --- |
@@ -47,13 +52,13 @@ return transaction.run(() => work.do(() => {
 
 `PENDING` is waiting. `PROCESSING` is claimed. `DONE` finished. `FAILED` will be tried again. `DEAD` will not.
 
-`save` joins a transaction that is already open on the connection, so a rollback removes the event with the business write. The dispatcher claims rows only when no transaction is open. It marks the event dispatched and inserts one `PENDING` row per eligible subscriber in that claim. A subscriber registered for another event type, or registered after the event was stored, gets no row.
+`save` joins a transaction that is already open on the connection, so a rollback removes the event with the business write. `record` has nothing to roll back. The dispatcher claims rows only when no transaction is open. It marks the event dispatched and inserts one `PENDING` row per eligible subscriber in that claim. A subscriber registered for another event type, or registered after the event was stored, gets no row.
 
-## Three ways to listen
+## Two ways to listen
 
 ### Live listeners
 
-`ofType` and `events` are the hot stream. `raise` is what pushes to them.
+`ofType` and `events` are the hot stream. `raise` is what pushes to them. A queued `save` and a queued `record` both arrive here.
 
 ```js
 domainEventBus.ofType(ProductWithLowStock).subscribe(event => {
@@ -62,25 +67,11 @@ domainEventBus.ofType(ProductWithLowStock).subscribe(event => {
 ```
 
 - The listener sees only events raised after it subscribes. Nothing is replayed.
-- `CreateOrder` raises after the sale commits, so the listener sees `database.isTransaction === false`.
-- A throw here does not roll the business write back. That write is already committed.
+- `CreateOrder` and `EnableProduct` raise after their transaction commits, so the listener sees `database.isTransaction === false`.
+- A throw is logged through the JSON error log and does not unsubscribe the listener. The other listeners for that event still run, and the rest of the batch is still delivered. `raise` does not throw, so a toast cannot fail a sale that has already committed.
 - The listener is not recorded in `domain_event_processing` and is not retried after a restart.
 
 The low-stock toast and the product-enabled toast listen this way.
-
-### Synchronous subscribers
-
-```js
-const stop = domainEventBus.subscribeSync('audit', OrderCreated, event => {
-  // runs from raise, after the commit
-});
-```
-
-- The handler runs during `raise`, before live listeners for that event.
-- The fact has already committed. A throw does not roll it back, and `raise` does not throw. Later synchronous handlers and live listeners still run.
-- The handler is not recorded and is not retried.
-- Handlers for one event run in registration order.
-- The function returned by `subscribeSync` removes that handler.
 
 ### Durable subscribers
 
@@ -90,9 +81,8 @@ domainEventBus.subscribeDurable('notify-warehouse', OrderCreated, event => {
 }, {ordered: true, maxAttempts: 5});
 ```
 
-- `save` and `raise` do not call the handler and do not insert a processing row.
-- `DomainEventDispatcher` scans on a one-second timer, and `dispatch()` does one scan now. The timer does not keep the process alive.
-- A scan claims every event with an empty `dispatched_at`, inserts the `PENDING` rows, then runs handlers that are free to run. The claim uses its own short transaction.
+- `save` and `raise` do not call the handler and do not insert a processing row. `record` never creates a row for the handler to claim.
+- `DomainEventDispatcher.dispatch()` claims every event with an empty `dispatched_at`, inserts the `PENDING` rows in its own short transaction, then runs handlers that are free to run. `CreateOrder` calls it immediately after `raise()`. The one-second timer calls the same scan, then retries `FAILED` rows. The timer does not keep the process alive. A throw from the timer is written to the JSON error log. The timer stays up.
 - The handler does not join the business transaction.
 - A throw marks the row `FAILED` and stores `last_error`. The business transaction stays committed.
 - `processPending()` tries a `FAILED` row again. The attempt count stops at `maxAttempts` (default 5). The last failure is marked `DEAD`.
@@ -114,7 +104,7 @@ Each class has a `type` string. The payload is the fields passed to the construc
 
 ### `OrderCreated`
 
-Saved by `CreateOrder` inside the sale transaction, after the order, its lines, and the stock update. Raised after that transaction commits.
+Saved by `CreateOrder` inside the sale transaction, after the order, its lines, and the stock update. The type is marked durable, so the row is stored even before a subscriber exists. Raised after that transaction commits. `CreateOrder` then calls `dispatch()`, so a durable subscriber such as `RecordProductSales` has already run when the sale observable emits.
 
 | Field | Meaning |
 | --- | --- |
@@ -126,7 +116,7 @@ Saved by `CreateOrder` inside the sale transaction, after the order, its lines, 
 
 ### `ProductWithLowStock`
 
-Saved by `CreateOrder` for each sold product whose remaining stock is less than or equal to its minimum, inside the same transaction. Raised after the commit. The same sale can save one `OrderCreated` and several of these. Low stock does not reject the sale.
+Recorded by `CreateOrder` for each sold product whose remaining stock is less than or equal to its minimum, inside the same transaction. Raised after the commit. It is not stored in `domain_event`. The same sale can save one `OrderCreated` and record several of these. Low stock does not reject the sale.
 
 | Field | Meaning |
 | --- | --- |
@@ -135,19 +125,19 @@ Saved by `CreateOrder` for each sold product whose remaining stock is less than 
 | `stock` | Stock after the sale |
 | `stockMin` | Minimum stock |
 
-`aggregate_id` is the barcode. The order screen listens with `ofType` and shows the low-stock toast.
+The order screen listens with `ofType` and shows the low-stock toast. There is no `domain_event` row and no `domain_event_processing` row.
 
 ### `ProductEnabledAgain`
 
-Saved and raised by `EnableProduct` when a cashier scans a disabled product. The product is enabled and its stock grows by one before the event is saved. That product write commits on its own, then the event row commits, then `raise` runs.
+Recorded and raised by `EnableProduct` when a cashier scans a disabled product. The product is enabled and its stock grows by one inside `transaction.run`, the event is recorded in that same transaction, and `raise` runs after commit. The event is not stored.
 
 | Field | Meaning |
 | --- | --- |
 | `barcode` | Product barcode |
 | `name` | Product name |
 
-`aggregate_id` is the barcode. The order screen listens with `ofType` and shows the warning toast. A second scan of an already enabled product does not save the event.
+The order screen listens with `ofType` and shows the warning toast. A second scan of an already enabled product does not record the event.
 
 ## What stays unaware of the tables
 
-Use cases, entities, and `ofType` listeners do not import the repository. They save, raise, or subscribe through `DomainEventBus`. `SqliteDomainEventRepository` only saves and finds rows. Retries and dead letters stay on the bus. The dispatcher owns the claim transaction. The container wires the repository, `RandomUUIDIdentity`, `SystemClock`, and the dispatcher.
+Use cases, entities, and `ofType` listeners do not import the repository. They save, record, raise, or subscribe through `DomainEventBus`. `SqliteDomainEventRepository` only saves and finds rows. Retries and dead letters stay on the bus. The dispatcher owns the claim transaction. The container wires the repository, `RandomUUIDIdentity`, `SystemClock`, the error log, and the dispatcher.

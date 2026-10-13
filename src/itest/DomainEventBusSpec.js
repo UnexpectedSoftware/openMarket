@@ -121,14 +121,9 @@ describe('Domain event bus', () => {
       replaceSqliteData(database, {products: [product]});
     });
 
-    it('records the event, then runs synchronous, live, and durable subscribers', () => {
-      const sync = [];
+    it('records the event, then runs live and durable subscribers', () => {
       const live = [];
       const durable = [];
-      unsubscribeLater(domainEventBus.subscribeSync('audit', OrderCreated, event => {
-        sync.push({open: database.isTransaction, id: event.id});
-        database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('from-sync', event.id);
-      }));
       unsubscribeLater(domainEventBus.subscribeDurable('plugin', OrderCreated, event => {
         durable.push({
           open: database.isTransaction,
@@ -136,8 +131,9 @@ describe('Domain event bus', () => {
           lines: event.lines
         });
       }));
-      unsubscribeLater(domainEventBus.ofType(OrderCreated).subscribe(() => {
+      unsubscribeLater(domainEventBus.ofType(OrderCreated).subscribe(event => {
         live.push(database.isTransaction);
+        database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('from-live', event.id);
       }));
       const lines = [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 5}];
       let order = null;
@@ -153,14 +149,13 @@ describe('Domain event bus', () => {
       );
 
       expect(failure).to.equal(null);
-      expect(sync).to.deep.equal([{open: false, id: order.id}]);
       expect(live).to.deep.equal([false]);
       expect(durable).to.deep.equal([{
         open: false,
         id: order.id,
         lines
       }]);
-      expect(database.prepare('SELECT name FROM category WHERE id = ?').get('from-sync').name).to.equal(order.id);
+      expect(database.prepare('SELECT name FROM category WHERE id = ?').get('from-live').name).to.equal(order.id);
       expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(95);
       const rows = storedEvents();
       expect(rows).to.have.lengthOf(1);
@@ -186,14 +181,13 @@ describe('Domain event bus', () => {
       expect(database.isTransaction).to.equal(false);
     });
 
-    it('leaves the sale in place when a synchronous handler throws', () => {
+    it('leaves the sale in place when a listener throws', () => {
       const live = [];
-      unsubscribeLater(domainEventBus.ofType(OrderCreated).subscribe(() => live.push('order')));
-      unsubscribeLater(domainEventBus.ofType(ProductWithLowStock).subscribe(() => live.push('low')));
-      unsubscribeLater(domainEventBus.subscribeSync('guard', OrderCreated, () => {
-        database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('from-sync', 'kept');
-        throw new Error('sync failed');
+      unsubscribeLater(domainEventBus.ofType(OrderCreated).subscribe(() => {
+        database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('from-live', 'kept');
+        throw new Error('listener failed');
       }));
+      unsubscribeLater(domainEventBus.ofType(OrderCreated).subscribe(() => live.push('order')));
       const lines = [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 5}];
       let failure = null;
       let emitted = false;
@@ -213,18 +207,18 @@ describe('Domain event bus', () => {
       expect(count('SELECT count(*) AS total FROM line')).to.equal(1);
       expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(95);
       expect(count('SELECT count(*) AS total FROM domain_event')).to.equal(1);
-      expect(database.prepare('SELECT name FROM category WHERE id = ?').get('from-sync').name).to.equal('kept');
+      expect(database.prepare('SELECT name FROM category WHERE id = ?').get('from-live').name).to.equal('kept');
       expect(live).to.deep.equal(['order']);
       expect(database.isTransaction).to.equal(false);
     });
 
-    it('keeps the earlier event when a later synchronous handler throws', () => {
+    it('keeps the earlier event when a later listener throws', () => {
       const live = [];
       unsubscribeLater(domainEventBus.ofType(OrderCreated).subscribe(() => live.push('order')));
-      unsubscribeLater(domainEventBus.ofType(ProductWithLowStock).subscribe(() => live.push('low')));
-      unsubscribeLater(domainEventBus.subscribeSync('block-low-stock', ProductWithLowStock, () => {
-        throw new Error('sync failed');
+      unsubscribeLater(domainEventBus.ofType(ProductWithLowStock).subscribe(() => {
+        throw new Error('listener failed');
       }));
+      unsubscribeLater(domainEventBus.ofType(ProductWithLowStock).subscribe(() => live.push('low')));
       const lines = [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 90}];
       let failure = null;
 
@@ -267,7 +261,7 @@ describe('Domain event bus', () => {
     });
   });
 
-  describe('when a product is enabled outside the sale transaction', () => {
+  describe('when a disabled product is enabled in its own transaction', () => {
     beforeEach(() => {
       replaceSqliteData(database, {
         products: [{
@@ -366,16 +360,13 @@ describe('Domain event repository', () => {
   it('raises after commit and delivers durable subscribers from the dispatcher', () => {
     directory = temporaryDirectory();
     const opened = openBus(path.join(directory, 'events.sqlite'));
-    const seen = {sync: [], live: [], durable: []};
-    opened.bus.subscribeSync('audit', OrderCreated, event => {
-      seen.sync.push(opened.database.isTransaction);
-      opened.database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('from-sync', event.id);
-    });
+    const seen = {live: [], durable: []};
     opened.bus.subscribeDurable('plugin', OrderCreated, event => {
       seen.durable.push({open: opened.database.isTransaction, id: event.id, type: event.constructor.type});
     });
-    opened.bus.ofType(OrderCreated).subscribe(() => {
+    opened.bus.ofType(OrderCreated).subscribe(event => {
       seen.live.push(opened.database.isTransaction);
+      opened.database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('from-live', event.id);
     });
     let failure = null;
 
@@ -397,11 +388,10 @@ describe('Domain event repository', () => {
       opened.dispatcher.dispatch();
 
       expect(failure).to.equal(null);
-      expect(seen.sync).to.deep.equal([false]);
       expect(seen.live).to.deep.equal([false]);
       expect(seen.durable).to.deep.equal([{open: false, id: 'sale-02/07/2017 10:00:00', type: 'OrderCreated'}]);
       const names = opened.database.prepare('SELECT id FROM category ORDER BY id').all().map(row => row.id);
-      expect(names).to.deep.equal(['from-sync', 'from-work']);
+      expect(names).to.deep.equal(['from-live', 'from-work']);
       expect(rows(opened.database)).to.deep.equal([{
         aggregateId: 'sale-02/07/2017 10:00:00',
         status: 'DONE',

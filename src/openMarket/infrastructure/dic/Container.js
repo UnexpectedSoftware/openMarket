@@ -280,7 +280,8 @@ class Container {
   _enableProduct() {
     return new EnableProduct({
       repository: this.getInstance({key: 'productRepository'}),
-      domainEventBus: this.getInstance({key: 'domainEventBus'})
+      domainEventBus: this.getInstance({key: 'domainEventBus'}),
+      transaction: this.getInstance({key: 'transaction'})
     });
   }
 

@@ -1,3 +1,5 @@
+import {record} from '../logging/ErrorLog';
+
 const DEFAULT_INTERVAL_MS = 1000;
 
 /**
@@ -37,7 +39,7 @@ export default class DomainEventDispatcher {
         this.dispatch();
         this._bus.processPending();
       } catch (error) {
-        // A subscriber failure is stored on its row. The timer stays up.
+        record(error);
       }
     };
     this._timer = setInterval(tick, this._intervalMs);
