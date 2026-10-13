@@ -345,7 +345,8 @@ class Container {
       productRepository: this.getInstance({key: 'productRepository'}),
       orderFactory: this.getInstance({key: 'orderFactory'}),
       domainEventBus: this.getInstance({key: 'domainEventBus'}),
-      transaction: this.getInstance({key: 'transaction'})
+      transaction: this.getInstance({key: 'transaction'}),
+      domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'})
     });
   }
 

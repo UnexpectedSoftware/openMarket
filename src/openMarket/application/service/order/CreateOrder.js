@@ -12,19 +12,20 @@ import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
 export default class CreateOrder {
 
   /**
-   *
    * @param {OrderRepository} orderRepository
    * @param {ProductRepository} productRepository
    * @param {OrderFactory} orderFactory
    * @param {DomainEventBus} domainEventBus
    * @param {Transaction} transaction
+   * @param {{dispatch: function(): void}} domainEventDispatcher
    */
-  constructor({ orderRepository, productRepository, orderFactory, domainEventBus, transaction}) {
+  constructor({ orderRepository, productRepository, orderFactory, domainEventBus, transaction, domainEventDispatcher}) {
     this._orderRepository = orderRepository;
     this._productRepository = productRepository;
     this._orderFactory = orderFactory;
     this._domainEventBus = domainEventBus;
     this._transaction = transaction;
+    this._domainEventDispatcher = domainEventDispatcher;
   }
 
   /**
@@ -53,7 +54,10 @@ export default class CreateOrder {
       })
       .map(({order}) => order))
       .do(
-        () => this._domainEventBus.raise(),
+        () => {
+          this._domainEventBus.raise();
+          this._domainEventDispatcher.dispatch();
+        },
         () => this._domainEventBus.discard()
       );
   }

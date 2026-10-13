@@ -37,7 +37,7 @@ describe('CreateOrder domain events', () => {
     bus.ofType(OrderCreated).subscribe(event => events.push(event));
   });
 
-  function createOrder({onApply, failStock, throwOnApply} = {}) {
+  function createOrder({onApply, failStock, throwOnApply, onDispatch} = {}) {
     const recorder = new RecordProductSales({
       repository: {
         isEmpty: () => false,
@@ -69,6 +69,15 @@ describe('CreateOrder domain events', () => {
       transaction: {
         run(work) {
           return work().toArray().flatMap(values => Rx.Observable.from(values));
+        }
+      },
+      domainEventDispatcher: {
+        dispatch() {
+          if (onDispatch) {
+            onDispatch();
+          }
+          bus.fanOut();
+          bus.deliverReady();
         }
       }
     });
@@ -107,13 +116,39 @@ describe('CreateOrder domain events', () => {
       .subscribe(
         order => {
           expect(order.id).to.equal('order-1');
-          expect(() => {
-            bus.fanOut();
-            bus.deliverReady();
-          }).not.to.throw();
         },
         error => done(error),
         () => done()
+      );
+  });
+
+  it('dispatches durable handlers after the sale and not when the sale fails', (done) => {
+    let dispatched = 0;
+    createOrder({
+      failStock: true,
+      onDispatch() {
+        dispatched += 1;
+      }
+    }).createOrder({lines})
+      .subscribe(
+        () => done(new Error('should not emit an order')),
+        () => {
+          expect(dispatched).to.equal(0);
+          expect(events).to.have.lengthOf(0);
+          createOrder({
+            onDispatch() {
+              dispatched += 1;
+            }
+          }).createOrder({lines})
+            .subscribe(
+              () => {
+                expect(dispatched).to.equal(1);
+                expect(events).to.have.lengthOf(1);
+              },
+              error => done(error),
+              () => done()
+            );
+        }
       );
   });
 });

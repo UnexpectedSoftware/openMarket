@@ -2,7 +2,9 @@ const DEFAULT_INTERVAL_MS = 1000;
 
 /**
  * Claims stored events and runs durable handlers after the caller's transaction
- * has committed. The bus never sees this transaction.
+ * has committed. CreateOrder calls dispatch() as soon as the sale commits.
+ * The timer only retries failed handlers and recovers work left by a crash.
+ * The bus never sees this transaction.
  */
 export default class DomainEventDispatcher {
 
@@ -23,7 +25,8 @@ export default class DomainEventDispatcher {
   }
 
   /**
-   * Fans out once, then again on the interval. The timer does not keep the process alive.
+   * Recovers anything left undispatched or PROCESSING, then retries on the interval.
+   * The timer does not keep the process alive and is not the sale path.
    */
   start() {
     if (this._timer) {

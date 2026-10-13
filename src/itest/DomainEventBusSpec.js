@@ -155,26 +155,21 @@ describe('Domain event bus', () => {
       expect(failure).to.equal(null);
       expect(sync).to.deep.equal([{open: false, id: order.id}]);
       expect(live).to.deep.equal([false]);
-      expect(durable).to.deep.equal([]);
+      expect(durable).to.deep.equal([{
+        open: false,
+        id: order.id,
+        lines
+      }]);
       expect(database.prepare('SELECT name FROM category WHERE id = ?').get('from-sync').name).to.equal(order.id);
       expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(95);
       const rows = storedEvents();
       expect(rows).to.have.lengthOf(1);
       expect(rows[0].type).to.equal('OrderCreated');
       expect(rows[0].aggregateId).to.equal(order.id);
-      expect(rows[0].dispatchedAt).to.equal(null);
+      expect(rows[0].dispatchedAt).to.match(/^\d{4}-\d{2}-\d{2}T/);
       expect(rows[0].createdAt).to.match(/^\d{4}-\d{2}-\d{2}T/);
       expect(JSON.parse(rows[0].payload).createdAt).to.equal(order.createdAt);
       expect(JSON.parse(rows[0].payload).lines).to.deep.equal(lines);
-      expect(processingRows().filter(row => row.subscriberName === 'plugin')).to.deep.equal([]);
-
-      dispatcher.dispatch();
-
-      expect(durable).to.deep.equal([{
-        open: false,
-        id: order.id,
-        lines
-      }]);
       expect(processingRows().find(row => row.subscriberName === 'plugin')).to.deep.equal({
         aggregateId: order.id,
         type: 'OrderCreated',
@@ -183,6 +178,11 @@ describe('Domain event bus', () => {
         lastError: null,
         subscriberName: 'plugin'
       });
+
+      dispatcher.dispatch();
+
+      expect(durable).to.have.lengthOf(1);
+      expect(processingRows().find(row => row.subscriberName === 'plugin').attempts).to.equal(1);
       expect(database.isTransaction).to.equal(false);
     });
 
