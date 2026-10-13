@@ -103,21 +103,17 @@ describe('CreateOrder domain events', () => {
   });
 
   it('still saves the order when the statistics subscriber fails', (done) => {
-    const errorLog = console.error;
-    console.error = () => {};
     createOrder({throwOnApply: true}).createOrder({lines})
       .subscribe(
         order => {
           expect(order.id).to.equal('order-1');
+          expect(() => {
+            bus.fanOut();
+            bus.deliverReady();
+          }).not.to.throw();
         },
-        error => {
-          console.error = errorLog;
-          done(error);
-        },
-        () => {
-          console.error = errorLog;
-          done();
-        }
+        error => done(error),
+        () => done()
       );
   });
 });
@@ -141,12 +137,19 @@ describe('RecordProductSales', () => {
     });
     recorder.start();
     recorder.start();
-    bus.publish(new OrderCreated({
+    const event = new OrderCreated({
       id: '1',
       createdAt: '02/07/2017 10:00:00',
       lines
-    }));
+    });
+    bus.save(event);
+    bus.raise();
+    expect(applied).to.equal(0);
+    bus.fanOut();
+    bus.deliverReady();
     expect(rebuilt).to.equal(1);
+    expect(applied).to.equal(1);
+    bus.deliverReady();
     expect(applied).to.equal(1);
   });
 
@@ -169,11 +172,14 @@ describe('RecordProductSales', () => {
         domainEventBus: bus
       });
       recorder.start();
-      bus.publish(new OrderCreated({
+      const event = new OrderCreated({
         id: '1',
         createdAt: '02/07/2017 10:00:00',
         lines
-      }));
+      });
+      bus.save(event);
+      bus.fanOut();
+      bus.deliverReady();
     } finally {
       console.error = errorLog;
     }

@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import 'rxjs/add/operator/do';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
 import {replaceSqliteData} from '../openMarket/infrastructure/service/sqliteSeed';
@@ -8,6 +9,7 @@ const database = container.getInstance({key: 'sqliteConnection'}).database;
 const createOrder = openMarket.get('orders_create_use_case');
 const sales = openMarket.get('product_sale_statistics_use_case');
 const domainEventBus = openMarket.get('domain_event_bus');
+const dispatcher = container.getInstance({key: 'domainEventDispatcher'});
 
 const product = {
   _id: 'Seq-0',
@@ -40,6 +42,7 @@ describe('Product sale statistics', () => {
       .flatMap(() => createOrder.createOrder({
         lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 1}]
       }))
+      .do(() => dispatcher.dispatch())
       .flatMap(() => sales.salesOfProduct({barcode: '0001', window: 'day'}))
       .subscribe(
         result => {

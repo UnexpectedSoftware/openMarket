@@ -44,10 +44,12 @@ export default class EnableProduct {
         product.addStock({ quantity: 1 });
         return this._productRepository.save({ product })
           .map(() => {
-            this._domainEventBus.publish(new ProductEnabledAgain({
+            const event = new ProductEnabledAgain({
               barcode: product.barcode,
               name: product.name
-            }));
+            });
+            this._domainEventBus.save(event);
+            this._domainEventBus.raise();
             return product;
           });
       });

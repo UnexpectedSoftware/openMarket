@@ -3,7 +3,8 @@ import {record} from '../../../infrastructure/logging/ErrorLog';
 
 /**
  * Keeps product_sale_day in step with sales.
- * Started once, with the app. Live listeners do not replay a sale that was missed.
+ * Started once, with the app. Delivery is durable and keyed by the order id,
+ * so a retry after a crash does not add the quantity again.
  */
 export default class RecordProductSales {
 
@@ -29,16 +30,13 @@ export default class RecordProductSales {
         record(error);
       }
     }
-    this._domainEventBus.ofType(OrderCreated).subscribe(event => {
-      try {
-        this._repository.applyOrder({
-          createdAt: event.createdAt,
-          lines: event.lines
-        });
-      } catch (error) {
-        record(error);
-      }
-    });
+    this._domainEventBus.subscribeDurable('record-product-sales', OrderCreated, event => {
+      this._repository.applyOrder({
+        orderId: event.id,
+        createdAt: event.createdAt,
+        lines: event.lines
+      });
+    }, {ordered: false});
   }
 
 }

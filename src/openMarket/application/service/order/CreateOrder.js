@@ -37,19 +37,25 @@ export default class CreateOrder {
       .flatMap(order => this._orderRepository.save({order})
         .flatMap(saved => this._subtrackStock({order: saved})))
       .do(({order, lowStockProducts}) => {
-        this._domainEventBus.publish(new OrderCreated({
+        this._domainEventBus.save(new OrderCreated({
           id: order.id,
           createdAt: order.createdAt,
           lines: order.lines
         }));
-        lowStockProducts.forEach(product => this._domainEventBus.publish(new ProductWithLowStock({
-          barcode: product.barcode,
-          name: product.name,
-          stock: product.stock,
-          stockMin: product.stockMin
-        })));
-      }))
-      .map(({order}) => order);
+        lowStockProducts.forEach(product => {
+          this._domainEventBus.save(new ProductWithLowStock({
+            barcode: product.barcode,
+            name: product.name,
+            stock: product.stock,
+            stockMin: product.stockMin
+          }));
+        });
+      })
+      .map(({order}) => order))
+      .do(
+        () => this._domainEventBus.raise(),
+        () => this._domainEventBus.discard()
+      );
   }
 
   _buildOrder({lines})  {

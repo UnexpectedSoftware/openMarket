@@ -4,7 +4,7 @@ Desktop application to administrate a generic market: stock, products, categorie
 
 The domain is organized as DDD with a hexagonal layout: `domain/`, `application/`, `infrastructure/`, and `user_interface/`.
 
-Sales and product changes publish domain events on `DomainEventBus`. A listener is live (`ofType`), synchronous inside the current transaction, or durable across restarts. The event tables, the delivery rules, and the public events are described in [docs/domain-event-bus.md](docs/domain-event-bus.md).
+Sales and product changes call `DomainEventBus.save` inside the caller's transaction. `save` queues the event, and `raise()` after commit notifies every queued event. A listener is live (`ofType`), synchronous after the commit, or durable across restarts. The event tables, the delivery rules, and the public events are described in [docs/domain-event-bus.md](docs/domain-event-bus.md).
 
 ## Requirements
 

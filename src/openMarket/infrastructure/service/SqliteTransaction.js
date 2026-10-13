@@ -6,26 +6,16 @@ import Transaction from '../../domain/service/Transaction';
 
 /**
  * Commits only after the work observable completes, then emits its values.
- * Synchronous domain-event handlers run during the work, so a throw rolls it back.
- * Live listeners are released after COMMIT, with the transaction closed.
+ * The bus is not involved. Callers raise events on the observable that comes out.
  */
 export default class SqliteTransaction extends Transaction {
 
   /**
    * @param {SqliteConnection} connection
-   * @param {DomainEventBus} [domainEventBus]
    */
-  constructor({connection, domainEventBus = null}) {
+  constructor({connection}) {
     super();
     this._database = connection.database;
-    this._domainEventBus = domainEventBus;
-  }
-
-  /**
-   * @param {DomainEventBus} domainEventBus
-   */
-  setDomainEventBus(domainEventBus) {
-    this._domainEventBus = domainEventBus;
   }
 
   /**
@@ -72,9 +62,6 @@ export default class SqliteTransaction extends Transaction {
           .flatMap(values => {
             this._database.exec('COMMIT');
             committed = true;
-            if (this._domainEventBus) {
-              this._domainEventBus.transactionCommitted();
-            }
             return Rx.Observable.from(values);
           })
           .catch(error => {
@@ -96,9 +83,6 @@ export default class SqliteTransaction extends Transaction {
       this._database.exec('ROLLBACK');
     } catch (rollbackError) {
       // A trigger abort can roll the transaction back before we do.
-    }
-    if (this._domainEventBus) {
-      this._domainEventBus.transactionRolledBack();
     }
   }
 

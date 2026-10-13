@@ -46,6 +46,7 @@ import FetchCatalogImages from "../../application/service/image/FetchCatalogImag
 import FindProductImage from "../../application/service/image/FindProductImage";
 import PrintProductCatalog from "../../application/service/product/PrintProductCatalog";
 import DomainEventBus from "../../domain/service/DomainEventBus";
+import DomainEventDispatcher from "../event/DomainEventDispatcher";
 import SqliteDomainEventRepository from "../event/SqliteDomainEventRepository";
 import SqliteTransaction from "../service/SqliteTransaction";
 import SystemClock from "../service/SystemClock";
@@ -324,15 +325,18 @@ class Container {
   }
 
   _domainEventBus() {
-    const transaction = this.getInstance({key: 'transaction'});
-    const bus = new DomainEventBus({
+    return new DomainEventBus({
       repository: this.getInstance({key: 'domainEventRepository'}),
-      transaction,
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
       clock: this.getInstance({key: 'systemClock'})
     });
-    transaction.setDomainEventBus(bus);
-    return bus;
+  }
+
+  _domainEventDispatcher() {
+    return new DomainEventDispatcher({
+      domainEventBus: this.getInstance({key: 'domainEventBus'}),
+      transaction: this.getInstance({key: 'transaction'})
+    });
   }
 
   _createOrderUseCase() {

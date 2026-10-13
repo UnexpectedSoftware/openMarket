@@ -43,12 +43,20 @@ CREATE TABLE IF NOT EXISTS product_sale_day (
   PRIMARY KEY (barcode, sold_on)
 );
 CREATE INDEX IF NOT EXISTS product_sale_day_sold_on ON product_sale_day (sold_on);
+CREATE TABLE IF NOT EXISTS product_sale_order (
+  order_id TEXT PRIMARY KEY
+);
 CREATE TABLE IF NOT EXISTS domain_event (
   id TEXT PRIMARY KEY,
   type TEXT NOT NULL,
   payload TEXT NOT NULL,
   aggregate_id TEXT,
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  dispatched_at TEXT
+);
+CREATE TABLE IF NOT EXISTS domain_event_subscriber (
+  subscriber_name TEXT PRIMARY KEY,
+  registered_at TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS domain_event_processing (
   event_id TEXT NOT NULL,
@@ -80,6 +88,7 @@ export default class SqliteConnection {
     this._database.exec(SCHEMA);
     ensureColumn(this._database, 'category', 'image_name', 'TEXT');
     ensureColumn(this._database, 'product', 'image_name', 'TEXT');
+    ensureColumn(this._database, 'domain_event', 'dispatched_at', 'TEXT');
   }
 
   get database() {

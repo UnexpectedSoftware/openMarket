@@ -4,93 +4,89 @@ import {aggregateId, hydrate, typeName} from '../event/registry';
 import {DEAD, DONE, FAILED, PENDING, PROCESSING} from './domainEventStatus';
 
 const DEFAULT_MAX_ATTEMPTS = 5;
-const DEFAULT_INTERVAL_MS = 1000;
 const ERROR_LIMIT = 500;
 
 /**
- * Delivers domain events to live listeners, synchronous handlers, and durable handlers.
- * Live listeners (ofType) see an event only after the publishing transaction commits.
- * Synchronous handlers run inside that transaction: a throw rolls it back.
- * Durable handlers are recorded as PENDING and retried until they succeed or are dead-lettered.
+ * Stores facts and tells in-memory listeners about facts that have already committed.
+ * Durable handlers are claimed later by DomainEventDispatcher. This bus does not
+ * open, join, or observe a transaction.
  */
 export default class DomainEventBus {
 
   /**
    * @param {DomainEventRepository} repository
-   * @param {Transaction} transaction
    * @param {Identity} identity
    * @param {Clock} clock
    * @param {number} [maxAttempts]
-   * @param {number} [intervalMs]
    */
   constructor({
     repository,
-    transaction,
     identity,
     clock,
-    maxAttempts = DEFAULT_MAX_ATTEMPTS,
-    intervalMs = DEFAULT_INTERVAL_MS
+    maxAttempts = DEFAULT_MAX_ATTEMPTS
   } = {}) {
-    if (!repository || !transaction || !identity || !clock) {
-      throw new Error('DomainEventBus requires a repository, a transaction, an identity, and a clock');
+    if (!repository || !identity || !clock) {
+      throw new Error('DomainEventBus requires a repository, an identity, and a clock');
     }
     this._events = new Subject();
     this._repository = repository;
-    this._transaction = transaction;
     this._identity = identity;
     this._clock = clock;
     this._maxAttempts = maxAttempts;
-    this._intervalMs = intervalMs;
     this._sync = new Map();
     this._durable = new Map();
-    this._deferred = [];
+    this._queued = [];
     this._draining = false;
     this._pumpAgain = false;
-    this._timer = null;
   }
 
   /**
-   * Persists the event, then runs synchronous handlers.
-   * A synchronous throw propagates to the caller and rolls the transaction back.
+   * Inserts the event on the caller's connection and holds it until raise.
+   * An open transaction takes the row with it. Nobody is notified yet.
    * @param {*} event
    */
-  publish(event) {
-    if (event == null || typeof event !== 'object') {
-      throw new Error('DomainEventBus#publish expects an event');
-    }
-    const record = {
+  save(event) {
+    this._assertEvent(event);
+    this._repository.save({
       id: this._identity.generate(),
       type: typeName(event),
       payload: JSON.stringify(event),
       aggregateId: aggregateId(event),
       createdAt: this._clock.now()
-    };
-    const subscriberNames = this._durableNames(event);
-    const joined = this._transaction.inTransaction();
-    const mark = this._deferred.length;
-    try {
-      this._transaction.execute(() => {
-        this._repository.save(record);
-        this._runSync(event);
-        subscriberNames.forEach(subscriberName => {
-          this._repository.saveProcessing({
-            eventId: record.id,
-            subscriberName,
-            status: PENDING,
-            attempts: 0,
-            lastError: null,
-            updatedAt: record.createdAt
-          });
-        });
-        this._deferred.push(event);
-      });
-    } catch (error) {
-      this._deferred.splice(mark);
-      throw error;
-    }
-    if (!joined) {
-      this._emit(this._deferred.splice(mark));
-    }
+    });
+    this._queued.push(event);
+  }
+
+  /**
+   * Notifies synchronous handlers and ofType listeners for every event saved since
+   * the last raise. The facts have already committed, so a synchronous throw stays
+   * on that handler and does not stop the others.
+   */
+  raise() {
+    const events = this._queued.splice(0);
+    events.forEach(event => this._notify(event));
+  }
+
+  /**
+   * Drops events saved during a transaction that rolled back, so a later raise
+   * cannot announce them.
+   */
+  discard() {
+    this._queued.length = 0;
+  }
+
+  _notify(event) {
+    this._sync.forEach(subscriber => {
+      if (!(event instanceof subscriber.EventType)) {
+        return;
+      }
+      try {
+        subscriber.handler(event);
+      } catch (error) {
+        // The sale is already committed. This handler cannot undo it.
+      }
+    });
+    this._events.next(event);
   }
 
   /**
@@ -101,8 +97,7 @@ export default class DomainEventBus {
   }
 
   /**
-   * Live listener. Events published inside a transaction are delivered after commit.
-   * There is no replay.
+   * Live listener. Nothing is replayed. Call raise after the commit.
    * @param {Function} EventType
    * @returns {Observable}
    */
@@ -111,8 +106,7 @@ export default class DomainEventBus {
   }
 
   /**
-   * Runs inside the publishing transaction, before live listeners.
-   * A throw aborts publish and rolls the transaction back.
+   * Runs from raise, after the fact has committed.
    * @param {string} name
    * @param {Function} EventType
    * @param {function(*): void} handler
@@ -130,8 +124,9 @@ export default class DomainEventBus {
   }
 
   /**
-   * Recorded per event and retried after commit until success or dead-letter.
+   * Recorded per event and retried until success or dead-letter.
    * Delivery is at least once, in insertion order when ordered is true.
+   * The first registration time is kept and reused. Events stored before it are skipped.
    * @param {string} name
    * @param {Function} EventType
    * @param {function(*): void} handler
@@ -140,14 +135,19 @@ export default class DomainEventBus {
    */
   subscribeDurable(name, EventType, handler, {ordered = true, maxAttempts = this._maxAttempts} = {}) {
     this._assertSubscriber(name, EventType, handler);
+    const existing = this._repository.findSubscriber({subscriberName: name});
+    const registeredAt = existing ? existing.registeredAt : this._clock.now();
+    if (!existing) {
+      this._repository.saveSubscriber({subscriberName: name, registeredAt});
+    }
     this._durable.set(name, {
       name,
       EventType,
       handler,
       ordered: ordered !== false,
-      maxAttempts: maxAttempts > 0 ? maxAttempts : this._maxAttempts
+      maxAttempts: maxAttempts > 0 ? maxAttempts : this._maxAttempts,
+      registeredAt
     });
-    this._ensureTimer();
     return () => {
       const current = this._durable.get(name);
       if (current && current.handler === handler) {
@@ -157,71 +157,38 @@ export default class DomainEventBus {
   }
 
   /**
-   * Resets rows left PROCESSING by a crash, then delivers what is waiting.
+   * Claims every event that has not been fanned out yet.
+   * One PENDING row per durable subscriber registered at or before the event.
+   * Call this inside the dispatcher's transaction.
    */
-  start() {
-    this._recover();
-    this.processPending();
-    this._ensureTimer();
-  }
-
-  stop() {
-    if (this._timer) {
-      clearInterval(this._timer);
-      this._timer = null;
-    }
-  }
-
-  /**
-   * One retry of a failed row, then every pending row that can run.
-   * A failed ordered subscriber stops before its later events.
-   */
-  processPending() {
-    this._pump({retry: true});
-  }
-
-  /**
-   * Called by the surrounding transaction after COMMIT.
-   */
-  transactionCommitted() {
-    this._emit(this._deferred.splice(0));
-  }
-
-  /**
-   * Called by the surrounding transaction after ROLLBACK.
-   * Drops live notifications for events that were removed with the transaction.
-   */
-  transactionRolledBack() {
-    this._deferred.length = 0;
-  }
-
-  _emit(events) {
-    try {
-      events.forEach(event => this._events.next(event));
-    } finally {
-      this._pump({retry: false});
-    }
-  }
-
-  _runSync(event) {
-    this._sync.forEach(subscriber => {
-      if (event instanceof subscriber.EventType) {
-        subscriber.handler(event);
-      }
+  fanOut() {
+    const updatedAt = this._clock.now();
+    this._repository.findUndispatched().forEach(record => {
+      this._durable.forEach(subscriber => {
+        if (subscriber.EventType.type !== record.type) {
+          return;
+        }
+        if (record.createdAt < subscriber.registeredAt) {
+          return;
+        }
+        this._repository.insertProcessing({
+          eventId: record.id,
+          subscriberName: subscriber.name,
+          status: PENDING,
+          attempts: 0,
+          lastError: null,
+          updatedAt
+        });
+      });
+      this._repository.markDispatched({id: record.id, dispatchedAt: updatedAt});
     });
   }
 
-  _durableNames(event) {
-    const names = [];
-    this._durable.forEach(subscriber => {
-      if (event instanceof subscriber.EventType) {
-        names.push(subscriber.name);
-      }
-    });
-    return names;
-  }
-
-  _recover() {
+  /**
+   * Rows left PROCESSING by a crash go back to PENDING, or to DEAD when the
+   * attempt count is already used up.
+   */
+  recover() {
     const updatedAt = this._clock.now();
     this._repository.findProcessingByStatus({status: PROCESSING}).forEach(row => {
       const subscriber = this._durable.get(row.subscriberName);
@@ -238,26 +205,21 @@ export default class DomainEventBus {
     });
   }
 
-  _ensureTimer() {
-    if (this._timer || this._durable.size === 0) {
-      return;
-    }
-    this._timer = setInterval(() => {
-      try {
-        this.processPending();
-      } catch (error) {
-        // A subscriber failure is stored on its row. The timer stays up.
-      }
-    }, this._intervalMs);
-    if (typeof this._timer.unref === 'function') {
-      this._timer.unref();
-    }
+  /**
+   * Runs PENDING rows that are free to run. A FAILED row waits for processPending.
+   */
+  deliverReady() {
+    this._pump({retry: false});
+  }
+
+  /**
+   * Runs one retry of a FAILED row, then the PENDING rows that are free to run.
+   */
+  processPending() {
+    this._pump({retry: true});
   }
 
   _pump({retry}) {
-    if (this._transaction.inTransaction()) {
-      return;
-    }
     if (this._draining) {
       this._pumpAgain = true;
       return;
@@ -366,6 +328,12 @@ export default class DomainEventBus {
       subscriberName: subscriber.name,
       statuses: [FAILED]
     });
+  }
+
+  _assertEvent(event) {
+    if (event == null || typeof event !== 'object') {
+      throw new Error('DomainEventBus expects an event');
+    }
   }
 
   _assertSubscriber(name, EventType, handler) {

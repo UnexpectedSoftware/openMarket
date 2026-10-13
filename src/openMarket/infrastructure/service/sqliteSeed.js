@@ -79,6 +79,7 @@ export function replaceSqliteData(database, {categories = [], products = [], ord
     database.exec('DELETE FROM domain_event');
     database.exec('DELETE FROM line');
     database.exec('DELETE FROM "order"');
+    database.exec('DELETE FROM product_sale_order');
     database.exec('DELETE FROM product_sale_day');
     database.exec('DELETE FROM product');
     database.exec('DELETE FROM category');

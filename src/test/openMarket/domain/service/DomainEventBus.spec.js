@@ -2,6 +2,7 @@ import { expect } from 'chai';
 import DomainEventBus from '../../../../openMarket/domain/service/DomainEventBus';
 import OrderCreated from '../../../../openMarket/domain/event/OrderCreated';
 import ProductWithLowStock from '../../../../openMarket/domain/event/ProductWithLowStock';
+import {memoryDomainEventRepository} from '../../support/domainEventBus';
 
 const FIXED_TIME = '2026-10-11T12:00:00.000Z';
 
@@ -30,95 +31,13 @@ function steppingClock(times) {
   };
 }
 
-function memoryRepository() {
-  const events = [];
-  const processing = [];
-  const processingWrites = [];
-  return {
-    events,
-    processing,
-    processingWrites,
-    save(event) {
-      events.push({...event});
-    },
-    saveProcessing(row) {
-      const stored = {...row};
-      processingWrites.push(stored);
-      const index = processing.findIndex(item =>
-        item.eventId === stored.eventId && item.subscriberName === stored.subscriberName);
-      if (index === -1) {
-        processing.push({...stored});
-        return;
-      }
-      processing[index] = {...stored};
-    },
-    findProcessingByStatus({status}) {
-      return processing.filter(row => row.status === status).map(row => ({...row}));
-    },
-    findFirstProcessing({subscriberName, statuses}) {
-      const row = processing.find(item =>
-        item.subscriberName === subscriberName && statuses.includes(item.status));
-      if (!row) {
-        return null;
-      }
-      const event = events.find(item => item.id === row.eventId);
-      return {
-        eventId: row.eventId,
-        subscriberName: row.subscriberName,
-        type: event.type,
-        payload: event.payload,
-        status: row.status,
-        attempts: row.attempts,
-        lastError: row.lastError
-      };
-    }
-  };
-}
-
-function recordingTransaction({joined}) {
-  let open = joined;
-  const calls = [];
-  return {
-    calls,
-    inTransaction() {
-      return open;
-    },
-    execute(work) {
-      if (open) {
-        calls.push('join');
-        return work();
-      }
-      open = true;
-      calls.push('begin');
-      try {
-        const result = work();
-        open = false;
-        calls.push('commit');
-        return result;
-      } catch (error) {
-        open = false;
-        calls.push('rollback');
-        throw error;
-      }
-    }
-  };
-}
-
 function openBus({
-  joined = false,
   clock = fixedClock(),
   identity = sequenceIdentity(),
-  repository = memoryRepository()
+  repository = memoryDomainEventRepository()
 } = {}) {
-  const transaction = recordingTransaction({joined});
-  const bus = new DomainEventBus({
-    repository,
-    transaction,
-    identity,
-    clock,
-    intervalMs: 60000
-  });
-  return {bus, transaction, repository, clock};
+  const bus = new DomainEventBus({repository, identity, clock});
+  return {bus, repository, clock};
 }
 
 describe('DomainEventBus', () => {
@@ -138,64 +57,99 @@ describe('DomainEventBus', () => {
     repository = opened.repository;
   });
 
-  afterEach(() => {
-    bus.stop();
-  });
-
-  it('requires a repository, a transaction, an identity, and a clock', () => {
+  it('requires a repository, an identity, and a clock', () => {
     expect(() => new DomainEventBus()).to.throw(
-      'DomainEventBus requires a repository, a transaction, an identity, and a clock'
+      'DomainEventBus requires a repository, an identity, and a clock'
     );
   });
 
-  it('delivers a published event to a subscriber', () => {
+  it('saves an event without notifying listeners', () => {
     const seen = [];
     bus.events().subscribe(event => seen.push(event));
-    const event = lowStock();
 
-    bus.publish(event);
+    bus.save(lowStock());
 
-    expect(seen).to.deep.equal([event]);
+    expect(seen).to.deep.equal([]);
+    expect(repository.events).to.have.lengthOf(1);
+    expect(repository.events[0].id).to.equal('event-1');
+    expect(repository.events[0].createdAt).to.equal(FIXED_TIME);
+    expect(repository.events[0].dispatchedAt).to.equal(null);
+    expect(repository.processing).to.deep.equal([]);
   });
 
-  it('delivers a published event to every subscriber', () => {
+  it('raises a saved event to every live listener', () => {
     const first = [];
     const second = [];
     bus.events().subscribe(event => first.push(event));
     bus.events().subscribe(event => second.push(event));
     const event = lowStock();
 
-    bus.publish(event);
+    bus.save(event);
+    bus.raise();
 
     expect(first).to.deep.equal([event]);
     expect(second).to.deep.equal([event]);
   });
 
+  it('raises every event saved since the last raise', () => {
+    const seen = [];
+    bus.events().subscribe(event => seen.push(event));
+    const first = lowStock();
+    const second = lowStock();
+    bus.save(first);
+    bus.save(second);
+
+    bus.raise();
+
+    expect(seen).to.deep.equal([first, second]);
+    bus.raise();
+    expect(seen).to.deep.equal([first, second]);
+  });
+
+  it('drops a saved event on discard so a later raise cannot announce it', () => {
+    const seen = [];
+    bus.events().subscribe(event => seen.push(event));
+    bus.save(lowStock());
+    bus.discard();
+    bus.raise();
+
+    expect(seen).to.deep.equal([]);
+    expect(repository.events).to.have.lengthOf(1);
+  });
+
   it('does not throw when nobody is listening', () => {
-    expect(() => bus.publish(lowStock())).not.to.throw();
+    const event = lowStock();
+    expect(() => {
+      bus.save(event);
+      bus.raise();
+    }).not.to.throw();
   });
 
   it('stops delivering after unsubscribe', () => {
     const seen = [];
     const subscription = bus.events().subscribe(event => seen.push(event));
     const first = lowStock();
-    bus.publish(first);
+    bus.save(first);
+    bus.raise();
 
     subscription.unsubscribe();
-    bus.publish(lowStock());
+    bus.save(lowStock());
+    bus.raise();
 
     expect(seen).to.deep.equal([first]);
   });
 
-  it('does not deliver events published before a subscriber arrives', () => {
-    bus.publish(lowStock());
+  it('does not deliver events raised before a subscriber arrives', () => {
+    bus.save(lowStock());
+    bus.raise();
     const seen = [];
     bus.events().subscribe(event => seen.push(event));
 
     expect(seen).to.deep.equal([]);
 
     const later = lowStock();
-    bus.publish(later);
+    bus.save(later);
+    bus.raise();
     expect(seen).to.deep.equal([later]);
   });
 
@@ -204,21 +158,22 @@ describe('DomainEventBus', () => {
     bus.ofType(ProductWithLowStock).subscribe(event => seen.push(event));
     const event = lowStock();
 
-    bus.publish(new OrderCreated({id: 'sale-1', createdAt: '02/07/2017 10:00:00', lines: []}));
-    bus.publish(event);
+    bus.save(new OrderCreated({id: 'sale-1', createdAt: '02/07/2017 10:00:00', lines: []}));
+    bus.save(event);
+    bus.raise();
 
     expect(seen).to.have.lengthOf(1);
     expect(seen[0]).to.equal(event);
     expect(seen[0]).to.be.instanceof(ProductWithLowStock);
   });
 
-  it('does not let events() publish', () => {
+  it('does not let events() raise', () => {
     const seen = [];
     bus.events().subscribe(event => seen.push(event));
     const events = bus.events();
 
     expect(events.next).to.equal(undefined);
-    expect(events.publish).to.not.equal(bus.publish);
+    expect(events.raise).to.equal(undefined);
     expect(seen).to.deep.equal([]);
   });
 
@@ -227,22 +182,23 @@ describe('DomainEventBus', () => {
     bus.subscribeSync('audit', ProductWithLowStock, () => order.push('sync'));
     bus.events().subscribe(() => order.push('live'));
 
-    bus.publish(lowStock());
+    bus.save(lowStock());
+    bus.raise();
 
     expect(order).to.deep.equal(['sync', 'live']);
   });
 
-  it('propagates a synchronous failure and skips later subscribers', () => {
+  it('keeps a synchronous failure on that handler', () => {
     const seen = [];
     bus.subscribeSync('first', ProductWithLowStock, () => {
       throw new Error('sync failed');
     });
     bus.subscribeSync('second', ProductWithLowStock, () => seen.push('second'));
-    bus.subscribeDurable('third', ProductWithLowStock, () => seen.push('third'));
     bus.events().subscribe(() => seen.push('live'));
+    bus.save(lowStock());
 
-    expect(() => bus.publish(lowStock())).to.throw('sync failed');
-    expect(seen).to.deep.equal([]);
+    expect(() => bus.raise()).not.to.throw();
+    expect(seen).to.deep.equal(['second', 'live']);
     expect(repository.processing).to.deep.equal([]);
   });
 
@@ -251,20 +207,39 @@ describe('DomainEventBus', () => {
     const unsubscribe = bus.subscribeSync('audit', ProductWithLowStock, () => seen.push('sync'));
     unsubscribe();
 
-    bus.publish(lowStock());
+    bus.save(lowStock());
+    bus.raise();
 
     expect(seen).to.deep.equal([]);
   });
 
-  it('still delivers the event when a durable handler throws', () => {
+  it('does not run a durable handler from raise', () => {
+    const seen = [];
+    bus.subscribeDurable('stats', ProductWithLowStock, () => seen.push('durable'));
+    const event = lowStock();
+
+    bus.save(event);
+    bus.raise();
+
+    expect(seen).to.deep.equal([]);
+    expect(repository.processing).to.deep.equal([]);
+  });
+
+  it('fans an event out once and marks a failed handler without losing the live event', () => {
     const seen = [];
     bus.subscribeDurable('stats', ProductWithLowStock, () => {
       throw new Error('disk');
     });
     bus.events().subscribe(event => seen.push(event));
+    const event = lowStock();
 
-    expect(() => bus.publish(lowStock())).not.to.throw();
-    expect(seen).to.have.lengthOf(1);
+    bus.save(event);
+    bus.raise();
+    bus.fanOut();
+    bus.deliverReady();
+
+    expect(seen).to.deep.equal([event]);
+    expect(repository.events[0].dispatchedAt).to.equal(FIXED_TIME);
     expect(repository.processing).to.deep.equal([{
       eventId: 'event-1',
       subscriberName: 'stats',
@@ -275,135 +250,75 @@ describe('DomainEventBus', () => {
     }]);
   });
 
-  it('stamps the event and each processing write with the clock', () => {
+  it('skips an event stored before the subscriber registered', () => {
+    const clock = steppingClock([
+      '2026-10-11T12:00:00.000Z',
+      '2026-10-11T13:00:00.000Z',
+      '2026-10-11T14:00:00.000Z',
+      '2026-10-11T15:00:00.000Z'
+    ]);
+    const opened = openBus({
+      clock,
+      identity: sequenceIdentity()
+    });
+    const seen = [];
+    opened.bus.save(new OrderCreated({id: 'old', createdAt: '02/07/2017 10:00:00', lines: []}));
+    opened.bus.subscribeDurable('plugin', OrderCreated, event => seen.push(event.id));
+    opened.bus.fanOut();
+    opened.bus.deliverReady();
+
+    expect(seen).to.deep.equal([]);
+    expect(opened.repository.processing).to.deep.equal([]);
+    expect(opened.repository.events[0].dispatchedAt).to.equal('2026-10-11T14:00:00.000Z');
+
+    opened.bus.save(new OrderCreated({id: 'new', createdAt: '02/07/2017 11:00:00', lines: []}));
+    opened.bus.fanOut();
+    opened.bus.deliverReady();
+
+    expect(seen).to.deep.equal(['new']);
+    expect(opened.repository.processing).to.have.lengthOf(1);
+    expect(opened.repository.processing[0].status).to.equal('DONE');
+  });
+
+  it('keeps the first registration time when the subscriber is registered again', () => {
+    const clock = steppingClock([
+      '2026-10-11T12:00:00.000Z',
+      '2026-10-11T13:00:00.000Z'
+    ]);
+    const opened = openBus({clock});
+    opened.bus.subscribeDurable('plugin', OrderCreated, () => {});
+    opened.bus.subscribeDurable('plugin', OrderCreated, () => {});
+
+    expect(opened.repository.findSubscriber({subscriberName: 'plugin'}).registeredAt)
+      .to.equal('2026-10-11T12:00:00.000Z');
+  });
+
+  it('stamps the event when it is saved and the processing row when it is claimed', () => {
     const clock = steppingClock([
       '2026-10-11T12:00:00.000Z',
       '2026-10-11T12:00:01.000Z',
-      '2026-10-11T12:00:02.000Z'
+      '2026-10-11T12:00:02.000Z',
+      '2026-10-11T12:00:03.000Z',
+      '2026-10-11T12:00:04.000Z'
     ]);
     const opened = openBus({
       clock,
       identity: {generate: () => 'event-9'}
     });
     opened.bus.subscribeDurable('plugin', OrderCreated, () => {});
-
-    opened.bus.publish(new OrderCreated({
+    opened.bus.save(new OrderCreated({
       id: 'sale-1',
       createdAt: '02/07/2017 10:00:00',
       lines: []
     }));
-    opened.bus.stop();
+    opened.bus.fanOut();
+    opened.bus.deliverReady();
 
-    expect(opened.repository.events[0].createdAt).to.equal('2026-10-11T12:00:00.000Z');
+    expect(opened.repository.events[0].createdAt).to.equal('2026-10-11T12:00:01.000Z');
     expect(opened.repository.processingWrites.map(row => [row.status, row.updatedAt])).to.deep.equal([
-      ['PENDING', '2026-10-11T12:00:00.000Z'],
-      ['PROCESSING', '2026-10-11T12:00:01.000Z'],
-      ['DONE', '2026-10-11T12:00:02.000Z']
+      ['PENDING', '2026-10-11T12:00:02.000Z'],
+      ['PROCESSING', '2026-10-11T12:00:03.000Z'],
+      ['DONE', '2026-10-11T12:00:04.000Z']
     ]);
-  });
-});
-
-describe('DomainEventBus with a repository', () => {
-  function order() {
-    return new OrderCreated({
-      id: 'sale-1',
-      createdAt: '02/07/2017 10:00:00',
-      lines: []
-    });
-  }
-
-  function lowStockEvent() {
-    return new ProductWithLowStock({
-      barcode: '0001',
-      name: 'Coca-Cola',
-      stock: 4,
-      stockMin: 10
-    });
-  }
-
-  function busWith({joined}) {
-    return openBus({
-      joined,
-      identity: {generate: () => 'event-1'}
-    });
-  }
-
-  it('joins the open transaction and waits to notify live listeners', () => {
-    const {bus, transaction, repository} = busWith({joined: true});
-    const seen = [];
-    bus.subscribeSync('audit', OrderCreated, () => seen.push('sync'));
-    bus.ofType(OrderCreated).subscribe(() => seen.push('live'));
-
-    bus.publish(order());
-
-    expect(transaction.calls).to.deep.equal(['join']);
-    expect(repository.events).to.have.lengthOf(1);
-    expect(repository.events[0].id).to.equal('event-1');
-    expect(repository.events[0].createdAt).to.equal(FIXED_TIME);
-    expect(repository.processing).to.have.lengthOf(0);
-    expect(seen).to.deep.equal(['sync']);
-
-    bus.transactionCommitted();
-
-    expect(seen).to.deep.equal(['sync', 'live']);
-    bus.stop();
-  });
-
-  it('drops live notifications when the open transaction rolls back', () => {
-    const {bus, transaction, repository} = busWith({joined: true});
-    const seen = [];
-    bus.ofType(OrderCreated).subscribe(() => seen.push('order'));
-    bus.ofType(ProductWithLowStock).subscribe(() => seen.push('low'));
-    bus.subscribeSync('boom', ProductWithLowStock, () => {
-      throw new Error('sync failed');
-    });
-
-    bus.publish(order());
-    expect(() => bus.publish(lowStockEvent())).to.throw('sync failed');
-    bus.transactionRolledBack();
-    bus.transactionCommitted();
-
-    expect(seen).to.deep.equal([]);
-    expect(transaction.calls).to.deep.equal(['join', 'join']);
-    expect(repository.events).to.have.lengthOf(2);
-    expect(repository.processing).to.have.lengthOf(0);
-    bus.stop();
-  });
-
-  it('rolls its own transaction back when a synchronous handler throws', () => {
-    const {bus, transaction, repository} = busWith({joined: false});
-    const seen = [];
-    bus.ofType(OrderCreated).subscribe(() => seen.push('live'));
-    bus.subscribeSync('boom', OrderCreated, () => {
-      throw new Error('sync failed');
-    });
-
-    expect(() => bus.publish(order())).to.throw('sync failed');
-
-    expect(transaction.calls).to.deep.equal(['begin', 'rollback']);
-    expect(repository.events).to.have.lengthOf(1);
-    expect(repository.events[0].id).to.equal('event-1');
-    expect(repository.processing).to.have.lengthOf(0);
-    expect(seen).to.deep.equal([]);
-    expect(transaction.inTransaction()).to.equal(false);
-    bus.stop();
-  });
-
-  it('commits, then notifies live listeners, when it owns the transaction', () => {
-    const {bus, transaction, repository} = busWith({joined: false});
-    const seen = [];
-    bus.subscribeSync('audit', OrderCreated, () => seen.push('sync'));
-    bus.ofType(OrderCreated).subscribe(() => seen.push('live'));
-
-    bus.publish(order());
-
-    expect(transaction.calls).to.deep.equal(['begin', 'commit']);
-    expect(repository.events).to.have.lengthOf(1);
-    expect(repository.events[0].id).to.equal('event-1');
-    expect(repository.events[0].createdAt).to.equal(FIXED_TIME);
-    expect(repository.processing).to.have.lengthOf(0);
-    expect(seen).to.deep.equal(['sync', 'live']);
-    expect(transaction.inTransaction()).to.equal(false);
-    bus.stop();
   });
 });

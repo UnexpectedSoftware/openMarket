@@ -17,6 +17,9 @@ const ORDER_LINES_SQL =
 
 const DELETE_SALE_DAYS_SQL = 'DELETE FROM product_sale_day';
 
+const CLAIM_ORDER_SQL =
+  'INSERT INTO product_sale_order (order_id) VALUES (?) ON CONFLICT(order_id) DO NOTHING';
+
 const SERIES_BY_MONTH_SQL =
   'SELECT strftime(\'%Y-%m\', sold_on) AS soldOn, SUM(quantity) AS quantity, SUM(amount) AS amount ' +
   'FROM product_sale_day WHERE barcode = ? AND sold_on >= ? AND sold_on <= ? ' +
@@ -49,6 +52,7 @@ export default class SqliteProductSaleStatisticsRepository extends ProductSaleSt
     this._queryService = queryService;
     this._findDay = this._database.prepare(FIND_SALE_DAY_SQL);
     this._upsert = this._database.prepare(UPSERT_SALE_DAY_SQL);
+    this._claimOrder = this._database.prepare(CLAIM_ORDER_SQL);
   }
 
   isEmpty() {
@@ -65,10 +69,16 @@ export default class SqliteProductSaleStatisticsRepository extends ProductSaleSt
     });
   }
 
-  applyOrder({createdAt, lines}) {
+  applyOrder({orderId, createdAt, lines}) {
     const soldOn = this._queryService.soldOnFrom(createdAt);
     const groups = this._queryService.groupsFromLines(lines, soldOn);
     this._queryService.transaction(this._database, () => {
+      if (orderId != null && String(orderId) !== '') {
+        const claimed = this._claimOrder.run(String(orderId));
+        if (Number(claimed.changes) === 0) {
+          return;
+        }
+      }
       this._write(groups);
     });
   }

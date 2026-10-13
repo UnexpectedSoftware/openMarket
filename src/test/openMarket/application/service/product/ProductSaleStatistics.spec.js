@@ -251,4 +251,16 @@ describe('Product sale statistics', () => {
     expect(row.amount).to.equal(3.3);
     expect(row.name).to.equal('Old cola');
   });
+
+  it('applies one order id once', () => {
+    const lines = [{barcode: '0001', name: 'Old cola', price: 0.55, quantity: 2}];
+    repository.applyOrder({orderId: 'sale-1', createdAt: '02/03/2020 12:00:00', lines});
+    repository.applyOrder({orderId: 'sale-1', createdAt: '02/03/2020 12:00:00', lines});
+
+    const row = connection.database.prepare(
+      'SELECT quantity, amount FROM product_sale_day WHERE barcode = ? AND sold_on = ?'
+    ).get('0001', '2020-03-02');
+    expect(row.quantity).to.equal(2);
+    expect(row.amount).to.equal(1.1);
+  });
 });

@@ -398,18 +398,19 @@ describe('Order Epics', () => {
           () => done()
         );
 
-      bus.publish(new ProductWithLowStock({
+      bus.save(new ProductWithLowStock({
         barcode: '0001',
         name: 'Coca-Cola',
         stock: 4,
         stockMin: 10
       }));
-      bus.publish(new ProductWithLowStock({
+      bus.save(new ProductWithLowStock({
         barcode: '0002',
         name: 'Water',
         stock: 0,
         stockMin: 5
       }));
+      bus.raise();
     });
   });
 
@@ -439,10 +440,11 @@ describe('Order Epics', () => {
           () => done()
         );
 
-      bus.publish(new ProductEnabledAgain({
+      bus.save(new ProductEnabledAgain({
         barcode: '0005',
         name: 'Coca-Cola Zero 42'
       }));
+      bus.raise();
     });
   });
 });
