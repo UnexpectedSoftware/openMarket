@@ -398,13 +398,13 @@ describe('Order Epics', () => {
           () => done()
         );
 
-      bus.save(new ProductWithLowStock({
+      bus.record(new ProductWithLowStock({
         barcode: '0001',
         name: 'Coca-Cola',
         stock: 4,
         stockMin: 10
       }));
-      bus.save(new ProductWithLowStock({
+      bus.record(new ProductWithLowStock({
         barcode: '0002',
         name: 'Water',
         stock: 0,
@@ -440,7 +440,7 @@ describe('Order Epics', () => {
           () => done()
         );
 
-      bus.save(new ProductEnabledAgain({
+      bus.record(new ProductEnabledAgain({
         barcode: '0005',
         name: 'Coca-Cola Zero 42'
       }));

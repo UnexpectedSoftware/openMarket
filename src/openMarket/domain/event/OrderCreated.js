@@ -8,6 +8,15 @@ export default class OrderCreated {
   }
 
   /**
+   * Stored even before a durable subscriber exists, so a later registration
+   * can still ignore sales from before it was enabled.
+   * @returns {boolean}
+   */
+  static get durable() {
+    return true;
+  }
+
+  /**
    * @param {string} id
    * @param {string} createdAt
    * @param {Array.<{barcode: string, name: string, price: number, quantity: number}>} lines

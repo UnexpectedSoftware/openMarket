@@ -39,7 +39,7 @@ describe('A command that needs a product', () => {
   it('fails enable when the barcode is missing', (done) => {
     const useCase = new EnableProduct({
       repository: emptyRepository(),
-      domainEventBus: {save() {}, raise() {}, discard() {}}
+      domainEventBus: {save() {}, record() {}, raise() {}, discard() {}}
     });
     miss(useCase.enableForSale({barcode: '8412'}), done);
   });

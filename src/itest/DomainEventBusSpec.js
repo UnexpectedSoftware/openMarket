@@ -238,15 +238,15 @@ describe('Domain event bus', () => {
       expect(failure).to.equal(null);
       expect(count('SELECT count(*) AS total FROM "order"')).to.equal(1);
       expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(10);
-      expect(storedEvents().map(row => row.type)).to.deep.equal(['OrderCreated', 'ProductWithLowStock']);
+      expect(storedEvents().map(row => row.type)).to.deep.equal(['OrderCreated']);
       expect(live).to.deep.equal(['order', 'low']);
       expect(database.isTransaction).to.equal(false);
     });
 
-    it('records ProductWithLowStock beside OrderCreated and delivers it when dispatched', () => {
-      const durable = [];
-      unsubscribeLater(domainEventBus.subscribeDurable('stock', ProductWithLowStock, event => {
-        durable.push({barcode: event.barcode, stock: event.stock, stockMin: event.stockMin});
+    it('raises ProductWithLowStock after commit without storing it', () => {
+      const live = [];
+      unsubscribeLater(domainEventBus.ofType(ProductWithLowStock).subscribe(event => {
+        live.push({barcode: event.barcode, stock: event.stock, stockMin: event.stockMin});
       }));
       const lines = [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 90}];
       let failure = null;
@@ -257,15 +257,13 @@ describe('Domain event bus', () => {
           failure = error;
         }
       );
-      dispatcher.dispatch();
 
       expect(failure).to.equal(null);
-      expect(storedEvents().map(row => row.type)).to.deep.equal(['OrderCreated', 'ProductWithLowStock']);
-      expect(durable).to.deep.equal([{barcode: '0001', stock: 10, stockMin: 10}]);
-      const stockRow = processingRows().find(row => row.type === 'ProductWithLowStock');
-      expect(stockRow.status).to.equal('DONE');
-      expect(stockRow.attempts).to.equal(1);
-      expect(stockRow.aggregateId).to.equal('0001');
+      expect(live).to.deep.equal([{barcode: '0001', stock: 10, stockMin: 10}]);
+      expect(storedEvents().map(row => row.type)).to.deep.equal(['OrderCreated']);
+      expect(processingRows().filter(row => row.type === 'ProductWithLowStock')).to.deep.equal([]);
+      const orderRow = processingRows().find(row => row.type === 'OrderCreated');
+      expect(orderRow.status).to.equal('DONE');
     });
   });
 
@@ -282,7 +280,7 @@ describe('Domain event bus', () => {
       });
     });
 
-    it('records ProductEnabledAgain and notifies live listeners', () => {
+    it('raises ProductEnabledAgain without storing it', () => {
       const live = [];
       unsubscribeLater(domainEventBus.ofType(ProductEnabledAgain).subscribe(event => {
         live.push({open: database.isTransaction, barcode: event.barcode, name: event.name});
@@ -298,12 +296,7 @@ describe('Domain event bus', () => {
 
       expect(failure).to.equal(null);
       expect(live).to.deep.equal([{open: false, barcode: '0005', name: 'Coca-Cola Zero 42'}]);
-      const rows = storedEvents();
-      expect(rows).to.have.lengthOf(1);
-      expect(rows[0].type).to.equal('ProductEnabledAgain');
-      expect(rows[0].aggregateId).to.equal('0005');
-      expect(rows[0].dispatchedAt).to.equal(null);
-      expect(JSON.parse(rows[0].payload)).to.deep.equal({barcode: '0005', name: 'Coca-Cola Zero 42'});
+      expect(storedEvents()).to.deep.equal([]);
       expect(count('SELECT count(*) AS total FROM domain_event_processing')).to.equal(0);
     });
   });

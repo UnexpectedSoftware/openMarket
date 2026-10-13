@@ -45,12 +45,17 @@ export default class DomainEventBus {
   }
 
   /**
-   * Inserts the event on the caller's connection and holds it until raise.
-   * An open transaction takes the row with it. Nobody is notified yet.
+   * Inserts a durable event on the caller's connection and holds it until raise.
+   * An event is durable when its type is marked durable, or when a durable
+   * subscriber for that type is already registered. An open transaction takes
+   * the row with it. Nobody is notified yet.
    * @param {*} event
    */
   save(event) {
     this._assertEvent(event);
+    if (!this._isDurable(event)) {
+      throw new Error(`Domain event ${typeName(event)} is not durable`);
+    }
     this._repository.save({
       id: this._identity.generate(),
       type: typeName(event),
@@ -58,6 +63,16 @@ export default class DomainEventBus {
       aggregateId: aggregateId(event),
       createdAt: this._clock.now()
     });
+    this._queued.push(event);
+  }
+
+  /**
+   * Holds the event until raise without inserting a row.
+   * Use this for facts that only live listeners need.
+   * @param {*} event
+   */
+  record(event) {
+    this._assertEvent(event);
     this._queued.push(event);
   }
 
@@ -364,6 +379,20 @@ export default class DomainEventBus {
       subscriberName: subscriber.name,
       statuses: [FAILED]
     });
+  }
+
+  _isDurable(event) {
+    if (event.constructor && event.constructor.durable === true) {
+      return true;
+    }
+    const type = typeName(event);
+    let durable = false;
+    this._durable.forEach(subscriber => {
+      if (subscriber.EventType.type === type) {
+        durable = true;
+      }
+    });
+    return durable;
   }
 
   _assertEvent(event) {

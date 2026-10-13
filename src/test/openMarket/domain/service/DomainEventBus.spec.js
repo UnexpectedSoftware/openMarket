@@ -70,14 +70,40 @@ describe('DomainEventBus', () => {
     const seen = [];
     bus.events().subscribe(event => seen.push(event));
 
-    bus.save(lowStock());
+    bus.save(new OrderCreated({id: 'sale-1', createdAt: '02/07/2017 10:00:00', lines: []}));
 
     expect(seen).to.deep.equal([]);
     expect(repository.events).to.have.lengthOf(1);
+    expect(repository.events[0].type).to.equal('OrderCreated');
     expect(repository.events[0].id).to.equal('event-1');
     expect(repository.events[0].createdAt).to.equal(FIXED_TIME);
     expect(repository.events[0].dispatchedAt).to.equal(null);
     expect(repository.processing).to.deep.equal([]);
+  });
+
+  it('refuses to store an event with no durable subscriber', () => {
+    expect(() => bus.save(lowStock())).to.throw('Domain event ProductWithLowStock is not durable');
+    expect(repository.events).to.deep.equal([]);
+  });
+
+  it('records a live event without storing it', () => {
+    const seen = [];
+    bus.ofType(ProductWithLowStock).subscribe(event => seen.push(event));
+    const event = lowStock();
+
+    bus.record(event);
+    expect(repository.events).to.deep.equal([]);
+    bus.raise();
+
+    expect(seen).to.deep.equal([event]);
+  });
+
+  it('stores an event type that already has a durable subscriber', () => {
+    bus.subscribeDurable('stock', ProductWithLowStock, () => {});
+    bus.save(lowStock());
+
+    expect(repository.events).to.have.lengthOf(1);
+    expect(repository.events[0].type).to.equal('ProductWithLowStock');
   });
 
   it('raises a saved event to every live listener', () => {
@@ -87,7 +113,7 @@ describe('DomainEventBus', () => {
     bus.events().subscribe(event => second.push(event));
     const event = lowStock();
 
-    bus.save(event);
+    bus.record(event);
     bus.raise();
 
     expect(first).to.deep.equal([event]);
@@ -99,8 +125,8 @@ describe('DomainEventBus', () => {
     bus.events().subscribe(event => seen.push(event));
     const first = lowStock();
     const second = lowStock();
-    bus.save(first);
-    bus.save(second);
+    bus.record(first);
+    bus.record(second);
 
     bus.raise();
 
@@ -112,7 +138,7 @@ describe('DomainEventBus', () => {
   it('drops a saved event on discard so a later raise cannot announce it', () => {
     const seen = [];
     bus.events().subscribe(event => seen.push(event));
-    bus.save(lowStock());
+    bus.save(new OrderCreated({id: 'sale-1', createdAt: '02/07/2017 10:00:00', lines: []}));
     bus.discard();
     bus.raise();
 
@@ -123,7 +149,7 @@ describe('DomainEventBus', () => {
   it('does not throw when nobody is listening', () => {
     const event = lowStock();
     expect(() => {
-      bus.save(event);
+      bus.record(event);
       bus.raise();
     }).not.to.throw();
   });
@@ -132,18 +158,18 @@ describe('DomainEventBus', () => {
     const seen = [];
     const subscription = bus.events().subscribe(event => seen.push(event));
     const first = lowStock();
-    bus.save(first);
+    bus.record(first);
     bus.raise();
 
     subscription.unsubscribe();
-    bus.save(lowStock());
+    bus.record(lowStock());
     bus.raise();
 
     expect(seen).to.deep.equal([first]);
   });
 
   it('does not deliver events raised before a subscriber arrives', () => {
-    bus.save(lowStock());
+    bus.record(lowStock());
     bus.raise();
     const seen = [];
     bus.events().subscribe(event => seen.push(event));
@@ -151,7 +177,7 @@ describe('DomainEventBus', () => {
     expect(seen).to.deep.equal([]);
 
     const later = lowStock();
-    bus.save(later);
+    bus.record(later);
     bus.raise();
     expect(seen).to.deep.equal([later]);
   });
@@ -161,8 +187,8 @@ describe('DomainEventBus', () => {
     bus.ofType(ProductWithLowStock).subscribe(event => seen.push(event));
     const event = lowStock();
 
-    bus.save(new OrderCreated({id: 'sale-1', createdAt: '02/07/2017 10:00:00', lines: []}));
-    bus.save(event);
+    bus.record(new OrderCreated({id: 'sale-1', createdAt: '02/07/2017 10:00:00', lines: []}));
+    bus.record(event);
     bus.raise();
 
     expect(seen).to.have.lengthOf(1);
@@ -190,8 +216,8 @@ describe('DomainEventBus', () => {
         stockMin: 1
       });
 
-      opened.bus.save(first);
-      opened.bus.save(second);
+      opened.bus.record(first);
+      opened.bus.record(second);
       expect(() => opened.bus.raise()).not.to.throw();
 
       expect(thrown).to.equal(2);
@@ -220,7 +246,7 @@ describe('DomainEventBus', () => {
     bus.subscribeSync('audit', ProductWithLowStock, () => order.push('sync'));
     bus.events().subscribe(() => order.push('live'));
 
-    bus.save(lowStock());
+    bus.record(lowStock());
     bus.raise();
 
     expect(order).to.deep.equal(['sync', 'live']);
@@ -233,7 +259,7 @@ describe('DomainEventBus', () => {
     });
     bus.subscribeSync('second', ProductWithLowStock, () => seen.push('second'));
     bus.events().subscribe(() => seen.push('live'));
-    bus.save(lowStock());
+    bus.record(lowStock());
 
     expect(() => bus.raise()).not.to.throw();
     expect(seen).to.deep.equal(['second', 'live']);
@@ -245,7 +271,7 @@ describe('DomainEventBus', () => {
     const unsubscribe = bus.subscribeSync('audit', ProductWithLowStock, () => seen.push('sync'));
     unsubscribe();
 
-    bus.save(lowStock());
+    bus.record(lowStock());
     bus.raise();
 
     expect(seen).to.deep.equal([]);

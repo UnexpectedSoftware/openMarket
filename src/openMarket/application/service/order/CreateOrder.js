@@ -44,7 +44,7 @@ export default class CreateOrder {
           lines: order.lines
         }));
         lowStockProducts.forEach(product => {
-          this._domainEventBus.save(new ProductWithLowStock({
+          this._domainEventBus.record(new ProductWithLowStock({
             barcode: product.barcode,
             name: product.name,
             stock: product.stock,

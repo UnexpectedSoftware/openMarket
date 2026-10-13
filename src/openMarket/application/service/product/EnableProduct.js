@@ -48,7 +48,7 @@ export default class EnableProduct {
               barcode: product.barcode,
               name: product.name
             });
-            this._domainEventBus.save(event);
+            this._domainEventBus.record(event);
             this._domainEventBus.raise();
             return product;
           });
