@@ -10,14 +10,14 @@ import SqlProductMapper from '../../../../openMarket/infrastructure/product/SqlP
 import ProductFactoryImpl from '../../../../openMarket/infrastructure/product/ProductFactoryImpl';
 import CategoryFactoryImpl from '../../../../openMarket/infrastructure/category/CategoryFactoryImpl';
 import ImageStore, {IMAGE_MAX_BYTES} from '../../../../openMarket/infrastructure/service/ImageStore';
-import UUIDIdentity from '../../../../openMarket/infrastructure/service/UUIDIdentity';
+import RandomUUIDIdentity from '../../../../openMarket/domain/RandomUUIDIdentity';
 
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
   'base64'
 );
 
-const identity = new UUIDIdentity();
+const identity = new RandomUUIDIdentity();
 const categoryFactory = new CategoryFactoryImpl({identity});
 const productFactory = new ProductFactoryImpl({identity});
 const category = categoryFactory.createWithId({id: '1', name: 'Fruit'});

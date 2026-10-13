@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import * as Rx from 'rxjs';
 import Order from '../../../../../openMarket/domain/order/Order';
 import OrderCreated from '../../../../../openMarket/domain/event/OrderCreated';
-import DomainEventBus from '../../../../../openMarket/domain/service/DomainEventBus';
+import {deliveringDomainEventBus} from '../../../support/domainEventBus';
 import CreateOrder from '../../../../../openMarket/application/service/order/CreateOrder';
 import RecordProductSales from '../../../../../openMarket/application/service/product/RecordProductSales';
 
@@ -32,12 +32,12 @@ describe('CreateOrder domain events', () => {
   let events;
 
   beforeEach(() => {
-    bus = new DomainEventBus();
+    bus = deliveringDomainEventBus();
     events = [];
     bus.ofType(OrderCreated).subscribe(event => events.push(event));
   });
 
-  function createOrder({onApply, failStock, throwOnApply} = {}) {
+  function createOrder({onApply, failStock, throwOnApply, onDispatch} = {}) {
     const recorder = new RecordProductSales({
       repository: {
         isEmpty: () => false,
@@ -70,6 +70,15 @@ describe('CreateOrder domain events', () => {
         run(work) {
           return work().toArray().flatMap(values => Rx.Observable.from(values));
         }
+      },
+      domainEventDispatcher: {
+        dispatch() {
+          if (onDispatch) {
+            onDispatch();
+          }
+          bus.fanOut();
+          bus.deliverReady();
+        }
       }
     });
   }
@@ -91,6 +100,33 @@ describe('CreateOrder domain events', () => {
       );
   });
 
+  it('returns the order when a listener throws and keeps that listener', (done) => {
+    let thrown = 0;
+    bus.ofType(OrderCreated).subscribe(() => {
+      thrown += 1;
+      throw new Error('toast failed');
+    });
+    const useCase = createOrder();
+    useCase.createOrder({lines}).subscribe(
+      order => {
+        expect(order.id).to.equal('order-1');
+        expect(events).to.have.lengthOf(1);
+        expect(thrown).to.equal(1);
+      },
+      error => done(error),
+      () => {
+        useCase.createOrder({lines}).subscribe(
+          () => {
+            expect(events).to.have.lengthOf(2);
+            expect(thrown).to.equal(2);
+          },
+          error => done(error),
+          () => done()
+        );
+      }
+    );
+  });
+
   it('publishes no OrderCreated when stock cannot be updated', (done) => {
     createOrder({failStock: true}).createOrder({lines})
       .subscribe(
@@ -103,20 +139,42 @@ describe('CreateOrder domain events', () => {
   });
 
   it('still saves the order when the statistics subscriber fails', (done) => {
-    const errorLog = console.error;
-    console.error = () => {};
     createOrder({throwOnApply: true}).createOrder({lines})
       .subscribe(
         order => {
           expect(order.id).to.equal('order-1');
         },
-        error => {
-          console.error = errorLog;
-          done(error);
-        },
+        error => done(error),
+        () => done()
+      );
+  });
+
+  it('dispatches durable handlers after the sale and not when the sale fails', (done) => {
+    let dispatched = 0;
+    createOrder({
+      failStock: true,
+      onDispatch() {
+        dispatched += 1;
+      }
+    }).createOrder({lines})
+      .subscribe(
+        () => done(new Error('should not emit an order')),
         () => {
-          console.error = errorLog;
-          done();
+          expect(dispatched).to.equal(0);
+          expect(events).to.have.lengthOf(0);
+          createOrder({
+            onDispatch() {
+              dispatched += 1;
+            }
+          }).createOrder({lines})
+            .subscribe(
+              () => {
+                expect(dispatched).to.equal(1);
+                expect(events).to.have.lengthOf(1);
+              },
+              error => done(error),
+              () => done()
+            );
         }
       );
   });
@@ -124,7 +182,7 @@ describe('CreateOrder domain events', () => {
 
 describe('RecordProductSales', () => {
   it('rebuilds an empty table once, then keeps listening', () => {
-    const bus = new DomainEventBus();
+    const bus = deliveringDomainEventBus();
     let rebuilt = 0;
     let applied = 0;
     const recorder = new RecordProductSales({
@@ -141,17 +199,24 @@ describe('RecordProductSales', () => {
     });
     recorder.start();
     recorder.start();
-    bus.publish(new OrderCreated({
+    const event = new OrderCreated({
       id: '1',
       createdAt: '02/07/2017 10:00:00',
       lines
-    }));
+    });
+    bus.save(event);
+    bus.raise();
+    expect(applied).to.equal(0);
+    bus.fanOut();
+    bus.deliverReady();
     expect(rebuilt).to.equal(1);
+    expect(applied).to.equal(1);
+    bus.deliverReady();
     expect(applied).to.equal(1);
   });
 
   it('subscribes even when the backfill fails', () => {
-    const bus = new DomainEventBus();
+    const bus = deliveringDomainEventBus();
     let applied = false;
     const errorLog = console.error;
     console.error = () => {};
@@ -169,11 +234,14 @@ describe('RecordProductSales', () => {
         domainEventBus: bus
       });
       recorder.start();
-      bus.publish(new OrderCreated({
+      const event = new OrderCreated({
         id: '1',
         createdAt: '02/07/2017 10:00:00',
         lines
-      }));
+      });
+      bus.save(event);
+      bus.fanOut();
+      bus.deliverReady();
     } finally {
       console.error = errorLog;
     }

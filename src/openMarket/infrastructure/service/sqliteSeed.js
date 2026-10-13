@@ -75,8 +75,11 @@ export function replaceSqliteData(database, {categories = [], products = [], ord
   const inserter = createFixtureInserter(database);
   database.exec('BEGIN');
   try {
+    database.exec('DELETE FROM domain_event_processing');
+    database.exec('DELETE FROM domain_event');
     database.exec('DELETE FROM line');
     database.exec('DELETE FROM "order"');
+    database.exec('DELETE FROM product_sale_order');
     database.exec('DELETE FROM product_sale_day');
     database.exec('DELETE FROM product');
     database.exec('DELETE FROM category');

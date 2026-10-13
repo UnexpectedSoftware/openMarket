@@ -7,12 +7,12 @@ import Category from '../../domain/category/Category';
 export default class CategoryFactoryImpl extends CategoryFactory {
     /**
      *
-     * @param {UUIDIdentity} identity
+     * @param {Identity} identity
      */
   constructor({ identity }) {
     super();
         /**
-         * @type {UUIDIdentity}
+         * @type {Identity}
          * @member CategoryFactoryImpl#identity
          */
     this._identity = identity;

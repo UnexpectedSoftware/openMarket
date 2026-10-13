@@ -146,18 +146,11 @@ describe('Order create use case', () => {
   });
 
   describe('When the sale commits', () => {
-    it('publishes OrderCreated after the transaction commits', (done) => {
+    it('notifies OrderCreated listeners after the transaction commits', (done) => {
       const seen = [];
-      const publish = domainEventBus.publish.bind(domainEventBus);
-      const restore = () => {
-        domainEventBus.publish = publish;
-      };
-      domainEventBus.publish = function publishEvent(event) {
-        if (event instanceof OrderCreated) {
-          seen.push(database.isTransaction);
-        }
-        return publish(event);
-      };
+      const subscription = domainEventBus.ofType(OrderCreated).subscribe(() => {
+        seen.push(database.isTransaction);
+      });
       const lines = [{
         barcode: "0001",
         name: "Coca-Cola",
@@ -174,18 +167,23 @@ describe('Order create use case', () => {
               expect(seen).to.deep.equal([false]);
               expect(Number(database.prepare('SELECT count(*) AS total FROM "order"').get().total)).to.equal(ordersBefore + 1);
               expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(95);
+              const stored = database.prepare(
+                "SELECT aggregate_id FROM domain_event WHERE type = 'OrderCreated'"
+              ).all();
+              expect(stored).to.have.lengthOf(1);
+              expect(stored[0].aggregate_id).to.be.a('string');
             } catch (error) {
               failed = true;
-              restore();
+              subscription.unsubscribe();
               done(error);
             }
           },
           (error) => {
-            restore();
+            subscription.unsubscribe();
             done(error);
           },
           () => {
-            restore();
+            subscription.unsubscribe();
             if (!failed) {
               done();
             }

@@ -19,10 +19,12 @@ export default class ProductSaleStatisticsRepository {
 
   /**
    * Add one order's lines into the daily counters.
+   * The same orderId is applied once.
+   * @param {string} [orderId]
    * @param {string} createdAt
    * @param {Array} lines
    */
-  applyOrder({createdAt, lines}) {
+  applyOrder({orderId, createdAt, lines}) {
     throw new Error('ProductSaleStatisticsRepository#applyOrder must be implemented');
   }
 

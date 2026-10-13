@@ -2,7 +2,7 @@ import PrinterConnection from "../printer/PrinterConnection";
 import OrderPrinterService from "../printer/OrderPrinterService";
 import CatalogPrinterService from "../printer/CatalogPrinterService";
 import CategoryFactoryImpl from "../category/CategoryFactoryImpl";
-import UUIDIdentity from "../service/UUIDIdentity";
+import RandomUUIDIdentity from "../../domain/RandomUUIDIdentity";
 import ListAllCategories from "../../application/service/category/ListAllCategories";
 import FindCategoryById from "../../application/service/category/FindCategoryById";
 import CreateCategory from "../../application/service/category/CreateCategory";
@@ -30,6 +30,7 @@ import dev from '../../../resources/application-dev.json'
 import pro from '../../../resources/application-pro.json'
 import SqlOrderMapper from "../order/SqlOrderMapper";
 import SqliteConnection from "../service/SqliteConnection";
+import {record} from "../logging/ErrorLog";
 import SqliteCategoryRepository from "../category/SqliteCategoryRepository";
 import SqliteCategoryQueryService from "../category/SqliteCategoryQueryService";
 import ImageStore, {imagesDirectory} from "../service/ImageStore";
@@ -46,7 +47,10 @@ import FetchCatalogImages from "../../application/service/image/FetchCatalogImag
 import FindProductImage from "../../application/service/image/FindProductImage";
 import PrintProductCatalog from "../../application/service/product/PrintProductCatalog";
 import DomainEventBus from "../../domain/service/DomainEventBus";
+import DomainEventDispatcher from "../event/DomainEventDispatcher";
+import SqliteDomainEventRepository from "../event/SqliteDomainEventRepository";
 import SqliteTransaction from "../service/SqliteTransaction";
+import SystemClock from "../service/SystemClock";
 const env = process.env.NODE_ENV
 
 class Container {
@@ -138,8 +142,8 @@ class Container {
   }
 
 
-  _uuidIdentity() {
-    return new UUIDIdentity();
+  _randomUUIDIdentity() {
+    return new RandomUUIDIdentity();
   }
 
   /**
@@ -147,7 +151,7 @@ class Container {
    * @returns {CategoryFactoryImpl}
    */
   _categoryFactory() {
-    return new CategoryFactoryImpl({ identity: this.getInstance({key: 'uuidIdentity'}) });
+    return new CategoryFactoryImpl({ identity: this.getInstance({key: 'randomUUIDIdentity'}) });
   }
 
   /**
@@ -244,7 +248,7 @@ class Container {
    * @returns {ProductFactoryImpl}
    */
   _productFactory() {
-    return new ProductFactoryImpl({ identity: this.getInstance({key: 'uuidIdentity'}) });
+    return new ProductFactoryImpl({ identity: this.getInstance({key: 'randomUUIDIdentity'}) });
   }
 
   _findProductsUseCase() {
@@ -276,7 +280,8 @@ class Container {
   _enableProduct() {
     return new EnableProduct({
       repository: this.getInstance({key: 'productRepository'}),
-      domainEventBus: this.getInstance({key: 'domainEventBus'})
+      domainEventBus: this.getInstance({key: 'domainEventBus'}),
+      transaction: this.getInstance({key: 'transaction'})
     });
   }
 
@@ -305,13 +310,35 @@ class Container {
     });
   }
 
-  _domainEventBus() {
-    return new DomainEventBus();
+  _domainEventRepository() {
+    return new SqliteDomainEventRepository({
+      connection: this.getInstance({key: 'sqliteConnection'})
+    });
   }
 
   _transaction() {
     return new SqliteTransaction({
       connection: this.getInstance({key: 'sqliteConnection'})
+    });
+  }
+
+  _systemClock() {
+    return new SystemClock();
+  }
+
+  _domainEventBus() {
+    return new DomainEventBus({
+      repository: this.getInstance({key: 'domainEventRepository'}),
+      identity: this.getInstance({key: 'randomUUIDIdentity'}),
+      clock: this.getInstance({key: 'systemClock'}),
+      recordError: record
+    });
+  }
+
+  _domainEventDispatcher() {
+    return new DomainEventDispatcher({
+      domainEventBus: this.getInstance({key: 'domainEventBus'}),
+      transaction: this.getInstance({key: 'transaction'})
     });
   }
 
@@ -321,12 +348,13 @@ class Container {
       productRepository: this.getInstance({key: 'productRepository'}),
       orderFactory: this.getInstance({key: 'orderFactory'}),
       domainEventBus: this.getInstance({key: 'domainEventBus'}),
-      transaction: this.getInstance({key: 'transaction'})
+      transaction: this.getInstance({key: 'transaction'}),
+      domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'})
     });
   }
 
   _orderFactory() {
-    return new OrderFactoryImpl({ identity: this.getInstance({key: 'uuidIdentity'})});
+    return new OrderFactoryImpl({ identity: this.getInstance({key: 'randomUUIDIdentity'})});
   }
 
   _listAllOrdersUseCase() {

@@ -5,7 +5,7 @@ import {
   makeLowStockWarningEpic,
   makeProductEnabledAgainEpic
 } from '../../../../../openMarket/user_interface/order/new_order/epicFactory';
-import DomainEventBus from '../../../../../openMarket/domain/service/DomainEventBus';
+import {deliveringDomainEventBus} from '../../../support/domainEventBus';
 import ProductWithLowStock from '../../../../../openMarket/domain/event/ProductWithLowStock';
 import ProductEnabledAgain from '../../../../../openMarket/domain/event/ProductEnabledAgain';
 import {
@@ -370,7 +370,7 @@ describe('Order Epics', () => {
 
   describe('Low stock warning', () => {
     it('shows one warning for each ProductWithLowStock event', (done) => {
-      const bus = new DomainEventBus();
+      const bus = deliveringDomainEventBus();
       const warningNotification = options => ({
         type: 'RNS_SHOW_NOTIFICATION',
         title: options.title,
@@ -398,24 +398,25 @@ describe('Order Epics', () => {
           () => done()
         );
 
-      bus.publish(new ProductWithLowStock({
+      bus.record(new ProductWithLowStock({
         barcode: '0001',
         name: 'Coca-Cola',
         stock: 4,
         stockMin: 10
       }));
-      bus.publish(new ProductWithLowStock({
+      bus.record(new ProductWithLowStock({
         barcode: '0002',
         name: 'Water',
         stock: 0,
         stockMin: 5
       }));
+      bus.raise();
     });
   });
 
   describe('Product enabled again', () => {
     it('warns that the product is enabled and stock increased by 1', (done) => {
-      const bus = new DomainEventBus();
+      const bus = deliveringDomainEventBus();
       const warningNotification = options => ({
         type: 'RNS_SHOW_NOTIFICATION',
         title: options.title,
@@ -439,10 +440,11 @@ describe('Order Epics', () => {
           () => done()
         );
 
-      bus.publish(new ProductEnabledAgain({
+      bus.record(new ProductEnabledAgain({
         barcode: '0005',
         name: 'Coca-Cola Zero 42'
       }));
+      bus.raise();
     });
   });
 });

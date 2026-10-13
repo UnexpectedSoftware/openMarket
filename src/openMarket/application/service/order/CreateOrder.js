@@ -12,19 +12,20 @@ import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
 export default class CreateOrder {
 
   /**
-   *
    * @param {OrderRepository} orderRepository
    * @param {ProductRepository} productRepository
    * @param {OrderFactory} orderFactory
    * @param {DomainEventBus} domainEventBus
    * @param {Transaction} transaction
+   * @param {{dispatch: function(): void}} domainEventDispatcher
    */
-  constructor({ orderRepository, productRepository, orderFactory, domainEventBus, transaction}) {
+  constructor({ orderRepository, productRepository, orderFactory, domainEventBus, transaction, domainEventDispatcher}) {
     this._orderRepository = orderRepository;
     this._productRepository = productRepository;
     this._orderFactory = orderFactory;
     this._domainEventBus = domainEventBus;
     this._transaction = transaction;
+    this._domainEventDispatcher = domainEventDispatcher;
   }
 
   /**
@@ -35,21 +36,30 @@ export default class CreateOrder {
   createOrder({lines}) {
     return this._transaction.run(() => this._buildOrder({lines})
       .flatMap(order => this._orderRepository.save({order})
-        .flatMap(saved => this._subtrackStock({order: saved}))))
+        .flatMap(saved => this._subtrackStock({order: saved})))
       .do(({order, lowStockProducts}) => {
-        this._domainEventBus.publish(new OrderCreated({
+        this._domainEventBus.save(new OrderCreated({
           id: order.id,
           createdAt: order.createdAt,
           lines: order.lines
         }));
-        lowStockProducts.forEach(product => this._domainEventBus.publish(new ProductWithLowStock({
-          barcode: product.barcode,
-          name: product.name,
-          stock: product.stock,
-          stockMin: product.stockMin
-        })));
+        lowStockProducts.forEach(product => {
+          this._domainEventBus.record(new ProductWithLowStock({
+            barcode: product.barcode,
+            name: product.name,
+            stock: product.stock,
+            stockMin: product.stockMin
+          }));
+        });
       })
-      .map(({order}) => order);
+      .map(({order}) => order))
+      .do(
+        () => {
+          this._domainEventBus.raise();
+          this._domainEventDispatcher.dispatch();
+        },
+        () => this._domainEventBus.discard()
+      );
   }
 
   _buildOrder({lines})  {

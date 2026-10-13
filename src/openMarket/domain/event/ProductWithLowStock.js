@@ -3,6 +3,10 @@
  */
 export default class ProductWithLowStock {
 
+  static get type() {
+    return 'ProductWithLowStock';
+  }
+
   /**
    * @param {string} barcode
    * @param {string} name
