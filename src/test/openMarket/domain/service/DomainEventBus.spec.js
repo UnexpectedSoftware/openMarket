@@ -1,7 +1,9 @@
 import { expect } from 'chai';
 import DomainEventBus from '../../../../openMarket/domain/service/DomainEventBus';
+import ErrorCode from '../../../../openMarket/domain/error/ErrorCode';
 import OrderCreated from '../../../../openMarket/domain/event/OrderCreated';
 import ProductWithLowStock from '../../../../openMarket/domain/event/ProductWithLowStock';
+import {record, resetForTest, start} from '../../../../openMarket/infrastructure/logging/ErrorLog';
 import {memoryDomainEventRepository} from '../../support/domainEventBus';
 
 const FIXED_TIME = '2026-10-11T12:00:00.000Z';
@@ -34,9 +36,10 @@ function steppingClock(times) {
 function openBus({
   clock = fixedClock(),
   identity = sequenceIdentity(),
-  repository = memoryDomainEventRepository()
+  repository = memoryDomainEventRepository(),
+  recordError
 } = {}) {
-  const bus = new DomainEventBus({repository, identity, clock});
+  const bus = new DomainEventBus({repository, identity, clock, recordError});
   return {bus, repository, clock};
 }
 
@@ -165,6 +168,41 @@ describe('DomainEventBus', () => {
     expect(seen).to.have.lengthOf(1);
     expect(seen[0]).to.equal(event);
     expect(seen[0]).to.be.instanceof(ProductWithLowStock);
+  });
+
+  it('keeps a throwing listener subscribed and delivers the other listeners', () => {
+    const lines = [];
+    start({write: line => lines.push(line)});
+    try {
+      const opened = openBus({recordError: record});
+      const seen = [];
+      let thrown = 0;
+      opened.bus.ofType(ProductWithLowStock).subscribe(() => {
+        thrown += 1;
+        throw new Error('toast failed');
+      });
+      opened.bus.ofType(ProductWithLowStock).subscribe(event => seen.push(event.name));
+      const first = lowStock();
+      const second = new ProductWithLowStock({
+        barcode: '0002',
+        name: 'Water',
+        stock: 0,
+        stockMin: 1
+      });
+
+      opened.bus.save(first);
+      opened.bus.save(second);
+      expect(() => opened.bus.raise()).not.to.throw();
+
+      expect(thrown).to.equal(2);
+      expect(seen).to.deep.equal(['Coca-Cola', 'Water']);
+      expect(lines).to.have.lengthOf(2);
+      expect(JSON.parse(lines[0]).message).to.equal('toast failed');
+      expect(JSON.parse(lines[0]).code).to.equal(ErrorCode.UNEXPECTED);
+      expect(JSON.parse(lines[1]).message).to.equal('toast failed');
+    } finally {
+      resetForTest();
+    }
   });
 
   it('does not let events() raise', () => {

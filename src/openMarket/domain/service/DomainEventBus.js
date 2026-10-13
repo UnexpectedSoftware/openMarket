@@ -1,5 +1,5 @@
+import {Observable} from 'rxjs/Observable';
 import {Subject} from 'rxjs/Subject';
-import 'rxjs/add/operator/filter';
 import {aggregateId, hydrate, typeName} from '../event/registry';
 import {DEAD, DONE, FAILED, PENDING, PROCESSING} from './domainEventStatus';
 
@@ -18,12 +18,14 @@ export default class DomainEventBus {
    * @param {Identity} identity
    * @param {Clock} clock
    * @param {number} [maxAttempts]
+   * @param {function(*): void} [recordError]
    */
   constructor({
     repository,
     identity,
     clock,
-    maxAttempts = DEFAULT_MAX_ATTEMPTS
+    maxAttempts = DEFAULT_MAX_ATTEMPTS,
+    recordError
   } = {}) {
     if (!repository || !identity || !clock) {
       throw new Error('DomainEventBus requires a repository, an identity, and a clock');
@@ -33,8 +35,10 @@ export default class DomainEventBus {
     this._identity = identity;
     this._clock = clock;
     this._maxAttempts = maxAttempts;
+    this._recordError = typeof recordError === 'function' ? recordError : () => {};
     this._sync = new Map();
     this._durable = new Map();
+    this._live = [];
     this._queued = [];
     this._draining = false;
     this._pumpAgain = false;
@@ -83,10 +87,21 @@ export default class DomainEventBus {
       try {
         subscriber.handler(event);
       } catch (error) {
-        // The sale is already committed. This handler cannot undo it.
+        this._recordError(error);
       }
     });
-    this._events.next(event);
+    this._live.slice().forEach(listener => {
+      try {
+        listener(event);
+      } catch (error) {
+        this._recordError(error);
+      }
+    });
+    try {
+      this._events.next(event);
+    } catch (error) {
+      this._recordError(error);
+    }
   }
 
   /**
@@ -98,11 +113,32 @@ export default class DomainEventBus {
 
   /**
    * Live listener. Nothing is replayed. Call raise after the commit.
+   * A throw in the handler is logged and does not unsubscribe it or the others.
    * @param {Function} EventType
    * @returns {Observable}
    */
   ofType(EventType) {
-    return this.events().filter(event => event instanceof EventType);
+    const recordError = this._recordError;
+    const observable = Observable.create(observer => {
+      const listener = event => {
+        if (!(event instanceof EventType)) {
+          return;
+        }
+        observer.next(event);
+      };
+      this._live.push(listener);
+      return () => {
+        const index = this._live.indexOf(listener);
+        if (index >= 0) {
+          this._live.splice(index, 1);
+        }
+      };
+    });
+    const subscribe = observable.subscribe.bind(observable);
+    observable.subscribe = function guardedSubscribe(observerOrNext, error, complete) {
+      return subscribe(guardListener(observerOrNext, recordError), error, complete);
+    };
+    return observable;
   }
 
   /**
@@ -348,6 +384,50 @@ export default class DomainEventBus {
     }
   }
 
+}
+
+/**
+ * RxJS 5 unsubscribes a listener that throws. Catch it here so the listener
+ * stays, the other listeners still run, and raise() does not throw.
+ * @param {*} observerOrNext
+ * @param {function(*): void} recordError
+ * @returns {*}
+ */
+function guardListener(observerOrNext, recordError) {
+  if (typeof observerOrNext === 'function') {
+    return function onEvent(event) {
+      try {
+        return observerOrNext(event);
+      } catch (error) {
+        recordError(error);
+      }
+    };
+  }
+  // Operator subscribers (map, filter) are Subscriber instances. Replacing them
+  // would drop the rest of the chain. Function handlers are the listeners that throw.
+  if (observerOrNext && typeof observerOrNext.unsubscribe === 'function' && 'destination' in observerOrNext) {
+    return observerOrNext;
+  }
+  if (observerOrNext && typeof observerOrNext.next === 'function') {
+    const next = observerOrNext.next.bind(observerOrNext);
+    const guarded = {
+      next(event) {
+        try {
+          return next(event);
+        } catch (error) {
+          recordError(error);
+        }
+      }
+    };
+    if (typeof observerOrNext.error === 'function') {
+      guarded.error = observerOrNext.error.bind(observerOrNext);
+    }
+    if (typeof observerOrNext.complete === 'function') {
+      guarded.complete = observerOrNext.complete.bind(observerOrNext);
+    }
+    return guarded;
+  }
+  return observerOrNext;
 }
 
 function messageOf(error) {

@@ -100,6 +100,33 @@ describe('CreateOrder domain events', () => {
       );
   });
 
+  it('returns the order when a listener throws and keeps that listener', (done) => {
+    let thrown = 0;
+    bus.ofType(OrderCreated).subscribe(() => {
+      thrown += 1;
+      throw new Error('toast failed');
+    });
+    const useCase = createOrder();
+    useCase.createOrder({lines}).subscribe(
+      order => {
+        expect(order.id).to.equal('order-1');
+        expect(events).to.have.lengthOf(1);
+        expect(thrown).to.equal(1);
+      },
+      error => done(error),
+      () => {
+        useCase.createOrder({lines}).subscribe(
+          () => {
+            expect(events).to.have.lengthOf(2);
+            expect(thrown).to.equal(2);
+          },
+          error => done(error),
+          () => done()
+        );
+      }
+    );
+  });
+
   it('publishes no OrderCreated when stock cannot be updated', (done) => {
     createOrder({failStock: true}).createOrder({lines})
       .subscribe(

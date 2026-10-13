@@ -30,6 +30,7 @@ import dev from '../../../resources/application-dev.json'
 import pro from '../../../resources/application-pro.json'
 import SqlOrderMapper from "../order/SqlOrderMapper";
 import SqliteConnection from "../service/SqliteConnection";
+import {record} from "../logging/ErrorLog";
 import SqliteCategoryRepository from "../category/SqliteCategoryRepository";
 import SqliteCategoryQueryService from "../category/SqliteCategoryQueryService";
 import ImageStore, {imagesDirectory} from "../service/ImageStore";
@@ -328,7 +329,8 @@ class Container {
     return new DomainEventBus({
       repository: this.getInstance({key: 'domainEventRepository'}),
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
-      clock: this.getInstance({key: 'systemClock'})
+      clock: this.getInstance({key: 'systemClock'}),
+      recordError: record
     });
   }
 
