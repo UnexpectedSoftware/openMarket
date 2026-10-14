@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import * as Rx from 'rxjs';
 import Invoice from '../../../../../openMarket/domain/invoice/Invoice';
 import InvoiceNumber from '../../../../../openMarket/domain/invoice/InvoiceNumber';
+import Order from '../../../../../openMarket/domain/order/Order';
 import InvoiceCancelled from '../../../../../openMarket/domain/event/InvoiceCancelled';
 import ErrorCode from '../../../../../openMarket/domain/error/ErrorCode';
 import DomainEventBus from '../../../../../openMarket/domain/service/DomainEventBus';
@@ -11,12 +12,16 @@ import CancelInvoice from '../../../../../openMarket/application/service/invoice
 const cancelledAt = '2026-10-14T15:00:00.000Z';
 
 function issuedInvoice() {
+  const order = new Order({
+    id: 'order-1',
+    lines: [{barcode: '0001', name: 'Cola', price: 0.55, quantity: 2}],
+    date: '14/10/2026 12:00:00'
+  }).place();
   return Invoice.issue({
     id: 'invoice-1',
     invoiceNumber: new InvoiceNumber({series: 'A', number: 1}),
     issuedAt: '2026-10-14T12:00:00.000Z',
-    lines: [{barcode: '0001', name: 'Cola', price: 0.55, quantity: 2}],
-    orderId: 'order-1'
+    order
   });
 }
 

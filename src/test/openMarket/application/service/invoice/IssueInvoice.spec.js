@@ -3,6 +3,7 @@ import * as Rx from 'rxjs';
 import InvoiceNumber from '../../../../../openMarket/domain/invoice/InvoiceNumber';
 import InvoiceIssued from '../../../../../openMarket/domain/event/InvoiceIssued';
 import ErrorCode from '../../../../../openMarket/domain/error/ErrorCode';
+import Order from '../../../../../openMarket/domain/order/Order';
 import DomainEventBus from '../../../../../openMarket/domain/service/DomainEventBus';
 import {hydrate} from '../../../../../openMarket/domain/event/registry';
 import {memoryDomainEventRepository} from '../../../support/domainEventBus';
@@ -10,6 +11,14 @@ import IssueInvoice from '../../../../../openMarket/application/service/invoice/
 
 const lines = [{barcode: '0001', name: 'Cola', price: 0.55, quantity: 2}];
 const issuedAt = '2026-10-14T12:00:00.000Z';
+
+function placedOrder(orderLines = lines, id = 'order-1') {
+  return new Order({
+    id,
+    lines: orderLines,
+    date: '14/10/2026 12:00:00'
+  }).place();
+}
 
 function harness({failSave, order, missingOrder} = {}) {
   const repository = memoryDomainEventRepository();
@@ -25,6 +34,7 @@ function harness({failSave, order, missingOrder} = {}) {
   const sequenceCalls = [];
   let allocated = 0;
   let dispatched = 0;
+  const source = order === undefined && !missingOrder ? placedOrder() : order;
   const useCase = new IssueInvoice({
     invoiceRepository: {
       save({invoice}) {
@@ -40,10 +50,10 @@ function harness({failSave, order, missingOrder} = {}) {
     },
     orderRepository: {
       findById() {
-        if (missingOrder) {
+        if (missingOrder || source == null) {
           return Rx.Observable.empty();
         }
-        return order ? Rx.Observable.of(order) : Rx.Observable.empty();
+        return Rx.Observable.of(source);
       }
     },
     identity: {generate: () => 'invoice-1'},
@@ -64,18 +74,18 @@ function harness({failSave, order, missingOrder} = {}) {
       }
     }
   });
-  return {useCase, repository, seen, sequenceCalls, dispatched: () => dispatched, bus, state};
+  return {useCase, repository, seen, sequenceCalls, dispatched: () => dispatched, bus, state, order: source};
 }
 
 describe('IssueInvoice', () => {
   it('allocates the next number inside the transaction and saves InvoiceIssued', done => {
     const {useCase, repository, seen, sequenceCalls, dispatched} = harness();
-    useCase.issueInvoice({lines, series: 'A', issuedAt}).subscribe(
+    useCase.issueInvoice({orderId: 'order-1', series: 'A', issuedAt}).subscribe(
       invoice => {
         expect(invoice.id).to.equal('invoice-1');
         expect(invoice.invoiceNumber.formatted).to.equal('A/000001');
         expect(invoice.total).to.equal(1.1);
-        expect(invoice.orderId).to.equal(null);
+        expect(invoice.orderId).to.equal('order-1');
         expect(sequenceCalls).to.deep.equal([{series: 'A', open: true}]);
         expect(seen).to.have.lengthOf(1);
         expect(seen[0]).to.be.instanceof(InvoiceIssued);
@@ -83,7 +93,7 @@ describe('IssueInvoice', () => {
         expect(seen[0].series).to.equal('A');
         expect(seen[0].number).to.equal(1);
         expect(seen[0].issuedAt).to.equal(issuedAt);
-        expect(seen[0].orderId).to.equal(null);
+        expect(seen[0].orderId).to.equal('order-1');
         expect(seen[0].total).to.equal(1.1);
         expect(seen[0].lines).to.deep.equal([
           {barcode: '0001', name: 'Cola', price: 0.55, quantity: 2, amount: 1.1}
@@ -105,7 +115,7 @@ describe('IssueInvoice', () => {
 
   it('uses the year of the issue time when no series is given', done => {
     const {useCase, sequenceCalls} = harness();
-    useCase.issueInvoice({lines}).subscribe(
+    useCase.issueInvoice({orderId: 'order-1'}).subscribe(
       invoice => {
         expect(sequenceCalls[0].series).to.equal('2026');
         expect(invoice.invoiceNumber.formatted).to.equal('2026/000001');
@@ -117,11 +127,11 @@ describe('IssueInvoice', () => {
   });
 
   it('copies the order lines and keeps the order id', done => {
-    const source = [{barcode: '0001', name: 'Cola', price: 0.55, quantity: 2}];
-    const {useCase} = harness({order: {id: 'order-1', lines: source}});
+    const order = placedOrder();
+    const {useCase} = harness({order});
     useCase.issueInvoice({orderId: 'order-1', series: 'A', issuedAt}).subscribe(
       invoice => {
-        source[0].quantity = 9;
+        order.lines[0].quantity = 9;
         expect(invoice.orderId).to.equal('order-1');
         expect(invoice.lines[0].quantity).to.equal(2);
         expect(invoice.lines[0].amount).to.equal(1.1);
@@ -146,12 +156,12 @@ describe('IssueInvoice', () => {
     );
   });
 
-  it('does not allocate a number when there are no lines', done => {
+  it('does not allocate a number when no order id is given', done => {
     const {useCase, sequenceCalls, dispatched} = harness();
-    useCase.issueInvoice({lines: [], series: 'A'}).subscribe(
+    useCase.issueInvoice({series: 'A'}).subscribe(
       () => done(new Error('should fail')),
       error => {
-        expect(error.code).to.equal(ErrorCode.INVOICE_LINES_EMPTY);
+        expect(error.code).to.equal(ErrorCode.INVOICE_ORDER_NOT_FOUND);
         expect(sequenceCalls).to.have.lengthOf(0);
         expect(dispatched()).to.equal(0);
         done();
@@ -161,7 +171,7 @@ describe('IssueInvoice', () => {
 
   it('publishes nothing when the invoice cannot be saved', done => {
     const {useCase, seen, repository, dispatched} = harness({failSave: true});
-    useCase.issueInvoice({lines, series: 'A'}).subscribe(
+    useCase.issueInvoice({orderId: 'order-1', series: 'A'}).subscribe(
       () => done(new Error('should fail')),
       () => {
         expect(seen).to.have.lengthOf(0);
@@ -177,7 +187,7 @@ describe('IssueInvoice', () => {
     bus.subscribeSync(InvoiceIssued, () => {
       throw new Error('sync failed');
     });
-    useCase.issueInvoice({lines, series: 'A'}).subscribe(
+    useCase.issueInvoice({orderId: 'order-1', series: 'A'}).subscribe(
       () => done(new Error('should fail')),
       error => {
         expect(error.message).to.equal('sync failed');
@@ -196,7 +206,7 @@ describe('IssueInvoice', () => {
       thrown += 1;
       throw new Error('toast failed');
     });
-    useCase.issueInvoice({lines, series: 'A'}).subscribe(
+    useCase.issueInvoice({orderId: 'order-1', series: 'A'}).subscribe(
       invoice => {
         expect(invoice.id).to.equal('invoice-1');
         expect(seen).to.have.lengthOf(1);
@@ -204,7 +214,7 @@ describe('IssueInvoice', () => {
       },
       error => done(error),
       () => {
-        useCase.issueInvoice({id: 'invoice-2', lines, series: 'A'}).subscribe(
+        useCase.issueInvoice({id: 'invoice-2', orderId: 'order-1', series: 'A'}).subscribe(
           () => {
             expect(seen).to.have.lengthOf(2);
             expect(thrown).to.equal(2);

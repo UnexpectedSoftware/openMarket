@@ -1,9 +1,8 @@
 import InvoiceStatus from './InvoiceStatus';
 import InvoiceNumber from './InvoiceNumber';
-import EmptyInvoiceLinesError from './EmptyInvoiceLinesError';
-import InvalidInvoiceLineError from './InvalidInvoiceLineError';
 import InvalidInvoiceError from './InvalidInvoiceError';
 import InvoiceAlreadyCancelledError from './InvoiceAlreadyCancelledError';
+/** @import Order from '../order/Order' */
 
 /**
  * One line stored on an invoice. `amount` is the line total in euros.
@@ -22,22 +21,25 @@ import InvoiceAlreadyCancelledError from './InvoiceAlreadyCancelledError';
 export default class Invoice {
 
   /**
-   * Issues a new invoice. The number comes from the caller, already allocated.
+   * Issues a new invoice from a placed order. The number comes from the caller, already allocated.
+   * The order's lines are copied. They are not checked again.
    * @param {object} params
    * @param {string} params.id
    * @param {InvoiceNumber} params.invoiceNumber
    * @param {string} params.issuedAt
-   * @param {Array<{barcode: string, name: string, price: number, quantity: number}>} params.lines
-   * @param {string | null} [params.orderId]
+   * @param {Order} params.order
    * @returns {Invoice}
    */
-  static issue({id, invoiceNumber, issuedAt, lines, orderId}) {
+  static issue({id, invoiceNumber, issuedAt, order}) {
+    if (order == null || typeof order.isPlaced !== 'function' || !order.isPlaced()) {
+      throw new InvalidInvoiceError({field: 'order', id: id == null ? undefined : String(id)});
+    }
     return new Invoice({
       id,
       invoiceNumber,
       issuedAt,
-      lines,
-      orderId,
+      lines: order.lines,
+      orderId: order.id,
       status: InvoiceStatus.ISSUED,
       cancelledAt: null
     });
@@ -170,33 +172,20 @@ export default class Invoice {
 }
 
 /**
+ * Copies the order snapshot onto the invoice. The order already accepted these lines.
  * @param {Array<{barcode: string, name: string, price: number, quantity: number}>} lines
  * @returns {InvoiceLine[]}
  */
 function copyLines(lines) {
-  if (!Array.isArray(lines) || lines.length === 0) {
-    throw new EmptyInvoiceLinesError();
+  if (!Array.isArray(lines)) {
+    return [];
   }
   return lines.map(line => {
-    if (line == null || typeof line !== 'object') {
-      throw new InvalidInvoiceLineError({problem: 'line'});
-    }
-    const barcode = line.barcode == null ? '' : String(line.barcode).trim();
-    const name = line.name == null ? '' : String(line.name).trim();
-    if (barcode === '' || name === '') {
-      throw new InvalidInvoiceLineError({barcode, problem: 'line'});
-    }
-    const quantity = Number(line.quantity);
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      throw new InvalidInvoiceLineError({barcode, quantity: line.quantity, problem: 'quantity'});
-    }
     const price = Number(line.price);
-    if (!Number.isFinite(price) || price < 0) {
-      throw new InvalidInvoiceLineError({barcode, price: line.price, problem: 'price'});
-    }
+    const quantity = Number(line.quantity);
     return {
-      barcode,
-      name,
+      barcode: line.barcode == null ? '' : String(line.barcode),
+      name: line.name == null ? '' : String(line.name),
       price,
       quantity,
       amount: cents(price * quantity)

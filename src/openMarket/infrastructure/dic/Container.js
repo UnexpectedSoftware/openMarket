@@ -318,9 +318,7 @@ class Container {
   }
 
   _orderMapper(){
-    return new SqlOrderMapper({
-      orderFactory: this.getInstance({key: 'orderFactory'})
-    });
+    return new SqlOrderMapper();
   }
 
   _domainEventRepository() {

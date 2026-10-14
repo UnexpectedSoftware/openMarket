@@ -2,45 +2,46 @@ import {expect} from 'chai';
 import Invoice from '../../../../openMarket/domain/invoice/Invoice';
 import InvoiceNumber from '../../../../openMarket/domain/invoice/InvoiceNumber';
 import InvoiceStatus from '../../../../openMarket/domain/invoice/InvoiceStatus';
-import EmptyInvoiceLinesError from '../../../../openMarket/domain/invoice/EmptyInvoiceLinesError';
-import InvalidInvoiceLineError from '../../../../openMarket/domain/invoice/InvalidInvoiceLineError';
 import InvalidInvoiceError from '../../../../openMarket/domain/invoice/InvalidInvoiceError';
 import InvoiceAlreadyCancelledError from '../../../../openMarket/domain/invoice/InvoiceAlreadyCancelledError';
 import ErrorCode from '../../../../openMarket/domain/error/ErrorCode';
+import Order from '../../../../openMarket/domain/order/Order';
 
 const issuedAt = '2026-10-14T12:00:00.000Z';
+const orderDate = '14/10/2026 12:00:00';
 
 function number() {
   return new InvoiceNumber({series: 'A', number: 1});
 }
 
-function issue(lines, extra = {}) {
+function placed(lines, id = 'order-1') {
+  return new Order({id, lines, date: orderDate}).place();
+}
+
+function issue(order) {
   return Invoice.issue({
     id: 'invoice-1',
     invoiceNumber: number(),
     issuedAt,
-    lines,
-    ...extra
+    order
   });
 }
 
 describe('Invoice', () => {
-  it('rejects an empty line list', () => {
-    expect(() => issue([])).to.throw(EmptyInvoiceLinesError, 'Lines must not be empty');
-    try {
-      issue([]);
-    } catch (error) {
-      expect(error.code).to.equal(ErrorCode.INVOICE_LINES_EMPTY);
-    }
-  });
+  it('rejects an order that has not been placed', () => {
+    const draft = new Order({
+      id: 'order-1',
+      lines: [{barcode: '1', name: 'Milk', price: 2, quantity: 1}],
+      date: orderDate
+    });
 
-  it('rejects a line that cannot be billed', () => {
-    expect(() => issue([{barcode: '1', name: 'Milk', price: 2, quantity: 0}]))
-      .to.throw(InvalidInvoiceLineError, 'Quantity must be greater than 0');
-    expect(() => issue([{barcode: '1', name: 'Milk', price: -1, quantity: 1}]))
-      .to.throw('Price must be zero or greater');
-    expect(() => issue([{barcode: '1', name: ' ', price: 1, quantity: 1}]))
-      .to.throw('Invoice line is incomplete');
+    expect(() => issue(draft)).to.throw(InvalidInvoiceError);
+    try {
+      issue(draft);
+    } catch (error) {
+      expect(error.code).to.equal(ErrorCode.INVOICE_INVALID);
+      expect(error.context.field).to.equal('order');
+    }
   });
 
   it('rejects a missing issue time', () => {
@@ -48,18 +49,19 @@ describe('Invoice', () => {
       id: 'invoice-1',
       invoiceNumber: number(),
       issuedAt: ' ',
-      lines: [{barcode: '1', name: 'Milk', price: 2, quantity: 1}]
+      order: placed([{barcode: '1', name: 'Milk', price: 2, quantity: 1}])
     })).to.throw(InvalidInvoiceError);
   });
 
-  it('copies the lines and rounds the total to cents', () => {
+  it('copies the order lines and rounds the total to cents', () => {
     const input = [
       {barcode: '1', name: 'Milk', price: 0.1, quantity: 1},
       {barcode: '2', name: 'Bread', price: 0.2, quantity: 1}
     ];
-    const invoice = issue(input, {orderId: 'order-1'});
+    const order = placed(input);
     input[0].quantity = 9;
-    input.push({barcode: '3', name: 'Tea', price: 1, quantity: 1});
+    const invoice = issue(order);
+    order.lines[0].quantity = 4;
 
     expect(invoice.invoiceNumber.formatted).to.equal('A/000001');
     expect(invoice.issuedAt).to.equal(issuedAt);
@@ -80,18 +82,34 @@ describe('Invoice', () => {
     expect(invoice.total).to.equal(0.3);
   });
 
+  it('copies a restored order without applying the order line rules again', () => {
+    const order = Order.restore({
+      id: 'order-1',
+      lines: [{barcode: '1', name: 'Milk', price: 2, quantity: 0}],
+      date: orderDate
+    });
+    const invoice = issue(order);
+
+    expect(invoice.orderId).to.equal('order-1');
+    expect(invoice.total).to.equal(0);
+    expect(invoice.lines).to.deep.equal([
+      {barcode: '1', name: 'Milk', price: 2, quantity: 0, amount: 0}
+    ]);
+  });
+
   it('accepts a fractional quantity and a zero price', () => {
-    const weighed = issue([{barcode: '1', name: 'Ham', price: 2, quantity: 0.5}]);
+    const weighed = issue(placed([{barcode: '1', name: 'Ham', price: 2, quantity: 0.5}]));
     expect(weighed.lines[0].quantity).to.equal(0.5);
     expect(weighed.lines[0].amount).to.equal(1);
     expect(weighed.total).to.equal(1);
 
-    const free = issue([{barcode: '2', name: 'Bag', price: 0, quantity: 1}]);
+    const free = issue(placed([{barcode: '2', name: 'Bag', price: 0, quantity: 1}], 'order-2'));
     expect(free.total).to.equal(0);
+    expect(free.orderId).to.equal('order-2');
   });
 
   it('keeps the issued document when it is cancelled', () => {
-    const invoice = issue([{barcode: '1', name: 'Milk', price: 2, quantity: 1}]);
+    const invoice = issue(placed([{barcode: '1', name: 'Milk', price: 2, quantity: 1}]));
     const lines = invoice.lines;
 
     invoice.cancel({cancelledAt: '2026-10-14T13:00:00.000Z'});
@@ -105,7 +123,7 @@ describe('Invoice', () => {
   });
 
   it('rejects a second cancellation and leaves the first time in place', () => {
-    const invoice = issue([{barcode: '1', name: 'Milk', price: 2, quantity: 1}]);
+    const invoice = issue(placed([{barcode: '1', name: 'Milk', price: 2, quantity: 1}]));
     invoice.cancel({cancelledAt: '2026-10-14T13:00:00.000Z'});
 
     expect(() => invoice.cancel({cancelledAt: '2026-10-14T14:00:00.000Z'}))

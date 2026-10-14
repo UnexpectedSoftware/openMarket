@@ -156,8 +156,8 @@ Saved by `IssueInvoice` inside the issuance transaction, after the invoice and i
 | `number` | Integer within that series |
 | `invoiceNumber` | Formatted number, such as `2026/000001` or `A/000123` |
 | `issuedAt` | Issue time, ISO-8601 UTC |
-| `orderId` | Order this invoice was issued for, or `null` |
-| `lines` | Snapshot of `{barcode, name, price, quantity, amount}` for each line |
+| `orderId` | Id of the placed order this invoice was issued for |
+| `lines` | Snapshot of `{barcode, name, price, quantity, amount}` copied from that order |
 | `total` | Sum of the line amounts |
 
 `aggregate_id` is the invoice id. Later edits to a product or to the order do not change this snapshot. Cancelling the invoice does not change it either.
@@ -169,7 +169,7 @@ Saved by `IssueInvoice` inside the issuance transaction, after the invoice and i
   "number": 1,
   "invoiceNumber": "2026/000001",
   "issuedAt": "2026-10-14T12:00:00.000Z",
-  "orderId": null,
+  "orderId": "8c2a1d44-7e5b-4f1a-9c0d-2b6e8a1f0c33",
   "lines": [
     {"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1, "amount": 0.55}
   ],
@@ -189,7 +189,7 @@ Saved by `CancelInvoice` inside the cancellation transaction, after the invoice 
 | `invoiceNumber` | Formatted number |
 | `issuedAt` | Original issue time, ISO-8601 UTC |
 | `cancelledAt` | Cancellation time, ISO-8601 UTC |
-| `orderId` | Order this invoice was issued for, or `null` |
+| `orderId` | Id of the placed order this invoice was issued for |
 | `lines` | Issued snapshot of `{barcode, name, price, quantity, amount}` |
 | `total` | Issued total |
 
@@ -203,7 +203,7 @@ Saved by `CancelInvoice` inside the cancellation transaction, after the invoice 
   "invoiceNumber": "2026/000001",
   "issuedAt": "2026-10-14T12:00:00.000Z",
   "cancelledAt": "2026-10-14T15:00:00.000Z",
-  "orderId": null,
+  "orderId": "8c2a1d44-7e5b-4f1a-9c0d-2b6e8a1f0c33",
   "lines": [
     {"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1, "amount": 0.55}
   ],

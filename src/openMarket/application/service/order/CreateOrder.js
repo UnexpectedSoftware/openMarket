@@ -37,7 +37,7 @@ export default class CreateOrder {
   }
 
   /**
-   * Create a new Order with all lines
+   * Places the order, then stores it and subtracts stock.
    * @param {{lines: OrderLine[]}} order
    * @returns {Observable<Order>}
    */
@@ -73,7 +73,7 @@ export default class CreateOrder {
   _buildOrder({lines})  {
     return Observable.create(observer => {
       try {
-        const order = this._orderFactory.createWith({lines});
+        const order = this._orderFactory.createWith({lines}).place();
         observer.next(order);
       } catch (error) {
         observer.error(record(error));

@@ -41,7 +41,7 @@ describe('Sql Order Mapper', () => {
         }
       ];
 
-      const sqlOrderMapper = new SqlOrderMapper({orderFactory});
+      const sqlOrderMapper = new SqlOrderMapper();
 
       const spyNext = sinon.spy();
 
@@ -68,7 +68,7 @@ describe('Sql Order Mapper', () => {
             quantity: 1
           }
         ]
-      });
+      }).place();
 
       sqlOrderMapper.toDomain({
         rows: givenRows

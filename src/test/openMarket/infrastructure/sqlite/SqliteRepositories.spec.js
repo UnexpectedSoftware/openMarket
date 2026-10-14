@@ -33,7 +33,7 @@ function repositories() {
     }),
     orders: new SqliteOrderRepository({
       connection,
-      objectMapper: new SqlOrderMapper({orderFactory}),
+      objectMapper: new SqlOrderMapper(),
       queryService: new SqliteOrderQueryService()
     })
   };

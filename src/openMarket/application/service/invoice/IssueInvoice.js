@@ -5,7 +5,6 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/mergeMap';
 import Invoice from '../../../domain/invoice/Invoice';
 import InvoiceNumber from '../../../domain/invoice/InvoiceNumber';
-import EmptyInvoiceLinesError from '../../../domain/invoice/EmptyInvoiceLinesError';
 import InvalidInvoiceNumberError from '../../../domain/invoice/InvalidInvoiceNumberError';
 import InvoiceOrderNotFoundError from '../../../domain/invoice/InvoiceOrderNotFoundError';
 import InvoiceIssued from '../../../domain/event/InvoiceIssued';
@@ -14,14 +13,16 @@ import observableError from '../../../infrastructure/logging/observableError';
 /** @import InvoiceRepository from '../../../domain/invoice/InvoiceRepository' */
 /** @import InvoiceSequence from '../../../domain/invoice/InvoiceSequence' */
 /** @import OrderRepository from '../../../domain/order/OrderRepository' */
+/** @import Order from '../../../domain/order/Order' */
 /** @import Identity from '../../../domain/Identity' */
 /** @import Clock from '../../../domain/Clock' */
 /** @import DomainEventBus from '../../../domain/service/DomainEventBus' */
 /** @import Transaction from '../../../domain/service/Transaction' */
 
 /**
- * Issues an immutable invoice and allocates its sequential number.
+ * Issues an immutable invoice for a placed order and allocates its sequential number.
  * The number, the insert, and InvoiceIssued commit together.
+ * The order's lines are copied. They are not checked again.
  */
 export default class IssueInvoice {
 
@@ -57,17 +58,15 @@ export default class IssueInvoice {
   }
 
   /**
-   * Lines are copied onto the invoice. An order id without lines copies that order.
    * The series defaults to the year of the issue time.
    * @param {object} [command]
    * @param {string} [command.id]
-   * @param {Array<{barcode: string, name: string, price: number, quantity: number}>} [command.lines]
    * @param {string} [command.orderId]
    * @param {string} [command.series]
    * @param {string} [command.issuedAt]
    * @returns {Observable<Invoice>}
    */
-  issueInvoice({id, lines, orderId, series, issuedAt} = {}) {
+  issueInvoice({id, orderId, series, issuedAt} = {}) {
     const stamp = issuedAt == null || String(issuedAt).trim() === ''
       ? this._clock.now()
       : String(issuedAt);
@@ -75,21 +74,17 @@ export default class IssueInvoice {
     if (!InvoiceNumber.isSeries(chosenSeries)) {
       return observableError(new InvalidInvoiceNumberError({series: chosenSeries}));
     }
-    if (lines != null && (!Array.isArray(lines) || lines.length === 0)) {
-      return observableError(new EmptyInvoiceLinesError());
+    if (orderId == null || String(orderId).trim() === '') {
+      return observableError(new InvoiceOrderNotFoundError({orderId}));
     }
-    const referencedOrderId = orderId == null || String(orderId).trim() === '' ? null : String(orderId);
-    if (lines == null && referencedOrderId == null) {
-      return observableError(new EmptyInvoiceLinesError());
-    }
-    return this._transaction.run(() => this._lines({lines, orderId: referencedOrderId})
-      .flatMap(resolved => this._invoiceSequence.next({series: chosenSeries})
+    const referencedOrderId = String(orderId);
+    return this._transaction.run(() => this._requireOrder({orderId: referencedOrderId})
+      .flatMap(order => this._invoiceSequence.next({series: chosenSeries})
         .flatMap(invoiceNumber => this._store({
           id: id || this._identity.generate(),
           invoiceNumber,
           issuedAt: stamp,
-          lines: resolved,
-          orderId: referencedOrderId
+          order
         }))))
       .do(
         () => {
@@ -101,27 +96,8 @@ export default class IssueInvoice {
   }
 
   /**
-   * @param {{lines: Array<{barcode: string, name: string, price: number, quantity: number}> | null, orderId: string | null}} command
-   * @returns {Observable<Array<{barcode: string, name: string, price: number, quantity: number}>>}
-   */
-  _lines({lines, orderId}) {
-    if (lines != null) {
-      if (orderId == null) {
-        return Rx.Observable.of(lines);
-      }
-      return this._requireOrder({orderId}).map(() => lines);
-    }
-    return this._requireOrder({orderId}).map(order => order.lines.map(line => ({
-      barcode: line.barcode,
-      name: line.name,
-      price: line.price,
-      quantity: line.quantity
-    })));
-  }
-
-  /**
    * @param {{orderId: string}} command
-   * @returns {Observable<{lines: Array<{barcode: string, name: string, price: number, quantity: number}>}>}
+   * @returns {Observable<Order>}
    */
   _requireOrder({orderId}) {
     return this._orderRepository.findById({id: orderId})
@@ -139,14 +115,13 @@ export default class IssueInvoice {
    * @param {string} command.id
    * @param {InvoiceNumber} command.invoiceNumber
    * @param {string} command.issuedAt
-   * @param {Array<{barcode: string, name: string, price: number, quantity: number}>} command.lines
-   * @param {string | null} command.orderId
+   * @param {Order} command.order
    * @returns {Observable<Invoice>}
    */
-  _store({id, invoiceNumber, issuedAt, lines, orderId}) {
+  _store({id, invoiceNumber, issuedAt, order}) {
     let invoice;
     try {
-      invoice = Invoice.issue({id, invoiceNumber, issuedAt, lines, orderId});
+      invoice = Invoice.issue({id, invoiceNumber, issuedAt, order});
     } catch (error) {
       return observableError(error);
     }
