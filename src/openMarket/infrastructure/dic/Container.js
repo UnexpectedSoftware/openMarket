@@ -18,7 +18,6 @@ import DisableProduct from "../../application/service/product/DisableProduct";
 import EnableProduct from "../../application/service/product/EnableProduct";
 import FindProduct from "../../application/service/product/FindProduct";
 import CreateOrder from "../../application/service/order/CreateOrder";
-import IssueInvoice from "../../application/service/invoice/IssueInvoice";
 import CancelInvoice from "../../application/service/invoice/CancelInvoice";
 import ListAllOrders from "../../application/service/order/ListAllOrders";
 import OrdersStatistics from "../../application/service/order/OrdersStatistics";
@@ -359,7 +358,11 @@ class Container {
     return new CreateOrder({
       orderRepository: this.getInstance({key: 'orderRepository'}),
       productRepository: this.getInstance({key: 'productRepository'}),
+      invoiceRepository: this.getInstance({key: 'invoiceRepository'}),
+      invoiceSequence: this.getInstance({key: 'invoiceSequence'}),
       orderFactory: this.getInstance({key: 'orderFactory'}),
+      identity: this.getInstance({key: 'randomUUIDIdentity'}),
+      clock: this.getInstance({key: 'systemClock'}),
       domainEventBus: this.getInstance({key: 'domainEventBus'}),
       transaction: this.getInstance({key: 'transaction'}),
       domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'})
@@ -384,19 +387,6 @@ class Container {
   _invoiceSequence() {
     return new SqliteInvoiceSequence({
       connection: this.getInstance({key: 'sqliteConnection'})
-    });
-  }
-
-  _issueInvoice() {
-    return new IssueInvoice({
-      invoiceRepository: this.getInstance({key: 'invoiceRepository'}),
-      invoiceSequence: this.getInstance({key: 'invoiceSequence'}),
-      orderRepository: this.getInstance({key: 'orderRepository'}),
-      identity: this.getInstance({key: 'randomUUIDIdentity'}),
-      clock: this.getInstance({key: 'systemClock'}),
-      domainEventBus: this.getInstance({key: 'domainEventBus'}),
-      transaction: this.getInstance({key: 'transaction'}),
-      domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'})
     });
   }
 

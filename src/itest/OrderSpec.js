@@ -166,6 +166,7 @@ describe('Order create use case', () => {
             try {
               expect(seen).to.deep.equal([false]);
               expect(Number(database.prepare('SELECT count(*) AS total FROM "order"').get().total)).to.equal(ordersBefore + 1);
+              expect(Number(database.prepare('SELECT count(*) AS total FROM invoice').get().total)).to.equal(1);
               expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(95);
               const stored = database.prepare(
                 "SELECT aggregate_id FROM domain_event WHERE type = 'OrderCreated'"
@@ -233,6 +234,8 @@ describe('Order create use case', () => {
               expect(Number(database.prepare('SELECT count(*) AS total FROM "order"').get().total)).to.equal(ordersBefore);
               expect(Number(database.prepare('SELECT count(*) AS total FROM line').get().total)).to.equal(linesBefore);
               expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(100);
+              expect(Number(database.prepare('SELECT count(*) AS total FROM invoice').get().total)).to.equal(0);
+              expect(Number(database.prepare('SELECT count(*) AS total FROM invoice_sequence').get().total)).to.equal(0);
               expect(database.isTransaction).to.equal(false);
               expect(events).to.have.lengthOf(0);
               done();

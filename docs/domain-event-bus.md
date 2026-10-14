@@ -123,7 +123,7 @@ Each class has a `type` string. The payload is the fields passed to the construc
 
 ### `OrderCreated`
 
-Saved by `CreateOrder` inside the sale transaction, after the order, its lines, and the stock update. The type is marked durable, so the row is stored even before a subscriber exists. Raised after that transaction commits. `CreateOrder` then calls `dispatch()`, so a durable subscriber such as `RecordProductSales` has already run when the sale observable emits.
+Saved by `CreateOrder` inside the sale transaction, after the order, its lines, the invoice, and the stock update. The type is marked durable, so the row is stored even before a subscriber exists. Raised after that transaction commits. `CreateOrder` then calls `dispatch()`, so a durable subscriber such as `RecordProductSales` has already run when the sale observable emits.
 
 | Field | Meaning |
 | --- | --- |
@@ -145,9 +145,9 @@ Saved by `CreateOrder` inside the sale transaction, after the order, its lines, 
 
 ### `InvoiceIssued`
 
-Saved by `IssueInvoice` inside the issuance transaction, after the invoice and its lines are inserted and after the series sequence has moved forward. The type is marked durable, so the row is stored even before a subscriber exists. Raised after that transaction commits. `IssueInvoice` then calls `dispatch()`.
+Saved by `CreateOrder` in the same transaction as the order, after the invoice lines are inserted and the series sequence has moved forward. A sale always stores one order and one invoice. The type is marked durable, so the row is stored even before a subscriber exists. Raised after that transaction commits. `CreateOrder` then calls `dispatch()`.
 
-`subscribeSync` runs from `save`, before the `domain_event` insert, while the invoice insert and the sequence update are still uncommitted. A throw rolls all of them back, and the number can be used again. `record` is not used: a subscriber that must see the issued document after a restart needs the stored row.
+`subscribeSync` runs from `save`, before the `domain_event` insert, while the order, the stock change, the invoice, and the sequence update are still uncommitted. A throw rolls all of them back, and the number can be used again. `record` is not used: a subscriber that must see the issued document after a restart needs the stored row.
 
 | Field | Meaning |
 | --- | --- |

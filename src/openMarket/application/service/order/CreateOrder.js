@@ -1,15 +1,22 @@
 import {Observable} from "rxjs/Observable";
 import {record} from "../../../infrastructure/logging/ErrorLog";
+import observableError from "../../../infrastructure/logging/observableError";
 import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/toArray";
 import OrderCreated from "../../../domain/event/OrderCreated";
+import InvoiceIssued from "../../../domain/event/InvoiceIssued";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
+import Invoice from "../../../domain/invoice/Invoice";
 /** @import Order from "../../../domain/order/Order" */
 /** @import { OrderLine } from "../../../domain/order/Order" */
 /** @import OrderFactory from "../../../domain/order/OrderFactory" */
 /** @import OrderRepository from "../../../domain/order/OrderRepository" */
 /** @import ProductRepository from "../../../domain/product/ProductRepository" */
+/** @import InvoiceRepository from "../../../domain/invoice/InvoiceRepository" */
+/** @import InvoiceSequence from "../../../domain/invoice/InvoiceSequence" */
+/** @import Identity from "../../../domain/Identity" */
+/** @import Clock from "../../../domain/Clock" */
 /** @import DomainEventBus from "../../../domain/service/DomainEventBus" */
 /** @import Transaction from "../../../domain/service/Transaction" */
 
@@ -22,35 +29,58 @@ export default class CreateOrder {
    * @param {object} deps
    * @param {OrderRepository} deps.orderRepository
    * @param {ProductRepository} deps.productRepository
+   * @param {InvoiceRepository} deps.invoiceRepository
+   * @param {InvoiceSequence} deps.invoiceSequence
    * @param {OrderFactory} deps.orderFactory
+   * @param {Identity} deps.identity
+   * @param {Clock} deps.clock
    * @param {DomainEventBus} deps.domainEventBus
    * @param {Transaction} deps.transaction
    * @param {{dispatch: () => void}} deps.domainEventDispatcher
    */
-  constructor({ orderRepository, productRepository, orderFactory, domainEventBus, transaction, domainEventDispatcher}) {
+  constructor({
+    orderRepository,
+    productRepository,
+    invoiceRepository,
+    invoiceSequence,
+    orderFactory,
+    identity,
+    clock,
+    domainEventBus,
+    transaction,
+    domainEventDispatcher
+  }) {
     this._orderRepository = orderRepository;
     this._productRepository = productRepository;
+    this._invoiceRepository = invoiceRepository;
+    this._invoiceSequence = invoiceSequence;
     this._orderFactory = orderFactory;
+    this._identity = identity;
+    this._clock = clock;
     this._domainEventBus = domainEventBus;
     this._transaction = transaction;
     this._domainEventDispatcher = domainEventDispatcher;
   }
 
   /**
-   * Places the order, then stores it and subtracts stock.
+   * Places the order, stores it with its invoice, and subtracts stock.
+   * Those writes commit together. The series is the year of the issue time.
    * @param {{lines: OrderLine[]}} order
    * @returns {Observable<Order>}
    */
   createOrder({lines}) {
     return this._transaction.run(() => this._buildOrder({lines})
       .flatMap(order => this._orderRepository.save({order})
-        .flatMap(saved => this._subtrackStock({order: saved})))
-      .do(({order, lowStockProducts}) => {
+        .flatMap(saved => this._subtrackStock({order: saved}))
+        .flatMap(({order, lowStockProducts}) => this._issueInvoice({order})
+          .map(invoice => ({order, invoice, lowStockProducts}))))
+      .do(({order, invoice, lowStockProducts}) => {
         this._domainEventBus.save(new OrderCreated({
           id: order.id,
           createdAt: order.createdAt,
           lines: order.lines
         }));
+        this._domainEventBus.save(new InvoiceIssued(facts(invoice)));
         lowStockProducts.forEach(product => {
           this._domainEventBus.record(new ProductWithLowStock({
             barcode: product.barcode,
@@ -82,6 +112,30 @@ export default class CreateOrder {
     })
   }
 
+  /**
+   * @param {{order: Order}} command
+   * @returns {Observable<Invoice>}
+   */
+  _issueInvoice({order}) {
+    const issuedAt = this._clock.now();
+    const series = String(issuedAt).slice(0, 4);
+    return this._invoiceSequence.next({series})
+      .flatMap(invoiceNumber => {
+        let invoice;
+        try {
+          invoice = Invoice.issue({
+            id: this._identity.generate(),
+            invoiceNumber,
+            issuedAt,
+            order
+          });
+        } catch (error) {
+          return observableError(error);
+        }
+        return this._invoiceRepository.save({invoice}).map(() => invoice);
+      });
+  }
+
   _subtrackStock({order}){
     return Observable.from(order.lines)
       .flatMap(line => this._productRepository.findByBarcode({barcode: line.barcode})
@@ -97,4 +151,20 @@ export default class CreateOrder {
 
 }
 
-
+/**
+ * Snapshot a subscriber can use without reading the invoice again.
+ * @param {Invoice} invoice
+ * @returns {{id: string, series: string, number: number, invoiceNumber: string, issuedAt: string, orderId: string | null, lines: Array<{barcode: string, name: string, price: number, quantity: number, amount: number}>, total: number}}
+ */
+function facts(invoice) {
+  return {
+    id: invoice.id,
+    series: invoice.invoiceNumber.series,
+    number: invoice.invoiceNumber.number,
+    invoiceNumber: invoice.invoiceNumber.formatted,
+    issuedAt: invoice.issuedAt,
+    orderId: invoice.orderId,
+    lines: invoice.lines,
+    total: invoice.total
+  };
+}
