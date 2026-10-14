@@ -1,6 +1,7 @@
 import {Observable} from 'rxjs/Observable';
 import {Subject} from 'rxjs/Subject';
 import {aggregateId, hydrate, typeName} from '../event/registry';
+import SyncSubscriberOutsideTransactionError from '../event/SyncSubscriberOutsideTransactionError';
 import {DEAD, DONE, FAILED, PENDING, PROCESSING} from './domainEventStatus';
 /** @import DomainEventRepository from '../event/DomainEventRepository' */
 /** @import Identity from '../Identity' */
@@ -23,13 +24,15 @@ export default class DomainEventBus {
    * @param {Clock} [deps.clock]
    * @param {number} [deps.maxAttempts]
    * @param {(error: any) => void} [deps.recordError]
+   * @param {() => boolean} [deps.inTransaction]
    */
   constructor({
     repository,
     identity,
     clock,
     maxAttempts = DEFAULT_MAX_ATTEMPTS,
-    recordError
+    recordError,
+    inTransaction
   } = {}) {
     if (!repository || !identity || !clock) {
       throw new Error('DomainEventBus requires a repository, an identity, and a clock');
@@ -40,7 +43,9 @@ export default class DomainEventBus {
     this._clock = clock;
     this._maxAttempts = maxAttempts;
     this._recordError = typeof recordError === 'function' ? recordError : () => {};
+    this._inTransaction = typeof inTransaction === 'function' ? inTransaction : null;
     this._durable = new Map();
+    this._sync = [];
     this._live = [];
     this._queued = [];
     this._draining = false;
@@ -48,10 +53,10 @@ export default class DomainEventBus {
   }
 
   /**
-   * Inserts a durable event on the caller's connection and holds it until raise.
-   * An event is durable when its type is marked durable, or when a durable
-   * subscriber for that type is already registered. An open transaction takes
-   * the row with it. Nobody is notified yet.
+   * Runs sync subscribers, then inserts a durable event on the caller's connection
+   * and holds it until raise. An event is durable when its type is marked durable,
+   * or when a durable subscriber for that type is already registered. An open
+   * transaction takes the row and the sync writes with it. Nobody is notified yet.
    * @param {*} event
    */
   save(event) {
@@ -59,6 +64,7 @@ export default class DomainEventBus {
     if (!this._isDurable(event)) {
       throw new Error(`Domain event ${typeName(event)} is not durable`);
     }
+    this._runSync(event);
     this._repository.save({
       id: this._identity.generate(),
       type: typeName(event),
@@ -146,6 +152,31 @@ export default class DomainEventBus {
       return subscribe(guardListener(observerOrNext, recordError), error, complete);
     };
     return observable;
+  }
+
+  /**
+   * Runs during save, before the row is inserted, while the caller's transaction
+   * is still open. A throw aborts save and rolls that transaction back.
+   * record and raise do not call it. It is not retried and it is not stored.
+   * @param {Function} EventType
+   * @param {(event: any) => void} handler
+   * @returns {() => void}
+   */
+  subscribeSync(EventType, handler) {
+    if (typeof EventType !== 'function') {
+      throw new Error('Domain event subscriber type is required');
+    }
+    if (typeof handler !== 'function') {
+      throw new Error('Domain event subscriber handler is required');
+    }
+    const subscriber = {EventType, handler};
+    this._sync.push(subscriber);
+    return () => {
+      const index = this._sync.indexOf(subscriber);
+      if (index >= 0) {
+        this._sync.splice(index, 1);
+      }
+    };
   }
 
   /**
@@ -353,6 +384,22 @@ export default class DomainEventBus {
       subscriberName: subscriber.name,
       statuses: [FAILED]
     });
+  }
+
+  /**
+   * Sync handlers share the open transaction. The first throw stops the rest
+   * and prevents the insert.
+   * @param {*} event
+   */
+  _runSync(event) {
+    const handlers = this._sync.filter(subscriber => event instanceof subscriber.EventType);
+    if (handlers.length === 0) {
+      return;
+    }
+    if (!this._inTransaction || !this._inTransaction()) {
+      throw new SyncSubscriberOutsideTransactionError({type: typeName(event)});
+    }
+    handlers.forEach(subscriber => subscriber.handler(event));
   }
 
   _isDurable(event) {

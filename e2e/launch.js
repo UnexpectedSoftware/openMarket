@@ -20,10 +20,12 @@ function assertDist() {
   fs.mkdirSync(path.join(root, 'test-results'), {recursive: true});
 }
 
-async function launchApp() {
-  const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
-  fs.writeFileSync(path.join(userData, 'pixel.png'), PNG);
-  fs.writeFileSync(path.join(userData, 'note.txt'), 'hello');
+async function launchApp({userData: existing} = {}) {
+  const userData = existing || fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
+  if (!existing) {
+    fs.writeFileSync(path.join(userData, 'pixel.png'), PNG);
+    fs.writeFileSync(path.join(userData, 'note.txt'), 'hello');
+  }
   const app = await electron.launch({
     executablePath: electronPath,
     args: [
@@ -37,9 +39,11 @@ async function launchApp() {
   return {app, window, userData};
 }
 
-async function closeApp(app, userData) {
+async function closeApp(app, userData, {keep = false} = {}) {
   await app.close();
-  fs.rmSync(userData, {recursive: true, force: true});
+  if (!keep) {
+    fs.rmSync(userData, {recursive: true, force: true});
+  }
 }
 
 function euros(amount) {

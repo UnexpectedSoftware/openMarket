@@ -1,0 +1,64 @@
+.plugins-page {
+  padding: $sp-base;
+
+  h2 {
+    margin-top: 0;
+  }
+}
+
+.plugin-directory,
+.plugin-restart {
+  max-width: 40rem;
+}
+
+.plugin-restart {
+  padding: $sp-base / 2;
+  background: $c-primary-lightest;
+  border: 1px solid $c-primary-light;
+}
+
+.plugin-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $sp-base;
+}
+
+.plugin-card {
+  width: 22rem;
+  padding: $sp-base;
+  border: 1px solid $c-grey-light;
+  background: $c-white;
+
+  h2 {
+    margin: 0 0 $sp-base / 2;
+    font-size: 1.6rem;
+  }
+
+  p {
+    margin: 0 0 $sp-base / 2;
+  }
+}
+
+.plugin-card-version {
+  color: $c-grey-darkest;
+}
+
+.plugin-setting {
+  display: block;
+  margin-bottom: $sp-base / 2;
+
+  input {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+  }
+}
+
+.plugin-enabled {
+  display: inline-block;
+  margin-right: $sp-base / 2;
+}
+
+.plugin-card-error {
+  color: $c-alert;
+}

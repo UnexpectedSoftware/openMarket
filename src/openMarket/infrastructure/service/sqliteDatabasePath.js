@@ -4,7 +4,7 @@ import path from 'path';
 
 const USER_DATA_ARGUMENT = '--openmarket-user-data=';
 
-function userDataDirectory() {
+export function userDataDirectory() {
   const fromArgv = process.argv.find(arg => arg.startsWith(USER_DATA_ARGUMENT));
   if (fromArgv) {
     return fromArgv.slice(USER_DATA_ARGUMENT.length);

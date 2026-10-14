@@ -54,7 +54,26 @@ return transaction.run(() => work.do(() => {
 
 `save` joins a transaction that is already open on the connection, so a rollback removes the event with the business write. `record` has nothing to roll back. The dispatcher claims rows only when no transaction is open. It marks the event dispatched and inserts one `PENDING` row per eligible subscriber in that claim. A subscriber registered for another event type, or registered after the event was stored, gets no row.
 
-## Two ways to listen
+## Three ways to listen
+
+### Synchronous subscribers
+
+`subscribeSync` runs from `save`, after the durable check and before the `domain_event` insert. The caller's transaction is still open. `record` does not call it, and `raise` does not call it.
+
+```js
+domainEventBus.subscribeSync(OrderCreated, event => {
+  // local write on the shared connection
+});
+```
+
+- The handler must be fast, local, and deterministic. Network and other external work belong in `subscribeDurable`.
+- The handler's writes on the shared connection join the open transaction. The bus does not take a `Transaction`.
+- A throw aborts `save`. The transaction rolls back, no `domain_event` row is inserted, and the event is not queued for `raise`.
+- If a matching handler is registered and no transaction is open, `save` throws `Sync subscriber for <type> ran outside a transaction` and inserts nothing.
+- The handler is in memory for this process. It is not stored, and it is not retried.
+- Plugins receive a wrapper that only exposes `subscribeSync`, `subscribeDurable`, and `ofType`. See `docs/plugins.md`.
+
+`subscribeSync` was removed while the bus had no caller for it. Plugins need a write that commits with the sale, so it is part of the bus again.
 
 ### Live listeners
 
@@ -96,7 +115,7 @@ domainEventBus.subscribeDurable('notify-warehouse', OrderCreated, event => {
 
 `RecordProductSales` is the durable subscriber `record-product-sales`. It adds the order to `product_sale_day` in its own transaction and records the order id in `product_sale_order`. The same order id is applied once, so the retry does not add the quantity again. `ordered` is false, so one failed order does not hold the next sale. A statistics failure leaves the sale in place.
 
-Register durable subscribers before `DomainEventDispatcher.start()`. The app starts `RecordProductSales` first, then the dispatcher.
+Register durable subscribers before `DomainEventDispatcher.start()`. The app starts `PluginHost`, then `RecordProductSales`, then the dispatcher. `PluginHost` registers enabled plugins before that first scan.
 
 ## Public events
 
@@ -114,6 +133,16 @@ Saved by `CreateOrder` inside the sale transaction, after the order, its lines, 
 
 `aggregate_id` is the order id. Later edits to a product do not change this snapshot.
 
+```json
+{
+  "id": "6f1c0b9e-1b2a-4c3d-9e8f-0a1b2c3d4e5f",
+  "createdAt": "02/07/2017 10:00:00",
+  "lines": [
+    {"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}
+  ]
+}
+```
+
 ### `ProductWithLowStock`
 
 Recorded by `CreateOrder` for each sold product whose remaining stock is less than or equal to its minimum, inside the same transaction. Raised after the commit. It is not stored in `domain_event`. The same sale can save one `OrderCreated` and record several of these. Low stock does not reject the sale.
@@ -127,6 +156,10 @@ Recorded by `CreateOrder` for each sold product whose remaining stock is less th
 
 The order screen listens with `ofType` and shows the low-stock toast. There is no `domain_event` row and no `domain_event_processing` row.
 
+```json
+{"barcode": "0001", "name": "Coca-Cola", "stock": 4, "stockMin": 10}
+```
+
 ### `ProductEnabledAgain`
 
 Recorded and raised by `EnableProduct` when a cashier scans a disabled product. The product is enabled and its stock grows by one inside `transaction.run`, the event is recorded in that same transaction, and `raise` runs after commit. The event is not stored.
@@ -137,6 +170,10 @@ Recorded and raised by `EnableProduct` when a cashier scans a disabled product. 
 | `name` | Product name |
 
 The order screen listens with `ofType` and shows the warning toast. A second scan of an already enabled product does not record the event.
+
+```json
+{"barcode": "0001", "name": "Coca-Cola"}
+```
 
 ## What stays unaware of the tables
 

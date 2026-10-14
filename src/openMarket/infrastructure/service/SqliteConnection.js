@@ -69,6 +69,12 @@ CREATE TABLE IF NOT EXISTS domain_event_processing (
 );
 CREATE INDEX IF NOT EXISTS domain_event_processing_due
   ON domain_event_processing (subscriber_name, status);
+CREATE TABLE IF NOT EXISTS plugin_state (
+  plugin_id TEXT PRIMARY KEY,
+  enabled INTEGER NOT NULL,
+  config_json TEXT NOT NULL,
+  last_error TEXT
+);
 `;
 
 function ensureColumn(database, table, column, definition) {
