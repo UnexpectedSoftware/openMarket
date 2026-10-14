@@ -13,6 +13,8 @@ import CategoryRepository from '../../../openMarket/domain/category/CategoryRepo
 import CategoryFactory from '../../../openMarket/domain/category/CategoryFactory';
 import ProductImageSource from '../../../openMarket/domain/image/ProductImageSource';
 import CategoryImageSource from '../../../openMarket/domain/image/CategoryImageSource';
+import InvoiceRepository from '../../../openMarket/domain/invoice/InvoiceRepository';
+import InvoiceSequence from '../../../openMarket/domain/invoice/InvoiceSequence';
 import DomainEventRepository from '../../../openMarket/domain/event/DomainEventRepository';
 import PluginRepository from '../../../openMarket/domain/plugin/PluginRepository';
 import PluginSource from '../../../openMarket/domain/plugin/PluginSource';
@@ -31,6 +33,8 @@ import SqliteCategoryRepository from '../../../openMarket/infrastructure/categor
 import CategoryFactoryImpl from '../../../openMarket/infrastructure/category/CategoryFactoryImpl';
 import OpenFoodFactsProductImageSource from '../../../openMarket/infrastructure/image/OpenFoodFactsProductImageSource';
 import WikimediaCategoryImageSource from '../../../openMarket/infrastructure/image/WikimediaCategoryImageSource';
+import SqliteInvoiceRepository from '../../../openMarket/infrastructure/invoice/SqliteInvoiceRepository';
+import SqliteInvoiceSequence from '../../../openMarket/infrastructure/invoice/SqliteInvoiceSequence';
 import SqliteDomainEventRepository from '../../../openMarket/infrastructure/event/SqliteDomainEventRepository';
 import SqlitePluginRepository from '../../../openMarket/infrastructure/plugins/SqlitePluginRepository';
 import FolderPluginSource from '../../../openMarket/infrastructure/plugins/FolderPluginSource';
@@ -41,6 +45,8 @@ describe('ports and adapters', () => {
   describeContract(Clock, SystemClock);
   describeContract(Transaction, SqliteTransaction);
   describeContract(OrderRepository, SqliteOrderRepository);
+  describeContract(InvoiceRepository, SqliteInvoiceRepository);
+  describeContract(InvoiceSequence, SqliteInvoiceSequence);
   describeContract(OrderFactory, OrderFactoryImpl);
   describeContract(ProductRepository, SqliteProductRepository);
   describeContract(ProductFactory, ProductFactoryImpl);

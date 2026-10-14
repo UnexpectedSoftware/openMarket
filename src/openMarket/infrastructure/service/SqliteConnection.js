@@ -75,6 +75,32 @@ CREATE TABLE IF NOT EXISTS plugin_state (
   config_json TEXT NOT NULL,
   last_error TEXT
 );
+CREATE TABLE IF NOT EXISTS invoice_sequence (
+  series TEXT PRIMARY KEY,
+  last_number INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS invoice (
+  id TEXT PRIMARY KEY,
+  series TEXT NOT NULL,
+  number INTEGER NOT NULL,
+  invoice_number TEXT NOT NULL UNIQUE,
+  issued_at TEXT NOT NULL,
+  order_id TEXT,
+  status TEXT NOT NULL,
+  cancelled_at TEXT,
+  total REAL NOT NULL,
+  UNIQUE (series, number)
+);
+CREATE TABLE IF NOT EXISTS invoice_line (
+  invoice_id TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  barcode TEXT NOT NULL,
+  name TEXT NOT NULL,
+  price REAL NOT NULL,
+  quantity REAL NOT NULL,
+  PRIMARY KEY (invoice_id, position)
+);
+CREATE INDEX IF NOT EXISTS invoice_order_id ON invoice (order_id);
 `;
 
 function ensureColumn(database, table, column, definition) {

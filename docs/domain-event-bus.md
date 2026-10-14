@@ -143,6 +143,74 @@ Saved by `CreateOrder` inside the sale transaction, after the order, its lines, 
 }
 ```
 
+### `InvoiceIssued`
+
+Saved by `IssueInvoice` inside the issuance transaction, after the invoice and its lines are inserted and after the series sequence has moved forward. The type is marked durable, so the row is stored even before a subscriber exists. Raised after that transaction commits. `IssueInvoice` then calls `dispatch()`.
+
+`subscribeSync` runs from `save`, before the `domain_event` insert, while the invoice insert and the sequence update are still uncommitted. A throw rolls all of them back, and the number can be used again. `record` is not used: a subscriber that must see the issued document after a restart needs the stored row.
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Invoice id |
+| `series` | Series, such as `2026` or `A` |
+| `number` | Integer within that series |
+| `invoiceNumber` | Formatted number, such as `2026/000001` or `A/000123` |
+| `issuedAt` | Issue time, ISO-8601 UTC |
+| `orderId` | Order this invoice was issued for, or `null` |
+| `lines` | Snapshot of `{barcode, name, price, quantity, amount}` for each line |
+| `total` | Sum of the line amounts |
+
+`aggregate_id` is the invoice id. Later edits to a product or to the order do not change this snapshot. Cancelling the invoice does not change it either.
+
+```json
+{
+  "id": "6f1c0b9e-1b2a-4c3d-9e8f-0a1b2c3d4e5f",
+  "series": "2026",
+  "number": 1,
+  "invoiceNumber": "2026/000001",
+  "issuedAt": "2026-10-14T12:00:00.000Z",
+  "orderId": null,
+  "lines": [
+    {"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1, "amount": 0.55}
+  ],
+  "total": 0.55
+}
+```
+
+### `InvoiceCancelled`
+
+Saved by `CancelInvoice` inside the cancellation transaction, after the invoice status has been set to cancelled. The type is marked durable. Raised after that transaction commits. `CancelInvoice` then calls `dispatch()`. The number, the lines, and the total are the issued snapshot. A second cancellation does not save another event.
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Invoice id |
+| `series` | Series |
+| `number` | Integer within that series |
+| `invoiceNumber` | Formatted number |
+| `issuedAt` | Original issue time, ISO-8601 UTC |
+| `cancelledAt` | Cancellation time, ISO-8601 UTC |
+| `orderId` | Order this invoice was issued for, or `null` |
+| `lines` | Issued snapshot of `{barcode, name, price, quantity, amount}` |
+| `total` | Issued total |
+
+`aggregate_id` is the invoice id.
+
+```json
+{
+  "id": "6f1c0b9e-1b2a-4c3d-9e8f-0a1b2c3d4e5f",
+  "series": "2026",
+  "number": 1,
+  "invoiceNumber": "2026/000001",
+  "issuedAt": "2026-10-14T12:00:00.000Z",
+  "cancelledAt": "2026-10-14T15:00:00.000Z",
+  "orderId": null,
+  "lines": [
+    {"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1, "amount": 0.55}
+  ],
+  "total": 0.55
+}
+```
+
 ### `ProductWithLowStock`
 
 Recorded by `CreateOrder` for each sold product whose remaining stock is less than or equal to its minimum, inside the same transaction. Raised after the commit. It is not stored in `domain_event`. The same sale can save one `OrderCreated` and record several of these. Low stock does not reject the sale.
