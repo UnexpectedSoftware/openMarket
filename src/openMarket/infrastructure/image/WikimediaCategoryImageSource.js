@@ -1,7 +1,7 @@
 import os from 'os';
 import * as Rx from 'rxjs';
-import CategoryImageSource from '../../domain/image/CategoryImageSource';
 import {IMAGE_MAX_BYTES} from '../service/ImageStore';
+/** @import CategoryImageSource from '../../domain/image/CategoryImageSource' */
 import {fetchWithRetry, IMAGE_EXTENSIONS, pause, writeFetchedImage} from './downloadImage';
 import {openMarketUserAgent} from './OpenFoodFactsProductImageSource';
 
@@ -56,7 +56,8 @@ function commonsUrl(params) {
   return COMMONS_API + '?' + new URLSearchParams(params).toString();
 }
 
-export default class WikimediaCategoryImageSource extends CategoryImageSource {
+/** @implements {CategoryImageSource} */
+export default class WikimediaCategoryImageSource {
   constructor({
     fetchImpl = fetch,
     userAgent = openMarketUserAgent(),
@@ -64,7 +65,6 @@ export default class WikimediaCategoryImageSource extends CategoryImageSource {
     retryDelay = () => pause(1000),
     maxBytes = IMAGE_MAX_BYTES
   } = {}) {
-    super();
     this._fetch = fetchImpl;
     this._headers = {'User-Agent': userAgent};
     this._directory = directory;

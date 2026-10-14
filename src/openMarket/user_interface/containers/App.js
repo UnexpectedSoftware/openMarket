@@ -1,4 +1,3 @@
-// @flow
 import React, { Component } from 'react';
 import {connect} from 'react-redux';
 import Dialog from '../dialog/ReduxConnector';
@@ -19,10 +18,6 @@ const notificationStyle = {
 };
 
 class App extends Component {
-  props: {
-    children: HTMLElement
-  };
-
   render() {
     const {notifications} = this.props;
     return (

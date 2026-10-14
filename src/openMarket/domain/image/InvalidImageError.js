@@ -8,10 +8,11 @@ import AppError, {defined} from '../error/AppError.js';
 export default class InvalidImageError extends AppError {
 
   /**
-   * @param {string} code
-   * @param {string} userMessage
-   * @param {Object} [context]
-   * @param {Error} [cause]
+   * @param {object} [params]
+   * @param {string} [params.code]
+   * @param {string} [params.userMessage]
+   * @param {Record<string, any>} [params.context]
+   * @param {Error} [params.cause]
    */
   constructor({code, userMessage, context, cause} = {}) {
     super({

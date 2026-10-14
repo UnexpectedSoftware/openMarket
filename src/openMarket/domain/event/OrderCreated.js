@@ -17,9 +17,10 @@ export default class OrderCreated {
   }
 
   /**
-   * @param {string} id
-   * @param {string} createdAt
-   * @param {Array.<{barcode: string, name: string, price: number, quantity: number}>} lines
+   * @param {object} params
+   * @param {string} params.id
+   * @param {string} params.createdAt
+   * @param {Array<{barcode: string, name: string, price: number, quantity: number}>} params.lines
    */
   constructor({id, createdAt, lines}) {
     this.id = id;

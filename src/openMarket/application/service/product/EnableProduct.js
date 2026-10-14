@@ -4,15 +4,21 @@ import "rxjs/add/operator/do";
 import ProductEnabledAgain from "../../../domain/event/ProductEnabledAgain";
 import ProductNotFoundError from "../../../domain/product/ProductNotFoundError";
 import observableError from "../../../infrastructure/logging/observableError";
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import Product from '../../../domain/product/Product' */
+/** @import ProductRepository from '../../../domain/product/ProductRepository' */
+/** @import DomainEventBus from '../../../domain/service/DomainEventBus' */
+/** @import Transaction from '../../../domain/service/Transaction' */
 
 /**
  * Puts a disabled product back on sale when a cashier scans it.
  */
 export default class EnableProduct {
   /**
-   * @param {ProductRepository} repository
-   * @param {DomainEventBus} domainEventBus
-   * @param {Transaction} transaction
+   * @param {object} deps
+   * @param {ProductRepository} deps.repository
+   * @param {DomainEventBus} deps.domainEventBus
+   * @param {Transaction} deps.transaction
    */
   constructor({ repository, domainEventBus, transaction }) {
     /**
@@ -34,7 +40,7 @@ export default class EnableProduct {
 
   /**
    * Enable a disabled product and add one unit. An enabled product is unchanged.
-   * @param {string} barcode
+   * @param {{barcode: string}} command
    * @returns {Observable<Product>}
    */
   enableForSale({ barcode }) {

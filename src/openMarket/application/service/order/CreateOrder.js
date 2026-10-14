@@ -5,6 +5,13 @@ import "rxjs/add/operator/map";
 import "rxjs/add/operator/toArray";
 import OrderCreated from "../../../domain/event/OrderCreated";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
+/** @import Order from "../../../domain/order/Order" */
+/** @import { OrderLine } from "../../../domain/order/Order" */
+/** @import OrderFactory from "../../../domain/order/OrderFactory" */
+/** @import OrderRepository from "../../../domain/order/OrderRepository" */
+/** @import ProductRepository from "../../../domain/product/ProductRepository" */
+/** @import DomainEventBus from "../../../domain/service/DomainEventBus" */
+/** @import Transaction from "../../../domain/service/Transaction" */
 
 /**
  * @class CreateOrder
@@ -12,12 +19,13 @@ import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
 export default class CreateOrder {
 
   /**
-   * @param {OrderRepository} orderRepository
-   * @param {ProductRepository} productRepository
-   * @param {OrderFactory} orderFactory
-   * @param {DomainEventBus} domainEventBus
-   * @param {Transaction} transaction
-   * @param {{dispatch: function(): void}} domainEventDispatcher
+   * @param {object} deps
+   * @param {OrderRepository} deps.orderRepository
+   * @param {ProductRepository} deps.productRepository
+   * @param {OrderFactory} deps.orderFactory
+   * @param {DomainEventBus} deps.domainEventBus
+   * @param {Transaction} deps.transaction
+   * @param {{dispatch: () => void}} deps.domainEventDispatcher
    */
   constructor({ orderRepository, productRepository, orderFactory, domainEventBus, transaction, domainEventDispatcher}) {
     this._orderRepository = orderRepository;
@@ -30,8 +38,8 @@ export default class CreateOrder {
 
   /**
    * Create a new Order with all lines
-   * @param lines
-   * @returns {Observable.<Order>}
+   * @param {{lines: OrderLine[]}} order
+   * @returns {Observable<Order>}
    */
   createOrder({lines}) {
     return this._transaction.run(() => this._buildOrder({lines})

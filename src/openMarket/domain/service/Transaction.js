@@ -1,5 +1,9 @@
+/** @import { Observable } from 'rxjs/Observable' */
+
 /**
  * One boundary around several repository writes. They commit together or roll back together.
+ * Adapters declare `@implements {Transaction}`; they do not extend this class.
+ * @interface
  */
 export default class Transaction {
 
@@ -13,7 +17,7 @@ export default class Transaction {
   /**
    * Runs work inside the transaction that is already open.
    * Opens one, then commits or rolls it back, when none is open.
-   * @param {function(): *} work
+   * @param {() => *} work
    * @returns {*}
    */
   execute(work) {
@@ -21,8 +25,8 @@ export default class Transaction {
   }
 
   /**
-   * @param {function(): Observable} work
-   * @returns {Observable}
+   * @param {() => Observable<any>} work
+   * @returns {Observable<any>}
    */
   run(work) {
     throw new Error('Transaction#run must be implemented');

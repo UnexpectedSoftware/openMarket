@@ -8,8 +8,9 @@ export default class ProductEnabledAgain {
   }
 
   /**
-   * @param {string} barcode
-   * @param {string} name
+   * @param {object} params
+   * @param {string} params.barcode
+   * @param {string} params.name
    */
   constructor({barcode, name}) {
     this.barcode = barcode;

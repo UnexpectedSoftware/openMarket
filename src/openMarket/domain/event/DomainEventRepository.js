@@ -2,6 +2,8 @@
  * Collection of stored domain events, subscriber registration times, and processing rows.
  * Saving and finding only. Retries and dead letters stay on the bus.
  * The caller owns the transaction around a claim.
+ * Adapters declare `@implements {DomainEventRepository}`; they do not extend this class.
+ * @interface
  */
 export default class DomainEventRepository {
 
@@ -14,23 +16,22 @@ export default class DomainEventRepository {
 
   /**
    * Events whose durable subscribers have not been recorded yet, oldest first.
-   * @returns {Array.<{id: string, type: string, payload: string, aggregateId: string|null, createdAt: string}>}
+   * @returns {Array<{id: string, type: string, payload: string, aggregateId: string | null, createdAt: string}>}
    */
   findUndispatched() {
     throw new Error('DomainEventRepository#findUndispatched must be implemented');
   }
 
   /**
-   * @param {string} id
-   * @param {string} dispatchedAt
+   * @param {{id: string, dispatchedAt: string}} command
    */
   markDispatched({id, dispatchedAt}) {
     throw new Error('DomainEventRepository#markDispatched must be implemented');
   }
 
   /**
-   * @param {string} subscriberName
-   * @returns {{subscriberName: string, registeredAt: string}|null}
+   * @param {{subscriberName: string}} query
+   * @returns {{subscriberName: string, registeredAt: string} | null}
    */
   findSubscriber({subscriberName}) {
     throw new Error('DomainEventRepository#findSubscriber must be implemented');
@@ -38,8 +39,7 @@ export default class DomainEventRepository {
 
   /**
    * Keeps the first registration time. A later call for the same name does nothing.
-   * @param {string} subscriberName
-   * @param {string} registeredAt
+   * @param {{subscriberName: string, registeredAt: string}} subscriber
    */
   saveSubscriber({subscriberName, registeredAt}) {
     throw new Error('DomainEventRepository#saveSubscriber must be implemented');
@@ -61,8 +61,8 @@ export default class DomainEventRepository {
   }
 
   /**
-   * @param {string} status
-   * @returns {Array.<{eventId: string, subscriberName: string, status: string, attempts: number, lastError: string|null}>}
+   * @param {{status: string}} query
+   * @returns {Array<{eventId: string, subscriberName: string, status: string, attempts: number, lastError: string | null}>}
    */
   findProcessingByStatus({status}) {
     throw new Error('DomainEventRepository#findProcessingByStatus must be implemented');
@@ -70,9 +70,8 @@ export default class DomainEventRepository {
 
   /**
    * Oldest processing row for a subscriber whose status is one of the given values.
-   * @param {string} subscriberName
-   * @param {string[]} statuses
-   * @returns {{eventId: string, subscriberName: string, type: string, payload: string, status: string, attempts: number, lastError: string|null}|null}
+   * @param {{subscriberName: string, statuses: string[]}} query
+   * @returns {{eventId: string, subscriberName: string, type: string, payload: string, status: string, attempts: number, lastError: string | null} | null}
    */
   findFirstProcessing({subscriberName, statuses}) {
     throw new Error('DomainEventRepository#findFirstProcessing must be implemented');

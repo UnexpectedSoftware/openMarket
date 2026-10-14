@@ -1,23 +1,25 @@
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import CategoryRepository from '../../../domain/category/CategoryRepository' */
+
 /**
  * @class DeleteCategory
  */
 export default class DeleteCategory {
     /**
-     * @constructs DeleteCategory
-     * @param {CategoryRepository} repository
+     * @param {{repository: CategoryRepository}} deps
      */
   constructor({ repository }) {
         /**
          * @type {CategoryRepository}
-         * @member DeleteCategory#repository
+         * @private
          */
     this.repository = repository;
   }
 
     /**
      * Removes a category that has no products.
-     * @param {string} id
-     * @returns {Observable.<null>}
+     * @param {{id: string}} command
+     * @returns {Observable<null>}
      */
   deleteCategory({ id }) {
     return this.repository.remove({ id });

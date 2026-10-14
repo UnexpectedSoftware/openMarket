@@ -1,5 +1,5 @@
-import ProductRepository from "../../domain/product/ProductRepository";
 import * as Rx from "rxjs";
+/** @import ProductRepository from "../../domain/product/ProductRepository" */
 import ProductStatus from "../../domain/product/ProductStatus";
 import ProductNotFoundError from "../../domain/product/ProductNotFoundError";
 import InvalidProductPageError from "../../domain/product/InvalidProductPageError";
@@ -63,9 +63,9 @@ const UPSERT_PRODUCT_SQL = 'INSERT INTO product (barcode, base_price, category_i
 
 const UPDATE_PRODUCT_IMAGE_SQL = 'UPDATE product SET image_name = ? WHERE barcode = ?';
 
-export default class SqliteProductRepository extends ProductRepository {
+/** @implements {ProductRepository} */
+export default class SqliteProductRepository {
   constructor({connection, productMapper, images, queryService}) {
-    super();
     this._database = connection.database;
     this._productMapper = productMapper;
     this._images = images;

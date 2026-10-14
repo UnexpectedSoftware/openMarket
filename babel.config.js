@@ -5,7 +5,6 @@ module.exports = {
     ['@babel/preset-react', { runtime: 'classic' }]
   ],
   plugins: [
-    '@babel/plugin-transform-flow-strip-types',
     'add-module-exports'
   ]
 };

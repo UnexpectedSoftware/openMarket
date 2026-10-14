@@ -9,10 +9,11 @@ import AppError from './AppError.js';
 export default class UnexpectedFailure extends AppError {
 
   /**
-   * @param {string} [message]
-   * @param {string} [userMessage]
-   * @param {Object} [context]
-   * @param {Error} [cause]
+   * @param {object} [params]
+   * @param {string} [params.message]
+   * @param {string} [params.userMessage]
+   * @param {Record<string, any>} [params.context]
+   * @param {Error} [params.cause]
    */
   constructor({message, userMessage, context, cause} = {}) {
     const detail = userMessage || (cause && cause.message) || message || 'Unexpected failure';

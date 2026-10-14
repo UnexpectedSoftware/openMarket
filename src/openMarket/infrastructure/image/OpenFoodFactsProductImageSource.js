@@ -1,7 +1,7 @@
 import os from 'os';
 import * as Rx from 'rxjs';
-import ProductImageSource from '../../domain/image/ProductImageSource';
 import {isProductBarcode} from '../../domain/image/barcode';
+/** @import ProductImageSource from '../../domain/image/ProductImageSource' */
 import {IMAGE_MAX_BYTES} from '../service/ImageStore';
 import {fetchWithRetry, pause, writeFetchedImage} from './downloadImage';
 
@@ -39,7 +39,8 @@ export function rawFrontUrl(code) {
   return `https://images.openfoodfacts.org/images/products/${folder}/1.400.jpg`;
 }
 
-export default class OpenFoodFactsProductImageSource extends ProductImageSource {
+/** @implements {ProductImageSource} */
+export default class OpenFoodFactsProductImageSource {
   constructor({
     fetchImpl = fetch,
     userAgent = openMarketUserAgent(),
@@ -47,7 +48,6 @@ export default class OpenFoodFactsProductImageSource extends ProductImageSource 
     retryDelay = () => pause(1000),
     maxBytes = IMAGE_MAX_BYTES
   } = {}) {
-    super();
     this._fetch = fetchImpl;
     this._headers = {'User-Agent': userAgent};
     this._directory = directory;

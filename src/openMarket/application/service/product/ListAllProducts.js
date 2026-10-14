@@ -1,12 +1,16 @@
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import Product from '../../../domain/product/Product' */
+/** @import ProductFilterFactory from '../../../domain/product/ProductFilterFactory' */
+/** @import ProductRepository from '../../../domain/product/ProductRepository' */
+/** @import { CatalogCursor, CatalogQuery } from '../../../domain/product/ProductRepository' */
+
 /**
  * @class ListAllProducts
  */
 export default class ListAllProducts {
 
     /**
-     * @constructs ListAllProducts
-     * @param {ProductRepository} repository
-     * @param {ProductFilterFactory} productFilterFactory
+     * @param {{repository: ProductRepository, productFilterFactory: ProductFilterFactory}} deps
      */
   constructor({ repository, productFilterFactory }) {
       /**
@@ -24,10 +28,8 @@ export default class ListAllProducts {
   }
 
     /**
-     *
-     * @param {number} limit
-     * @param {number} offset
-     * @returns {Observable.<Array.<Product>>}
+     * @param {{limit: number, offset: number}} page
+     * @returns {Observable<Product[]>}
      */
   findAll({ limit, offset }) {
     return this._productRepository.findAll({
@@ -39,11 +41,8 @@ export default class ListAllProducts {
   }
 
     /**
-     *
-     * @param {string} name
-     * @param {number} limit
-     * @param {number} offset
-     * @returns {*|Observable.<Product>}
+     * @param {{name: string, limit: number, offset: number}} query
+     * @returns {Observable<Product[]>}
      */
   findAllByName({ name, limit, offset }) {
     return this._productRepository.findAllByName({
@@ -53,6 +52,10 @@ export default class ListAllProducts {
     });
   }
 
+  /**
+   * @param {{limit: number, offset: number}} page
+   * @returns {Observable<Product[]>}
+   */
   findAllWithLowStock({ limit, offset }){
     return this._productRepository.findAllWithLowStock({
         limit,
@@ -61,14 +64,9 @@ export default class ListAllProducts {
   }
 
   /**
-   * @param {string} query
-   * @param {boolean} lowStock
-   * @param {?string} status ENABLED, DISABLED, or null for both
-   * @param {?string} categoryId
-   * @param {?string} sort name_asc (default), name_desc, stock_asc, or stock_desc
-   * @param {?{name: string, stock: ?number, barcode: string}} after
-   * @param {number} limit
-   * @returns {Observable<{products: Array, hasMore: boolean}>}
+   * sort is name_asc (default), name_desc, stock_asc, or stock_desc.
+   * @param {CatalogQuery & {sort?: string | null, after?: CatalogCursor | null, limit: number}} query
+   * @returns {Observable<{products: Product[], hasMore: boolean}>}
    */
   findCatalog({query, lowStock, status, categoryId, sort, after, limit}) {
     return this._productRepository.findCatalog({
@@ -82,6 +80,9 @@ export default class ListAllProducts {
     });
   }
 
+  /**
+   * @returns {Observable<Array<{key: string, value: string}>>}
+   */
   findAllStatuses(){
     return this._productRepository.findAllStatuses();
   }

@@ -1,23 +1,25 @@
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import CategoryRepository from '../../../domain/category/CategoryRepository' */
+/** @import CategorySummary from '../../../domain/category/CategorySummary' */
+
 /**
  * @class ListAllCategories
  */
 export default class ListAllCategories {
 
     /**
-     * @constructs ListAllCategories
-     * @param {CategoryRepository} repository
+     * @param {{repository: CategoryRepository}} deps
      */
   constructor({ repository }) {
         /**
          * @type {CategoryRepository}
-         * @member ListAllCategories#repository
-         * */
+         * @private
+         */
     this.repository = repository;
   }
 
     /**
-     *
-     * @returns {Observable.<Array.<CategorySummary>>}
+     * @returns {Observable<CategorySummary[]>}
      */
   findAllWithStats() {
     return this.repository.findAllWithStats();

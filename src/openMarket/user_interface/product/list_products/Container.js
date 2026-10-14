@@ -1,4 +1,3 @@
-// @flow
 import React, {Component} from 'react';
 import placeholder from '../../resources/category-placeholder.svg';
 import {formatMoney} from '../../i18n/money';

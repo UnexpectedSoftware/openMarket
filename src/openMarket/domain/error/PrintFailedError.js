@@ -9,9 +9,10 @@ import AppError from './AppError.js';
 export default class PrintFailedError extends AppError {
 
   /**
-   * @param {Error} [cause]
-   * @param {number} printed
-   * @param {number} total
+   * @param {object} [params]
+   * @param {Error & {userMessage?: string}} [params.cause]
+   * @param {number} [params.printed]
+   * @param {number} [params.total]
    */
   constructor({cause, printed, total} = {}) {
     const detail = (cause && (cause.userMessage || cause.message)) || 'Could not print products';

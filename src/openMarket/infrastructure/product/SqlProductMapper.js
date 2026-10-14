@@ -1,15 +1,17 @@
-import ObjectMapper from "../service/ObjectMapper";
 import * as Rx from "rxjs";
+/** @import ProductFactory from '../../domain/product/ProductFactory' */
+/** @import CategoryFactory from '../../domain/category/CategoryFactory' */
+/** @import Product from '../../domain/product/Product' */
+/** @import { Observable } from 'rxjs/Observable' */
 
-export default class SqlProductMapper extends ObjectMapper{
+export default class SqlProductMapper {
 
   /**
-   *
-   * @param {ProductFactory} productFactory
-   * @param {CategoryFactory} categoryFactory
+   * @param {object} deps
+   * @param {ProductFactory} deps.productFactory
+   * @param {CategoryFactory} deps.categoryFactory
    */
   constructor({ productFactory, categoryFactory }){
-    super();
     this._productFactory = productFactory;
     this._categoryFactory = categoryFactory;
   }
@@ -40,7 +42,4 @@ export default class SqlProductMapper extends ObjectMapper{
     );
   }
 
-  toPersistence({domainProduct}) {
-    return super.toPersistence({domainProduct});
-  }
 }

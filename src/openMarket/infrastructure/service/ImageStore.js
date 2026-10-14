@@ -23,8 +23,8 @@ export function imagesDirectory(folderName) {
 /**
  * Reads one image file as a data URL. Paths outside an ImageStore directory are allowed
  * so a downloaded temp file can be previewed. The type and size rules match store().
- * @param {?string} filePath
- * @returns {?string}
+ * @param {string | null} filePath
+ * @returns {string | null}
  */
 export function dataUrlForFile(filePath) {
   try {
@@ -58,8 +58,7 @@ export default class ImageStore {
   }
 
   /**
-   * @param {string} id
-   * @param {string} sourcePath
+   * @param {{id: string, sourcePath: string}} file
    * @returns {string} stored filename
    */
   store({id, sourcePath}) {
@@ -126,8 +125,8 @@ export default class ImageStore {
   }
 
   /**
-   * @param {?string} imageName
-   * @returns {?string} data URL, or null when the file is missing
+   * @param {string | null} imageName
+   * @returns {string | null} data URL, or null when the file is missing
    */
   readDataUrl(imageName) {
     return dataUrlForFile(this._filePath(imageName));

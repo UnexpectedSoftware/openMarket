@@ -7,7 +7,8 @@ import AppError from './AppError.js';
 export default class UnsupportedUseCaseError extends AppError {
 
   /**
-   * @param {string} key
+   * @param {object} [params]
+   * @param {string} [params.key]
    */
   constructor({key} = {}) {
     super({

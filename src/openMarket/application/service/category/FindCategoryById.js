@@ -1,24 +1,26 @@
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import Category from '../../../domain/category/Category' */
+/** @import CategoryRepository from '../../../domain/category/CategoryRepository' */
+
 /**
  * @class FindCategoryById
  */
 export default class FindCategoryById {
 
     /**
-     * @constructs FindCategoryById
-     * @param {CategoryRepository} repository
+     * @param {{repository: CategoryRepository}} deps
      */
   constructor({ repository }) {
         /**
          * @type {CategoryRepository}
-         * @member FindCategoryById#repository
+         * @private
          */
     this.repository = repository;
   }
 
     /**
-     *
-     * @param {string} id
-     * @returns {Observable.<Category>}
+     * @param {{id: string}} query
+     * @returns {Observable<Category>}
      */
   findById({ id }) {
     return this.repository.findById({ id });

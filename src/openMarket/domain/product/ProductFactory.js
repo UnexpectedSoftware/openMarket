@@ -1,19 +1,30 @@
+/** @import Category from '../category/Category' */
+/** @import Product from './Product' */
+
 /**
+ * @typedef {object} NewProduct
+ * @property {string} barcode
+ * @property {string} name
+ * @property {string} description
+ * @property {number} price
+ * @property {number} basePrice
+ * @property {number} stock
+ * @property {number} stockMin
+ * @property {boolean} [weighted]
+ * @property {Category} category
+ * @property {string} [status]
+ * @property {string | null} [imageName]
+ */
+
+/**
+ * Port for building a product.
+ * Adapters declare `@implements {ProductFactory}`; they do not extend this class.
  * @interface
- * */
+ */
 export default class ProductFactory {
 
   /**
-   *
-   * @param {string} barcode
-   * @param {string} name
-   * @param {string} description
-   * @param {number} price
-   * @param {number} basePrice
-   * @param {number} stock
-   * @param {number} stockMin
-   * @param {?string} imageName
-   * @param {Category} category
+   * @param {NewProduct} product
    * @returns {Product}
    */
   createWith({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status, imageName }) {

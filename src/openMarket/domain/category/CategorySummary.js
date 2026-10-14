@@ -4,13 +4,14 @@
 export default class CategorySummary {
 
   /**
-   * @param {string} id
-   * @param {string} name
-   * @param {?string} imageName
-   * @param {number} productCount
-   * @param {number} stockTotal
-   * @param {number} basePriceTotal
-   * @param {?{barcode: string, name: string, quantity: number}} mostSold
+   * @param {object} params
+   * @param {string} params.id
+   * @param {string} params.name
+   * @param {string | null} [params.imageName]
+   * @param {number} params.productCount
+   * @param {number} params.stockTotal
+   * @param {number} params.basePriceTotal
+   * @param {{barcode: string, name: string, quantity: number} | null} [params.mostSold]
    */
   constructor({
     id,

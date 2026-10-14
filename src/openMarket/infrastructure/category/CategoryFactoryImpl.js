@@ -1,33 +1,33 @@
-import CategoryFactory from '../../domain/category/CategoryFactory';
 import Category from '../../domain/category/Category';
-/**
- * @class CategoryFactoryImpl
- * @implements CategoryFactory
- */
-export default class CategoryFactoryImpl extends CategoryFactory {
+/** @import CategoryFactory from '../../domain/category/CategoryFactory' */
+/** @import Identity from '../../domain/Identity' */
+
+/** @implements {CategoryFactory} */
+export default class CategoryFactoryImpl {
     /**
-     *
-     * @param {Identity} identity
+     * @param {object} deps
+     * @param {Identity} deps.identity
      */
   constructor({ identity }) {
-    super();
         /**
          * @type {Identity}
-         * @member CategoryFactoryImpl#identity
+         * @private
          */
     this._identity = identity;
   }
 
     /**
-     *
-     * @param {string} name
-     * @param {?string} imageName
+     * @param {{name: string, imageName?: string | null}} category
      * @returns {Category}
      */
   createWith({ name, imageName = null }) {
     return new Category({ id: this._identity.generate(), name, imageName });
   }
 
+    /**
+     * @param {{id: string, name: string, imageName?: string | null}} category
+     * @returns {Category}
+     */
   createWithId({ id, name, imageName = null }) {
     return new Category({ id, name, imageName });
   }

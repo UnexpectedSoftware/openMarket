@@ -1,4 +1,4 @@
-import ProductSaleStatisticsRepository from '../../domain/product/ProductSaleStatisticsRepository';
+/** @import ProductSaleStatisticsRepository from '../../domain/product/ProductSaleStatisticsRepository' */
 
 const FIND_SALE_DAY_SQL =
   'SELECT quantity, amount FROM product_sale_day WHERE barcode = ? AND sold_on = ?';
@@ -44,10 +44,10 @@ const QUANTITIES_SQL =
 
 const QUANTITIES_GROUP_SQL = ') GROUP BY barcode';
 
-export default class SqliteProductSaleStatisticsRepository extends ProductSaleStatisticsRepository {
+/** @implements {ProductSaleStatisticsRepository} */
+export default class SqliteProductSaleStatisticsRepository {
 
   constructor({connection, queryService}) {
-    super();
     this._database = connection.database;
     this._queryService = queryService;
     this._findDay = this._database.prepare(FIND_SALE_DAY_SQL);

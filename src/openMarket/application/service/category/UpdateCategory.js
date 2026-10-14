@@ -1,24 +1,24 @@
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import CategoryRepository from '../../../domain/category/CategoryRepository' */
+
 /**
  * @class UpdateCategory
  */
 export default class UpdateCategory {
     /**
-     * @constructs UpdateCategory
-     * @param {CategoryRepository} repository
+     * @param {{repository: CategoryRepository}} deps
      */
   constructor({ repository }) {
         /**
          * @type {CategoryRepository}
-         * @member UpdateCategory#repository
+         * @private
          */
     this.repository = repository;
   }
 
     /**
-     *
-     * @param {string} id
-     * @param {string} name
-     * @returns {Observable.<null>}
+     * @param {{id: string, name: string}} command
+     * @returns {Observable<null>}
      */
   updateCategory({ id, name }) {
     return this.repository.update({
@@ -28,17 +28,18 @@ export default class UpdateCategory {
   }
 
   /**
-   * @param {string} id
-   * @param {string} imagePath absolute path of a file to copy
-   * @returns {Observable.<null>}
+   * @param {object} command
+   * @param {string} command.id
+   * @param {string} command.imagePath absolute path of a file to copy
+   * @returns {Observable<null>}
    */
   replaceImage({id, imagePath}) {
     return this.repository.updateCategory({id, imagePath});
   }
 
   /**
-   * @param {string} id
-   * @returns {Observable.<null>}
+   * @param {{id: string}} command
+   * @returns {Observable<null>}
    */
   removeImage({id}) {
     return this.repository.clearImage({id});

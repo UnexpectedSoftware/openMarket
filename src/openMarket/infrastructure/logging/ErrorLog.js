@@ -4,6 +4,7 @@ import UnexpectedFailure from '../../domain/error/UnexpectedFailure.js';
 
 const CAUSE_LIMIT = 8;
 
+/** @type {(line: string) => void} */
 let writer = () => {};
 let seen = new WeakSet();
 let processType = 'main';
@@ -44,8 +45,9 @@ export function raise(error) {
  * Wraps a driver error with the operation that was in progress.
  * An AppError is thrown unchanged so it is not logged a second time.
  * @param {*} error
- * @param {string} [message]
- * @param {Object} [context]
+ * @param {object} [options]
+ * @param {string} [options.message]
+ * @param {Record<string, any>} [options.context]
  */
 export function rethrow(error, {message, context} = {}) {
   if (error instanceof AppError) {
@@ -104,8 +106,9 @@ export function serialize(error) {
  * Installs the electron-log sink. The main process writes the file.
  * The renderer forwards lines to that file. A second call does nothing.
  * Tests never reach the file: NODE_ENV=test returns before electron-log is used.
- * @param {Object} imported
- * @param {'main'|'renderer'} [processType]
+ * @param {object} imported
+ * @param {object} [options]
+ * @param {'main' | 'renderer'} [options.processType]
  */
 export function bindLogger(imported, {processType: type = 'main'} = {}) {
   if (process.env.NODE_ENV === 'test') {
@@ -144,7 +147,8 @@ export function bindLogger(imported, {processType: type = 'main'} = {}) {
 
 /**
  * Points record at a writer. The unit test uses this instead of a log file.
- * @param {function(string): void} [write]
+ * @param {object} [options]
+ * @param {(line: string) => void} [options.write]
  */
 export function start({write} = {}) {
   if (typeof write === 'function') {

@@ -1,11 +1,14 @@
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import Product from '../../../domain/product/Product' */
+/** @import ProductRepository from '../../../domain/product/ProductRepository' */
+
 /**
  * @class FindProductById
  */
 export default class FindProduct {
 
     /**
-     * @constructs FindProduct
-     * @param {ProductRepository} repository
+     * @param {{repository: ProductRepository}} deps
      */
   constructor({ repository }) {
       /**
@@ -17,9 +20,8 @@ export default class FindProduct {
   }
 
   /**
-   *
-   * @param {string} barcode
-   * @returns {Observable.<Product>}
+   * @param {{barcode: string}} query
+   * @returns {Observable<Product>}
    */
   findProductByBarcode({ barcode }) {
     return this._productRepository.findByBarcode({ barcode });

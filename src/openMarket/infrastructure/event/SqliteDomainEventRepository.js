@@ -1,4 +1,5 @@
 /** @import DomainEventRepository from '../../domain/event/DomainEventRepository' */
+/** @import SqliteConnection from '../service/SqliteConnection' */
 
 const SAVE_EVENT_SQL =
   'INSERT INTO domain_event (id, type, payload, aggregate_id, created_at) VALUES (?, ?, ?, ?, ?)';
@@ -53,7 +54,8 @@ const FIND_FIRST_PROCESSING_ORDER_SQL = ') ORDER BY e.rowid ASC LIMIT 1';
 export default class SqliteDomainEventRepository {
 
   /**
-   * @param {SqliteConnection} connection
+   * @param {object} deps
+   * @param {SqliteConnection} deps.connection
    */
   constructor({connection}) {
     this._database = connection.database;
@@ -71,8 +73,11 @@ export default class SqliteDomainEventRepository {
     this._saveEvent.run(id, type, payload, aggregateId, createdAt);
   }
 
+  /**
+   * @returns {{id: string, type: string, payload: string, aggregateId: string | null, createdAt: string}[]}
+   */
   findUndispatched() {
-    return this._findUndispatched.all().map(row => ({
+    return this._findUndispatched.all().map(/** @param {{id: string, type: string, payload: string, aggregateId: string | null, createdAt: string}} row */ row => ({
       id: row.id,
       type: row.type,
       payload: row.payload,
@@ -85,14 +90,18 @@ export default class SqliteDomainEventRepository {
     this._markDispatched.run(dispatchedAt, id);
   }
 
+  /**
+   * @param {{subscriberName: string}} query
+   * @returns {{subscriberName: string, registeredAt: string} | null}
+   */
   findSubscriber({subscriberName}) {
     const row = this._findSubscriber.get(subscriberName);
     if (!row) {
       return null;
     }
     return {
-      subscriberName: row.subscriberName,
-      registeredAt: row.registeredAt
+      subscriberName: /** @type {string} */ (row.subscriberName),
+      registeredAt: /** @type {string} */ (row.registeredAt)
     };
   }
 
@@ -108,8 +117,12 @@ export default class SqliteDomainEventRepository {
     this._saveProcessing.run(eventId, subscriberName, status, attempts, lastError, updatedAt);
   }
 
+  /**
+   * @param {{status: string}} query
+   * @returns {{eventId: string, subscriberName: string, status: string, attempts: number, lastError: string | null}[]}
+   */
   findProcessingByStatus({status}) {
-    return this._findProcessingByStatus.all(status).map(row => ({
+    return this._findProcessingByStatus.all(status).map(/** @param {{eventId: string, subscriberName: string, status: string, attempts: number, lastError: string | null}} row */ row => ({
       eventId: row.eventId,
       subscriberName: row.subscriberName,
       status: row.status,
@@ -118,6 +131,10 @@ export default class SqliteDomainEventRepository {
     }));
   }
 
+  /**
+   * @param {{subscriberName: string, statuses: string[]}} query
+   * @returns {{eventId: string, subscriberName: string, type: string, payload: string, status: string, attempts: number, lastError: string | null} | null}
+   */
   findFirstProcessing({subscriberName, statuses}) {
     if (!statuses || statuses.length === 0) {
       return null;
@@ -129,13 +146,13 @@ export default class SqliteDomainEventRepository {
       return null;
     }
     return {
-      eventId: row.eventId,
-      subscriberName: row.subscriberName,
-      type: row.type,
-      payload: row.payload,
-      status: row.status,
+      eventId: /** @type {string} */ (row.eventId),
+      subscriberName: /** @type {string} */ (row.subscriberName),
+      type: /** @type {string} */ (row.type),
+      payload: /** @type {string} */ (row.payload),
+      status: /** @type {string} */ (row.status),
       attempts: Number(row.attempts),
-      lastError: row.lastError
+      lastError: /** @type {string | null} */ (row.lastError)
     };
   }
 

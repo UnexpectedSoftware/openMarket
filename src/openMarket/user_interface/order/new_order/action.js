@@ -1,4 +1,3 @@
-// @flow
 
 export const NEW_ORDER_SAVE = 'NEW_ORDER_SAVE';
 export const NEW_ORDER_SAVED = 'NEW_ORDER_SAVED';

@@ -1,12 +1,18 @@
-import OrderFactory from "../../domain/order/OrderFactory";
 import Order from "../../domain/order/Order";
-export default class OrderFactoryImpl extends OrderFactory {
+/** @import OrderFactory from "../../domain/order/OrderFactory" */
+/** @import { OrderLine } from "../../domain/order/Order" */
+
+/** @implements {OrderFactory} */
+export default class OrderFactoryImpl {
 
   constructor({identity}){
-    super();
     this._identity = identity;
   }
 
+  /**
+   * @param {{id?: string, lines?: OrderLine[], date?: string}} [order]
+   * @returns {Order}
+   */
   createWith({id = this._identity.generate(), lines, date} = {}) {
     return new Order({
         id: id,

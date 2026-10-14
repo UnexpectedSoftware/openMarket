@@ -7,8 +7,9 @@ import AppError, {defined} from '../error/AppError.js';
 export default class InvalidOrderQuantityError extends AppError {
 
   /**
-   * @param {*} quantity
-   * @param {string} [barcode]
+   * @param {object} [params]
+   * @param {*} [params.quantity]
+   * @param {string} [params.barcode]
    */
   constructor({quantity, barcode} = {}) {
     super({
