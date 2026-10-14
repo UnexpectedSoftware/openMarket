@@ -1,0 +1,112 @@
+{
+  "id": "mostrador-noche",
+  "name": "Mostrador Noche (high-contrast dark)",
+  "colorScheme": "dark",
+  "mood": "Focused, high-contrast, glare-free. Big numbers, amber primary that reads at arm's length.",
+  "suits": "Evening shops, bars/bakeries with dim counters, glossy touch screens, older eyes (larger type scale).",
+  "color": {
+    "background": "#0A0C0F",
+    "surface": "#14171C",
+    "surfaceAlt": "#1D2128",
+    "text": "#F3F5F7",
+    "textMuted": "#A6AFBC",
+    "primary": "#FFC233",
+    "primaryHover": "#FFD166",
+    "primaryContrast": "#14110A",
+    "accent": "#5CC8F2",
+    "accentContrast": "#06131A",
+    "success": "#43D17F",
+    "warning": "#FFB224",
+    "danger": "#FF6B66",
+    "border": "#2E3540",
+    "focus": "#5CC8F2",
+    "overlay": "rgba(0,0,0,0.66)"
+  },
+  "gradient": {
+    "primary": "none",
+    "header": "none"
+  },
+  "font": {
+    "sans": "\"Atkinson Hyperlegible\", \"Inter\", \"Segoe UI\", system-ui, Arial, sans-serif",
+    "display": "\"Atkinson Hyperlegible\", \"Inter\", system-ui, sans-serif",
+    "mono": "\"JetBrains Mono\", Consolas, \"Liberation Mono\", monospace",
+    "numeric": "\"JetBrains Mono\", Consolas, monospace"
+  },
+  "fontFeature": {
+    "numeric": "\"tnum\" 1, \"zero\" 1"
+  },
+  "fontSize": {
+    "xs": "13px",
+    "sm": "15px",
+    "md": "17px",
+    "lg": "20px",
+    "xl": "24px",
+    "2xl": "30px",
+    "3xl": "40px",
+    "total": "56px"
+  },
+  "fontWeight": {
+    "regular": "400",
+    "medium": "700",
+    "bold": "700"
+  },
+  "lineHeight": {
+    "tight": "1.15",
+    "normal": "1.45"
+  },
+  "letterSpacing": {
+    "heading": "0",
+    "label": "0.04em"
+  },
+  "radius": {
+    "sm": "6px",
+    "md": "8px",
+    "lg": "12px",
+    "pill": "999px"
+  },
+  "space": {
+    "0": "0px",
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "20px",
+    "6": "24px",
+    "7": "32px",
+    "8": "40px",
+    "9": "56px"
+  },
+  "shadow": {
+    "sm": "none",
+    "md": "0 0 0 1px #2E3540",
+    "lg": "0 20px 48px rgba(0,0,0,0.6)",
+    "focus": "0 0 0 3px #5CC8F2"
+  },
+  "button": {
+    "height": "56px",
+    "heightLg": "72px",
+    "paddingX": "22px",
+    "radius": "8px",
+    "fontWeight": "700",
+    "textTransform": "none",
+    "letterSpacing": "0.01em",
+    "borderWidth": "2px",
+    "primaryBg": "var(--om-color-primary)",
+    "primaryFg": "var(--om-color-primary-contrast)",
+    "secondaryBg": "var(--om-color-surface-alt)",
+    "secondaryFg": "var(--om-color-text)",
+    "secondaryBorder": "var(--om-color-border)",
+    "ghostFg": "var(--om-color-accent)",
+    "dangerBg": "var(--om-color-danger)",
+    "dangerFg": "#14110A"
+  },
+  "control": {
+    "height": "52px",
+    "radius": "8px"
+  },
+  "tile": {
+    "minWidth": "168px",
+    "imageHeight": "92px",
+    "radius": "10px"
+  }
+}
