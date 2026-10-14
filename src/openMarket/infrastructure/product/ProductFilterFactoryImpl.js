@@ -1,17 +1,13 @@
-import ProductFilterFactory from '../../domain/product/ProductFilterFactory';
 import ProductFilter from '../../domain/product/ProductFilter';
-/**
- * @class ProductFilterFactoryImpl
- * @implements ProductFilterFactory
- */
-export default class ProductFilterFactoryImpl extends ProductFilterFactory {
+/** @import ProductFilterFactory from '../../domain/product/ProductFilterFactory' */
+
+/** @implements {ProductFilterFactory} */
+export default class ProductFilterFactoryImpl {
 
 
 
     /**
-     *
-     * @param {number} limit
-     * @param {number} offset
+     * @param {{limit: number, offset: number}} filter
      * @returns {ProductFilter}
      */
   createWith({ limit, offset }) {

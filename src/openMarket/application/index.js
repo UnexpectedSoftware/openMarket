@@ -4,17 +4,20 @@
 import container from '../infrastructure/dic/Container';
 import UnsupportedUseCaseError from '../domain/error/UnsupportedUseCaseError';
 import {raise} from '../infrastructure/logging/ErrorLog';
+
+/** @typedef {typeof container} AppContainer */
+
 class OpenMarket {
 
     /**
-     * @constructs OpenMarket
+     * @param {{container: AppContainer}} deps
      */
   constructor({container}) {
     this.fixturesService = container.getInstance({key:'fixturesService'});
     this.fixturesService.load();
         /**
          *
-         * @type {Map<string, UseCase>|Map}
+         * @type {Map<string, object>}
          * @private
          */
     this.deps = new Map();
@@ -45,7 +48,7 @@ class OpenMarket {
     /**
      *
      * @param {string} key
-     * @returns {*}
+     * @returns {object}
      */
   get(key) {
     if (!this.deps.has(key)) {

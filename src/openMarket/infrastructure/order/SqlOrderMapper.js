@@ -1,9 +1,7 @@
-import ObjectMapper from "../service/ObjectMapper";
 import * as Rx from "rxjs";
 
-export default class SqlOrderMapper extends ObjectMapper {
+export default class SqlOrderMapper {
   constructor({orderFactory}){
-    super();
     this._orderFactory = orderFactory;
   }
   toDomain({rows}) {
@@ -16,10 +14,6 @@ export default class SqlOrderMapper extends ObjectMapper {
         date: orderData.created_at
       })
     )
-  }
-
-  toPersistence({domain}) {
-    return super.toPersistence({domain});
   }
 
   _buildOrderData(data){

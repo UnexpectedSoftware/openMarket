@@ -1,22 +1,23 @@
 import ProductStatus from "./ProductStatus";
+/** @import Category from '../category/Category' */
 
 /**
  * @class Product
  */
 export default class Product {
     /**
-     * @constructs Product
-     * @param {string} barcode
-     * @param {string} name
-     * @param {string} description
-     * @param {number} price
-     * @param {number} basePrice
-     * @param {number} stock
-     * @param {number} stockMin
-     * @param {boolean} weighted
-     * @param {Category} category
-     * @param {string} status
-     * @param {?string} imageName
+     * @param {object} params
+     * @param {string} params.barcode
+     * @param {string} params.name
+     * @param {string} params.description
+     * @param {number} params.price
+     * @param {number} params.basePrice
+     * @param {number} params.stock
+     * @param {number} params.stockMin
+     * @param {boolean} params.weighted
+     * @param {Category} params.category
+     * @param {string} params.status
+     * @param {string | null} [params.imageName]
      */
   constructor({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status, imageName = null }) {
 
@@ -92,7 +93,7 @@ export default class Product {
 
       /**
        * Filename stored next to the database, or null
-       * @type {?string}
+       * @type {string | null}
        * @private
        */
     this._imageName = imageName || null;
@@ -145,18 +146,18 @@ export default class Product {
   }
 
   /**
-     *
-     * @param {number} quantity
-     */
+   * @param {{quantity: number}} change
+   * @returns {Product}
+   */
   addStock({ quantity }) {
     this._stock += quantity;
     return this;
   }
 
-    /**
-     *
-     * @param {number} quantity
-     */
+  /**
+   * @param {{quantity: number}} change
+   * @returns {Product}
+   */
   subtractStock({ quantity }) {
     this._stock -= quantity;
     return this;

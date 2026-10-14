@@ -7,7 +7,8 @@ import AppError from './AppError.js';
 export default class UnrecognisedDateError extends AppError {
 
   /**
-   * @param {*} value
+   * @param {object} [params]
+   * @param {*} [params.value]
    */
   constructor({value} = {}) {
     super({

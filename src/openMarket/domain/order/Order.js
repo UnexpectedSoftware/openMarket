@@ -1,16 +1,27 @@
-/**
- * @class Order
- */
 import moment from "moment";
 import {add, multiply} from "../../infrastructure/service/floatCalculatorService";
 import EmptyOrderLinesError from "./EmptyOrderLinesError";
 import InvalidOrderQuantityError from "./InvalidOrderQuantityError";
+
+/**
+ * One line stored on an order.
+ * @typedef {object} OrderLine
+ * @property {string} barcode
+ * @property {string} name
+ * @property {number} price
+ * @property {number} quantity
+ */
+
+/**
+ * @class Order
+ */
 export default class Order {
 
   /**
-   * @param {String} id
-   * @param {Array.<Line>} lines
-   * @param {date} date
+   * @param {object} [params]
+   * @param {string} [params.id]
+   * @param {OrderLine[]} [params.lines]
+   * @param {string} [params.date]
    */
   constructor({ id, lines, date=moment().format("DD/MM/YYYY HH:mm:ss") } = {}) {
   /**
@@ -19,7 +30,7 @@ export default class Order {
     this._id = id;
 
   /**
-   * @type {Date}
+   * @type {string}
    * */
     this._createdAt = date;
 
@@ -37,8 +48,7 @@ export default class Order {
     });
 
     /**
-     *
-     * @type {Array.<Line>}
+     * @type {OrderLine[]}
      * @private
      */
     this._lines = lines;

@@ -1,5 +1,7 @@
 import OrderCreated from '../../../domain/event/OrderCreated';
 import {record} from '../../../infrastructure/logging/ErrorLog';
+/** @import ProductSaleStatisticsRepository from '../../../domain/product/ProductSaleStatisticsRepository' */
+/** @import DomainEventBus from '../../../domain/service/DomainEventBus' */
 
 /**
  * Keeps product_sale_day in step with sales.
@@ -9,8 +11,7 @@ import {record} from '../../../infrastructure/logging/ErrorLog';
 export default class RecordProductSales {
 
   /**
-   * @param {ProductSaleStatisticsRepository} repository
-   * @param {DomainEventBus} domainEventBus
+   * @param {{repository: ProductSaleStatisticsRepository, domainEventBus: DomainEventBus}} deps
    */
   constructor({repository, domainEventBus}) {
     this._repository = repository;
@@ -18,6 +19,9 @@ export default class RecordProductSales {
     this._started = false;
   }
 
+  /**
+   * @returns {void}
+   */
   start() {
     if (this._started) {
       return;

@@ -1,6 +1,7 @@
 import moment from 'moment';
 import UnknownSalesWindowError from '../../../domain/error/UnknownSalesWindowError';
 import {raise} from '../../../infrastructure/logging/ErrorLog';
+/** @import { SalePoint } from '../../../domain/product/ProductSaleStatisticsRepository' */
 
 export const DEFAULT_SALES_WINDOW = 'last_7_days';
 
@@ -58,11 +59,12 @@ export function previousYearRange({startOn, endOn}) {
 
 /**
  * Insert a zero for every day or month in the range that has no row.
- * @param {string} startOn
- * @param {string} endOn
- * @param {string} bucket
- * @param {Array} rows
- * @returns {Array.<{soldOn: string, quantity: number, amount: number}>}
+ * @param {object} range
+ * @param {string} range.startOn
+ * @param {string} range.endOn
+ * @param {string} range.bucket
+ * @param {SalePoint[] | null} [range.rows]
+ * @returns {SalePoint[]}
  */
 export function fillSeries({startOn, endOn, bucket, rows}) {
   const byKey = new Map();

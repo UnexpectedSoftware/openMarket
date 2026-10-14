@@ -1,6 +1,6 @@
-import OrderRepository from "../../domain/order/OrderRepository";
 import * as Rx from "rxjs";
 import { toStoredBound } from "../service/sqliteDates";
+/** @import OrderRepository from "../../domain/order/OrderRepository" */
 
 const DISPLAY_CREATED_AT = "strftime('%d/%m/%Y %H:%M:%S', created_at)";
 const DISPLAY_DAY = "strftime('%d/%m/%Y', created_at)";
@@ -23,9 +23,9 @@ const INSERT_ORDER_SQL = 'INSERT INTO "order" (id, created_at, total) VALUES (?,
 
 const INSERT_LINE_SQL = 'INSERT INTO line (order_id, barcode, name, price, quantity) VALUES (?, ?, ?, ?, ?)';
 
-export default class SqliteOrderRepository extends OrderRepository {
+/** @implements {OrderRepository} */
+export default class SqliteOrderRepository {
   constructor({connection, objectMapper, queryService}) {
-    super();
     this._database = connection.database;
     this._objectMapper = objectMapper;
     this._queryService = queryService;
@@ -85,10 +85,6 @@ export default class SqliteOrderRepository extends OrderRepository {
       );
       return Rx.Observable.of(this._queryService.totalsByDay(rows));
     });
-  }
-
-  update({id, lines}) {
-    return super.update({id, lines});
   }
 
   save({order}) {

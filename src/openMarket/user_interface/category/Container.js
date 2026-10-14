@@ -1,4 +1,3 @@
-// @flow
 import React, {Component} from "react";
 import CategoryCard from './CategoryCard';
 import CategoryDraft from './CategoryDraft';

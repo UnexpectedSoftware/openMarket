@@ -1,48 +1,56 @@
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import Category from './Category' */
+/** @import CategorySummary from './CategorySummary' */
+
 /**
+ * Port for the category collection.
+ * Adapters declare `@implements {CategoryRepository}`; they do not extend this class.
  * @interface
- * */
+ */
 export default class CategoryRepository {
 
+  /**
+   * @returns {Observable<Category[]>}
+   */
   findAll() {
-    throw new Error('CategoryRepository#category must be implemented');
+    throw new Error('CategoryRepository#findAll must be implemented');
   }
 
   /**
    * Every category with product totals and its most sold product.
-   * @returns {Observable.<Array.<CategorySummary>>}
+   * @returns {Observable<CategorySummary[]>}
    */
   findAllWithStats() {
     throw new Error('CategoryRepository#findAllWithStats must be implemented');
   }
 
-    /**
-     *
-     * @param {string} id
-     */
+  /**
+   * Emits the category, or completes empty when the id is unknown.
+   * @param {{id: string}} query
+   * @returns {Observable<Category>}
+   */
   findById({ id }) {
-    throw new Error('CategoryRepository#category must be implemented');
-  }
-
-    /**
-     * @param {Category} category
-     * @param {?string} imagePath absolute path of a file to copy, when the user picked one
-     */
-  save({ category, imagePath }) {
-    throw new Error('CategoryRepository#category must be implemented');
-  }
-
-    /**
-     *
-     * @param {string} id
-     * @param {string} name
-     */
-  update({ id, name }) {
-    throw new Error('CategoryRepository#category must be implemented');
+    throw new Error('CategoryRepository#findById must be implemented');
   }
 
   /**
-   * @param {string} id
-   * @param {string} imagePath absolute path of a file to copy
+   * @param {{category: Category, imagePath?: string | null}} command
+   * @returns {Observable<null>}
+   */
+  save({ category, imagePath }) {
+    throw new Error('CategoryRepository#save must be implemented');
+  }
+
+  /**
+   * @param {{id: string, name: string}} command
+   * @returns {Observable<null>}
+   */
+  update({ id, name }) {
+    throw new Error('CategoryRepository#update must be implemented');
+  }
+
+  /**
+   * @param {{id: string, imagePath: string}} command absolute path of a file to copy
    * @returns {Observable<null>}
    */
   updateCategory({id, imagePath}) {
@@ -51,7 +59,7 @@ export default class CategoryRepository {
 
   /**
    * Drop the stored photo and leave the category on the default image.
-   * @param {string} id
+   * @param {{id: string}} command
    * @returns {Observable<null>}
    */
   clearImage({id}) {
@@ -60,8 +68,8 @@ export default class CategoryRepository {
 
   /**
    * Delete a category that has no products, and its stored image.
-   * @param {string} id
-   * @returns {Observable.<null>}
+   * @param {{id: string}} command
+   * @returns {Observable<null>}
    */
   remove({id}) {
     throw new Error('CategoryRepository#remove must be implemented');

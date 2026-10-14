@@ -1,12 +1,9 @@
-import Identity from '../../domain/Identity';
-/**
- * @class SequentialIdentity
- * @implements Identity
- */
-export default class SequentialIdentity extends Identity {
+/** @import Identity from '../../domain/Identity' */
+
+/** @implements {Identity} */
+export default class SequentialIdentity {
 
   constructor() {
-    super();
     this.id = 0;
   }
     /**

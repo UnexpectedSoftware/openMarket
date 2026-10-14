@@ -1,6 +1,10 @@
 import * as Rx from 'rxjs';
 import PrintFailedError from '../../../domain/error/PrintFailedError';
 import {record} from '../../../infrastructure/logging/ErrorLog';
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import Product from '../../../domain/product/Product' */
+/** @import ProductRepository from '../../../domain/product/ProductRepository' */
+/** @import { CatalogQuery } from '../../../domain/product/ProductRepository' */
 
 export const CATALOG_PRINT_PAGE_SIZE = 20;
 
@@ -18,11 +22,20 @@ function cursorFrom(product) {
  * Emits progress after the count and after each page the printer accepts, then `{printed}`.
  */
 export default class PrintProductCatalog {
+  /**
+   * @param {object} deps
+   * @param {ProductRepository} deps.productRepository
+   * @param {{printBatch: (batch: {printedAt: string, filters: object, products: Product[], header: boolean, cut: boolean}) => Observable<boolean>}} deps.catalogPrinter
+   */
   constructor({productRepository, catalogPrinter}) {
     this._productRepository = productRepository;
     this._catalogPrinter = catalogPrinter;
   }
 
+  /**
+   * @param {CatalogQuery & {sort?: string | null, categoryName?: string, printedAt?: string}} filters
+   * @returns {Observable<{progress: true, completed: number, total: number, percent: number} | {printed: number}>}
+   */
   execute({query, lowStock, status, categoryId, sort, categoryName, printedAt}) {
     return Rx.Observable.create(observer => {
       const filters = {

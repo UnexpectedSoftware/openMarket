@@ -2,6 +2,11 @@ import fs from 'fs';
 import * as Rx from 'rxjs';
 import {isProductBarcode} from '../../../domain/image/barcode';
 import {record} from '../../../infrastructure/logging/ErrorLog';
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import CategoryImageSource from '../../../domain/image/CategoryImageSource' */
+/** @import ProductImageSource from '../../../domain/image/ProductImageSource' */
+/** @import CategoryRepository from '../../../domain/category/CategoryRepository' */
+/** @import ProductRepository from '../../../domain/product/ProductRepository' */
 
 export const PRODUCT_BATCH_SIZE = 20;
 
@@ -20,6 +25,14 @@ function removeFile(filePath) {
  * Fills empty category and product photos from the two image sources.
  */
 export default class FetchCatalogImages {
+  /**
+   * @param {object} deps
+   * @param {CategoryRepository} deps.categoryRepository
+   * @param {ProductRepository} deps.productRepository
+   * @param {CategoryImageSource} deps.categoryImageSource
+   * @param {ProductImageSource} deps.productImageSource
+   * @param {number} [deps.pauseMs]
+   */
   constructor({categoryRepository, productRepository, categoryImageSource, productImageSource, pauseMs = 250}) {
     this._categoryRepository = categoryRepository;
     this._productRepository = productRepository;
@@ -31,7 +44,7 @@ export default class FetchCatalogImages {
   /**
    * Emits `{progress, completed, total, percent}` after the count and after each lookup,
    * then `{productsUpdated, categoriesUpdated}`.
-   * @returns {Observable<Object>}
+   * @returns {Observable<{progress: true, completed: number, total: number, percent: number} | {productsUpdated: number, categoriesUpdated: number}>}
    */
   execute() {
     return Rx.Observable.create(observer => {

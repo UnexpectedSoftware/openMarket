@@ -2,6 +2,9 @@ import {Observable} from 'rxjs/Observable';
 import {Subject} from 'rxjs/Subject';
 import {aggregateId, hydrate, typeName} from '../event/registry';
 import {DEAD, DONE, FAILED, PENDING, PROCESSING} from './domainEventStatus';
+/** @import DomainEventRepository from '../event/DomainEventRepository' */
+/** @import Identity from '../Identity' */
+/** @import Clock from '../Clock' */
 
 const DEFAULT_MAX_ATTEMPTS = 5;
 const ERROR_LIMIT = 500;
@@ -14,11 +17,12 @@ const ERROR_LIMIT = 500;
 export default class DomainEventBus {
 
   /**
-   * @param {DomainEventRepository} repository
-   * @param {Identity} identity
-   * @param {Clock} clock
-   * @param {number} [maxAttempts]
-   * @param {function(*): void} [recordError]
+   * @param {object} [deps]
+   * @param {DomainEventRepository} [deps.repository]
+   * @param {Identity} [deps.identity]
+   * @param {Clock} [deps.clock]
+   * @param {number} [deps.maxAttempts]
+   * @param {(error: any) => void} [deps.recordError]
    */
   constructor({
     repository,
@@ -150,9 +154,9 @@ export default class DomainEventBus {
    * The first registration time is kept and reused. Events stored before it are skipped.
    * @param {string} name
    * @param {Function} EventType
-   * @param {function(*): void} handler
+   * @param {(event: any) => void} handler
    * @param {{ordered?: boolean, maxAttempts?: number}} [options]
-   * @returns {function(): void}
+   * @returns {() => void}
    */
   subscribeDurable(name, EventType, handler, {ordered = true, maxAttempts = this._maxAttempts} = {}) {
     this._assertSubscriber(name, EventType, handler);
@@ -389,7 +393,7 @@ export default class DomainEventBus {
  * RxJS 5 unsubscribes a listener that throws. Catch it here so the listener
  * stays, the other listeners still run, and raise() does not throw.
  * @param {*} observerOrNext
- * @param {function(*): void} recordError
+ * @param {(error: any) => void} recordError
  * @returns {*}
  */
 function guardListener(observerOrNext, recordError) {

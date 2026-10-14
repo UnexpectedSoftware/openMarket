@@ -2,19 +2,22 @@ import * as Rx from 'rxjs';
 import 'rxjs/add/operator/toArray';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/catch';
-import Transaction from '../../domain/service/Transaction';
+/** @import Transaction from '../../domain/service/Transaction' */
+/** @import SqliteConnection from './SqliteConnection' */
+/** @import { Observable } from 'rxjs/Observable' */
 
 /**
  * Commits only after the work observable completes, then emits its values.
  * The bus is not involved. Callers raise events on the observable that comes out.
+ * @implements {Transaction}
  */
-export default class SqliteTransaction extends Transaction {
+export default class SqliteTransaction {
 
   /**
-   * @param {SqliteConnection} connection
+   * @param {object} deps
+   * @param {SqliteConnection} deps.connection
    */
   constructor({connection}) {
-    super();
     this._database = connection.database;
   }
 
@@ -26,7 +29,7 @@ export default class SqliteTransaction extends Transaction {
   }
 
   /**
-   * @param {function(): *} work
+   * @param {() => *} work
    * @returns {*}
    */
   execute(work) {
@@ -49,8 +52,8 @@ export default class SqliteTransaction extends Transaction {
   }
 
   /**
-   * @param {function(): Observable} work
-   * @returns {Observable}
+   * @param {() => Observable<any>} work
+   * @returns {Observable<any>}
    */
   run(work) {
     return Rx.Observable.defer(() => {

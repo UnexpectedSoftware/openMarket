@@ -1,4 +1,40 @@
 /**
+ * One bucket of units and money sold.
+ * @typedef {object} SalePoint
+ * @property {string} soldOn
+ * @property {number} quantity
+ * @property {number} amount
+ */
+
+/**
+ * One product on the most-sold list.
+ * @typedef {object} MostSoldProduct
+ * @property {string} barcode
+ * @property {string} name
+ * @property {string | null} imageName
+ * @property {number} quantity
+ * @property {number} amount
+ */
+
+/**
+ * Units sold for one barcode in a window.
+ * @typedef {object} SoldQuantity
+ * @property {string} barcode
+ * @property {number} quantity
+ */
+
+/**
+ * One order line applied to the daily counters.
+ * @typedef {object} SaleLine
+ * @property {string} barcode
+ * @property {string} name
+ * @property {number} price
+ * @property {number} quantity
+ */
+
+/**
+ * Daily sale counters. These reads and writes are synchronous.
+ * Adapters declare `@implements {ProductSaleStatisticsRepository}`; they do not extend this class.
  * @interface
  */
 export default class ProductSaleStatisticsRepository {
@@ -20,40 +56,31 @@ export default class ProductSaleStatisticsRepository {
   /**
    * Add one order's lines into the daily counters.
    * The same orderId is applied once.
-   * @param {string} [orderId]
-   * @param {string} createdAt
-   * @param {Array} lines
+   * @param {{orderId?: string | null, createdAt: string, lines: SaleLine[]}} order
    */
   applyOrder({orderId, createdAt, lines}) {
     throw new Error('ProductSaleStatisticsRepository#applyOrder must be implemented');
   }
 
   /**
-   * @param {string} barcode
-   * @param {string} startOn YYYY-MM-DD
-   * @param {string} endOn YYYY-MM-DD
-   * @param {string} bucket day or month
-   * @returns {Array.<{soldOn: string, quantity: number, amount: number}>}
+   * @param {{barcode: string, startOn: string, endOn: string, bucket: string}} query
+   * @returns {SalePoint[]}
    */
   series({barcode, startOn, endOn, bucket}) {
     throw new Error('ProductSaleStatisticsRepository#series must be implemented');
   }
 
   /**
-   * @param {string} startOn
-   * @param {string} endOn
-   * @param {number} limit
-   * @returns {Array.<{barcode: string, name: string, imageName: ?string, quantity: number, amount: number}>}
+   * @param {{startOn: string, endOn: string, limit: number}} query
+   * @returns {MostSoldProduct[]}
    */
   mostSold({startOn, endOn, limit}) {
     throw new Error('ProductSaleStatisticsRepository#mostSold must be implemented');
   }
 
   /**
-   * @param {Array.<string>} barcodes
-   * @param {string} startOn
-   * @param {string} endOn
-   * @returns {Array.<{barcode: string, quantity: number}>}
+   * @param {{barcodes: string[], startOn: string, endOn: string}} query
+   * @returns {SoldQuantity[]}
    */
   quantities({barcodes, startOn, endOn}) {
     throw new Error('ProductSaleStatisticsRepository#quantities must be implemented');

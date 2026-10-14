@@ -2,6 +2,8 @@ import "rxjs/add/operator/defaultIfEmpty";
 import "rxjs/add/operator/mergeMap";
 import ProductNotFoundError from "../../../domain/product/ProductNotFoundError";
 import observableError from "../../../infrastructure/logging/observableError";
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import ProductRepository from '../../../domain/product/ProductRepository' */
 
 /**
  * @class AddStock
@@ -9,12 +11,10 @@ import observableError from "../../../infrastructure/logging/observableError";
 export default class AddStock {
 
     /**
-     * @constructs AddStock
-     * @param {ProductRepository} repository
+     * @param {{repository: ProductRepository}} deps
      */
   constructor({ repository }) {
       /**
-       *
        * @type {ProductRepository}
        * @private
        */
@@ -23,9 +23,8 @@ export default class AddStock {
 
   /**
    * Add stock quantity for a product by barcode
-   * @param {string} barcode
-   * @param {number} quantity
-   * @returns {Observable.<null>}
+   * @param {{barcode: string, quantity: number}} command
+   * @returns {Observable<null>}
    */
   addStock({ barcode, quantity }) {
 
@@ -35,8 +34,7 @@ export default class AddStock {
         if (!product) {
           return observableError(new ProductNotFoundError({barcode, operation: 'addStock'}));
         }
-        // TODO Pattern state for product and use setter
-        product._stock += quantity;
+        product.addStock({ quantity });
         return this._productRepository.save({ product });
       });
   }

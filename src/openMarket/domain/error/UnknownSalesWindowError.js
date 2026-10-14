@@ -7,7 +7,8 @@ import AppError from './AppError.js';
 export default class UnknownSalesWindowError extends AppError {
 
   /**
-   * @param {string} window
+   * @param {object} [params]
+   * @param {string} [params.window]
    */
   constructor({window} = {}) {
     super({

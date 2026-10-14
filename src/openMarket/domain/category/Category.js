@@ -5,30 +5,29 @@
 export default class Category {
 
     /**
-     * Category Constructor
-     * @constructs Category
-     * @param {string} id
-     * @param {string} name
-     * @param {?string} imageName
+     * @param {object} params
+     * @param {string} params.id
+     * @param {string} params.name
+     * @param {string | null} [params.imageName]
      */
   constructor({ id, name, imageName = null }) {
         /**
          * @type {string}
-         * @member Category#id
-         * */
+         * @private
+         */
     this._id = id;
 
         /**
          * @type {string}
-         * @member Category#name
-         * */
+         * @private
+         */
     this._name = name;
 
         /**
          * Filename stored next to the database, or null
-         * @type {?string}
-         * @member Category#imageName
-         * */
+         * @type {string | null}
+         * @private
+         */
     this._imageName = imageName || null;
 
   }

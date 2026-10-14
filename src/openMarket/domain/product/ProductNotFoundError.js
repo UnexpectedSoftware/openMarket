@@ -16,11 +16,12 @@ const PHRASE = {
 export default class ProductNotFoundError extends AppError {
 
   /**
-   * @param {string} [barcode]
-   * @param {string} [id]
-   * @param {string} [name]
-   * @param {string} [operation]
-   * @param {Error} [cause]
+   * @param {object} [params]
+   * @param {string} [params.barcode]
+   * @param {string} [params.id]
+   * @param {string} [params.name]
+   * @param {string} [params.operation]
+   * @param {Error} [params.cause]
    */
   constructor({barcode, id, name, operation, cause} = {}) {
     const who = [barcode, name].filter(part => part != null && part !== '').join(' ') || 'unknown';

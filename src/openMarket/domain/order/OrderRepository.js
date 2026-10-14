@@ -1,55 +1,75 @@
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import Order from './Order' */
+
 /**
+ * One row of the order list.
+ * @typedef {object} OrderListItem
+ * @property {string} id
+ * @property {string} createdAt
+ * @property {number} total
+ */
+
+/**
+ * Takings for one day.
+ * @typedef {object} DailyTotal
+ * @property {number} total
+ * @property {string} createdAt
+ */
+
+/**
+ * Port for the order collection. Orders are not updated after they are saved.
+ * Adapters declare `@implements {OrderRepository}`; they do not extend this class.
  * @interface
  */
 export default class OrderRepository {
 
-
   /**
-   * @param {string} id
+   * Emits the order, or completes empty when the id is unknown.
+   * @param {{id: string}} query
+   * @returns {Observable<Order>}
    */
   findById({ id }) {
     throw new Error('OrderRepository#findById must be implemented');
   }
 
   /**
-   *
-   * @param limit
-   * @param offset
-   * @param startDate
-   * @param endDate
+   * @param {{limit: number, offset: number, startDate: string, endDate: string}} query
+   * @returns {Observable<OrderListItem[]>}
    */
   findAllByDates({ limit, offset, startDate, endDate }) {
     throw new Error('OrderRepository#findAllByDates must be implemented');
   }
 
-  countByDates({ startDate, endDate }){
+  /**
+   * @param {{startDate: string, endDate: string}} query
+   * @returns {Observable<number>}
+   */
+  countByDates({ startDate, endDate }) {
     throw new Error('OrderRepository#countByDates must be implemented');
   }
 
-  calculateTotalAmount({startDate, endDate}){
+  /**
+   * @param {{startDate: string, endDate: string}} query
+   * @returns {Observable<number>}
+   */
+  calculateTotalAmount({startDate, endDate}) {
     throw new Error('OrderRepository#calculateTotalAmount must be implemented');
   }
-  calculateTotalAmountByDays({startDate, endDate}){
+
+  /**
+   * @param {{startDate: string, endDate: string}} query
+   * @returns {Observable<DailyTotal[]>}
+   */
+  calculateTotalAmountByDays({startDate, endDate}) {
     throw new Error('OrderRepository#calculateTotalAmountByDays must be implemented');
   }
 
   /**
-   *
-   * @param {string} id
-   * @param {} lines
-   */
-  update({ id, lines }) {
-    throw new Error('OrderRepository#update must be implemented');
-  }
-
-  /**
-   *
-   * @param {Order} order
-   * @returns {Observable.<Order>}
+   * @param {{order: Order}} command
+   * @returns {Observable<Order>}
    */
   save({ order }) {
     throw new Error('OrderRepository#save must be implemented');
   }
-
 
 }

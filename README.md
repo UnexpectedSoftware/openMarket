@@ -70,4 +70,4 @@ These stayed on the APIs the current screens and tests already use:
 - React 15, React Router 3, Redux 3, redux-form 6, redux-observable 0.14, RxJS 5
 - react-table 6, react-datepicker 0.48, chart.js 2
 
-Still to do later: React 18 and React Router 6, RxJS 7, a preload script instead of `nodeIntegration`, Flow, and an ESLint cleanup.
+Still to do later: React 18 and React Router 6, RxJS 7, a preload script instead of `nodeIntegration`, and an ESLint cleanup.

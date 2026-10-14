@@ -1,5 +1,5 @@
-import CategoryRepository from "../../domain/category/CategoryRepository";
 import * as Rx from "rxjs";
+/** @import CategoryRepository from "../../domain/category/CategoryRepository" */
 import CategoryNotFoundError from "../../domain/category/CategoryNotFoundError";
 import CategoryNotEmptyError from "../../domain/category/CategoryNotEmptyError";
 import {raise, rethrow} from "../logging/ErrorLog";
@@ -98,9 +98,9 @@ const COMMIT_SQL = 'COMMIT';
 
 const ROLLBACK_SQL = 'ROLLBACK';
 
-export default class SqliteCategoryRepository extends CategoryRepository {
+/** @implements {CategoryRepository} */
+export default class SqliteCategoryRepository {
   constructor({connection, categoryFactory, images, queryService}) {
-    super();
     this._database = connection.database;
     this._categoryFactory = categoryFactory;
     this._images = images;

@@ -1,4 +1,5 @@
 import ProductStatus from '../../domain/product/ProductStatus';
+/** @import { Observable } from 'rxjs/Observable' */
 
 function stockText(stock) {
   if (stock == null || Number.isNaN(Number(stock))) {

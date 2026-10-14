@@ -79,6 +79,9 @@ function ensureColumn(database, table, column, definition) {
 }
 
 export default class SqliteConnection {
+  /**
+   * @param {{filename?: string}} [options]
+   */
   constructor({filename} = {}) {
     const databasePath = filename || sqliteDatabasePath();
     if (databasePath !== ':memory:') {

@@ -1,3 +1,21 @@
+/** @import { Observable } from 'rxjs/Observable' */
+
+/**
+ * Receipt line. The ticket prints subtotal, which the order screen adds before printing.
+ * @typedef {object} PrintableLine
+ * @property {string} name
+ * @property {number} quantity
+ * @property {number} price
+ * @property {number} subtotal
+ */
+
+/**
+ * @typedef {object} PrintableOrder
+ * @property {string} createdAt
+ * @property {PrintableLine[]} lines
+ * @property {number} total
+ */
+
 const MAX_CHARACTERS = 19;
 
 export default class OrderPrinterService {
@@ -7,8 +25,7 @@ export default class OrderPrinterService {
   }
 
   /**
-   *
-   * @param {Order} order
+   * @param {{order: PrintableOrder}} command
    * @returns {Observable<boolean>}
    */
   print({order}){

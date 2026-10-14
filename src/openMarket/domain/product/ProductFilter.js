@@ -9,29 +9,26 @@ const defaultStatus = ProductStatus.ENABLED;
  */
 export default class ProductFilter {
     /**
-     * @constructs ProductFilter
-     * @param {number} limit
-     * @param {number} offset
-     * @param {Object} sort
-     * @param {string} status
+     * @param {object} [params]
+     * @param {number} [params.limit]
+     * @param {number} [params.offset]
+     * @param {Record<string, string>} [params.sort]
+     * @param {string} [params.status]
      */
   constructor({ limit = defaultLimit, offset = defaultOffset, sort = defaultSorting, status = defaultStatus } = {}) {
         /**
          * @private
          * @type {number}
-         * @member ProductFilter#_limit
          */
     this._limit = limit;
         /**
          * @private
          * @type {number}
-         * @member ProductFilter#_offset
          */
     this._offset = offset;
         /**
          * @private
-         * @type {Object}
-         * @member ProductFilter#_sorting
+         * @type {Record<string, string>}
          */
     this._sorting = sort;
       /**
@@ -44,24 +41,21 @@ export default class ProductFilter {
   }
 
     /**
-     *
-     * @returns {ProductFilter#_limit}
+     * @returns {number}
      */
   get limit() {
     return this._limit;
   }
 
     /**
-     *
-     * @returns {ProductFilter#_offset}
+     * @returns {number}
      */
   get offset() {
     return this._offset;
   }
 
     /**
-     *
-     * @returns {ProductFilter#_sorting}
+     * @returns {Record<string, string>}
      */
   get sorting() {
     return this._sorting;

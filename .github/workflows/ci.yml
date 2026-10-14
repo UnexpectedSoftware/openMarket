@@ -18,6 +18,8 @@ jobs:
       - run: npm ci
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      - name: Typecheck (JSDoc via tsc --noEmit)
+        run: npm run typecheck
       - run: npm run test-all
       - run: npm run build
       - name: Install Electron libraries

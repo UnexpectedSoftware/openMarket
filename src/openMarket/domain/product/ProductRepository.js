@@ -1,52 +1,64 @@
+/** @import { Observable } from 'rxjs/Observable' */
+/** @import Product from './Product' */
+/** @import ProductFilter from './ProductFilter' */
+
 /**
+ * @typedef {object} CatalogQuery
+ * @property {string} [query]
+ * @property {boolean} [lowStock]
+ * @property {string | null} [status] ENABLED, DISABLED, or null for both
+ * @property {string | null} [categoryId]
+ */
+
+/**
+ * @typedef {object} CatalogCursor
+ * @property {string} name
+ * @property {number | null} stock
+ * @property {string} barcode
+ */
+
+/**
+ * Port for the product collection.
+ * Adapters declare `@implements {ProductRepository}`; they do not extend this class.
  * @interface
- * */
+ */
 export default class ProductRepository {
   /**
-   *
-   * @param {ProductFilter} productFilter
-   * @returns {Observable<Product>}
+   * @param {{productFilter: ProductFilter}} query
+   * @returns {Observable<Product[]>}
    */
   findAll({ productFilter }) {
-    throw new Error('ProductRepository#product must be implemented');
+    throw new Error('ProductRepository#findAll must be implemented');
   }
 
   /**
-   *
-   * @param {string} name
-   * @param {number} limit
-   * @param {number} offset
-   * @returns {Observable<Product>}
+   * @param {{name: string, limit: number, offset: number}} query
+   * @returns {Observable<Product[]>}
    */
   findAllByName({ name, limit, offset }) {
-    throw new Error('ProductRepository#product must be implemented');
+    throw new Error('ProductRepository#findAllByName must be implemented');
   }
 
-  findAllWithLowStock({  limit, offset }){
-    throw new Error('ProductRepository#product must be implemented');
+  /**
+   * @param {{limit: number, offset: number}} query
+   * @returns {Observable<Product[]>}
+   */
+  findAllWithLowStock({ limit, offset }) {
+    throw new Error('ProductRepository#findAllWithLowStock must be implemented');
   }
 
   /**
    * One catalog page. sort is name_asc (default), name_desc, stock_asc, or stock_desc.
    * The cursor is the last product's name, stock, and barcode.
-   * @param {string} query
-   * @param {boolean} lowStock
-   * @param {?string} status ENABLED, DISABLED, or null for both
-   * @param {?string} categoryId
-   * @param {?string} sort
-   * @param {?{name: string, stock: ?number, barcode: string}} after
-   * @param {number} limit
-   * @returns {Observable<{products: Array, hasMore: boolean}>}
+   * @param {CatalogQuery & {sort?: string | null, after?: CatalogCursor | null, limit: number}} query
+   * @returns {Observable<{products: Product[], hasMore: boolean}>}
    */
   findCatalog({query, lowStock, status, categoryId, sort, after, limit}) {
     throw new Error('ProductRepository#findCatalog must be implemented');
   }
 
   /**
-   * @param {string} query
-   * @param {boolean} lowStock
-   * @param {?string} status
-   * @param {?string} categoryId
+   * @param {CatalogQuery} query
    * @returns {Observable<number>}
    */
   countCatalog({query, lowStock, status, categoryId}) {
@@ -54,41 +66,49 @@ export default class ProductRepository {
   }
 
   /**
-   *
-   * @param {Product} product
-   * @param {?string} imagePath absolute path of a file to copy, when the user picked one
+   * @param {{product: Product, imagePath?: string | null}} command
    * @returns {Observable<null>}
    */
   save({ product, imagePath }) {
-    throw new Error('ProductRepository#product must be implemented');
+    throw new Error('ProductRepository#save must be implemented');
   }
 
   /**
-   *
-   * @param {string} barcode
+   * Emits the product, or completes empty when the barcode is unknown.
+   * @param {{barcode: string}} query
    * @returns {Observable<Product>}
    */
   findByBarcode({ barcode }) {
-    throw new Error('ProductRepository#product must be implemented');
+    throw new Error('ProductRepository#findByBarcode must be implemented');
   }
 
-  findAllStatuses(){
-    throw new Error('ProductRepository#product must be implemented');
+  /**
+   * @returns {Observable<Array<{key: string, value: string}>>}
+   */
+  findAllStatuses() {
+    throw new Error('ProductRepository#findAllStatuses must be implemented');
   }
 
   /**
    * @returns {Observable<number>}
    */
-  countProducts(){
-    throw new Error('ProductRepository#product must be implemented');
+  countProducts() {
+    throw new Error('ProductRepository#countProducts must be implemented');
   }
 
-  countProductsByName({name}){
-    throw new Error('ProductRepository#product must be implemented');
+  /**
+   * @param {{name: string}} query
+   * @returns {Observable<number>}
+   */
+  countProductsByName({name}) {
+    throw new Error('ProductRepository#countProductsByName must be implemented');
   }
 
-  countProductsWithLowStock(){
-    throw new Error('ProductRepository#product must be implemented');
+  /**
+   * @returns {Observable<number>}
+   */
+  countProductsWithLowStock() {
+    throw new Error('ProductRepository#countProductsWithLowStock must be implemented');
   }
 
   /**
@@ -101,17 +121,15 @@ export default class ProductRepository {
 
   /**
    * One page of products, ordered by barcode. Includes disabled products.
-   * @param {number} limit
-   * @param {number} offset
-   * @returns {Observable<Array<Product>>}
+   * @param {{limit: number, offset: number}} query
+   * @returns {Observable<Product[]>}
    */
   findPage({limit, offset}) {
     throw new Error('ProductRepository#findPage must be implemented');
   }
 
   /**
-   * @param {string} barcode
-   * @param {string} imagePath absolute path of a file to copy
+   * @param {{barcode: string, imagePath: string}} command
    * @returns {Observable<null>}
    */
   updateProduct({barcode, imagePath}) {

@@ -3,6 +3,8 @@ import 'rxjs/add/observable/defer';
 import 'rxjs/add/observable/of';
 import {add} from '../../../infrastructure/service/floatCalculatorService';
 import {fillSeries, previousYearRange, resolveSalesWindow} from './salesWindows';
+/** @import ProductSaleStatisticsRepository from '../../../domain/product/ProductSaleStatisticsRepository' */
+/** @import { MostSoldProduct, SalePoint } from '../../../domain/product/ProductSaleStatisticsRepository' */
 
 /**
  * Sales of one product, and the products that sold the most, over a named window.
@@ -10,16 +12,15 @@ import {fillSeries, previousYearRange, resolveSalesWindow} from './salesWindows'
 export default class ProductSaleStatistics {
 
   /**
-   * @param {ProductSaleStatisticsRepository} repository
+   * @param {{repository: ProductSaleStatisticsRepository}} deps
    */
   constructor({repository}) {
     this._repository = repository;
   }
 
   /**
-   * @param {string} barcode
-   * @param {string} window
-   * @returns {Observable.<{window: string, quantity: number, amount: number, series: Array}>}
+   * @param {{barcode: string, window: string}} query
+   * @returns {Observable<{window: string, quantity: number, amount: number, series: SalePoint[]}>}
    */
   salesOfProduct({barcode, window}) {
     return Observable.defer(() => {
@@ -50,9 +51,10 @@ export default class ProductSaleStatistics {
   }
 
   /**
-   * @param {string} window
-   * @param {number} [limit]
-   * @returns {Observable.<{window: string, products: Array}>}
+   * @param {object} query
+   * @param {string} query.window
+   * @param {number} [query.limit]
+   * @returns {Observable<{window: string, products: Array<MostSoldProduct & {previousQuantity: number}>}>}
    */
   mostSold({window, limit = 10}) {
     return Observable.defer(() => {
@@ -79,6 +81,9 @@ export default class ProductSaleStatistics {
     });
   }
 
+  /**
+   * @returns {void}
+   */
   rebuildFromOrders() {
     this._repository.rebuildFromOrders();
   }

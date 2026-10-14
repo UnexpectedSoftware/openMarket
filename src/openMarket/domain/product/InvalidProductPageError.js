@@ -8,11 +8,12 @@ import AppError, {defined} from '../error/AppError.js';
 export default class InvalidProductPageError extends AppError {
 
   /**
-   * @param {number} [limit]
-   * @param {number} [offset]
-   * @param {string} [operation]
-   * @param {string} [barcode]
-   * @param {string} [name]
+   * @param {object} [params]
+   * @param {number} [params.limit]
+   * @param {number} [params.offset]
+   * @param {string} [params.operation]
+   * @param {string} [params.barcode]
+   * @param {string} [params.name]
    */
   constructor({limit, offset, operation, barcode, name} = {}) {
     super({

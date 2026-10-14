@@ -1,4 +1,3 @@
-// @flow
 
 export const SHOW_PRINTER_DIALOG = 'SHOW_PRINTER_DIALOG';
 export const HIDE_PRINTER_DIALOG = 'HIDE_PRINTER_DIALOG';

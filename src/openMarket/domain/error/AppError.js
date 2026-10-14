@@ -2,8 +2,8 @@ import ErrorCode from './ErrorCode.js';
 
 /**
  * Copies the fields that were actually supplied. Logs stay free of nulls.
- * @param {Object} [fields]
- * @returns {Object}
+ * @param {Record<string, any>} [fields]
+ * @returns {Record<string, any>}
  */
 export function defined(fields) {
   const context = {};
@@ -26,12 +26,13 @@ export function defined(fields) {
 export default class AppError extends Error {
 
   /**
-   * @param {string} code
-   * @param {string} message
-   * @param {string} [userMessage]
-   * @param {Object} [context]
-   * @param {Error} [cause]
-   * @param {'warn'|'error'} [level]
+   * @param {object} [params]
+   * @param {string} [params.code]
+   * @param {string} [params.message]
+   * @param {string} [params.userMessage]
+   * @param {Record<string, any>} [params.context]
+   * @param {Error} [params.cause]
+   * @param {'warn' | 'error'} [params.level]
    */
   constructor({code, message, userMessage, context, cause, level} = {}) {
     super(message, cause ? {cause} : undefined);

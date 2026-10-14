@@ -8,10 +8,11 @@ export default class ProductWithLowStock {
   }
 
   /**
-   * @param {string} barcode
-   * @param {string} name
-   * @param {number} stock
-   * @param {number} stockMin
+   * @param {object} params
+   * @param {string} params.barcode
+   * @param {string} params.name
+   * @param {number} params.stock
+   * @param {number} params.stockMin
    */
   constructor({barcode, name, stock, stockMin}) {
     this.barcode = barcode;

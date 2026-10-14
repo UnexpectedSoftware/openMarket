@@ -7,7 +7,8 @@ import AppError, {defined} from '../error/AppError.js';
 export default class CategoryNotEmptyError extends AppError {
 
   /**
-   * @param {string} id
+   * @param {object} [params]
+   * @param {string} [params.id]
    */
   constructor({id} = {}) {
     super({

@@ -14,10 +14,11 @@ const PHRASE = {
 export default class CategoryNotFoundError extends AppError {
 
   /**
-   * @param {string} [id]
-   * @param {string} [name]
-   * @param {string} [operation]
-   * @param {Error} [cause]
+   * @param {object} [params]
+   * @param {string} [params.id]
+   * @param {string} [params.name]
+   * @param {string} [params.operation]
+   * @param {Error} [params.cause]
    */
   constructor({id, name, operation, cause} = {}) {
     const who = [id, name].filter(part => part != null && part !== '').join(' ') || 'unknown';

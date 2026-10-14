@@ -1,8 +1,32 @@
 import printer from 'node-thermal-printer';
 import * as Rx from 'rxjs';
 import PrinterBusyError from '../../domain/error/PrinterBusyError';
+/** @import { Observable } from 'rxjs/Observable' */
+
+/**
+ * Subset of node-thermal-printer used by the ticket and catalog jobs.
+ * @typedef {object} ThermalPrinter
+ * @property {() => void} clear
+ * @property {(callback: (err: unknown) => void) => void} execute
+ * @property {() => void} alignCenter
+ * @property {() => void} alignLeft
+ * @property {() => void} alignRight
+ * @property {(text: string) => void} println
+ * @property {(text: string | number) => void} print
+ * @property {() => void} drawLine
+ * @property {() => void} cut
+ * @property {() => void} newLine
+ * @property {() => void} setTextDoubleHeight
+ * @property {() => void} setTextDoubleWidth
+ * @property {() => void} setTextNormal
+ * @property {(enabled: boolean) => void} bold
+ * @property {(columns: {text?: string | number, align?: string, width?: number, bold?: boolean}[]) => void} tableCustom
+ */
 
 export default class PrinterConnection {
+  /**
+   * @param {{device?: ThermalPrinter}} [options]
+   */
   constructor({device} = {}) {
     if (device) {
       this._printer = device;
@@ -24,7 +48,7 @@ export default class PrinterConnection {
 
   /**
    * Clears the shared buffer, lets fill append one job, and completes when the device accepts it.
-   * @param {function} fill
+   * @param {(printer: ThermalPrinter) => void} fill
    * @returns {Observable<boolean>}
    */
   print(fill) {

@@ -2,7 +2,10 @@
  * @interface
  * */
 export default class Identity {
+  /**
+   * @returns {string}
+   */
   generate() {
-    throw new Error('IdentityInterface#generate method must be implemented');
+    throw new Error('Identity#generate must be implemented');
   }
 }

@@ -1,0 +1,50 @@
+import {describeContract} from './assertImplements';
+
+import Identity from '../../../openMarket/domain/Identity';
+import Clock from '../../../openMarket/domain/Clock';
+import Transaction from '../../../openMarket/domain/service/Transaction';
+import OrderRepository from '../../../openMarket/domain/order/OrderRepository';
+import OrderFactory from '../../../openMarket/domain/order/OrderFactory';
+import ProductRepository from '../../../openMarket/domain/product/ProductRepository';
+import ProductFactory from '../../../openMarket/domain/product/ProductFactory';
+import ProductFilterFactory from '../../../openMarket/domain/product/ProductFilterFactory';
+import ProductSaleStatisticsRepository from '../../../openMarket/domain/product/ProductSaleStatisticsRepository';
+import CategoryRepository from '../../../openMarket/domain/category/CategoryRepository';
+import CategoryFactory from '../../../openMarket/domain/category/CategoryFactory';
+import ProductImageSource from '../../../openMarket/domain/image/ProductImageSource';
+import CategoryImageSource from '../../../openMarket/domain/image/CategoryImageSource';
+import DomainEventRepository from '../../../openMarket/domain/event/DomainEventRepository';
+
+import RandomUUIDIdentity from '../../../openMarket/domain/RandomUUIDIdentity';
+import SequentialIdentity from '../../../openMarket/infrastructure/service/SequentialIdentity';
+import SystemClock from '../../../openMarket/infrastructure/service/SystemClock';
+import SqliteTransaction from '../../../openMarket/infrastructure/service/SqliteTransaction';
+import SqliteOrderRepository from '../../../openMarket/infrastructure/order/SqliteOrderRepository';
+import OrderFactoryImpl from '../../../openMarket/infrastructure/order/OrderFactoryImpl';
+import SqliteProductRepository from '../../../openMarket/infrastructure/product/SqliteProductRepository';
+import ProductFactoryImpl from '../../../openMarket/infrastructure/product/ProductFactoryImpl';
+import ProductFilterFactoryImpl from '../../../openMarket/infrastructure/product/ProductFilterFactoryImpl';
+import SqliteProductSaleStatisticsRepository from '../../../openMarket/infrastructure/product/SqliteProductSaleStatisticsRepository';
+import SqliteCategoryRepository from '../../../openMarket/infrastructure/category/SqliteCategoryRepository';
+import CategoryFactoryImpl from '../../../openMarket/infrastructure/category/CategoryFactoryImpl';
+import OpenFoodFactsProductImageSource from '../../../openMarket/infrastructure/image/OpenFoodFactsProductImageSource';
+import WikimediaCategoryImageSource from '../../../openMarket/infrastructure/image/WikimediaCategoryImageSource';
+import SqliteDomainEventRepository from '../../../openMarket/infrastructure/event/SqliteDomainEventRepository';
+
+describe('ports and adapters', () => {
+  describeContract(Identity, RandomUUIDIdentity);
+  describeContract(Identity, SequentialIdentity);
+  describeContract(Clock, SystemClock);
+  describeContract(Transaction, SqliteTransaction);
+  describeContract(OrderRepository, SqliteOrderRepository);
+  describeContract(OrderFactory, OrderFactoryImpl);
+  describeContract(ProductRepository, SqliteProductRepository);
+  describeContract(ProductFactory, ProductFactoryImpl);
+  describeContract(ProductFilterFactory, ProductFilterFactoryImpl);
+  describeContract(ProductSaleStatisticsRepository, SqliteProductSaleStatisticsRepository);
+  describeContract(CategoryRepository, SqliteCategoryRepository);
+  describeContract(CategoryFactory, CategoryFactoryImpl);
+  describeContract(ProductImageSource, OpenFoodFactsProductImageSource);
+  describeContract(CategoryImageSource, WikimediaCategoryImageSource);
+  describeContract(DomainEventRepository, SqliteDomainEventRepository);
+});

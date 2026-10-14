@@ -1,4 +1,6 @@
 import {record} from '../logging/ErrorLog';
+/** @import DomainEventBus from '../../domain/service/DomainEventBus' */
+/** @import Transaction from '../../domain/service/Transaction' */
 
 const DEFAULT_INTERVAL_MS = 1000;
 
@@ -11,9 +13,10 @@ const DEFAULT_INTERVAL_MS = 1000;
 export default class DomainEventDispatcher {
 
   /**
-   * @param {DomainEventBus} domainEventBus
-   * @param {Transaction} transaction
-   * @param {number} [intervalMs]
+   * @param {object} deps
+   * @param {DomainEventBus} deps.domainEventBus
+   * @param {Transaction} deps.transaction
+   * @param {number} [deps.intervalMs]
    */
   constructor({domainEventBus, transaction, intervalMs = DEFAULT_INTERVAL_MS}) {
     if (!domainEventBus || !transaction) {
