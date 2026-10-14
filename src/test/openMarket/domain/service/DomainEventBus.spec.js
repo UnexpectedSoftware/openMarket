@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import DomainEventBus from '../../../../openMarket/domain/service/DomainEventBus';
 import ErrorCode from '../../../../openMarket/domain/error/ErrorCode';
+import SyncSubscriberOutsideTransactionError from '../../../../openMarket/domain/event/SyncSubscriberOutsideTransactionError';
 import OrderCreated from '../../../../openMarket/domain/event/OrderCreated';
 import ProductWithLowStock from '../../../../openMarket/domain/event/ProductWithLowStock';
 import {record, resetForTest, start} from '../../../../openMarket/infrastructure/logging/ErrorLog';
@@ -37,9 +38,10 @@ function openBus({
   clock = fixedClock(),
   identity = sequenceIdentity(),
   repository = memoryDomainEventRepository(),
-  recordError
+  recordError,
+  inTransaction
 } = {}) {
-  const bus = new DomainEventBus({repository, identity, clock, recordError});
+  const bus = new DomainEventBus({repository, identity, clock, recordError, inTransaction});
   return {bus, repository, clock};
 }
 
@@ -84,6 +86,65 @@ describe('DomainEventBus', () => {
   it('refuses to store an event with no durable subscriber', () => {
     expect(() => bus.save(lowStock())).to.throw('Domain event ProductWithLowStock is not durable');
     expect(repository.events).to.deep.equal([]);
+  });
+
+  it('runs a sync handler inside save before the row is stored', () => {
+    const opened = openBus({inTransaction: () => true});
+    let ran = false;
+    opened.bus.subscribeSync(OrderCreated, () => {
+      ran = true;
+      expect(opened.repository.events).to.have.lengthOf(0);
+    });
+
+    opened.bus.save(new OrderCreated({id: 'sale-1', createdAt: '02/07/2017 10:00:00', lines: []}));
+
+    expect(ran).to.equal(true);
+    expect(opened.repository.events).to.have.lengthOf(1);
+  });
+
+  it('rolls nothing in when a sync handler throws', () => {
+    const opened = openBus({inTransaction: () => true});
+    const seen = [];
+    opened.bus.ofType(OrderCreated).subscribe(event => seen.push(event));
+    opened.bus.subscribeSync(OrderCreated, () => {
+      throw new Error('sync failed');
+    });
+
+    expect(() => opened.bus.save(new OrderCreated({
+      id: 'sale-1',
+      createdAt: '02/07/2017 10:00:00',
+      lines: []
+    }))).to.throw('sync failed');
+    expect(opened.repository.events).to.deep.equal([]);
+    opened.bus.raise();
+    expect(seen).to.deep.equal([]);
+  });
+
+  it('refuses a sync handler when no transaction is open', () => {
+    const opened = openBus({inTransaction: () => false});
+    let ran = false;
+    opened.bus.subscribeSync(OrderCreated, () => {
+      ran = true;
+    });
+
+    expect(() => opened.bus.save(new OrderCreated({
+      id: 'sale-1',
+      createdAt: '02/07/2017 10:00:00',
+      lines: []
+    }))).to.throw(SyncSubscriberOutsideTransactionError);
+    expect(ran).to.equal(false);
+    expect(opened.repository.events).to.deep.equal([]);
+  });
+
+  it('does not call a sync handler from record or raise', () => {
+    const seen = [];
+    bus.subscribeSync(ProductWithLowStock, () => seen.push('sync'));
+    bus.ofType(ProductWithLowStock).subscribe(() => seen.push('live'));
+
+    bus.record(lowStock());
+    bus.raise();
+
+    expect(seen).to.deep.equal(['live']);
   });
 
   it('records a live event without storing it', () => {

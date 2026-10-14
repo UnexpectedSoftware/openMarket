@@ -448,24 +448,16 @@ export default class InvalidSupplierNifError extends AppError {
 
 ---
 
-## Recipe 6: add a plugin (PROPOSAL: forward-looking)
+## Recipe 6: add a plugin
 
-There is no plugin system in the code yet. If one has landed, **follow its real API and ignore this recipe.** Until then, build plugin-shaped features (the first one is Verifactu) like this, so they can move behind a plugin API later:
-- Everything lives under `src/openMarket/plugins/<pluginId>/` with the same inner layers: `domain/`, `application/`, `infrastructure/`. The core never imports from `plugins/`.
-- The plugin reacts to core **domain events** (`OrderCreated`) through `subscribeDurable`. Enabling it requires a reboot. Its registration time is stored once, so it does not receive events saved before it was enabled. It never patches core use cases or repositories. If it needs data the event doesn't carry (VAT lines, totals, a sequential invoice number), propose adding it to the core event or to a core port first.
-- It owns its ports, adapters, tables (prefix `<pluginId>_`, created in its own `ensureSchema(database)` called from its registration), error codes (prefix `<PLUGINID>_`), and its contract and architecture tests.
-- A single entry point, `plugins/<pluginId>/index.js`:
-```js
-/**
- * @param {{container: any, domainEventBus: import('../../domain/service/DomainEventBus').default}} host
- * @returns {{id: string, start: () => void}}
- */
-export default function register({container, domainEventBus}) {
-  // build the plugin's own adapters and handlers here, from host services only
-  return {id: 'verifactu', start() { /* handler.start() */ }};
-}
-```
-- Receipt and UI integration (QR code, invoice status) go through extension points that the core exposes. Ask Victor before adding any.
+The loader is `src/openMarket/infrastructure/plugins/`. A plugin is not source in this repository. It is a folder in the user-data `plugins` directory (`~/.config/OpenMarket/plugins` on this machine). Read `docs/plugins.md` before adding loader behaviour.
+
+- `plugin.json` plus CommonJS `index.js` that exports `register`. The loader reads the manifest without running the file. `PluginHost.start()` runs `register` only for an enabled plugin whose `openmarket` range matches the app, and it runs before `domainEventDispatcher.start()`.
+- `register({apiVersion, eventBus, connection, config, events})` is the public API (`apiVersion` is `1`). `events` comes from `domain/event/registry.js` (`eventClasses()`). Do not import OpenMarket source from the plugin.
+- The wrapper prefixes durable names with `<pluginId>:` (`send` becomes `verifactu:send`) and throws `PluginSubscriberNameError` for another prefix.
+- `subscribeSync` runs inside `save` while the transaction is open. It must be fast, local, and deterministic. A throw rolls the sale back. Network work uses `subscribeDurable`.
+- Plugin tables use the prefix `<pluginId>_`. The plugin stores its own schema version and migrates itself. Do not add those tables to core `SCHEMA`.
+- Enabling a plugin requires a restart. Domain and application do not import a plugin. Receipt or UI extension points need Victor's OK before they are added.
 
 ---
 

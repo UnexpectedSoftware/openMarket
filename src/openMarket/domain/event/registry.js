@@ -36,6 +36,14 @@ export function aggregateId(event) {
 }
 
 /**
+ * Event classes a plugin may subscribe to. The bus uses these same functions.
+ * @returns {Record<string, Function>}
+ */
+export function eventClasses() {
+  return {...TYPES};
+}
+
+/**
  * Builds the event the subscriber was registered for.
  * @param {string} type
  * @param {Object} payload

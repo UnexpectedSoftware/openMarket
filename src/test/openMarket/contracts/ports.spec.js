@@ -14,6 +14,8 @@ import CategoryFactory from '../../../openMarket/domain/category/CategoryFactory
 import ProductImageSource from '../../../openMarket/domain/image/ProductImageSource';
 import CategoryImageSource from '../../../openMarket/domain/image/CategoryImageSource';
 import DomainEventRepository from '../../../openMarket/domain/event/DomainEventRepository';
+import PluginRepository from '../../../openMarket/domain/plugin/PluginRepository';
+import PluginSource from '../../../openMarket/domain/plugin/PluginSource';
 
 import RandomUUIDIdentity from '../../../openMarket/domain/RandomUUIDIdentity';
 import SequentialIdentity from '../../../openMarket/infrastructure/service/SequentialIdentity';
@@ -30,6 +32,8 @@ import CategoryFactoryImpl from '../../../openMarket/infrastructure/category/Cat
 import OpenFoodFactsProductImageSource from '../../../openMarket/infrastructure/image/OpenFoodFactsProductImageSource';
 import WikimediaCategoryImageSource from '../../../openMarket/infrastructure/image/WikimediaCategoryImageSource';
 import SqliteDomainEventRepository from '../../../openMarket/infrastructure/event/SqliteDomainEventRepository';
+import SqlitePluginRepository from '../../../openMarket/infrastructure/plugins/SqlitePluginRepository';
+import FolderPluginSource from '../../../openMarket/infrastructure/plugins/FolderPluginSource';
 
 describe('ports and adapters', () => {
   describeContract(Identity, RandomUUIDIdentity);
@@ -47,4 +51,6 @@ describe('ports and adapters', () => {
   describeContract(ProductImageSource, OpenFoodFactsProductImageSource);
   describeContract(CategoryImageSource, WikimediaCategoryImageSource);
   describeContract(DomainEventRepository, SqliteDomainEventRepository);
+  describeContract(PluginRepository, SqlitePluginRepository);
+  describeContract(PluginSource, FolderPluginSource);
 });

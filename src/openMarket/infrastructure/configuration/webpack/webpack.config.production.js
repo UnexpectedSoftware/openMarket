@@ -31,6 +31,13 @@ export default merge(baseConfig, {
   },
 
   module: {
+    parser: {
+      javascript: {
+        // A dynamic createRequire() is the plugin loader. Webpack's parser
+        // replaces that call with undefined when it cannot see a literal path.
+        createRequire: false
+      }
+    },
     rules: [
       {
         test: /\.jsx?$/,
@@ -76,7 +83,9 @@ export default merge(baseConfig, {
     electron: 'commonjs electron',
     'electron-log/main': 'commonjs electron-log/main',
     'electron-log/renderer': 'commonjs electron-log/renderer',
-    'node:sqlite': 'commonjs node:sqlite'
+    'node:sqlite': 'commonjs node:sqlite',
+    module: 'commonjs module',
+    'node:module': 'commonjs node:module'
   },
 
   target: 'electron-renderer'

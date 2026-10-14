@@ -51,6 +51,14 @@ import DomainEventDispatcher from "../event/DomainEventDispatcher";
 import SqliteDomainEventRepository from "../event/SqliteDomainEventRepository";
 import SqliteTransaction from "../service/SqliteTransaction";
 import SystemClock from "../service/SystemClock";
+import {eventClasses} from "../../domain/event/registry";
+import ListPlugins from "../../application/service/plugin/ListPlugins";
+import SavePlugin from "../../application/service/plugin/SavePlugin";
+import pluginDirectory from "../plugins/pluginDirectory";
+import FolderPluginSource from "../plugins/FolderPluginSource";
+import SqlitePluginRepository from "../plugins/SqlitePluginRepository";
+import PluginHost from "../plugins/PluginHost";
+import loadPlugin from "../plugins/loadPlugin";
 const env = process.env.NODE_ENV
 
 class Container {
@@ -327,11 +335,13 @@ class Container {
   }
 
   _domainEventBus() {
+    const connection = this.getInstance({key: 'sqliteConnection'});
     return new DomainEventBus({
       repository: this.getInstance({key: 'domainEventRepository'}),
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
       clock: this.getInstance({key: 'systemClock'}),
-      recordError: record
+      recordError: record,
+      inTransaction: () => connection.database.isTransaction
     });
   }
 
@@ -391,6 +401,43 @@ class Container {
   _findProductImage() {
     return new FindProductImage({
       productImageSource: this.getInstance({key: 'productImageSource'})
+    });
+  }
+
+  _pluginSource() {
+    return new FolderPluginSource({directory: pluginDirectory()});
+  }
+
+  _pluginRepository() {
+    return new SqlitePluginRepository({
+      connection: this.getInstance({key: 'sqliteConnection'})
+    });
+  }
+
+  _listPlugins() {
+    return new ListPlugins({
+      pluginSource: this.getInstance({key: 'pluginSource'}),
+      pluginRepository: this.getInstance({key: 'pluginRepository'})
+    });
+  }
+
+  _savePlugin() {
+    return new SavePlugin({
+      pluginSource: this.getInstance({key: 'pluginSource'}),
+      pluginRepository: this.getInstance({key: 'pluginRepository'})
+    });
+  }
+
+  _pluginHost() {
+    return new PluginHost({
+      pluginSource: this.getInstance({key: 'pluginSource'}),
+      pluginRepository: this.getInstance({key: 'pluginRepository'}),
+      domainEventBus: this.getInstance({key: 'domainEventBus'}),
+      connection: this.getInstance({key: 'sqliteConnection'}),
+      appVersion: process.env.OPENMARKET_VERSION || '0.0.0',
+      loadPlugin,
+      events: eventClasses(),
+      recordError: record
     });
   }
 

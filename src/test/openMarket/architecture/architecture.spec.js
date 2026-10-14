@@ -149,6 +149,26 @@ describe('architecture', () => {
     expect(bad, 'Use <Name>Repository (port in domain, Sqlite<Name>Repository in infrastructure)').to.deep.equal([]);
   });
 
+  it('loads plugin implementations only through the plugin shell', () => {
+    const bad = [];
+    files.forEach(file => {
+      const from = rel(file);
+      if (from.startsWith('infrastructure/plugins/')) {
+        return;
+      }
+      importsOf(file).forEach(spec => {
+        const to = resolveTarget(file, spec);
+        if (!to || !to.startsWith('infrastructure/plugins/')) {
+          return;
+        }
+        if (from !== 'infrastructure/dic/Container.js') {
+          bad.push(`${from} -> ${to}`);
+        }
+      });
+    });
+    expect(bad, 'Plugin folders are loaded from disk. Only Container wires the shell').to.deep.equal([]);
+  });
+
   it('gives every Sqlite<Name>Repository a domain port <Name>Repository', () => {
     const ports = new Set(files.map(rel).filter(f => f.startsWith('domain/'))
       .map(f => path.basename(f, '.js')).filter(n => n.endsWith('Repository')));
