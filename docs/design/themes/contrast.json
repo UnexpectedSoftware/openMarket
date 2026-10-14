@@ -1,0 +1,426 @@
+{
+  "mercado": [
+    {
+      "fg": "text",
+      "bg": "background",
+      "ratio": 16.16,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "text",
+      "bg": "surface",
+      "ratio": 17.47,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "text",
+      "bg": "surfaceAlt",
+      "ratio": 15.29,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "textMuted",
+      "bg": "surface",
+      "ratio": 6.36,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "textMuted",
+      "bg": "surfaceAlt",
+      "ratio": 5.56,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "primaryContrast",
+      "bg": "primary",
+      "ratio": 6.25,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "primary",
+      "bg": "surface",
+      "ratio": 6.25,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "accentContrast",
+      "bg": "accent",
+      "ratio": 5.16,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "accent",
+      "bg": "surface",
+      "ratio": 5.16,
+      "AA": true,
+      "AAA": false,
+      "required": 3.0
+    },
+    {
+      "fg": "success",
+      "bg": "surface",
+      "ratio": 5.42,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "warning",
+      "bg": "surface",
+      "ratio": 5.43,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "danger",
+      "bg": "surface",
+      "ratio": 5.9,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "border",
+      "bg": "surface",
+      "ratio": 1.38,
+      "AA": null,
+      "AAA": false,
+      "required": null
+    }
+  ],
+  "mostrador-noche": [
+    {
+      "fg": "text",
+      "bg": "background",
+      "ratio": 17.92,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "text",
+      "bg": "surface",
+      "ratio": 16.44,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "text",
+      "bg": "surfaceAlt",
+      "ratio": 14.78,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "textMuted",
+      "bg": "surface",
+      "ratio": 8.11,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "textMuted",
+      "bg": "surfaceAlt",
+      "ratio": 7.29,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "primaryContrast",
+      "bg": "primary",
+      "ratio": 11.68,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "primary",
+      "bg": "surface",
+      "ratio": 11.13,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "accentContrast",
+      "bg": "accent",
+      "ratio": 9.86,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "accent",
+      "bg": "surface",
+      "ratio": 9.41,
+      "AA": true,
+      "AAA": true,
+      "required": 3.0
+    },
+    {
+      "fg": "success",
+      "bg": "surface",
+      "ratio": 9.12,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "warning",
+      "bg": "surface",
+      "ratio": 9.96,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "danger",
+      "bg": "surface",
+      "ratio": 6.46,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "border",
+      "bg": "surface",
+      "ratio": 1.45,
+      "AA": null,
+      "AAA": false,
+      "required": null
+    }
+  ],
+  "ultramarinos": [
+    {
+      "fg": "text",
+      "bg": "background",
+      "ratio": 14.8,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "text",
+      "bg": "surface",
+      "ratio": 15.81,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "text",
+      "bg": "surfaceAlt",
+      "ratio": 13.25,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "textMuted",
+      "bg": "surface",
+      "ratio": 6.48,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "textMuted",
+      "bg": "surfaceAlt",
+      "ratio": 5.43,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "primaryContrast",
+      "bg": "primary",
+      "ratio": 6.95,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "primary",
+      "bg": "surface",
+      "ratio": 6.84,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "accentContrast",
+      "bg": "accent",
+      "ratio": 6.14,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "accent",
+      "bg": "surface",
+      "ratio": 6.04,
+      "AA": true,
+      "AAA": false,
+      "required": 3.0
+    },
+    {
+      "fg": "success",
+      "bg": "surface",
+      "ratio": 5.6,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "warning",
+      "bg": "surface",
+      "ratio": 5.57,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "danger",
+      "bg": "surface",
+      "ratio": 6.56,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "border",
+      "bg": "surface",
+      "ratio": 1.42,
+      "AA": null,
+      "AAA": false,
+      "required": null
+    }
+  ],
+  "unexpected-neon": [
+    {
+      "fg": "text",
+      "bg": "background",
+      "ratio": 17.4,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "text",
+      "bg": "surface",
+      "ratio": 15.52,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "text",
+      "bg": "surfaceAlt",
+      "ratio": 12.63,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "textMuted",
+      "bg": "surface",
+      "ratio": 8.36,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "textMuted",
+      "bg": "surfaceAlt",
+      "ratio": 6.8,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "primaryContrast",
+      "bg": "primary",
+      "ratio": 6.7,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "primary",
+      "bg": "surface",
+      "ratio": 4.95,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "accentContrast",
+      "bg": "accent",
+      "ratio": 16.75,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "accent",
+      "bg": "surface",
+      "ratio": 12.38,
+      "AA": true,
+      "AAA": true,
+      "required": 3.0
+    },
+    {
+      "fg": "success",
+      "bg": "surface",
+      "ratio": 11.7,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "warning",
+      "bg": "surface",
+      "ratio": 12.2,
+      "AA": true,
+      "AAA": true,
+      "required": 4.5
+    },
+    {
+      "fg": "danger",
+      "bg": "surface",
+      "ratio": 4.87,
+      "AA": true,
+      "AAA": false,
+      "required": 4.5
+    },
+    {
+      "fg": "border",
+      "bg": "surface",
+      "ratio": 1.59,
+      "AA": null,
+      "AAA": false,
+      "required": null
+    }
+  ]
+}

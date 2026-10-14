@@ -2,6 +2,7 @@
 
 Electron 44 point-of-sale app. React 15 + Redux 3 + redux-observable, RxJS 5, SQLite (`node:sqlite`), plain JavaScript (no TypeScript files).
 Architecture: DDD with a hexagonal layout. **Read this file before writing code.** For step-by-step recipes, use the `openmarket-architecture` skill.
+UI work: read `docs/design/DESIGN.md` and use the `openmarket-design` skill (see `src/openMarket/user_interface/AGENTS.md`).
 
 ## Layers (`src/openMarket/`)
 

@@ -1,0 +1,112 @@
+{
+  "id": "unexpected-neon",
+  "name": "Unexpected Neon (retro arcade)",
+  "colorScheme": "dark",
+  "mood": "Playful 80s arcade: #1a1a1a background, magenta→cyan gradient header, monospace everything, soft neon glow. Matches unexpectedsoftware.com.",
+  "suits": "Game/comic/vinyl shops, pop-up stores, the author's own demo builds; fun showcase theme.",
+  "color": {
+    "background": "#1A1A1A",
+    "surface": "#242424",
+    "surfaceAlt": "#333333",
+    "text": "#FFFFFF",
+    "textMuted": "#BDBDCB",
+    "primary": "#FF00FF",
+    "primaryHover": "#FF4DFF",
+    "primaryContrast": "#000000",
+    "accent": "#00FFFF",
+    "accentContrast": "#000000",
+    "success": "#39FF88",
+    "warning": "#FFE45C",
+    "danger": "#FF4D7A",
+    "border": "#444444",
+    "focus": "#00FFFF",
+    "overlay": "rgba(0,0,0,0.7)"
+  },
+  "gradient": {
+    "primary": "linear-gradient(45deg, #FF00FF, #00FFFF)",
+    "header": "linear-gradient(45deg, #FF00FF, #00FFFF)"
+  },
+  "font": {
+    "sans": "\"JetBrains Mono\", \"Space Mono\", \"Courier New\", Courier, monospace",
+    "display": "\"VT323\", \"JetBrains Mono\", \"Courier New\", monospace",
+    "mono": "\"JetBrains Mono\", \"Courier New\", monospace",
+    "numeric": "\"JetBrains Mono\", \"Courier New\", monospace"
+  },
+  "fontFeature": {
+    "numeric": "\"tnum\" 1, \"zero\" 1"
+  },
+  "fontSize": {
+    "xs": "12px",
+    "sm": "14px",
+    "md": "16px",
+    "lg": "18px",
+    "xl": "22px",
+    "2xl": "28px",
+    "3xl": "36px",
+    "total": "48px"
+  },
+  "fontWeight": {
+    "regular": "400",
+    "medium": "600",
+    "bold": "800"
+  },
+  "lineHeight": {
+    "tight": "1.1",
+    "normal": "1.45"
+  },
+  "letterSpacing": {
+    "heading": "0.04em",
+    "label": "0.08em"
+  },
+  "radius": {
+    "sm": "0px",
+    "md": "2px",
+    "lg": "4px",
+    "pill": "4px"
+  },
+  "space": {
+    "0": "0px",
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "20px",
+    "6": "24px",
+    "7": "32px",
+    "8": "40px",
+    "9": "56px"
+  },
+  "shadow": {
+    "sm": "0 0 0 1px #444444",
+    "md": "0 0 12px rgba(0,255,255,0.25)",
+    "lg": "0 0 32px rgba(255,0,255,0.35)",
+    "focus": "0 0 0 2px #00FFFF, 0 0 12px #00FFFF"
+  },
+  "button": {
+    "height": "48px",
+    "heightLg": "64px",
+    "paddingX": "20px",
+    "radius": "2px",
+    "fontWeight": "800",
+    "textTransform": "uppercase",
+    "letterSpacing": "0.08em",
+    "borderWidth": "2px",
+    "primaryBg": "var(--om-gradient-primary)",
+    "primaryFg": "var(--om-color-primary-contrast)",
+    "secondaryBg": "transparent",
+    "secondaryFg": "var(--om-color-accent)",
+    "secondaryBorder": "var(--om-color-accent)",
+    "ghostFg": "var(--om-color-accent)",
+    "dangerBg": "var(--om-color-danger)",
+    "dangerFg": "#000000"
+  },
+  "control": {
+    "height": "44px",
+    "radius": "2px"
+  },
+  "tile": {
+    "minWidth": "150px",
+    "imageHeight": "96px",
+    "radius": "4px"
+  }
+}

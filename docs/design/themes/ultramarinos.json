@@ -1,0 +1,112 @@
+{
+  "id": "ultramarinos",
+  "name": "Ultramarinos (warm boutique)",
+  "colorScheme": "light",
+  "mood": "Warm, crafted, artisanal: cream paper, terracotta and olive, a serif for headings and prices.",
+  "suits": "Bakeries, delis, wine & cheese shops, gift and boutique retail.",
+  "color": {
+    "background": "#FAF5EC",
+    "surface": "#FFFDF8",
+    "surfaceAlt": "#F2E8D8",
+    "text": "#2A1F17",
+    "textMuted": "#6B5A4B",
+    "primary": "#9A3B20",
+    "primaryHover": "#7E2F18",
+    "primaryContrast": "#FFFFFF",
+    "accent": "#4C6A36",
+    "accentContrast": "#FFFFFF",
+    "success": "#3B7334",
+    "warning": "#975800",
+    "danger": "#AE2A1F",
+    "border": "#E3D5BF",
+    "focus": "#9A3B20",
+    "overlay": "rgba(42,31,23,0.5)"
+  },
+  "gradient": {
+    "primary": "none",
+    "header": "none"
+  },
+  "font": {
+    "sans": "\"DM Sans\", \"Nunito Sans\", \"Segoe UI\", system-ui, sans-serif",
+    "display": "\"Fraunces\", \"DM Serif Display\", Georgia, \"Times New Roman\", serif",
+    "mono": "\"IBM Plex Mono\", Consolas, monospace",
+    "numeric": "\"Fraunces\", Georgia, serif"
+  },
+  "fontFeature": {
+    "numeric": "\"lnum\" 1, \"tnum\" 1"
+  },
+  "fontSize": {
+    "xs": "12px",
+    "sm": "14px",
+    "md": "16px",
+    "lg": "18px",
+    "xl": "22px",
+    "2xl": "28px",
+    "3xl": "36px",
+    "total": "48px"
+  },
+  "fontWeight": {
+    "regular": "400",
+    "medium": "500",
+    "bold": "700"
+  },
+  "lineHeight": {
+    "tight": "1.15",
+    "normal": "1.5"
+  },
+  "letterSpacing": {
+    "heading": "-0.005em",
+    "label": "0.06em"
+  },
+  "radius": {
+    "sm": "8px",
+    "md": "14px",
+    "lg": "20px",
+    "pill": "999px"
+  },
+  "space": {
+    "0": "0px",
+    "1": "4px",
+    "2": "8px",
+    "3": "12px",
+    "4": "16px",
+    "5": "20px",
+    "6": "24px",
+    "7": "32px",
+    "8": "40px",
+    "9": "56px"
+  },
+  "shadow": {
+    "sm": "0 1px 2px rgba(74,48,26,0.08)",
+    "md": "0 6px 18px rgba(74,48,26,0.10)",
+    "lg": "0 18px 44px rgba(74,48,26,0.22)",
+    "focus": "0 0 0 3px rgba(154,59,32,0.30)"
+  },
+  "button": {
+    "height": "48px",
+    "heightLg": "64px",
+    "paddingX": "22px",
+    "radius": "999px",
+    "fontWeight": "600",
+    "textTransform": "none",
+    "letterSpacing": "0.01em",
+    "borderWidth": "1px",
+    "primaryBg": "var(--om-color-primary)",
+    "primaryFg": "var(--om-color-primary-contrast)",
+    "secondaryBg": "var(--om-color-surface)",
+    "secondaryFg": "var(--om-color-text)",
+    "secondaryBorder": "var(--om-color-border)",
+    "ghostFg": "var(--om-color-primary)",
+    "dangerBg": "var(--om-color-danger)",
+    "dangerFg": "#FFFFFF"
+  },
+  "control": {
+    "height": "46px",
+    "radius": "12px"
+  },
+  "tile": {
+    "minWidth": "150px",
+    "imageHeight": "100px",
+    "radius": "18px"
+  }
+}
