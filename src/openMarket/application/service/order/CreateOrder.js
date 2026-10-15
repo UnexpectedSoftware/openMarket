@@ -1,11 +1,14 @@
 import {Observable} from "rxjs/Observable";
 import {record} from "../../../infrastructure/logging/ErrorLog";
 import observableError from "../../../infrastructure/logging/observableError";
+import "rxjs/add/observable/of";
 import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/toArray";
 import "rxjs/add/operator/defaultIfEmpty";
 import VatRate from "../../../domain/tax/VatRate";
+import InvoiceType from "../../../domain/invoice/InvoiceType";
+import ShopProfileIncompleteError from "../../../domain/shop/ShopProfileIncompleteError";
 import OrderCreated from "../../../domain/event/OrderCreated";
 import InvoiceIssued from "../../../domain/event/InvoiceIssued";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
@@ -41,6 +44,7 @@ export default class CreateOrder {
    * @param {DomainEventBus} deps.domainEventBus
    * @param {Transaction} deps.transaction
    * @param {{dispatch: () => void}} deps.domainEventDispatcher
+   * @param {import('../../../domain/shop/ShopProfileRepository').default} [deps.shopProfileRepository]
    */
   constructor({
     orderRepository,
@@ -52,7 +56,8 @@ export default class CreateOrder {
     clock,
     domainEventBus,
     transaction,
-    domainEventDispatcher
+    domainEventDispatcher,
+    shopProfileRepository
   }) {
     this._orderRepository = orderRepository;
     this._productRepository = productRepository;
@@ -64,6 +69,7 @@ export default class CreateOrder {
     this._domainEventBus = domainEventBus;
     this._transaction = transaction;
     this._domainEventDispatcher = domainEventDispatcher;
+    this._shopProfileRepository = shopProfileRepository;
   }
 
   /**
@@ -73,14 +79,15 @@ export default class CreateOrder {
    * @returns {Observable<Order>}
    */
   createOrder({lines}) {
-    const saved = this._transaction.run(() => this._loadProducts({lines})
+    const saved = this._transaction.run(() => this._loadProfile()
+      .flatMap(profile => this._loadProducts({lines})
       .flatMap(products => {
         const order = this._buildOrder({lines: stampVat(lines, products)});
         return order.flatMap(draft => this._orderRepository.save({order: draft})
           .flatMap(() => this._subtrackStock({order: draft, products}))
-          .flatMap(({lowStockProducts}) => this._issueInvoice({order: draft})
+          .flatMap(({lowStockProducts}) => this._issueInvoice({order: draft, profile})
             .map(invoice => ({order: draft, invoice, lowStockProducts}))));
-      })
+      }))
       .do(({order, invoice, lowStockProducts}) => {
         this._domainEventBus.save(new OrderCreated({
           id: order.id,
@@ -120,12 +127,26 @@ export default class CreateOrder {
   }
 
   /**
-   * @param {{order: Order}} command
+   * The stored shop, or null when this process has no settings repository.
+   * @returns {Observable<import('../../../domain/shop/ShopProfile').default | null>}
+   */
+  _loadProfile() {
+    if (!this._shopProfileRepository) {
+      return Observable.of(null);
+    }
+    return this._shopProfileRepository.find().defaultIfEmpty(null);
+  }
+
+  /**
+   * @param {{order: Order, profile: import('../../../domain/shop/ShopProfile').default | null}} command
    * @returns {Observable<Invoice>}
    */
-  _issueInvoice({order}) {
-    const issuedAt = this._clock.now();
-    const series = this._clock.localDate({instant: issuedAt}).slice(0, 4);
+  _issueInvoice({order, profile}) {
+    if (profile && profile.invoicingEnabled && !profile.isComplete()) {
+      return observableError(new ShopProfileIncompleteError());
+    }
+    const zoned = this._clock.zonedNow();
+    const series = zoned.date.slice(0, 4);
     return this._invoiceSequence.next({series})
       .flatMap(invoiceNumber => {
         let invoice;
@@ -133,7 +154,10 @@ export default class CreateOrder {
           invoice = Invoice.issue({
             id: this._identity.generate(),
             invoiceNumber,
-            issuedAt,
+            issuedAt: zoned.local,
+            issueDate: zoned.date,
+            issuer: profile && profile.snapshot ? profile.snapshot() : null,
+            type: InvoiceType.F2,
             order
           });
         } catch (error) {

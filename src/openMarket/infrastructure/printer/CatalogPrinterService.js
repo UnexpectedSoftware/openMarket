@@ -23,7 +23,6 @@ export default class CatalogPrinterService {
     return this._connection.print((printer) => {
       if (header) {
         printer.alignCenter();
-        printer.println('SUPER COMPRIN');
         printer.println('Product list');
         printer.println(String(printedAt));
         printer.alignLeft();

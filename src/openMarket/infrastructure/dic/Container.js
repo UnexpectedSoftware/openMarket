@@ -63,6 +63,9 @@ import FolderPluginSource from "../plugins/FolderPluginSource";
 import SqlitePluginRepository from "../plugins/SqlitePluginRepository";
 import PluginHost from "../plugins/PluginHost";
 import loadPlugin from "../plugins/loadPlugin";
+import SqliteShopProfileRepository from "../shop/SqliteShopProfileRepository";
+import GetShopProfile from "../../application/service/shop/GetShopProfile";
+import UpdateShopProfile from "../../application/service/shop/UpdateShopProfile";
 const env = process.env.NODE_ENV
 
 class Container {
@@ -102,7 +105,10 @@ class Container {
   }
 
   _orderPrinterService(){
-    return new OrderPrinterService({printerConnection: this.getInstance({key: 'printerConnection'})});
+    return new OrderPrinterService({
+      printerConnection: this.getInstance({key: 'printerConnection'}),
+      invoiceRepository: this.getInstance({key: 'invoiceRepository'})
+    });
   }
 
   _catalogPrinterService(){
@@ -365,12 +371,34 @@ class Container {
       clock: this.getInstance({key: 'systemClock'}),
       domainEventBus: this.getInstance({key: 'domainEventBus'}),
       transaction: this.getInstance({key: 'transaction'}),
-      domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'})
+      domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'}),
+      shopProfileRepository: this.getInstance({key: 'shopProfileRepository'})
     });
   }
 
   _orderFactory() {
-    return new OrderFactoryImpl({ identity: this.getInstance({key: 'randomUUIDIdentity'})});
+    return new OrderFactoryImpl({
+      identity: this.getInstance({key: 'randomUUIDIdentity'}),
+      clock: this.getInstance({key: 'systemClock'})
+    });
+  }
+
+  _shopProfileRepository() {
+    return new SqliteShopProfileRepository({
+      connection: this.getInstance({key: 'sqliteConnection'})
+    });
+  }
+
+  _getShopProfile() {
+    return new GetShopProfile({
+      shopProfileRepository: this.getInstance({key: 'shopProfileRepository'})
+    });
+  }
+
+  _updateShopProfile() {
+    return new UpdateShopProfile({
+      shopProfileRepository: this.getInstance({key: 'shopProfileRepository'})
+    });
   }
 
   _invoiceMapper() {

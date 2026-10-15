@@ -49,7 +49,6 @@ describe('CatalogPrinterService', () => {
 
     expect(connection.jobs[0]).to.deep.equal([
       'center',
-      'SUPER COMPRIN',
       'Product list',
       '08/10/2026',
       'left',
@@ -76,7 +75,6 @@ describe('CatalogPrinterService', () => {
     }).subscribe(() => {}, () => { throw new Error('print failed'); });
     expect(connection.jobs[0]).to.deep.equal([
       'center',
-      'SUPER COMPRIN',
       'Product list',
       'today',
       'left',

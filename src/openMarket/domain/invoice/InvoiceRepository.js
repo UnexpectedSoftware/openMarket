@@ -36,4 +36,13 @@ export default class InvoiceRepository {
     throw new Error('InvoiceRepository#findByNumber must be implemented');
   }
 
+  /**
+   * Completes empty when the order has no invoice.
+   * @param {{orderId: string}} params
+   * @returns {Observable<Invoice>}
+   */
+  findByOrderId({orderId}) {
+    throw new Error('InvoiceRepository#findByOrderId must be implemented');
+  }
+
 }

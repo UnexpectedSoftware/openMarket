@@ -29,17 +29,57 @@ export default class SystemClock {
    * @returns {string}
    */
   localDate({instant}) {
-    const parts = new Intl.DateTimeFormat('en-US', {
-      timeZone: this._timeZone,
+    const parts = this._parts(instant, {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
-    }).formatToParts(new Date(instant));
-    const value = type => {
-      const part = parts.find(item => item.type === type);
-      return part ? part.value : '';
+    });
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  }
+
+  /** @returns {{instant: string, local: string, date: string}} */
+  zonedNow() {
+    return this.zoned({instant: this.now()});
+  }
+
+  /**
+   * @param {{instant: string}} params
+   * @returns {{instant: string, local: string, date: string}}
+   */
+  zoned({instant}) {
+    const date = this.localDate({instant});
+    const parts = this._parts(instant, {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hourCycle: 'h23',
+      timeZoneName: 'longOffset'
+    });
+    const offset = String(parts.timeZoneName || 'GMT+00:00').replace('GMT', '');
+    return {
+      instant: new Date(instant).toISOString(),
+      local: `${date}T${parts.hour}:${parts.minute}:${parts.second}${offset}`,
+      date
     };
-    return `${value('year')}-${value('month')}-${value('day')}`;
+  }
+
+  /**
+   * @param {string} instant
+   * @param {object} options
+   * @returns {Record<string, string>}
+   */
+  _parts(instant, options) {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: this._timeZone,
+      ...options
+    }).formatToParts(new Date(instant));
+    const values = {};
+    parts.forEach(part => {
+      if (part.type !== 'literal') {
+        values[part.type] = part.value;
+      }
+    });
+    return values;
   }
 
 }

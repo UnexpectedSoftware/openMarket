@@ -9,6 +9,7 @@ import CategoriesPage from './category/ReduxConnector';
 import OrderPage from './order/new_order/ReduxConnector';
 import OrderListing from './order/list_orders/ReduxConnector';
 import PluginsPage from './plugin/ReduxConnector';
+import SettingsPage from './settings/ReduxConnector';
 
 
 export default (
@@ -22,5 +23,6 @@ export default (
     <Route path="/create_order" component={OrderPage} />
     <Route path="/list_orders" component={OrderListing} />
     <Route path="/plugins" component={PluginsPage} />
+    <Route path="/settings" component={SettingsPage} />
   </Route>
 );

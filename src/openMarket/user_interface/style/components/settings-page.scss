@@ -1,0 +1,52 @@
+.settings-page {
+  padding: $sp-base;
+
+  h2,
+  h3 {
+    margin-top: 0;
+  }
+}
+
+.settings-shop {
+  max-width: 36rem;
+
+  label {
+    display: block;
+    width: auto;
+    margin-bottom: $sp-base / 2;
+    padding-top: 0;
+  }
+
+  input[type="text"] {
+    display: block;
+    width: 100%;
+    margin-top: $sp-base / 4;
+    margin-bottom: 0;
+  }
+
+  input[type="checkbox"] {
+    display: inline-block;
+    width: auto;
+    margin: 0 $sp-base / 4 0 0;
+  }
+}
+
+.settings-check {
+  margin-top: $sp-base / 2;
+  margin-bottom: $sp-base;
+}
+
+.settings-error {
+  color: $c-alert;
+}
+
+.settings-saved {
+  padding: $sp-base / 2;
+  background: $c-primary-lightest;
+  border: 1px solid $c-primary-light;
+}
+
+.shop-issuer {
+  margin: 0 0 $sp-base;
+  color: $c-grey-darkest;
+}
