@@ -30,6 +30,9 @@ export function typeName(event) {
  * @returns {string|null}
  */
 export function aggregateId(event) {
+  if (event.invoiceId != null && String(event.invoiceId) !== '') {
+    return String(event.invoiceId);
+  }
   if (event.id != null && String(event.id) !== '') {
     return String(event.id);
   }

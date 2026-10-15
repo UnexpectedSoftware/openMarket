@@ -13,6 +13,7 @@ import OrderCreated from "../../../domain/event/OrderCreated";
 import InvoiceIssued from "../../../domain/event/InvoiceIssued";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
 import Invoice from "../../../domain/invoice/Invoice";
+import {issuedPayload} from "../../../domain/invoice/invoicePayload";
 import Money from "../../../domain/money/Money";
 import Quantity from "../../../domain/money/Quantity";
 /** @import Order from "../../../domain/order/Order" */
@@ -94,7 +95,7 @@ export default class CreateOrder {
           createdAt: order.createdAt,
           lines: order.lines.map(lineSnapshot)
         }));
-        this._domainEventBus.save(new InvoiceIssued(facts(invoice)));
+        this._domainEventBus.save(new InvoiceIssued(issuedPayload(invoice)));
         lowStockProducts.forEach(product => {
           this._domainEventBus.record(new ProductWithLowStock({
             barcode: product.barcode,
@@ -212,11 +213,6 @@ export default class CreateOrder {
 }
 
 /**
- * Snapshot a subscriber can use without reading the invoice again.
- * Euro fields are for display. Cent and milli fields are the exact amounts.
- * @param {Invoice} invoice
- */
-/**
  * Copies the product's rate onto the line. A missing product keeps the general rate.
  * @param {Array<{barcode: string}>} lines
  * @param {Map<string, *>} products
@@ -228,20 +224,6 @@ function stampVat(lines, products) {
     const vatRate = product && product.vatRate != null ? product.vatRate : VatRate.standard();
     return {...line, vatRate};
   });
-}
-
-function facts(invoice) {
-  return {
-    id: invoice.id,
-    series: invoice.invoiceNumber.series,
-    number: invoice.invoiceNumber.number,
-    invoiceNumber: invoice.invoiceNumber.formatted,
-    issuedAt: invoice.issuedAt,
-    orderId: invoice.orderId,
-    lines: invoice.lines.map(lineSnapshot),
-    total: invoice.total.toEuros(),
-    totalCents: invoice.total.cents
-  };
 }
 
 /**

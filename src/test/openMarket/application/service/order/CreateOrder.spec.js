@@ -166,21 +166,24 @@ describe('CreateOrder domain events', () => {
           expect(sequenceCalls).to.deep.equal(['2026']);
           expect(invoices).to.have.lengthOf(1);
           expect(invoices[0]).to.be.instanceof(InvoiceIssued);
-          expect(invoices[0].id).to.equal('invoice-1');
+          expect(invoices[0].schemaVersion).to.equal(1);
+          expect(invoices[0].invoiceId).to.equal('invoice-1');
           expect(invoices[0].invoiceNumber).to.equal('2026/000001');
           expect(invoices[0].orderId).to.equal('order-1');
           expect(invoices[0].issuedAt).to.equal(new SystemClock().zoned({instant: issuedAt}).local);
-          expect(invoices[0].total).to.equal(1.1);
+          expect(invoices[0].issueDate).to.equal('2026-10-14');
+          expect(invoices[0].type).to.equal('F2');
           expect(invoices[0].totalCents).to.equal(110);
+          expect(invoices[0].vatTotalCents).to.equal(19);
+          expect(invoices[0].issuer).to.equal(null);
           expect(invoices[0].lines).to.deep.equal([{
+            position: 0,
             barcode: '0001',
             name: 'Cola',
-            price: 0.55,
-            quantity: 2,
-            amount: 1.1,
-            priceCents: 55,
+            unitPriceCents: 55,
             quantityMilli: 2000,
-            amountCents: 110
+            amountCents: 110,
+            vat: {kind: 'S1', percent: 21, cause: null}
           }]);
         },
         error => done(error),
