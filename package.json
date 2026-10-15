@@ -83,7 +83,7 @@
     "email": "victuxbb@gmail.com",
     "url": "http://www.unexpectedsoftware.com/"
   },
-  "license": "MIT",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/UnexpectedSoftware/openMarket/issues"
   },
