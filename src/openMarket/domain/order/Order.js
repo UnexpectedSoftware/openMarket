@@ -95,7 +95,12 @@ export default class Order {
 
   /** @returns {OrderLine[]} */
   get lines() {
-    return this._lines;
+    return this._lines.map(line => ({
+      barcode: line.barcode,
+      name: line.name,
+      price: line.price,
+      quantity: line.quantity
+    }));
   }
 
   /** @returns {number} */

@@ -56,6 +56,19 @@ describe('Order', () => {
     expect(order.total).to.equal(1);
   });
 
+  it('returns a copy of its lines', () => {
+    const order = new Order({id: '1', lines: [line(2)], date}).place();
+    const returned = order.lines;
+
+    returned.push(line(1));
+    returned[0].quantity = 9;
+    returned[0].name = 'Changed';
+
+    expect(order.lines).to.deep.equal([line(2)]);
+    expect(order.total).to.equal(4);
+    expect(order.lines[0].quantity).to.equal(2);
+  });
+
   it('places an order once', () => {
     const order = new Order({id: '1', lines: [line(1)], date}).place();
 
