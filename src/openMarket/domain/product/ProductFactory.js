@@ -6,8 +6,8 @@
  * @property {string} barcode
  * @property {string} name
  * @property {string} description
- * @property {number} price
- * @property {number} basePrice
+ * @property {import('../money/Money').default | number | string} price
+ * @property {import('../money/Money').default | number | string} basePrice
  * @property {number} stock
  * @property {number} stockMin
  * @property {boolean} [weighted]

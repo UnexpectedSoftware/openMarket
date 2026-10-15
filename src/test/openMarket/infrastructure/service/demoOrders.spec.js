@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import moment from 'moment';
-import { add, multiply } from '../../../../openMarket/infrastructure/service/floatCalculatorService';
+import Money from '../../../../openMarket/domain/money/Money';
+import Quantity from '../../../../openMarket/domain/money/Quantity';
 import { buildDemoOrders } from '../../../../openMarket/infrastructure/dev/demoOrders';
 
 const DISPLAY_FORMAT = 'DD/MM/YYYY HH:mm:ss';
@@ -40,7 +41,10 @@ describe('Demo orders', () => {
         expect(['1001', '1002']).to.include(line.barcode);
         expect(line.quantity).to.be.within(1, 3);
       });
-      const total = order._lines.reduce((sum, line) => add(sum, multiply(line.price, line.quantity)), 0);
+      const total = order._lines.reduce(
+        (sum, line) => sum.plus(Money.from(line.price).times(Quantity.from(line.quantity))),
+        Money.ofCents(0)
+      ).toEuros();
       expect(order._total).to.equal(total);
     });
   });

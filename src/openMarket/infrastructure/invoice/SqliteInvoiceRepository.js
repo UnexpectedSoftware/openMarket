@@ -3,14 +3,16 @@ import 'rxjs/add/observable/defer';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/empty';
 import {rethrow} from '../logging/ErrorLog';
+import {centsOf, eurosOf, milliOf, unitsOf} from '../service/storedMoney';
 /** @import { Observable } from 'rxjs/Observable' */
 /** @import InvoiceRepository from '../../domain/invoice/InvoiceRepository' */
 /** @import Invoice from '../../domain/invoice/Invoice' */
 /** @import SqlInvoiceMapper from './SqlInvoiceMapper' */
 
 const INVOICE_COLUMNS = 'i.id, i.series, i.number, i.invoice_number, i.issued_at, i.order_id, ' +
-  'i.status, i.cancelled_at, i.total';
-const LINE_COLUMNS = 'l.barcode, l.name, l.price, l.quantity, l.amount';
+  'i.status, i.cancelled_at, i.total, i.total_cents';
+const LINE_COLUMNS = 'l.barcode, l.name, l.price, l.quantity, l.amount, ' +
+  'l.price_cents, l.quantity_milli, l.amount_cents';
 
 const FIND_BY_ID_SQL = 'SELECT ' + INVOICE_COLUMNS + ', ' + LINE_COLUMNS +
   ' FROM invoice i INNER JOIN invoice_line l ON l.invoice_id = i.id' +
@@ -21,11 +23,12 @@ const FIND_BY_NUMBER_SQL = 'SELECT ' + INVOICE_COLUMNS + ', ' + LINE_COLUMNS +
   ' WHERE i.invoice_number = ? ORDER BY l.position ASC';
 
 const INSERT_INVOICE_SQL = 'INSERT INTO invoice ' +
-  '(id, series, number, invoice_number, issued_at, order_id, status, cancelled_at, total) ' +
-  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  '(id, series, number, invoice_number, issued_at, order_id, status, cancelled_at, total, total_cents) ' +
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
 const INSERT_LINE_SQL = 'INSERT INTO invoice_line ' +
-  '(invoice_id, position, barcode, name, price, quantity, amount) VALUES (?, ?, ?, ?, ?, ?, ?)';
+  '(invoice_id, position, barcode, name, price, quantity, amount, price_cents, quantity_milli, amount_cents) ' +
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
 const UPDATE_CANCELLATION_SQL = 'UPDATE invoice SET status = ?, cancelled_at = ? WHERE id = ?';
 
@@ -117,7 +120,8 @@ export default class SqliteInvoiceRepository {
       invoice.orderId,
       invoice.status,
       invoice.cancelledAt,
-      invoice.total
+      eurosOf(invoice.total),
+      centsOf(invoice.total)
     );
     const insertLine = this._database.prepare(INSERT_LINE_SQL);
     invoice.lines.forEach((line, position) => {
@@ -126,9 +130,12 @@ export default class SqliteInvoiceRepository {
         position,
         line.barcode,
         line.name,
-        line.price,
-        line.quantity,
-        line.amount
+        eurosOf(line.price),
+        unitsOf(line.quantity),
+        eurosOf(line.amount),
+        centsOf(line.price),
+        milliOf(line.quantity),
+        centsOf(line.amount)
       );
     });
   }

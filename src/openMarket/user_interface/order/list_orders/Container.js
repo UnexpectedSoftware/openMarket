@@ -4,6 +4,7 @@ import ReactTable from "react-table";
 import DatePicker from 'react-datepicker';
 import moment from "moment";
 import { defaultLimit } from './model';
+import {formatMoney} from '../../i18n/money';
 
 class Container extends Component {
 
@@ -28,7 +29,7 @@ class Container extends Component {
       {
         Header: 'Total',
         accessor: 'total',
-        Cell: (data) => data.value +" "+this.moneySymbol
+        Cell: (data) => formatMoney(data.value)
       },
       {
         Header: 'Actions',
@@ -122,7 +123,7 @@ class Container extends Component {
           showPageSizeOptions={false}
         />
 
-        <h3>{orders.total} €</h3>
+        <h3>{formatMoney(orders.total)}</h3>
       </div>
     );
   }

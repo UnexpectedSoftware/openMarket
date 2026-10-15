@@ -4,6 +4,7 @@ const {
   launchApp,
   closeApp,
   chooseMenu,
+  euros,
   createCategory,
   createProduct,
   productCard,
@@ -29,7 +30,7 @@ async function saveOrder(window) {
 }
 
 async function expectSubtotal(window, name, amount) {
-  await expect(orderRow(window, name).locator('.rt-td').nth(3)).toHaveText(`${amount} €`);
+  await expect(orderRow(window, name).locator('.rt-td').nth(3)).toHaveText(euros(amount));
 }
 
 async function openStartCalendar(window) {
@@ -112,6 +113,34 @@ test('sells, edits quantity, and warns on low stock', async () => {
   }
 });
 
+test('sells a weighed product for 6,48 €', async () => {
+  const {app, window, userData} = await launchApp();
+  try {
+    await createCategory(window, 'Deli');
+    await createProduct(window, {
+      name: 'Ham',
+      barcode: '8400000000035',
+      price: 18.5,
+      basePrice: 10,
+      stock: 5,
+      stockMin: 1,
+      category: 'Deli',
+      weighted: true
+    });
+    await openNewOrder(window);
+    await scanBarcode(window, '8400000000035');
+    const dialog = window.locator('.dialog-Modal');
+    await expect(dialog.getByRole('heading', {name: 'Weight!'})).toBeVisible();
+    await dialog.locator('input[name="quantity"]').fill('0.35');
+    await dialog.locator('a.button', {hasText: 'Save'}).click();
+    await expect(orderRow(window, 'Ham').locator('input')).toHaveValue('0.35');
+    await expectSubtotal(window, 'Ham', 6.48);
+    await expectOrderTotal(window, 6.48);
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
 test('lists an order and opens its detail', async () => {
   const {app, window, userData} = await launchApp();
   try {
@@ -133,23 +162,23 @@ test('lists an order and opens its detail', async () => {
 
     await chooseMenu(window, 'Orders', 'List Orders!');
     await expect(window.getByRole('heading', {name: 'List Order!'})).toBeVisible();
-    const row = window.locator('.rt-tbody .rt-tr').filter({hasText: '2 €'});
+    const row = window.locator('.rt-tbody .rt-tr').filter({hasText: euros(2)});
     await expect(row).toBeVisible();
-    await expect(window.locator('h3')).toHaveText('2 €');
+    await expect(window.locator('h3')).toHaveText(euros(2));
 
     await openStartCalendar(window);
     await window.locator('.react-datepicker__navigation--next').click();
     await chooseCalendarDay(window, '15');
     await window.getByRole('button', {name: 'Filter'}).click();
     await expect(window.locator('.rt-tbody').getByText('View', {exact: true})).toHaveCount(0);
-    await expect(window.locator('h3')).toHaveText('0 €');
+    await expect(window.locator('h3')).toHaveText(euros(0));
 
     await openStartCalendar(window);
     await window.locator('.react-datepicker__navigation--previous').click();
     await chooseCalendarDay(window, '1');
     await window.getByRole('button', {name: 'Filter'}).click();
     await expect(row).toBeVisible();
-    await expect(window.locator('h3')).toHaveText('2 €');
+    await expect(window.locator('h3')).toHaveText(euros(2));
 
     await row.getByText('View', {exact: true}).click();
     await expect(window.getByRole('heading', {name: "Let's edit an order!"})).toBeVisible();

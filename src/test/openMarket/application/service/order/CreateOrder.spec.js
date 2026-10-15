@@ -137,7 +137,16 @@ describe('CreateOrder domain events', () => {
           expect(events[0]).to.be.instanceof(OrderCreated);
           expect(events[0].id).to.equal('order-1');
           expect(events[0].createdAt).to.equal('02/07/2017 10:00:00');
-          expect(events[0].lines).to.deep.equal(lines);
+          expect(events[0].lines).to.deep.equal([{
+            barcode: '0001',
+            name: 'Cola',
+            price: 0.55,
+            quantity: 2,
+            amount: 1.1,
+            priceCents: 55,
+            quantityMilli: 2000,
+            amountCents: 110
+          }]);
           expect(events[0].lines[0]).to.not.equal(lines[0]);
           expect(sequenceCalls).to.deep.equal(['2026']);
           expect(invoices).to.have.lengthOf(1);
@@ -147,9 +156,17 @@ describe('CreateOrder domain events', () => {
           expect(invoices[0].orderId).to.equal('order-1');
           expect(invoices[0].issuedAt).to.equal(issuedAt);
           expect(invoices[0].total).to.equal(1.1);
-          expect(invoices[0].lines).to.deep.equal([
-            {barcode: '0001', name: 'Cola', price: 0.55, quantity: 2, amount: 1.1}
-          ]);
+          expect(invoices[0].totalCents).to.equal(110);
+          expect(invoices[0].lines).to.deep.equal([{
+            barcode: '0001',
+            name: 'Cola',
+            price: 0.55,
+            quantity: 2,
+            amount: 1.1,
+            priceCents: 55,
+            quantityMilli: 2000,
+            amountCents: 110
+          }]);
         },
         error => done(error),
         () => done()

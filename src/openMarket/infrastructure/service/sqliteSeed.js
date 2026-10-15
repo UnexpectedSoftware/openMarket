@@ -1,5 +1,8 @@
 import { toStoredBound } from './sqliteDates';
 import {dropInvoiceGuards, installInvoiceGuards} from './SqliteConnection';
+import Money from '../../domain/money/Money';
+import Quantity from '../../domain/money/Quantity';
+import {centsOf, eurosOf, milliOf, unitsOf} from './storedMoney';
 
 function allocateId(id, used) {
   const base = id == null ? 'order' : String(id);
@@ -17,6 +20,16 @@ function allocateId(id, used) {
   return next;
 }
 
+function lineAmountCents(line) {
+  if (line.amount != null) {
+    return centsOf(line.amount);
+  }
+  const price = Money.from(line.price == null ? 0 : line.price);
+  const quantity = Quantity.from(line.quantity == null ? 0 : line.quantity);
+  const safe = quantity.milli < 0 ? Quantity.ofMilli(0) : quantity;
+  return price.times(safe).cents;
+}
+
 function bit(value) {
   if (value == null) {
     return null;
@@ -27,12 +40,15 @@ function bit(value) {
 export function createFixtureInserter(database) {
   const insertCategory = database.prepare('INSERT INTO category (id, name) VALUES (?, ?)');
   const insertProduct = database.prepare(
-    'INSERT INTO product (barcode, name, description, price, base_price, stock, stock_min, status, weighted, category_id) ' +
-    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+    'INSERT INTO product (barcode, name, description, price, price_cents, base_price, base_price_cents, stock, stock_min, status, weighted, category_id) ' +
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
   );
-  const insertOrder = database.prepare('INSERT INTO "order" (id, created_at, total) VALUES (?, ?, ?)');
+  const insertOrder = database.prepare(
+    'INSERT INTO "order" (id, created_at, total, total_cents) VALUES (?, ?, ?, ?)'
+  );
   const insertLine = database.prepare(
-    'INSERT INTO line (order_id, barcode, name, price, quantity) VALUES (?, ?, ?, ?, ?)'
+    'INSERT INTO line (order_id, barcode, name, price, quantity, price_cents, quantity_milli, amount_cents) ' +
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
   );
   const categoryIds = new Set();
   const usedOrderIds = new Set();
@@ -53,8 +69,10 @@ export function createFixtureInserter(database) {
         product._barcode,
         product._name == null ? null : product._name,
         product._description == null ? null : product._description,
-        product._price == null ? null : product._price,
-        product._basePrice == null ? null : product._basePrice,
+        product._price == null ? null : eurosOf(product._price),
+        product._price == null ? null : centsOf(product._price),
+        product._basePrice == null ? null : eurosOf(product._basePrice),
+        product._basePrice == null ? null : centsOf(product._basePrice),
         product._stock == null ? null : product._stock,
         product._stockMin == null ? null : product._stockMin,
         product._status == null ? null : product._status,
@@ -64,9 +82,18 @@ export function createFixtureInserter(database) {
     },
     insertOrder(order) {
       const id = allocateId(order._id, usedOrderIds);
-      insertOrder.run(id, toStoredBound(order._createdAt), order._total);
+      insertOrder.run(id, toStoredBound(order._createdAt), eurosOf(order._total), centsOf(order._total));
       (order._lines || []).forEach(line => {
-        insertLine.run(id, line.barcode, line.name, line.price, line.quantity);
+        insertLine.run(
+          id,
+          line.barcode,
+          line.name,
+          eurosOf(line.price),
+          unitsOf(line.quantity),
+          centsOf(line.price),
+          milliOf(line.quantity),
+          lineAmountCents(line)
+        );
       });
     }
   };

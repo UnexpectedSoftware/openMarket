@@ -94,12 +94,16 @@ describe('Invoice', () => {
           expect(payload.invoiceNumber).to.equal(first.invoiceNumber);
           expect(payload.orderId).to.equal(firstOrder.id);
           expect(payload.total).to.equal(1.1);
+          expect(payload.totalCents).to.equal(110);
           expect(payload.lines[0]).to.deep.equal({
             barcode: '0001',
             name: 'Coca-Cola',
             price: 0.55,
             quantity: 2,
-            amount: 1.1
+            amount: 1.1,
+            priceCents: 55,
+            quantityMilli: 2000,
+            amountCents: 110
           });
         },
         error => done(error),
@@ -210,7 +214,7 @@ describe('Invoice', () => {
           expect(found.id).to.equal(invoice.id);
           expect(found.invoiceNumber.formatted).to.equal(invoice.invoiceNumber.formatted);
           expect(found.lines).to.deep.equal(invoice.lines);
-          expect(found.total).to.equal(1.1);
+          expect(found.total.cents).to.equal(110);
           expect(found.status).to.equal('ISSUED');
           expect(found.orderId).to.equal(invoice.orderId);
         },
@@ -328,21 +332,20 @@ describe('Invoice', () => {
         const storedLine = database.prepare(
           'SELECT price, quantity, amount FROM invoice_line WHERE invoice_id = ?'
         ).get(row.id);
-        expect(row.total).to.equal(order.total);
+        expect(row.total).to.equal(order.total.toEuros());
         expect(storedLine.amount).to.equal(1.1);
+        expect(database.prepare('SELECT total_cents FROM invoice WHERE id = ?').get(row.id).total_cents)
+          .to.equal(order.total.cents);
         database.prepare('UPDATE product SET price = ? WHERE barcode = ?').run(99, '0001');
         return invoiceRepository.findById({id: row.id}).map(invoice => ({order, invoice, storedLine}));
       })
       .subscribe(
         ({order, invoice, storedLine}) => {
-          expect(invoice.total).to.equal(order.total);
-          expect(invoice.lines).to.deep.equal([{
-            barcode: '0001',
-            name: 'Coca-Cola',
-            price: storedLine.price,
-            quantity: storedLine.quantity,
-            amount: storedLine.amount
-          }]);
+          expect(invoice.total.cents).to.equal(order.total.cents);
+          expect(invoice.lines[0].barcode).to.equal('0001');
+          expect(invoice.lines[0].price.cents).to.equal(55);
+          expect(invoice.lines[0].quantity.milli).to.equal(2000);
+          expect(invoice.lines[0].amount.cents).to.equal(110);
           expect(database.prepare('SELECT price FROM product WHERE barcode = ?').get('0001').price).to.equal(99);
         },
         error => done(error),

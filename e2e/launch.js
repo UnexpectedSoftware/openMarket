@@ -78,6 +78,9 @@ async function fillProduct(window, product) {
   await window.locator('input[name="basePrice"]').fill(String(product.basePrice));
   await window.locator('input[name="stock"]').fill(String(product.stock));
   await window.locator('input[name="stockMin"]').fill(String(product.stockMin));
+  if (product.weighted) {
+    await window.locator('input[name="weighted"]').check();
+  }
   const category = window.locator('select[name="categoryId"]');
   await expect(category.locator('option', {hasText: product.category})).toHaveCount(1);
   await category.selectOption({label: product.category});
@@ -125,7 +128,7 @@ async function setQuantity(window, name, quantity) {
 }
 
 async function expectOrderTotal(window, amount) {
-  await expect(window.locator('h3')).toContainText(`${amount} €`);
+  await expect(window.locator('h3')).toContainText(euros(amount));
 }
 
 async function dismissTicket(window) {

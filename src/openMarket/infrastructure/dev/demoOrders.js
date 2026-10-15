@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker';
-import { add, multiply } from '../service/floatCalculatorService';
+import Money from '../../domain/money/Money';
+import Quantity from '../../domain/money/Quantity';
 
 const OPEN_MINUTES = 10 * 60;
 const CLOSE_MINUTES = 20 * 60 + 30;
@@ -46,7 +47,11 @@ function buildLines(products) {
 }
 
 function lineTotal(lines) {
-  return lines.reduce((sum, line) => add(sum, multiply(line.price, line.quantity)), 0);
+  return lines.reduce((sum, line) => {
+    const price = Money.from(line.price);
+    const quantity = Quantity.from(line.quantity);
+    return sum.plus(price.times(quantity));
+  }, Money.ofCents(0)).toEuros();
 }
 
 export function buildDemoOrders(products, now = new Date()) {

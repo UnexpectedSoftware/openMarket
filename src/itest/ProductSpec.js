@@ -371,7 +371,7 @@ describe('Product create use case', () => {
       if (product.barcode === productDTONew.barcode) {
         la(product.name === productDTONew.name, 'names are not the same');
         la(product.description === productDTONew.description, 'descriptions are not the same');
-        la(product.price === productDTONew.price, 'prices are not the same');
+        la(product.price.cents === productDTONew.price * 100, 'prices are not the same');
         la(product.stock === productDTONew.stock, 'stocks are not the same');
         la(product.category.id === productDTONew.categoryId, 'categoryId are not the same');
         la(product.status === productDTONew.status, `status not updated, product status is ${product.status} and should be ${productDTONew.status}`);

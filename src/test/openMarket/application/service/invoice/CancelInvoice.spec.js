@@ -76,8 +76,8 @@ describe('CancelInvoice', () => {
         expect(invoice.status).to.equal('CANCELLED');
         expect(invoice.cancelledAt).to.equal(cancelledAt);
         expect(invoice.invoiceNumber.formatted).to.equal('A/000001');
-        expect(invoice.total).to.equal(1.1);
-        expect(invoice.lines[0].amount).to.equal(1.1);
+        expect(invoice.total.cents).to.equal(110);
+        expect(invoice.lines[0].amount.cents).to.equal(110);
         expect(seen).to.have.lengthOf(1);
         expect(seen[0]).to.be.instanceof(InvoiceCancelled);
         expect(seen[0].invoiceNumber).to.equal('A/000001');
@@ -85,6 +85,7 @@ describe('CancelInvoice', () => {
         expect(seen[0].issuedAt).to.equal('2026-10-14T12:00:00.000Z');
         expect(seen[0].orderId).to.equal('order-1');
         expect(seen[0].total).to.equal(1.1);
+        expect(seen[0].totalCents).to.equal(110);
         expect(seen[0].lines[0].barcode).to.equal('0001');
         expect(repository.events).to.have.lengthOf(1);
         expect(repository.events[0].type).to.equal('InvoiceCancelled');

@@ -1,7 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { DatabaseSync } from 'node:sqlite';
-import {multiply} from '../../domain/money';
+import Money from '../../domain/money/Money';
+import Quantity from '../../domain/money/Quantity';
 import sqliteDatabasePath from './sqliteDatabasePath';
 
 const SCHEMA = `
@@ -16,6 +17,8 @@ CREATE TABLE IF NOT EXISTS product (
   description TEXT,
   price REAL,
   base_price REAL,
+  price_cents INTEGER,
+  base_price_cents INTEGER,
   stock REAL,
   stock_min REAL,
   status TEXT,
@@ -26,14 +29,18 @@ CREATE TABLE IF NOT EXISTS product (
 CREATE TABLE IF NOT EXISTS "order" (
   id TEXT PRIMARY KEY,
   created_at TEXT,
-  total REAL
+  total REAL,
+  total_cents INTEGER
 );
 CREATE TABLE IF NOT EXISTS line (
   order_id TEXT,
   barcode TEXT,
   name TEXT,
   price REAL,
-  quantity REAL
+  quantity REAL,
+  price_cents INTEGER,
+  quantity_milli INTEGER,
+  amount_cents INTEGER
 );
 CREATE TABLE IF NOT EXISTS product_sale_day (
   barcode TEXT NOT NULL,
@@ -41,6 +48,7 @@ CREATE TABLE IF NOT EXISTS product_sale_day (
   sold_on TEXT NOT NULL,
   quantity REAL NOT NULL,
   amount REAL NOT NULL,
+  amount_cents INTEGER,
   PRIMARY KEY (barcode, sold_on)
 );
 CREATE INDEX IF NOT EXISTS product_sale_day_sold_on ON product_sale_day (sold_on);
@@ -90,6 +98,7 @@ CREATE TABLE IF NOT EXISTS invoice (
   status TEXT NOT NULL,
   cancelled_at TEXT,
   total REAL NOT NULL,
+  total_cents INTEGER,
   UNIQUE (series, number)
 );
 CREATE TABLE IF NOT EXISTS invoice_line (
@@ -100,14 +109,63 @@ CREATE TABLE IF NOT EXISTS invoice_line (
   price REAL NOT NULL,
   quantity REAL NOT NULL,
   amount REAL,
+  price_cents INTEGER,
+  quantity_milli INTEGER,
+  amount_cents INTEGER,
   PRIMARY KEY (invoice_id, position)
+);
+CREATE TABLE IF NOT EXISTS schema_migration (
+  name TEXT PRIMARY KEY,
+  applied_at TEXT NOT NULL
 );
 CREATE UNIQUE INDEX IF NOT EXISTS invoice_order_id ON invoice (order_id);
 `;
 
+/**
+ * Cents for a stored euro amount. The text of the number is parsed, not multiplied.
+ * @param {number | string | null | undefined} value
+ * @returns {number}
+ */
+function storedCents(value) {
+  if (value == null || value === '') {
+    return 0;
+  }
+  return Money.fromEuros(String(value)).cents;
+}
+
+/**
+ * @param {number | string | null | undefined} value
+ * @returns {number}
+ */
+function storedMilli(value) {
+  if (value == null || value === '') {
+    return 0;
+  }
+  return Quantity.fromDecimal(String(value)).milli;
+}
+
+/**
+ * The line total the previous float total used, rounded to euro cents.
+ * @param {number | null} price
+ * @param {number | null} quantity
+ * @returns {number}
+ */
+function historicalLineCents(price, quantity) {
+  const places = 2;
+  const euros = Number((Number(price) * Number(quantity)).toFixed(places));
+  return storedCents(euros);
+}
+
+function tableColumns(database, table) {
+  return database.prepare(`PRAGMA table_info(${table})`).all();
+}
+
+function hasColumn(database, table, column) {
+  return tableColumns(database, table).some(columnInfo => columnInfo.name === column);
+}
+
 function ensureColumn(database, table, column, definition) {
-  const columns = database.prepare(`PRAGMA table_info(${table})`).all();
-  if (!columns.some(columnInfo => columnInfo.name === column)) {
+  if (!hasColumn(database, table, column)) {
     database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
 }
@@ -120,7 +178,7 @@ function ensureColumn(database, table, column, definition) {
  */
 const INVOICE_GUARD_SQL = `
 CREATE TRIGGER IF NOT EXISTS invoice_forbid_rewrite
-BEFORE UPDATE OF series, number, invoice_number, issued_at, total ON invoice
+BEFORE UPDATE OF series, number, invoice_number, issued_at, total, total_cents ON invoice
 BEGIN
   SELECT RAISE(ABORT, 'An issued invoice cannot change its number, date, or total');
 END;
@@ -166,8 +224,97 @@ function backfillInvoiceLineAmounts(database) {
     'UPDATE invoice_line SET amount = ? WHERE invoice_id = ? AND position = ? AND amount IS NULL'
   );
   pending.forEach(row => {
-    update.run(multiply(row.price, row.quantity), row.invoice_id, row.position);
+    const amount = Money.fromEuros(row.price).times(Quantity.fromDecimal(row.quantity));
+    update.run(amount.toEuros(), row.invoice_id, row.position);
   });
+}
+
+const MONEY_CENTS_MIGRATION = 'money_integer_cents';
+
+/**
+ * Copies stored euro amounts into integer cents. Issued invoice amounts are
+ * copied, not recalculated. A second open finds the schema_migration row and skips.
+ * @param {{prepare: Function, exec: Function}} database
+ */
+function migrateMoneyCents(database) {
+  ensureColumn(database, 'product', 'price_cents', 'INTEGER');
+  ensureColumn(database, 'product', 'base_price_cents', 'INTEGER');
+  ensureColumn(database, '"order"', 'total_cents', 'INTEGER');
+  ensureColumn(database, 'line', 'price_cents', 'INTEGER');
+  ensureColumn(database, 'line', 'quantity_milli', 'INTEGER');
+  ensureColumn(database, 'line', 'amount_cents', 'INTEGER');
+  ensureColumn(database, 'product_sale_day', 'amount_cents', 'INTEGER');
+  ensureColumn(database, 'invoice', 'total_cents', 'INTEGER');
+  ensureColumn(database, 'invoice_line', 'price_cents', 'INTEGER');
+  ensureColumn(database, 'invoice_line', 'quantity_milli', 'INTEGER');
+  ensureColumn(database, 'invoice_line', 'amount_cents', 'INTEGER');
+  const applied = database.prepare(
+    'SELECT name FROM schema_migration WHERE name = ?'
+  ).get(MONEY_CENTS_MIGRATION);
+  if (applied) {
+    return;
+  }
+  // Stored REAL values are copied from their decimal text. SQLite ROUND(real * 100)
+  // can turn a stored 6.47 into 648. Order lines never stored an amount, so their
+  // cents use the same toFixed product the old total used.
+  if (hasColumn(database, 'product', 'price')) {
+    const products = database.prepare('SELECT rowid AS rowid, price, base_price FROM product').all();
+    const update = database.prepare(
+      'UPDATE product SET price_cents = ?, base_price_cents = ? WHERE rowid = ?'
+    );
+    products.forEach(row => {
+      update.run(storedCents(row.price), storedCents(row.base_price), row.rowid);
+    });
+  }
+  if (hasColumn(database, '"order"', 'total')) {
+    const orders = database.prepare('SELECT rowid AS rowid, total FROM "order"').all();
+    const update = database.prepare('UPDATE "order" SET total_cents = ? WHERE rowid = ?');
+    orders.forEach(row => update.run(storedCents(row.total), row.rowid));
+  }
+  if (hasColumn(database, 'line', 'price') && hasColumn(database, 'line', 'quantity')) {
+    const lines = database.prepare('SELECT rowid AS rowid, price, quantity FROM line').all();
+    const update = database.prepare(
+      'UPDATE line SET price_cents = ?, quantity_milli = ?, amount_cents = ? WHERE rowid = ?'
+    );
+    lines.forEach(row => {
+      update.run(
+        storedCents(row.price),
+        storedMilli(row.quantity),
+        historicalLineCents(row.price, row.quantity),
+        row.rowid
+      );
+    });
+  }
+  if (hasColumn(database, 'product_sale_day', 'amount')) {
+    const days = database.prepare('SELECT rowid AS rowid, amount FROM product_sale_day').all();
+    const update = database.prepare('UPDATE product_sale_day SET amount_cents = ? WHERE rowid = ?');
+    days.forEach(row => update.run(storedCents(row.amount), row.rowid));
+  }
+  dropInvoiceGuards(database);
+  if (hasColumn(database, 'invoice', 'total')) {
+    const invoices = database.prepare('SELECT rowid AS rowid, total FROM invoice').all();
+    const update = database.prepare('UPDATE invoice SET total_cents = ? WHERE rowid = ?');
+    invoices.forEach(row => update.run(storedCents(row.total), row.rowid));
+  }
+  if (hasColumn(database, 'invoice_line', 'amount')) {
+    const invoiceLines = database.prepare(
+      'SELECT rowid AS rowid, price, quantity, amount FROM invoice_line'
+    ).all();
+    const update = database.prepare(
+      'UPDATE invoice_line SET price_cents = ?, quantity_milli = ?, amount_cents = ? WHERE rowid = ?'
+    );
+    invoiceLines.forEach(row => {
+      update.run(
+        storedCents(row.price),
+        storedMilli(row.quantity),
+        storedCents(row.amount),
+        row.rowid
+      );
+    });
+  }
+  database.prepare(
+    'INSERT INTO schema_migration (name, applied_at) VALUES (?, ?)'
+  ).run(MONEY_CENTS_MIGRATION, new Date().toISOString());
 }
 
 /**
@@ -202,8 +349,14 @@ export default class SqliteConnection {
     ensureColumn(this._database, 'product', 'image_name', 'TEXT');
     ensureColumn(this._database, 'domain_event', 'dispatched_at', 'TEXT');
     ensureColumn(this._database, 'invoice_line', 'amount', 'REAL');
+    this._database.exec(`CREATE TABLE IF NOT EXISTS schema_migration (
+      name TEXT PRIMARY KEY,
+      applied_at TEXT NOT NULL
+    )`);
     backfillInvoiceLineAmounts(this._database);
+    migrateMoneyCents(this._database);
     ensureUniqueInvoiceOrder(this._database);
+    dropInvoiceGuards(this._database);
     installInvoiceGuards(this._database);
   }
 

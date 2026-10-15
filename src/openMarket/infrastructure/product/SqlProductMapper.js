@@ -1,4 +1,5 @@
 import * as Rx from "rxjs";
+import {moneyFromColumns} from "../service/storedMoney";
 /** @import ProductFactory from '../../domain/product/ProductFactory' */
 /** @import CategoryFactory from '../../domain/category/CategoryFactory' */
 /** @import Product from '../../domain/product/Product' */
@@ -25,10 +26,10 @@ export default class SqlProductMapper {
     return Rx.Observable.of(
       this._productFactory.createWith({
         barcode: persistenceProduct.barcode,
-        basePrice: persistenceProduct.base_price,
+        basePrice: moneyFromColumns(persistenceProduct.base_price_cents, persistenceProduct.base_price),
         description: persistenceProduct.description,
         name: persistenceProduct.name,
-        price: persistenceProduct.price,
+        price: moneyFromColumns(persistenceProduct.price_cents, persistenceProduct.price),
         status: persistenceProduct.status,
         stock: persistenceProduct.stock,
         stockMin: persistenceProduct.stock_min,

@@ -67,8 +67,18 @@ export default class CancelInvoice {
             issuedAt: invoice.issuedAt,
             cancelledAt: invoice.cancelledAt,
             orderId: invoice.orderId,
-            lines: invoice.lines,
-            total: invoice.total
+            total: invoice.total.toEuros(),
+            totalCents: invoice.total.cents,
+            lines: invoice.lines.map(line => ({
+              barcode: line.barcode,
+              name: line.name,
+              price: line.price.toEuros(),
+              quantity: line.quantity.units,
+              amount: line.amount.toEuros(),
+              priceCents: line.price.cents,
+              quantityMilli: line.quantity.milli,
+              amountCents: line.amount.cents
+            }))
           }));
         });
       }))

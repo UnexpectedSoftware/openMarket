@@ -1,5 +1,6 @@
 import * as Rx from "rxjs";
 import Order from "../../domain/order/Order";
+import {moneyFromColumns, quantityFromColumns} from "../service/storedMoney";
 
 /**
  * A stored order is already placed. Restoring it does not check its lines again.
@@ -32,8 +33,11 @@ export default class SqlOrderMapper {
       .map(row => ({
         barcode: row.line_barcode,
         name: row.line_name,
-        price: row.line_price,
-        quantity: row.line_quantity
+        price: moneyFromColumns(row.line_price_cents, row.line_price),
+        quantity: quantityFromColumns(row.line_quantity_milli, row.line_quantity),
+        amount: row.line_amount_cents == null
+          ? undefined
+          : moneyFromColumns(row.line_amount_cents, null)
       }))
       .toArray()
   }

@@ -1,27 +1,31 @@
 import * as Rx from "rxjs";
 import { toStoredBound } from "../service/sqliteDates";
+import {centsOf, eurosOf, milliOf, moneyFromColumns, unitsOf} from "../service/storedMoney";
 /** @import OrderRepository from "../../domain/order/OrderRepository" */
 
 const DISPLAY_CREATED_AT = "strftime('%d/%m/%Y %H:%M:%S', created_at)";
 const DISPLAY_DAY = "strftime('%d/%m/%Y', created_at)";
 
-const FIND_BY_ID_SQL = 'SELECT o.id, ' + DISPLAY_CREATED_AT + ' as created_at, o.total, ' +
-  'l.barcode as line_barcode, l.name as line_name, l.price as line_price, l.quantity as line_quantity ' +
+const FIND_BY_ID_SQL = 'SELECT o.id, ' + DISPLAY_CREATED_AT + ' as created_at, o.total, o.total_cents, ' +
+  'l.barcode as line_barcode, l.name as line_name, l.price as line_price, l.quantity as line_quantity, ' +
+  'l.price_cents as line_price_cents, l.quantity_milli as line_quantity_milli, l.amount_cents as line_amount_cents ' +
   'FROM "order" o INNER JOIN line l ON l.order_id = o.id WHERE o.id = ?';
 
-const FIND_ALL_BY_DATES_SQL = 'SELECT id, ' + DISPLAY_CREATED_AT + ' as createdAt, total FROM "order" ' +
+const FIND_ALL_BY_DATES_SQL = 'SELECT id, ' + DISPLAY_CREATED_AT + ' as createdAt, total, total_cents FROM "order" ' +
   'WHERE created_at BETWEEN ? AND ? ORDER BY created_at ASC LIMIT ? OFFSET ?';
 
 const COUNT_BY_DATES_SQL = 'SELECT count(*) AS total FROM "order" WHERE created_at BETWEEN ? AND ?';
 
-const TOTAL_AMOUNT_SQL = 'SELECT total FROM "order" WHERE created_at BETWEEN ? AND ?';
+const TOTAL_AMOUNT_SQL = 'SELECT total, total_cents FROM "order" WHERE created_at BETWEEN ? AND ?';
 
-const TOTAL_AMOUNT_BY_DAYS_SQL = 'SELECT total, ' + DISPLAY_DAY + ' as createdAt FROM "order" ' +
+const TOTAL_AMOUNT_BY_DAYS_SQL = 'SELECT total, total_cents, ' + DISPLAY_DAY + ' as createdAt FROM "order" ' +
   'WHERE created_at BETWEEN ? AND ? ORDER BY created_at ASC';
 
-const INSERT_ORDER_SQL = 'INSERT INTO "order" (id, created_at, total) VALUES (?, ?, ?)';
+const INSERT_ORDER_SQL = 'INSERT INTO "order" (id, created_at, total, total_cents) VALUES (?, ?, ?, ?)';
 
-const INSERT_LINE_SQL = 'INSERT INTO line (order_id, barcode, name, price, quantity) VALUES (?, ?, ?, ?, ?)';
+const INSERT_LINE_SQL = 'INSERT INTO line ' +
+  '(order_id, barcode, name, price, quantity, price_cents, quantity_milli, amount_cents) ' +
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
 
 /** @implements {OrderRepository} */
 export default class SqliteOrderRepository {
@@ -52,7 +56,7 @@ export default class SqliteOrderRepository {
       return Rx.Observable.of(rows.map(row => ({
         id: row.id,
         createdAt: row.createdAt,
-        total: row.total
+        total: moneyFromColumns(row.total_cents, row.total).toEuros()
       })));
     });
   }
@@ -92,11 +96,21 @@ export default class SqliteOrderRepository {
       this._database.prepare(INSERT_ORDER_SQL).run(
         String(order.id),
         toStoredBound(order.createdAt),
-        order.total
+        eurosOf(order.total),
+        centsOf(order.total)
       );
       const insertLine = this._database.prepare(INSERT_LINE_SQL);
       order.lines.forEach(line => {
-        insertLine.run(String(order.id), line.barcode, line.name, line.price, line.quantity);
+        insertLine.run(
+          String(order.id),
+          line.barcode,
+          line.name,
+          eurosOf(line.price),
+          unitsOf(line.quantity),
+          centsOf(line.price),
+          milliOf(line.quantity),
+          centsOf(line.amount)
+        );
       });
       return Rx.Observable.of(order);
     });
