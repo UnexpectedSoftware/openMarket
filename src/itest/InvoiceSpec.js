@@ -91,20 +91,13 @@ describe('Invoice', () => {
           expect(row.aggregateId).to.equal(first.id);
           expect(row.dispatchedAt).to.match(/^\d{4}-\d{2}-\d{2}T/);
           const payload = JSON.parse(row.payload);
+          expect(payload.schemaVersion).to.equal(1);
+          expect(payload.invoiceId).to.equal(first.id);
           expect(payload.invoiceNumber).to.equal(first.invoiceNumber);
           expect(payload.orderId).to.equal(firstOrder.id);
-          expect(payload.total).to.equal(1.1);
           expect(payload.totalCents).to.equal(110);
-          expect(payload.lines[0]).to.deep.equal({
-            barcode: '0001',
-            name: 'Coca-Cola',
-            price: 0.55,
-            quantity: 2,
-            amount: 1.1,
-            priceCents: 55,
-            quantityMilli: 2000,
-            amountCents: 110
-          });
+          expect(payload.lines[0].amountCents).to.equal(110);
+          expect(payload.lines[0].vat).to.deep.equal({kind: 'S1', percent: 21, cause: null});
         },
         error => done(error),
         () => done()
@@ -245,7 +238,7 @@ describe('Invoice', () => {
           expect(after.number).to.equal(before.number);
           expect(after.orderId).to.equal(before.orderId);
           expect(after.status).to.equal('CANCELLED');
-          expect(after.cancelledAt).to.equal('2026-10-14T15:00:00.000Z');
+          expect(after.cancelledAt).to.equal('2026-10-14T17:00:00+02:00');
           expect(found.lines).to.deep.equal(cancelled.lines);
           expect(found.invoiceNumber.formatted).to.equal(before.invoiceNumber);
           expect(count('SELECT COUNT(*) AS total FROM invoice_line')).to.equal(lines.length);
@@ -253,9 +246,12 @@ describe('Invoice', () => {
           const event = database.prepare(
             'SELECT payload FROM domain_event WHERE type = ? AND aggregate_id = ?'
           ).get('InvoiceCancelled', cancelled.id);
-          expect(JSON.parse(event.payload).cancelledAt).to.equal('2026-10-14T15:00:00.000Z');
-          expect(JSON.parse(event.payload).invoiceNumber).to.equal(before.invoiceNumber);
-          expect(JSON.parse(event.payload).orderId).to.equal(before.orderId);
+          const cancelledPayload = JSON.parse(event.payload);
+          expect(cancelledPayload.schemaVersion).to.equal(1);
+          expect(cancelledPayload.cancelledAt).to.equal('2026-10-14T17:00:00+02:00');
+          expect(cancelledPayload.invoiceNumber).to.equal(before.invoiceNumber);
+          expect(cancelledPayload.reason).to.equal(null);
+          expect(cancelledPayload.totalCents).to.equal(110);
         },
         error => done(error),
         () => done()

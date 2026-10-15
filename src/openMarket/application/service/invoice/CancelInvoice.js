@@ -2,6 +2,7 @@ import 'rxjs/add/operator/defaultIfEmpty';
 import 'rxjs/add/operator/do';
 import 'rxjs/add/operator/mergeMap';
 import InvoiceCancelled from '../../../domain/event/InvoiceCancelled';
+import {cancelledPayload} from '../../../domain/invoice/invoicePayload';
 import InvoiceNotFoundError from '../../../domain/invoice/InvoiceNotFoundError';
 import observableError from '../../../infrastructure/logging/observableError';
 /** @import { Observable } from 'rxjs/Observable' */
@@ -44,9 +45,10 @@ export default class CancelInvoice {
     if (invoiceId === '') {
       return observableError(new InvoiceNotFoundError({id, operation: 'cancel'}));
     }
-    const stamp = cancelledAt == null || String(cancelledAt).trim() === ''
+    const instant = cancelledAt == null || String(cancelledAt).trim() === ''
       ? this._clock.now()
       : String(cancelledAt);
+    const stamp = this._clock.zoned ? this._clock.zoned({instant}).local : instant;
     return this._transaction.run(() => this._invoiceRepository.findById({id: invoiceId})
       .defaultIfEmpty(null)
       .flatMap(invoice => {
@@ -59,27 +61,7 @@ export default class CancelInvoice {
           return observableError(error);
         }
         return this._invoiceRepository.save({invoice}).do(() => {
-          this._domainEventBus.save(new InvoiceCancelled({
-            id: invoice.id,
-            series: invoice.invoiceNumber.series,
-            number: invoice.invoiceNumber.number,
-            invoiceNumber: invoice.invoiceNumber.formatted,
-            issuedAt: invoice.issuedAt,
-            cancelledAt: invoice.cancelledAt,
-            orderId: invoice.orderId,
-            total: invoice.total.toEuros(),
-            totalCents: invoice.total.cents,
-            lines: invoice.lines.map(line => ({
-              barcode: line.barcode,
-              name: line.name,
-              price: line.price.toEuros(),
-              quantity: line.quantity.units,
-              amount: line.amount.toEuros(),
-              priceCents: line.price.cents,
-              quantityMilli: line.quantity.milli,
-              amountCents: line.amount.cents
-            }))
-          }));
+          this._domainEventBus.save(new InvoiceCancelled(cancelledPayload(invoice, {reason: null})));
         });
       }))
       .do(

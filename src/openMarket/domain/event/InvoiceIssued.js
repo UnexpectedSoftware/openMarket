@@ -1,6 +1,6 @@
 /**
- * An invoice was issued. Lines are a snapshot so a later change to a product
- * or to the source order does not change this document.
+ * An invoice was issued. The public payload is schema version 1.
+ * A stored row with no schemaVersion is version 0 and is not rewritten.
  */
 export default class InvoiceIssued {
 
@@ -16,54 +16,59 @@ export default class InvoiceIssued {
     return true;
   }
 
+  /** @returns {number} */
+  static get schemaVersion() {
+    return 1;
+  }
+
   /**
-   * @param {object} params
-   * @param {string} params.id
-   * @param {string} params.series
-   * @param {number} params.number
-   * @param {string} params.invoiceNumber
-   * @param {string} params.issuedAt
-   * @param {string | null} params.orderId
-   * @param {Array<{barcode: string, name: string, price: number, quantity: number, amount: number, priceCents?: number, quantityMilli?: number, amountCents?: number}>} params.lines
-   * @param {number} params.total
-   * @param {number} [params.totalCents]
+   * @param {*} payload Version 1 payload, or a version 0 row
    */
-  constructor({id, series, number, invoiceNumber, issuedAt, orderId, lines, total, totalCents}) {
-    this.id = id;
-    this.series = series;
-    this.number = number;
-    this.invoiceNumber = invoiceNumber;
-    this.issuedAt = issuedAt;
-    this.orderId = orderId == null ? null : orderId;
-    this.lines = (lines || []).map(line => lineWithCents(line));
-    this.total = total;
-    if (totalCents != null) {
-      this.totalCents = totalCents;
-    }
+  constructor(payload) {
+    const source = payload || {};
+    const body = source.schemaVersion == null ? legacyIssued(source) : clone(source);
+    Object.assign(this, freeze(body));
   }
 
 }
 
 /**
- * @param {{barcode: string, name: string, price: number, quantity: number, amount: number, priceCents?: number, quantityMilli?: number, amountCents?: number}} line
+ * Rows saved before schema version 1. Subscribers registered after that release
+ * do not receive them: delivery skips events stored before registration.
+ * @param {*} payload
  * @returns {object}
  */
-function lineWithCents(line) {
-  const copy = {
-    barcode: line.barcode,
-    name: line.name,
-    price: line.price,
-    quantity: line.quantity,
-    amount: line.amount
+function legacyIssued(payload) {
+  return {
+    schemaVersion: 0,
+    id: payload.id,
+    series: payload.series,
+    number: payload.number,
+    invoiceNumber: payload.invoiceNumber,
+    issuedAt: payload.issuedAt,
+    orderId: payload.orderId == null ? null : payload.orderId,
+    lines: payload.lines || [],
+    total: payload.total,
+    totalCents: payload.totalCents == null ? null : payload.totalCents
   };
-  if (line.priceCents != null) {
-    copy.priceCents = line.priceCents;
+}
+
+/**
+ * @param {object} value
+ * @returns {object}
+ */
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+/**
+ * @param {*} value
+ * @returns {*}
+ */
+function freeze(value) {
+  if (value && typeof value === 'object' && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    Object.keys(value).forEach(key => freeze(value[key]));
   }
-  if (line.quantityMilli != null) {
-    copy.quantityMilli = line.quantityMilli;
-  }
-  if (line.amountCents != null) {
-    copy.amountCents = line.amountCents;
-  }
-  return copy;
+  return value;
 }

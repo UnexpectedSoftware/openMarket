@@ -117,9 +117,17 @@ domainEventBus.subscribeDurable('notify-warehouse', OrderCreated, event => {
 
 Register durable subscribers before `DomainEventDispatcher.start()`. The app starts `PluginHost`, then `RecordProductSales`, then the dispatcher. `PluginHost` registers enabled plugins before that first scan.
 
+## Public event payloads
+
+`InvoiceIssued` and `InvoiceCancelled` are the fiscal contract a plugin may read. Both are built only by `domain/invoice/invoicePayload.js`. The current contract is schema version 1. The field list, types, and JSON fixtures are in [plugins.md](plugins.md). Amounts are integer cents. A missing value is `null`.
+
+A `domain_event` row saved before this contract has no `schemaVersion`. `hydrate` maps that row to version 0 and does not rewrite it. A durable subscriber registered after this release never sees version 0: delivery skips events stored before that subscriber's registration time. Version 0 is not upcast.
+
+Removing or renaming a field requires schema version 2, with both versions documented. Adding a field stays on version 1.
+
 ## Public events
 
-Each class has a `type` string. The payload is the fields passed to the constructor.
+Each class has a `type` string. The payload is the fields passed to the constructor. `InvoiceIssued` and `InvoiceCancelled` use schema version 1.
 
 ### `OrderCreated`
 
@@ -149,67 +157,13 @@ Saved by `CreateOrder` in the same transaction as the order, after the invoice l
 
 `subscribeSync` runs from `save`, before the `domain_event` insert, while the order, the stock change, the invoice, and the sequence update are still uncommitted. A throw rolls all of them back, and the number can be used again. `record` is not used: a subscriber that must see the issued document after a restart needs the stored row.
 
-| Field | Meaning |
-| --- | --- |
-| `id` | Invoice id |
-| `series` | Series, such as `2026` or `A` |
-| `number` | Integer within that series |
-| `invoiceNumber` | Formatted number, such as `2026/000001` or `A/000123` |
-| `issuedAt` | Issue time, ISO-8601 UTC |
-| `orderId` | Id of the placed order this invoice was issued for |
-| `lines` | Snapshot of `{barcode, name, price, quantity, amount}` copied from that order |
-| `total` | Sum of the line amounts |
-
-`aggregate_id` is the invoice id. Later edits to a product or to the order do not change this snapshot. Cancelling the invoice does not change it either.
-
-```json
-{
-  "id": "6f1c0b9e-1b2a-4c3d-9e8f-0a1b2c3d4e5f",
-  "series": "2026",
-  "number": 1,
-  "invoiceNumber": "2026/000001",
-  "issuedAt": "2026-10-14T12:00:00.000Z",
-  "orderId": "8c2a1d44-7e5b-4f1a-9c0d-2b6e8a1f0c33",
-  "lines": [
-    {"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1, "amount": 0.55}
-  ],
-  "total": 0.55
-}
-```
+The stored payload is schema version 1 from `issuedPayload`. `aggregate_id` is `invoiceId`. Later edits to a product or to the order do not change this snapshot. Cancelling the invoice does not change it either. The example is `src/test/openMarket/contracts/fixtures/InvoiceIssued.v1.json`.
 
 ### `InvoiceCancelled`
 
-Saved by `CancelInvoice` inside the cancellation transaction, after the invoice status has been set to cancelled. The type is marked durable. Raised after that transaction commits. `CancelInvoice` then calls `dispatch()`. The number, the lines, and the total are the issued snapshot. A second cancellation does not save another event.
+Saved by `CancelInvoice` inside the cancellation transaction, after the invoice status has been set to cancelled. The type is marked durable. Raised after that transaction commits. `CancelInvoice` then calls `dispatch()`. A second cancellation does not save another event.
 
-| Field | Meaning |
-| --- | --- |
-| `id` | Invoice id |
-| `series` | Series |
-| `number` | Integer within that series |
-| `invoiceNumber` | Formatted number |
-| `issuedAt` | Original issue time, ISO-8601 UTC |
-| `cancelledAt` | Cancellation time, ISO-8601 UTC |
-| `orderId` | Id of the placed order this invoice was issued for |
-| `lines` | Issued snapshot of `{barcode, name, price, quantity, amount}` |
-| `total` | Issued total |
-
-`aggregate_id` is the invoice id.
-
-```json
-{
-  "id": "6f1c0b9e-1b2a-4c3d-9e8f-0a1b2c3d4e5f",
-  "series": "2026",
-  "number": 1,
-  "invoiceNumber": "2026/000001",
-  "issuedAt": "2026-10-14T12:00:00.000Z",
-  "cancelledAt": "2026-10-14T15:00:00.000Z",
-  "orderId": "8c2a1d44-7e5b-4f1a-9c0d-2b6e8a1f0c33",
-  "lines": [
-    {"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1, "amount": 0.55}
-  ],
-  "total": 0.55
-}
-```
+The stored payload is schema version 1 from `cancelledPayload`. It repeats the identifying fields and adds `cancelledAt` (offset ISO) and `reason`. `aggregate_id` is `invoiceId`. The example is `src/test/openMarket/contracts/fixtures/InvoiceCancelled.v1.json`.
 
 ### `ProductWithLowStock`
 
