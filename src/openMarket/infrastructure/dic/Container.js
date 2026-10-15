@@ -63,6 +63,8 @@ import FolderPluginSource from "../plugins/FolderPluginSource";
 import SqlitePluginRepository from "../plugins/SqlitePluginRepository";
 import PluginHost from "../plugins/PluginHost";
 import loadPlugin from "../plugins/loadPlugin";
+import SafeStorageSecretStore from "../plugins/SafeStorageSecretStore";
+import {electronSecretBridge} from "../plugins/electronSecretBridge";
 import SqliteShopProfileRepository from "../shop/SqliteShopProfileRepository";
 import GetShopProfile from "../../application/service/shop/GetShopProfile";
 import UpdateShopProfile from "../../application/service/shop/UpdateShopProfile";
@@ -476,17 +478,26 @@ class Container {
     });
   }
 
+  _secretStore() {
+    return new SafeStorageSecretStore({
+      connection: this.getInstance({key: 'sqliteConnection'}),
+      bridge: electronSecretBridge()
+    });
+  }
+
   _listPlugins() {
     return new ListPlugins({
       pluginSource: this.getInstance({key: 'pluginSource'}),
-      pluginRepository: this.getInstance({key: 'pluginRepository'})
+      pluginRepository: this.getInstance({key: 'pluginRepository'}),
+      secretStore: this.getInstance({key: 'secretStore'})
     });
   }
 
   _savePlugin() {
     return new SavePlugin({
       pluginSource: this.getInstance({key: 'pluginSource'}),
-      pluginRepository: this.getInstance({key: 'pluginRepository'})
+      pluginRepository: this.getInstance({key: 'pluginRepository'}),
+      secretStore: this.getInstance({key: 'secretStore'})
     });
   }
 
@@ -499,7 +510,8 @@ class Container {
       appVersion: process.env.OPENMARKET_VERSION || '0.0.0',
       loadPlugin,
       events: eventClasses(),
-      recordError: record
+      recordError: record,
+      secretStore: this.getInstance({key: 'secretStore'})
     });
   }
 

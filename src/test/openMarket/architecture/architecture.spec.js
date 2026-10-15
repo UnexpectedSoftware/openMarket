@@ -39,7 +39,9 @@ const DOMAIN_FORBIDDEN_PACKAGES = [
 /** Suffixes that hide what a class is. Persistence of an aggregate is a <Name>Repository. */
 const BANNED_SUFFIXES = /(Store|Dao|DAO|Manager|Helper)\.js$/;
 const BANNED_SUFFIX_ALLOWED = [
-  'infrastructure/service/ImageStore.js'  // file storage for photos, not aggregate persistence
+  'infrastructure/service/ImageStore.js',  // file storage for photos, not aggregate persistence
+  'domain/plugin/SecretStore.js',          // encrypted setting capability, not an aggregate
+  'infrastructure/plugins/SafeStorageSecretStore.js'
 ];
 
 /** Existing debt, as "from -> to". Delete a line when you fix it. Never add one without Victor's OK. */

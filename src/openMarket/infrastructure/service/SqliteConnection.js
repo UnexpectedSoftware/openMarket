@@ -92,6 +92,12 @@ CREATE TABLE IF NOT EXISTS plugin_state (
   config_json TEXT NOT NULL,
   last_error TEXT
 );
+CREATE TABLE IF NOT EXISTS plugin_secret (
+  plugin_id TEXT NOT NULL,
+  key TEXT NOT NULL,
+  ciphertext TEXT NOT NULL,
+  PRIMARY KEY (plugin_id, key)
+);
 CREATE TABLE IF NOT EXISTS invoice_sequence (
   series TEXT PRIMARY KEY,
   last_number INTEGER NOT NULL

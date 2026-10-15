@@ -5,6 +5,9 @@ import { app, BrowserWindow, Menu, shell } from 'electron';
 import electronLog from 'electron-log/main';
 import { FETCH_IMAGES_CHANNEL } from './image/channel.js';
 import { bindLogger, record } from '../infrastructure/logging/ErrorLog.js';
+import { preferOsKeyring, registerSecretIpc } from './main/secretsIpc.js';
+
+preferOsKeyring();
 
 const log = electronLog && typeof electronLog.error === 'function'
   ? electronLog
@@ -70,6 +73,7 @@ const installExtensions = async () => {
 };
 
 app.whenReady().then(async () => {
+  registerSecretIpc();
   await enableProcessHelpers();
   await installExtensions();
 

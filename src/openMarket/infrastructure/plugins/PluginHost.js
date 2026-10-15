@@ -1,4 +1,6 @@
+import 'rxjs/add/operator/toPromise';
 import PluginIncompatibleError from '../../domain/plugin/PluginIncompatibleError';
+import PluginSettingsIncompleteError from '../../domain/plugin/PluginSettingsIncompleteError';
 import {eventClasses} from '../../domain/event/registry';
 import {openMarketCompatibility} from './semverRange';
 import scopedEventBus from './scopedEventBus';
@@ -7,6 +9,7 @@ import scopedEventBus from './scopedEventBus';
 /** @import PluginRepository from '../../domain/plugin/PluginRepository' */
 /** @import { PluginState } from '../../domain/plugin/PluginRepository' */
 /** @import DomainEventBus from '../../domain/service/DomainEventBus' */
+/** @import SecretStore from '../../domain/plugin/SecretStore' */
 
 export const PLUGIN_API_VERSION = 1;
 
@@ -46,6 +49,7 @@ export default class PluginHost {
    * @param {(params: {directory: string, main: string}) => {register: Function}} deps.loadPlugin
    * @param {Record<string, Function>} [deps.events]
    * @param {(error: any) => void} [deps.recordError]
+   * @param {SecretStore} [deps.secretStore]
    */
   constructor({
     pluginSource,
@@ -55,7 +59,8 @@ export default class PluginHost {
     appVersion,
     loadPlugin,
     events,
-    recordError
+    recordError,
+    secretStore
   }) {
     this._pluginSource = pluginSource;
     this._pluginRepository = pluginRepository;
@@ -65,6 +70,7 @@ export default class PluginHost {
     this._loadPlugin = loadPlugin;
     this._events = Object.freeze(events || eventClasses());
     this._recordError = typeof recordError === 'function' ? recordError : () => {};
+    this._secretStore = secretStore || null;
     this._started = false;
   }
 
@@ -112,6 +118,17 @@ export default class PluginHost {
       }
       return;
     }
+    const prepared = this._prepareConfig(manifest, state);
+    const missing = (manifest.settings || [])
+      .filter(setting => setting.secret && setting.required)
+      .map(setting => setting.key)
+      .filter(key => !prepared.present[key]);
+    if (missing.length > 0) {
+      const error = new PluginSettingsIncompleteError({pluginId: manifest.id, keys: missing});
+      this._recordError(error);
+      this._store(prepared.state, error.message);
+      return;
+    }
     const undo = [];
     const scoped = scopedEventBus({eventBus: this._domainEventBus, pluginId: manifest.id});
     const eventBus = {
@@ -133,10 +150,13 @@ export default class PluginHost {
         apiVersion: PLUGIN_API_VERSION,
         eventBus,
         connection: this._connection,
-        config: state.config || {},
+        config: prepared.config,
+        secrets: {
+          get: key => this._readSecret(manifest.id, key)
+        },
         events: this._events
       });
-      this._store(state, null);
+      this._store(prepared.state, null);
     } catch (error) {
       undo.forEach(unsubscribe => {
         try {
@@ -147,8 +167,55 @@ export default class PluginHost {
       });
       this._recordError(error);
       const message = error && error.message ? error.message : 'Plugin failed to load';
-      this._store(state, message);
+      this._store(prepared.state, message);
     }
+  }
+
+  /**
+   * Moves secret values out of config and records which secret keys are stored.
+   * @param {PluginManifest} manifest
+   * @param {PluginState} state
+   * @returns {{state: PluginState, config: Record<string, string>, present: Record<string, boolean>}}
+   */
+  _prepareConfig(manifest, state) {
+    const secretKeys = (manifest.settings || []).filter(setting => setting.secret).map(setting => setting.key);
+    const config = {};
+    const leaked = {};
+    Object.keys(state.config || {}).forEach(key => {
+      if (secretKeys.indexOf(key) === -1) {
+        config[key] = state.config[key];
+      } else if (state.config[key] != null && String(state.config[key]).trim() !== '') {
+        leaked[key] = String(state.config[key]);
+      }
+    });
+    Object.keys(leaked).forEach(key => {
+      if (this._secretStore) {
+        take(this._secretStore.put({pluginId: manifest.id, key, value: leaked[key]}));
+      }
+    });
+    const next = Object.keys(leaked).length > 0 ? {...state, config} : state;
+    if (next !== state) {
+      this._store(next, next.lastError);
+    }
+    const present = {};
+    secretKeys.forEach(key => {
+      const stored = this._secretStore ? take(this._secretStore.get({pluginId: manifest.id, key})) : null;
+      present[key] = stored != null && String(stored) !== '';
+    });
+    return {state: next, config, present};
+  }
+
+  /**
+   * @param {string} pluginId
+   * @param {string} key
+   * @returns {Promise<string | null>}
+   */
+  _readSecret(pluginId, key) {
+    if (!this._secretStore) {
+      return Promise.resolve(null);
+    }
+    return this._secretStore.get({pluginId, key: String(key)}).toPromise()
+      .then(value => value == null ? null : String(value));
   }
 
   /**

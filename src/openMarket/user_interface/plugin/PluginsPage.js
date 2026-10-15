@@ -47,8 +47,10 @@ class PluginCard extends Component {
           <label className="plugin-setting" key={setting.key}>
             {setting.label}
             <input
-              type="text"
+              type={setting.secret ? 'password' : 'text'}
+              autoComplete={setting.secret ? 'new-password' : 'off'}
               value={this.state.config[setting.key] || ''}
+              placeholder={setting.secret && (plugin.storedSecrets || []).indexOf(setting.key) !== -1 ? 'Stored' : ''}
               onChange={event => this._set(setting.key, event.target.value)}
             />
           </label>
@@ -81,10 +83,18 @@ export default class PluginsPage extends Component {
   }
 
   render() {
-    const {directory, plugins, loaded, restartRequired, error} = this.props.pluginsPage;
+    const {directory, plugins, loaded, restartRequired, error, encryption} = this.props.pluginsPage;
+    const hasSecret = plugins.some(plugin => (plugin.settings || []).some(setting => setting.secret));
+    const basic = encryption && (encryption.available === false || encryption.backend === 'basic_text');
     return (
       <section className="plugins-page">
         <h2>Plugins</h2>
+        {hasSecret && basic ? (
+          <p className="plugin-restart" role="status">Secrets are stored with basic encryption.</p>
+        ) : null}
+        {hasSecret && !basic ? (
+          <p className="plugin-directory" role="status">Secrets are stored securely.</p>
+        ) : null}
         <p className="plugin-directory">
           Copy a plugin folder into {directory || 'the plugins directory'}, then restart OpenMarket.
         </p>

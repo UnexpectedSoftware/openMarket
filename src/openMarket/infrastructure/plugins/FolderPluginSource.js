@@ -27,7 +27,7 @@ export function entryInside(folder, main) {
 
 /**
  * @param {*} value
- * @returns {Array<{key: string, label: string, required: boolean}>}
+ * @returns {Array<{key: string, label: string, required: boolean, secret: boolean}>}
  */
 function settingsOf(value) {
   if (!Array.isArray(value)) {
@@ -38,7 +38,7 @@ function settingsOf(value) {
     .map(item => {
       const key = item.key.trim();
       const label = typeof item.label === 'string' && item.label.trim() !== '' ? item.label.trim() : key;
-      return {key, label, required: item.required === true};
+      return {key, label, required: item.required === true, secret: item.secret === true};
     });
 }
 
