@@ -64,7 +64,7 @@ export default class CreateOrder {
 
   /**
    * Places the order, stores it with its invoice, and subtracts stock.
-   * Those writes commit together. The series is the year of the issue time.
+   * Those writes commit together. The series is the shop's local year of the issue time.
    * @param {{lines: OrderLine[]}} order
    * @returns {Observable<Order>}
    */
@@ -118,7 +118,7 @@ export default class CreateOrder {
    */
   _issueInvoice({order}) {
     const issuedAt = this._clock.now();
-    const series = String(issuedAt).slice(0, 4);
+    const series = this._clock.localDate({instant: issuedAt}).slice(0, 4);
     return this._invoiceSequence.next({series})
       .flatMap(invoiceNumber => {
         let invoice;

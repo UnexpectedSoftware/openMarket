@@ -6,6 +6,7 @@ import container from '../openMarket/infrastructure/dic/Container';
 import {replaceSqliteData} from '../openMarket/infrastructure/service/sqliteSeed';
 import InvoiceIssued from '../openMarket/domain/event/InvoiceIssued';
 import ErrorCode from '../openMarket/domain/error/ErrorCode';
+import SystemClock from '../openMarket/infrastructure/service/SystemClock';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 const cancelInvoice = openMarket.get('invoices_cancel_use_case');
@@ -71,7 +72,7 @@ describe('Invoice', () => {
         ({firstOrder, secondOrder}) => {
           const first = invoiceFor(firstOrder.id);
           const second = invoiceFor(secondOrder.id);
-          const year = first.issuedAt.slice(0, 4);
+          const year = new SystemClock().localDate({instant: first.issuedAt}).slice(0, 4);
           expect(first.invoiceNumber).to.equal(year + '/000001');
           expect(second.invoiceNumber).to.equal(year + '/000002');
           expect(first.series).to.equal(year);

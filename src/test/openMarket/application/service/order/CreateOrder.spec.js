@@ -7,6 +7,7 @@ import InvoiceNumber from '../../../../../openMarket/domain/invoice/InvoiceNumbe
 import {deliveringDomainEventBus} from '../../../support/domainEventBus';
 import CreateOrder from '../../../../../openMarket/application/service/order/CreateOrder';
 import RecordProductSales from '../../../../../openMarket/application/service/product/RecordProductSales';
+import SystemClock from '../../../../../openMarket/infrastructure/service/SystemClock';
 
 const lines = [{barcode: '0001', name: 'Cola', price: 0.55, quantity: 2}];
 const issuedAt = '2026-10-14T12:00:00.000Z';
@@ -45,7 +46,8 @@ describe('CreateOrder domain events', () => {
     bus.ofType(InvoiceIssued).subscribe(event => invoices.push(event));
   });
 
-  function createOrder({onApply, failStock, throwOnApply, onDispatch} = {}) {
+  function createOrder({onApply, failStock, throwOnApply, onDispatch, issuedAt: at = issuedAt} = {}) {
+    const clock = new SystemClock();
     let allocated = 0;
     const recorder = new RecordProductSales({
       repository: {
@@ -87,7 +89,12 @@ describe('CreateOrder domain events', () => {
         }
       },
       identity: {generate: () => 'invoice-1'},
-      clock: {now: () => issuedAt},
+      clock: {
+        now: () => at,
+        localDate({instant}) {
+          return clock.localDate({instant});
+        }
+      },
       domainEventBus: bus,
       transaction: {
         run(work) {
@@ -105,6 +112,21 @@ describe('CreateOrder domain events', () => {
       }
     });
   }
+
+  it('uses the Madrid year when UTC is still the previous year', (done) => {
+    createOrder({issuedAt: '2026-12-31T23:30:00.000Z'}).createOrder({lines})
+      .subscribe(
+        () => {
+          expect(sequenceCalls).to.deep.equal(['2027']);
+          expect(invoices).to.have.lengthOf(1);
+          expect(invoices[0].series).to.equal('2027');
+          expect(invoices[0].invoiceNumber).to.equal('2027/000001');
+          expect(invoices[0].issuedAt).to.equal('2026-12-31T23:30:00.000Z');
+        },
+        error => done(error),
+        () => done()
+      );
+  });
 
   it('publishes one OrderCreated snapshot after the order is saved', (done) => {
     createOrder().createOrder({lines})
