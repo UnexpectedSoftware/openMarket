@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { DatabaseSync } from 'node:sqlite';
+import {multiply} from '../../domain/money';
 import sqliteDatabasePath from './sqliteDatabasePath';
 
 const SCHEMA = `
@@ -98,6 +99,7 @@ CREATE TABLE IF NOT EXISTS invoice_line (
   name TEXT NOT NULL,
   price REAL NOT NULL,
   quantity REAL NOT NULL,
+  amount REAL,
   PRIMARY KEY (invoice_id, position)
 );
 CREATE INDEX IF NOT EXISTS invoice_order_id ON invoice (order_id);
@@ -108,6 +110,27 @@ function ensureColumn(database, table, column, definition) {
   if (!columns.some(columnInfo => columnInfo.name === column)) {
     database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
+}
+
+/**
+ * Fills line amounts that were never stored. Runs once per row: a later open
+ * leaves a stored amount alone, including one that no longer matches price times quantity.
+ * The fill uses the same cents product as an order total.
+ * @param {{prepare: Function}} database
+ */
+function backfillInvoiceLineAmounts(database) {
+  const pending = database.prepare(
+    'SELECT invoice_id, position, price, quantity FROM invoice_line WHERE amount IS NULL'
+  ).all();
+  if (pending.length === 0) {
+    return;
+  }
+  const update = database.prepare(
+    'UPDATE invoice_line SET amount = ? WHERE invoice_id = ? AND position = ? AND amount IS NULL'
+  );
+  pending.forEach(row => {
+    update.run(multiply(row.price, row.quantity), row.invoice_id, row.position);
+  });
 }
 
 export default class SqliteConnection {
@@ -124,6 +147,8 @@ export default class SqliteConnection {
     ensureColumn(this._database, 'category', 'image_name', 'TEXT');
     ensureColumn(this._database, 'product', 'image_name', 'TEXT');
     ensureColumn(this._database, 'domain_event', 'dispatched_at', 'TEXT');
+    ensureColumn(this._database, 'invoice_line', 'amount', 'REAL');
+    backfillInvoiceLineAmounts(this._database);
   }
 
   get database() {

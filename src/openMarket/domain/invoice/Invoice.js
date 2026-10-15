@@ -2,6 +2,7 @@ import InvoiceStatus from './InvoiceStatus';
 import InvoiceNumber from './InvoiceNumber';
 import InvalidInvoiceError from './InvalidInvoiceError';
 import InvoiceAlreadyCancelledError from './InvoiceAlreadyCancelledError';
+import {add, multiply} from '../money';
 /** @import Order from '../order/Order' */
 
 /**
@@ -15,7 +16,8 @@ import InvoiceAlreadyCancelledError from './InvoiceAlreadyCancelledError';
  */
 
 /**
- * An issued invoice. The number, the lines, the issue time, and the total do not change.
+ * An issued invoice. The number, the lines, the amounts, the issue time, and the total do not change.
+ * Those amounts are stored when the invoice is issued. Loading them does not calculate them again.
  * Cancellation records that the document was withdrawn. It does not edit the document.
  */
 export default class Invoice {
@@ -23,6 +25,7 @@ export default class Invoice {
   /**
    * Issues a new invoice from a placed order. The number comes from the caller, already allocated.
    * The order's lines are copied. They are not checked again.
+   * Line amounts and the total use the same cents arithmetic as the order total, and are fixed here.
    * @param {object} params
    * @param {string} params.id
    * @param {InvoiceNumber} params.invoiceNumber
@@ -34,14 +37,17 @@ export default class Invoice {
     if (order == null || typeof order.isPlaced !== 'function' || !order.isPlaced()) {
       throw new InvalidInvoiceError({field: 'order', id: id == null ? undefined : String(id)});
     }
+    const lines = issuedLines(order.lines);
+    const total = lines.reduce((sum, line) => add(sum, line.amount), 0);
     return new Invoice({
       id,
       invoiceNumber,
       issuedAt,
-      lines: order.lines,
+      lines,
       orderId: order.id,
       status: InvoiceStatus.ISSUED,
-      cancelledAt: null
+      cancelledAt: null,
+      total
     });
   }
 
@@ -51,11 +57,11 @@ export default class Invoice {
    * @param {string} params.id
    * @param {InvoiceNumber} params.invoiceNumber
    * @param {string} params.issuedAt
-   * @param {Array<{barcode: string, name: string, price: number, quantity: number}>} params.lines
+   * @param {InvoiceLine[]} params.lines Stored lines, including each line amount
    * @param {string | null} [params.orderId]
    * @param {string} params.status
    * @param {string | null} [params.cancelledAt]
-   * @param {number} params.total
+   * @param {number} params.total Stored invoice total
    * @returns {Invoice}
    */
   static restore({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total}) {
@@ -67,11 +73,11 @@ export default class Invoice {
    * @param {string} params.id
    * @param {InvoiceNumber} params.invoiceNumber
    * @param {string} params.issuedAt
-   * @param {Array<{barcode: string, name: string, price: number, quantity: number}>} params.lines
+   * @param {InvoiceLine[]} params.lines
    * @param {string | null} [params.orderId]
    * @param {string} params.status
    * @param {string | null} [params.cancelledAt]
-   * @param {number} [params.total]
+   * @param {number} params.total
    */
   constructor({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total}) {
     if (id == null || String(id).trim() === '') {
@@ -98,9 +104,11 @@ export default class Invoice {
     this._orderId = orderId == null || String(orderId).trim() === '' ? null : String(orderId);
     this._status = status;
     this._cancelledAt = status === InvoiceStatus.CANCELLED ? String(cancelledAt) : null;
-    this._lines = copyLines(lines);
-    const computed = this._lines.reduce((sum, line) => addCents(sum, line.amount), 0);
-    this._total = total == null ? computed : cents(total);
+    this._lines = storedLines(lines, this._id);
+    if (total == null || !Number.isFinite(Number(total))) {
+      throw new InvalidInvoiceError({field: 'total', id: this._id});
+    }
+    this._total = Number(total);
   }
 
   /** @returns {string} */
@@ -172,41 +180,43 @@ export default class Invoice {
 }
 
 /**
- * Copies the order snapshot onto the invoice. The order already accepted these lines.
+ * Line amounts for a new invoice. Same rounding as the order total.
  * @param {Array<{barcode: string, name: string, price: number, quantity: number}>} lines
  * @returns {InvoiceLine[]}
  */
-function copyLines(lines) {
+function issuedLines(lines) {
   if (!Array.isArray(lines)) {
     return [];
   }
+  return lines.map(line => ({
+    barcode: line.barcode == null ? '' : String(line.barcode),
+    name: line.name == null ? '' : String(line.name),
+    price: line.price,
+    quantity: line.quantity,
+    amount: multiply(line.price, line.quantity)
+  }));
+}
+
+/**
+ * Copies stored lines. The amount is the stored number, not price times quantity.
+ * @param {InvoiceLine[]} lines
+ * @param {string} id
+ * @returns {InvoiceLine[]}
+ */
+function storedLines(lines, id) {
+  if (!Array.isArray(lines)) {
+    throw new InvalidInvoiceError({field: 'lines', id});
+  }
   return lines.map(line => {
-    const price = Number(line.price);
-    const quantity = Number(line.quantity);
+    if (line == null || line.amount == null || !Number.isFinite(Number(line.amount))) {
+      throw new InvalidInvoiceError({field: 'amount', id});
+    }
     return {
       barcode: line.barcode == null ? '' : String(line.barcode),
       name: line.name == null ? '' : String(line.name),
-      price,
-      quantity,
-      amount: cents(price * quantity)
+      price: line.price,
+      quantity: line.quantity,
+      amount: Number(line.amount)
     };
   });
-}
-
-/**
- * Rounds a money amount to cents.
- * @param {number} value
- * @returns {number}
- */
-function cents(value) {
-  return Number(Number(value).toFixed(2));
-}
-
-/**
- * @param {number} left
- * @param {number} right
- * @returns {number}
- */
-function addCents(left, right) {
-  return cents(Number(left) + Number(right));
 }

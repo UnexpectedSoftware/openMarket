@@ -68,6 +68,7 @@ describe('Invoice', () => {
     expect(invoice.orderId).to.equal('order-1');
     expect(invoice.status).to.equal(InvoiceStatus.ISSUED);
     expect(invoice.cancelledAt).to.equal(null);
+    expect(invoice.total).to.equal(order.total);
     expect(invoice.total).to.equal(0.3);
     expect(invoice.lines).to.deep.equal([
       {barcode: '1', name: 'Milk', price: 0.1, quantity: 1, amount: 0.1},
@@ -80,6 +81,24 @@ describe('Invoice', () => {
     expect(invoice.lines).to.have.lengthOf(2);
     expect(invoice.lines[0].quantity).to.equal(1);
     expect(invoice.total).to.equal(0.3);
+  });
+
+  it('returns stored amounts instead of calculating them again', () => {
+    const invoice = Invoice.restore({
+      id: 'invoice-1',
+      invoiceNumber: number(),
+      issuedAt,
+      lines: [{barcode: '1', name: 'Milk', price: 0.1, quantity: 3, amount: 9.99}],
+      orderId: 'order-1',
+      status: InvoiceStatus.ISSUED,
+      cancelledAt: null,
+      total: 9.99
+    });
+
+    expect(invoice.lines[0].amount).to.equal(9.99);
+    expect(invoice.total).to.equal(9.99);
+    expect(invoice.lines[0].price).to.equal(0.1);
+    expect(invoice.lines[0].quantity).to.equal(3);
   });
 
   it('copies a restored order without applying the order line rules again', () => {

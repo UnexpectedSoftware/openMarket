@@ -7,7 +7,7 @@ import InvoiceNumber from '../../domain/invoice/InvoiceNumber';
 export default class SqlInvoiceMapper {
 
   /**
-   * @param {{rows: Array<{id: string, series: string, number: number, issued_at: string, order_id: string | null, status: string, cancelled_at: string | null, total: number, barcode: string, name: string, price: number, quantity: number}>}} params
+   * @param {{rows: Array<{id: string, series: string, number: number, issued_at: string, order_id: string | null, status: string, cancelled_at: string | null, total: number, barcode: string, name: string, price: number, quantity: number, amount: number}>}} params
    * @returns {Invoice}
    */
   toDomain({rows}) {
@@ -24,7 +24,8 @@ export default class SqlInvoiceMapper {
         barcode: row.barcode,
         name: row.name,
         price: row.price,
-        quantity: row.quantity
+        quantity: row.quantity,
+        amount: row.amount
       }))
     });
   }

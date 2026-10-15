@@ -10,7 +10,7 @@ import {rethrow} from '../logging/ErrorLog';
 
 const INVOICE_COLUMNS = 'i.id, i.series, i.number, i.invoice_number, i.issued_at, i.order_id, ' +
   'i.status, i.cancelled_at, i.total';
-const LINE_COLUMNS = 'l.barcode, l.name, l.price, l.quantity';
+const LINE_COLUMNS = 'l.barcode, l.name, l.price, l.quantity, l.amount';
 
 const FIND_BY_ID_SQL = 'SELECT ' + INVOICE_COLUMNS + ', ' + LINE_COLUMNS +
   ' FROM invoice i INNER JOIN invoice_line l ON l.invoice_id = i.id' +
@@ -25,7 +25,7 @@ const INSERT_INVOICE_SQL = 'INSERT INTO invoice ' +
   'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
 const INSERT_LINE_SQL = 'INSERT INTO invoice_line ' +
-  '(invoice_id, position, barcode, name, price, quantity) VALUES (?, ?, ?, ?, ?, ?)';
+  '(invoice_id, position, barcode, name, price, quantity, amount) VALUES (?, ?, ?, ?, ?, ?, ?)';
 
 const UPDATE_CANCELLATION_SQL = 'UPDATE invoice SET status = ?, cancelled_at = ? WHERE id = ?';
 
@@ -121,7 +121,15 @@ export default class SqliteInvoiceRepository {
     );
     const insertLine = this._database.prepare(INSERT_LINE_SQL);
     invoice.lines.forEach((line, position) => {
-      insertLine.run(invoice.id, position, line.barcode, line.name, line.price, line.quantity);
+      insertLine.run(
+        invoice.id,
+        position,
+        line.barcode,
+        line.name,
+        line.price,
+        line.quantity,
+        line.amount
+      );
     });
   }
 

@@ -255,6 +255,35 @@ describe('Invoice', () => {
       );
   });
 
+  it('keeps the issued amounts when the product price changes', done => {
+    placeOrder()
+      .flatMap(order => {
+        const row = invoiceFor(order.id);
+        const storedLine = database.prepare(
+          'SELECT price, quantity, amount FROM invoice_line WHERE invoice_id = ?'
+        ).get(row.id);
+        expect(row.total).to.equal(order.total);
+        expect(storedLine.amount).to.equal(1.1);
+        database.prepare('UPDATE product SET price = ? WHERE barcode = ?').run(99, '0001');
+        return invoiceRepository.findById({id: row.id}).map(invoice => ({order, invoice, storedLine}));
+      })
+      .subscribe(
+        ({order, invoice, storedLine}) => {
+          expect(invoice.total).to.equal(order.total);
+          expect(invoice.lines).to.deep.equal([{
+            barcode: '0001',
+            name: 'Coca-Cola',
+            price: storedLine.price,
+            quantity: storedLine.quantity,
+            amount: storedLine.amount
+          }]);
+          expect(database.prepare('SELECT price FROM product WHERE barcode = ?').get('0001').price).to.equal(99);
+        },
+        error => done(error),
+        () => done()
+      );
+  });
+
   it('reduces stock once when the order and the invoice are stored', done => {
     const sold = [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 1}];
     placeOrder(sold).subscribe(
