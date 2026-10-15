@@ -12,4 +12,13 @@ export default class Clock {
     throw new Error('Clock#now must be implemented');
   }
 
+  /**
+   * Calendar date of an instant in the shop's timezone.
+   * @param {{instant: string}} params ISO-8601 timestamp, usually `now()`
+   * @returns {string} `YYYY-MM-DD`
+   */
+  localDate({instant}) {
+    throw new Error('Clock#localDate must be implemented');
+  }
+
 }

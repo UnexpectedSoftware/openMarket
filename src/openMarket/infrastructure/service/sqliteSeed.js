@@ -1,4 +1,5 @@
 import { toStoredBound } from './sqliteDates';
+import {dropInvoiceGuards, installInvoiceGuards} from './SqliteConnection';
 
 function allocateId(id, used) {
   const base = id == null ? 'order' : String(id);
@@ -75,8 +76,12 @@ export function replaceSqliteData(database, {categories = [], products = [], ord
   const inserter = createFixtureInserter(database);
   database.exec('BEGIN');
   try {
+    dropInvoiceGuards(database);
     database.exec('DELETE FROM domain_event_processing');
     database.exec('DELETE FROM domain_event');
+    database.exec('DELETE FROM invoice_line');
+    database.exec('DELETE FROM invoice');
+    database.exec('DELETE FROM invoice_sequence');
     database.exec('DELETE FROM line');
     database.exec('DELETE FROM "order"');
     database.exec('DELETE FROM product_sale_order');
@@ -86,6 +91,7 @@ export function replaceSqliteData(database, {categories = [], products = [], ord
     categories.forEach(category => inserter.insertCategory(category));
     products.forEach(product => inserter.insertProduct(product));
     orders.forEach(order => inserter.insertOrder(order));
+    installInvoiceGuards(database);
     database.exec('COMMIT');
   } catch (error) {
     try {

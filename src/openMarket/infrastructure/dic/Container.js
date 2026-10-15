@@ -18,6 +18,7 @@ import DisableProduct from "../../application/service/product/DisableProduct";
 import EnableProduct from "../../application/service/product/EnableProduct";
 import FindProduct from "../../application/service/product/FindProduct";
 import CreateOrder from "../../application/service/order/CreateOrder";
+import CancelInvoice from "../../application/service/invoice/CancelInvoice";
 import ListAllOrders from "../../application/service/order/ListAllOrders";
 import OrdersStatistics from "../../application/service/order/OrdersStatistics";
 import OrderFactoryImpl from "../order/OrderFactoryImpl";
@@ -40,6 +41,9 @@ import SqliteProductSaleStatisticsRepository from "../product/SqliteProductSaleS
 import SqliteProductSaleQueryService from "../product/SqliteProductSaleQueryService";
 import SqliteOrderRepository from "../order/SqliteOrderRepository";
 import SqliteOrderQueryService from "../order/SqliteOrderQueryService";
+import SqlInvoiceMapper from "../invoice/SqlInvoiceMapper";
+import SqliteInvoiceRepository from "../invoice/SqliteInvoiceRepository";
+import SqliteInvoiceSequence from "../invoice/SqliteInvoiceSequence";
 import { createFixturesService } from "../dev";
 import OpenFoodFactsProductImageSource from "../image/OpenFoodFactsProductImageSource";
 import WikimediaCategoryImageSource from "../image/WikimediaCategoryImageSource";
@@ -313,9 +317,7 @@ class Container {
   }
 
   _orderMapper(){
-    return new SqlOrderMapper({
-      orderFactory: this.getInstance({key: 'orderFactory'})
-    });
+    return new SqlOrderMapper();
   }
 
   _domainEventRepository() {
@@ -356,7 +358,11 @@ class Container {
     return new CreateOrder({
       orderRepository: this.getInstance({key: 'orderRepository'}),
       productRepository: this.getInstance({key: 'productRepository'}),
+      invoiceRepository: this.getInstance({key: 'invoiceRepository'}),
+      invoiceSequence: this.getInstance({key: 'invoiceSequence'}),
       orderFactory: this.getInstance({key: 'orderFactory'}),
+      identity: this.getInstance({key: 'randomUUIDIdentity'}),
+      clock: this.getInstance({key: 'systemClock'}),
       domainEventBus: this.getInstance({key: 'domainEventBus'}),
       transaction: this.getInstance({key: 'transaction'}),
       domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'})
@@ -365,6 +371,33 @@ class Container {
 
   _orderFactory() {
     return new OrderFactoryImpl({ identity: this.getInstance({key: 'randomUUIDIdentity'})});
+  }
+
+  _invoiceMapper() {
+    return new SqlInvoiceMapper();
+  }
+
+  _invoiceRepository() {
+    return new SqliteInvoiceRepository({
+      connection: this.getInstance({key: 'sqliteConnection'}),
+      invoiceMapper: this.getInstance({key: 'invoiceMapper'})
+    });
+  }
+
+  _invoiceSequence() {
+    return new SqliteInvoiceSequence({
+      connection: this.getInstance({key: 'sqliteConnection'})
+    });
+  }
+
+  _cancelInvoice() {
+    return new CancelInvoice({
+      invoiceRepository: this.getInstance({key: 'invoiceRepository'}),
+      clock: this.getInstance({key: 'systemClock'}),
+      domainEventBus: this.getInstance({key: 'domainEventBus'}),
+      transaction: this.getInstance({key: 'transaction'}),
+      domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'})
+    });
   }
 
   _listAllOrdersUseCase() {

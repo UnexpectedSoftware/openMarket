@@ -2,7 +2,7 @@ import ErrorCode from '../error/ErrorCode.js';
 import AppError, {defined} from '../error/AppError.js';
 
 /**
- * An order line quantity was missing, not a number, or not greater than zero.
+ * An order cannot be placed when a line quantity is missing, not a number, or not greater than zero.
  */
 export default class InvalidOrderQuantityError extends AppError {
 

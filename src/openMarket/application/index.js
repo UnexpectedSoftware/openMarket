@@ -35,6 +35,7 @@ class OpenMarket {
     this.deps.set('products_statistics_use_case', container.getInstance({key:'productStatisticsUseCase'}));
     this.deps.set('product_sale_statistics_use_case', container.getInstance({key:'productSaleStatisticsUseCase'}));
     this.deps.set('orders_create_use_case', container.getInstance({key:'createOrderUseCase'}));
+    this.deps.set('invoices_cancel_use_case', container.getInstance({key:'cancelInvoice'}));
     this.deps.set('domain_event_bus', container.getInstance({key:'domainEventBus'}));
     this.deps.set('orders_list_all_use_case', container.getInstance({key:'listAllOrdersUseCase'}));
     this.deps.set('orders_statistics_use_case', container.getInstance({key:'orderStatisticsUseCase'}));

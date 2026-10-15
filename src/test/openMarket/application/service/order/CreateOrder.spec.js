@@ -2,11 +2,15 @@ import {expect} from 'chai';
 import * as Rx from 'rxjs';
 import Order from '../../../../../openMarket/domain/order/Order';
 import OrderCreated from '../../../../../openMarket/domain/event/OrderCreated';
+import InvoiceIssued from '../../../../../openMarket/domain/event/InvoiceIssued';
+import InvoiceNumber from '../../../../../openMarket/domain/invoice/InvoiceNumber';
 import {deliveringDomainEventBus} from '../../../support/domainEventBus';
 import CreateOrder from '../../../../../openMarket/application/service/order/CreateOrder';
 import RecordProductSales from '../../../../../openMarket/application/service/product/RecordProductSales';
+import SystemClock from '../../../../../openMarket/infrastructure/service/SystemClock';
 
 const lines = [{barcode: '0001', name: 'Cola', price: 0.55, quantity: 2}];
+const issuedAt = '2026-10-14T12:00:00.000Z';
 
 function productRepository({fail} = {}) {
   const product = {
@@ -30,14 +34,21 @@ function productRepository({fail} = {}) {
 describe('CreateOrder domain events', () => {
   let bus;
   let events;
+  let invoices;
+  let sequenceCalls;
 
   beforeEach(() => {
     bus = deliveringDomainEventBus();
     events = [];
+    invoices = [];
+    sequenceCalls = [];
     bus.ofType(OrderCreated).subscribe(event => events.push(event));
+    bus.ofType(InvoiceIssued).subscribe(event => invoices.push(event));
   });
 
-  function createOrder({onApply, failStock, throwOnApply, onDispatch} = {}) {
+  function createOrder({onApply, failStock, throwOnApply, onDispatch, issuedAt: at = issuedAt} = {}) {
+    const clock = new SystemClock();
+    let allocated = 0;
     const recorder = new RecordProductSales({
       repository: {
         isEmpty: () => false,
@@ -60,9 +71,28 @@ describe('CreateOrder domain events', () => {
         }
       },
       productRepository: productRepository({fail: failStock}),
+      invoiceRepository: {
+        save({invoice}) {
+          return Rx.Observable.of(invoice);
+        }
+      },
+      invoiceSequence: {
+        next({series}) {
+          sequenceCalls.push(series);
+          allocated += 1;
+          return Rx.Observable.of(new InvoiceNumber({series, number: allocated}));
+        }
+      },
       orderFactory: {
         createWith({lines: orderLines, date}) {
           return new Order({id: 'order-1', lines: orderLines, date: date || '02/07/2017 10:00:00'});
+        }
+      },
+      identity: {generate: () => 'invoice-1'},
+      clock: {
+        now: () => at,
+        localDate({instant}) {
+          return clock.localDate({instant});
         }
       },
       domainEventBus: bus,
@@ -83,6 +113,21 @@ describe('CreateOrder domain events', () => {
     });
   }
 
+  it('uses the Madrid year when UTC is still the previous year', (done) => {
+    createOrder({issuedAt: '2026-12-31T23:30:00.000Z'}).createOrder({lines})
+      .subscribe(
+        () => {
+          expect(sequenceCalls).to.deep.equal(['2027']);
+          expect(invoices).to.have.lengthOf(1);
+          expect(invoices[0].series).to.equal('2027');
+          expect(invoices[0].invoiceNumber).to.equal('2027/000001');
+          expect(invoices[0].issuedAt).to.equal('2026-12-31T23:30:00.000Z');
+        },
+        error => done(error),
+        () => done()
+      );
+  });
+
   it('publishes one OrderCreated snapshot after the order is saved', (done) => {
     createOrder().createOrder({lines})
       .subscribe(
@@ -94,6 +139,17 @@ describe('CreateOrder domain events', () => {
           expect(events[0].createdAt).to.equal('02/07/2017 10:00:00');
           expect(events[0].lines).to.deep.equal(lines);
           expect(events[0].lines[0]).to.not.equal(lines[0]);
+          expect(sequenceCalls).to.deep.equal(['2026']);
+          expect(invoices).to.have.lengthOf(1);
+          expect(invoices[0]).to.be.instanceof(InvoiceIssued);
+          expect(invoices[0].id).to.equal('invoice-1');
+          expect(invoices[0].invoiceNumber).to.equal('2026/000001');
+          expect(invoices[0].orderId).to.equal('order-1');
+          expect(invoices[0].issuedAt).to.equal(issuedAt);
+          expect(invoices[0].total).to.equal(1.1);
+          expect(invoices[0].lines).to.deep.equal([
+            {barcode: '0001', name: 'Cola', price: 0.55, quantity: 2, amount: 1.1}
+          ]);
         },
         error => done(error),
         () => done()
@@ -133,6 +189,8 @@ describe('CreateOrder domain events', () => {
         () => done(new Error('should not emit an order')),
         () => {
           expect(events).to.have.lengthOf(0);
+          expect(invoices).to.have.lengthOf(0);
+          expect(sequenceCalls).to.have.lengthOf(0);
           done();
         }
       );

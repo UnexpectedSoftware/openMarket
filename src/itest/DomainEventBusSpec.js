@@ -158,13 +158,16 @@ describe('Domain event bus', () => {
       expect(database.prepare('SELECT name FROM category WHERE id = ?').get('from-live').name).to.equal(order.id);
       expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(95);
       const rows = storedEvents();
-      expect(rows).to.have.lengthOf(1);
+      expect(rows).to.have.lengthOf(2);
       expect(rows[0].type).to.equal('OrderCreated');
       expect(rows[0].aggregateId).to.equal(order.id);
       expect(rows[0].dispatchedAt).to.match(/^\d{4}-\d{2}-\d{2}T/);
       expect(rows[0].createdAt).to.match(/^\d{4}-\d{2}-\d{2}T/);
       expect(JSON.parse(rows[0].payload).createdAt).to.equal(order.createdAt);
       expect(JSON.parse(rows[0].payload).lines).to.deep.equal(lines);
+      expect(rows[1].type).to.equal('InvoiceIssued');
+      expect(JSON.parse(rows[1].payload).orderId).to.equal(order.id);
+      expect(rows[1].dispatchedAt).to.match(/^\d{4}-\d{2}-\d{2}T/);
       expect(processingRows().find(row => row.subscriberName === 'plugin')).to.deep.equal({
         aggregateId: order.id,
         type: 'OrderCreated',
@@ -206,7 +209,8 @@ describe('Domain event bus', () => {
       expect(count('SELECT count(*) AS total FROM "order"')).to.equal(1);
       expect(count('SELECT count(*) AS total FROM line')).to.equal(1);
       expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(95);
-      expect(count('SELECT count(*) AS total FROM domain_event')).to.equal(1);
+      expect(count('SELECT count(*) AS total FROM domain_event')).to.equal(2);
+      expect(count('SELECT count(*) AS total FROM invoice')).to.equal(1);
       expect(database.prepare('SELECT name FROM category WHERE id = ?').get('from-live').name).to.equal('kept');
       expect(live).to.deep.equal(['order']);
       expect(database.isTransaction).to.equal(false);
@@ -232,7 +236,7 @@ describe('Domain event bus', () => {
       expect(failure).to.equal(null);
       expect(count('SELECT count(*) AS total FROM "order"')).to.equal(1);
       expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(10);
-      expect(storedEvents().map(row => row.type)).to.deep.equal(['OrderCreated']);
+      expect(storedEvents().map(row => row.type)).to.deep.equal(['OrderCreated', 'InvoiceIssued']);
       expect(live).to.deep.equal(['order', 'low']);
       expect(database.isTransaction).to.equal(false);
     });
@@ -254,7 +258,7 @@ describe('Domain event bus', () => {
 
       expect(failure).to.equal(null);
       expect(live).to.deep.equal([{barcode: '0001', stock: 10, stockMin: 10}]);
-      expect(storedEvents().map(row => row.type)).to.deep.equal(['OrderCreated']);
+      expect(storedEvents().map(row => row.type)).to.deep.equal(['OrderCreated', 'InvoiceIssued']);
       expect(processingRows().filter(row => row.type === 'ProductWithLowStock')).to.deep.equal([]);
       const orderRow = processingRows().find(row => row.type === 'OrderCreated');
       expect(orderRow.status).to.equal('DONE');

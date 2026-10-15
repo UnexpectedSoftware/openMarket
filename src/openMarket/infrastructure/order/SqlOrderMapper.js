@@ -1,14 +1,15 @@
 import * as Rx from "rxjs";
+import Order from "../../domain/order/Order";
 
+/**
+ * A stored order is already placed. Restoring it does not check its lines again.
+ */
 export default class SqlOrderMapper {
-  constructor({orderFactory}){
-    this._orderFactory = orderFactory;
-  }
   toDomain({rows}) {
     return Rx.Observable.zip(
       this._buildOrderData(rows),
       this._buildOrderLines(rows),
-      (orderData, lines) => this._orderFactory.createWith({
+      (orderData, lines) => Order.restore({
         id: orderData.id,
         lines,
         date: orderData.created_at

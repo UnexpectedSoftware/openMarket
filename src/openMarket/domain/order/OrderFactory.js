@@ -2,7 +2,7 @@
 /** @import { OrderLine } from './Order' */
 
 /**
- * Port for building an order.
+ * Port for building a draft order. Placing it is a separate step.
  * Adapters declare `@implements {OrderFactory}`; they do not extend this class.
  * @interface
  */

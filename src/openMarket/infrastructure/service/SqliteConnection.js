@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { DatabaseSync } from 'node:sqlite';
+import {multiply} from '../../domain/money';
 import sqliteDatabasePath from './sqliteDatabasePath';
 
 const SCHEMA = `
@@ -75,6 +76,33 @@ CREATE TABLE IF NOT EXISTS plugin_state (
   config_json TEXT NOT NULL,
   last_error TEXT
 );
+CREATE TABLE IF NOT EXISTS invoice_sequence (
+  series TEXT PRIMARY KEY,
+  last_number INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS invoice (
+  id TEXT PRIMARY KEY,
+  series TEXT NOT NULL,
+  number INTEGER NOT NULL,
+  invoice_number TEXT NOT NULL UNIQUE,
+  issued_at TEXT NOT NULL,
+  order_id TEXT,
+  status TEXT NOT NULL,
+  cancelled_at TEXT,
+  total REAL NOT NULL,
+  UNIQUE (series, number)
+);
+CREATE TABLE IF NOT EXISTS invoice_line (
+  invoice_id TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  barcode TEXT NOT NULL,
+  name TEXT NOT NULL,
+  price REAL NOT NULL,
+  quantity REAL NOT NULL,
+  amount REAL,
+  PRIMARY KEY (invoice_id, position)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS invoice_order_id ON invoice (order_id);
 `;
 
 function ensureColumn(database, table, column, definition) {
@@ -82,6 +110,81 @@ function ensureColumn(database, table, column, definition) {
   if (!columns.some(columnInfo => columnInfo.name === column)) {
     database.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
   }
+}
+
+/**
+ * Fills line amounts that were never stored. Runs once per row: a later open
+ * leaves a stored amount alone, including one that no longer matches price times quantity.
+ * The fill uses the same cents product as an order total.
+ * @param {{prepare: Function}} database
+ */
+const INVOICE_GUARD_SQL = `
+CREATE TRIGGER IF NOT EXISTS invoice_forbid_rewrite
+BEFORE UPDATE OF series, number, invoice_number, issued_at, total ON invoice
+BEGIN
+  SELECT RAISE(ABORT, 'An issued invoice cannot change its number, date, or total');
+END;
+CREATE TRIGGER IF NOT EXISTS invoice_line_forbid_update
+BEFORE UPDATE ON invoice_line
+BEGIN
+  SELECT RAISE(ABORT, 'An issued invoice line cannot change');
+END;
+CREATE TRIGGER IF NOT EXISTS invoice_forbid_delete
+BEFORE DELETE ON invoice
+BEGIN
+  SELECT RAISE(ABORT, 'An issued invoice cannot be deleted');
+END;
+CREATE TRIGGER IF NOT EXISTS invoice_line_forbid_delete
+BEFORE DELETE ON invoice_line
+BEGIN
+  SELECT RAISE(ABORT, 'An issued invoice line cannot be deleted');
+END;
+`;
+
+/** @param {{exec: Function}} database */
+export function dropInvoiceGuards(database) {
+  database.exec('DROP TRIGGER IF EXISTS invoice_forbid_rewrite');
+  database.exec('DROP TRIGGER IF EXISTS invoice_line_forbid_update');
+  database.exec('DROP TRIGGER IF EXISTS invoice_forbid_delete');
+  database.exec('DROP TRIGGER IF EXISTS invoice_line_forbid_delete');
+}
+
+/** @param {{exec: Function}} database */
+export function installInvoiceGuards(database) {
+  database.exec(INVOICE_GUARD_SQL);
+}
+
+function backfillInvoiceLineAmounts(database) {
+  const pending = database.prepare(
+    'SELECT invoice_id, position, price, quantity FROM invoice_line WHERE amount IS NULL'
+  ).all();
+  if (pending.length === 0) {
+    return;
+  }
+  dropInvoiceGuards(database);
+  const update = database.prepare(
+    'UPDATE invoice_line SET amount = ? WHERE invoice_id = ? AND position = ? AND amount IS NULL'
+  );
+  pending.forEach(row => {
+    update.run(multiply(row.price, row.quantity), row.invoice_id, row.position);
+  });
+}
+
+/**
+ * Replaces the plain order index with a unique one. A database created before
+ * that change keeps the old index name, so CREATE UNIQUE INDEX IF NOT EXISTS does not replace it.
+ * @param {{prepare: Function, exec: Function}} database
+ */
+function ensureUniqueInvoiceOrder(database) {
+  const indexes = database.prepare(`PRAGMA index_list('invoice')`).all();
+  const current = indexes.find(index => index.name === 'invoice_order_id');
+  if (current && Number(current.unique) === 1) {
+    return;
+  }
+  if (current) {
+    database.exec('DROP INDEX invoice_order_id');
+  }
+  database.exec('CREATE UNIQUE INDEX invoice_order_id ON invoice (order_id)');
 }
 
 export default class SqliteConnection {
@@ -98,6 +201,10 @@ export default class SqliteConnection {
     ensureColumn(this._database, 'category', 'image_name', 'TEXT');
     ensureColumn(this._database, 'product', 'image_name', 'TEXT');
     ensureColumn(this._database, 'domain_event', 'dispatched_at', 'TEXT');
+    ensureColumn(this._database, 'invoice_line', 'amount', 'REAL');
+    backfillInvoiceLineAmounts(this._database);
+    ensureUniqueInvoiceOrder(this._database);
+    installInvoiceGuards(this._database);
   }
 
   get database() {
