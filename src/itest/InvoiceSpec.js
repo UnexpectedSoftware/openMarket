@@ -258,6 +258,36 @@ describe('Invoice', () => {
       );
   });
 
+  it('rejects a rewrite or a delete of an issued invoice', done => {
+    placeOrder().subscribe(
+      order => {
+        const row = invoiceFor(order.id);
+        expect(() => database.prepare('UPDATE invoice SET total = ? WHERE id = ?').run(0, row.id))
+          .to.throw(/cannot change/);
+        expect(() => database.prepare('UPDATE invoice SET number = ?, invoice_number = ? WHERE id = ?')
+          .run(99, '2099/000099', row.id)).to.throw(/cannot change/);
+        expect(() => database.prepare('UPDATE invoice SET issued_at = ? WHERE id = ?')
+          .run('2020-01-01T00:00:00.000Z', row.id)).to.throw(/cannot change/);
+        expect(() => database.prepare('DELETE FROM invoice_line WHERE invoice_id = ?').run(row.id))
+          .to.throw(/cannot be deleted/);
+        expect(() => database.prepare('UPDATE invoice_line SET quantity = ? WHERE invoice_id = ?').run(9, row.id))
+          .to.throw(/cannot change/);
+        expect(() => database.prepare('DELETE FROM invoice WHERE id = ?').run(row.id))
+          .to.throw(/cannot be deleted/);
+        database.prepare('UPDATE invoice SET status = ?, cancelled_at = ? WHERE id = ?')
+          .run('CANCELLED', '2026-10-14T16:00:00.000Z', row.id);
+        const after = invoiceFor(order.id);
+        expect(after.total).to.equal(row.total);
+        expect(after.number).to.equal(row.number);
+        expect(after.issuedAt).to.equal(row.issuedAt);
+        expect(after.status).to.equal('CANCELLED');
+        expect(count('SELECT COUNT(*) AS total FROM invoice_line')).to.equal(lines.length);
+        done();
+      },
+      error => done(error)
+    );
+  });
+
   it('rejects a second invoice for the same order and rolls the transaction back', done => {
     placeOrder().subscribe(
       order => {
