@@ -102,7 +102,7 @@ CREATE TABLE IF NOT EXISTS invoice_line (
   amount REAL,
   PRIMARY KEY (invoice_id, position)
 );
-CREATE INDEX IF NOT EXISTS invoice_order_id ON invoice (order_id);
+CREATE UNIQUE INDEX IF NOT EXISTS invoice_order_id ON invoice (order_id);
 `;
 
 function ensureColumn(database, table, column, definition) {
@@ -133,6 +133,23 @@ function backfillInvoiceLineAmounts(database) {
   });
 }
 
+/**
+ * Replaces the plain order index with a unique one. A database created before
+ * that change keeps the old index name, so CREATE UNIQUE INDEX IF NOT EXISTS does not replace it.
+ * @param {{prepare: Function, exec: Function}} database
+ */
+function ensureUniqueInvoiceOrder(database) {
+  const indexes = database.prepare(`PRAGMA index_list('invoice')`).all();
+  const current = indexes.find(index => index.name === 'invoice_order_id');
+  if (current && Number(current.unique) === 1) {
+    return;
+  }
+  if (current) {
+    database.exec('DROP INDEX invoice_order_id');
+  }
+  database.exec('CREATE UNIQUE INDEX invoice_order_id ON invoice (order_id)');
+}
+
 export default class SqliteConnection {
   /**
    * @param {{filename?: string}} [options]
@@ -149,6 +166,7 @@ export default class SqliteConnection {
     ensureColumn(this._database, 'domain_event', 'dispatched_at', 'TEXT');
     ensureColumn(this._database, 'invoice_line', 'amount', 'REAL');
     backfillInvoiceLineAmounts(this._database);
+    ensureUniqueInvoiceOrder(this._database);
   }
 
   get database() {

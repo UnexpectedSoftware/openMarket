@@ -5,6 +5,8 @@ import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
 import {replaceSqliteData} from '../openMarket/infrastructure/service/sqliteSeed';
 import InvoiceIssued from '../openMarket/domain/event/InvoiceIssued';
+import Invoice from '../openMarket/domain/invoice/Invoice';
+import InvoiceNumber from '../openMarket/domain/invoice/InvoiceNumber';
 import ErrorCode from '../openMarket/domain/error/ErrorCode';
 import SystemClock from '../openMarket/infrastructure/service/SystemClock';
 
@@ -12,6 +14,7 @@ const database = container.getInstance({key: 'sqliteConnection'}).database;
 const cancelInvoice = openMarket.get('invoices_cancel_use_case');
 const createOrder = openMarket.get('orders_create_use_case');
 const invoiceRepository = container.getInstance({key: 'invoiceRepository'});
+const transaction = container.getInstance({key: 'transaction'});
 const domainEventBus = openMarket.get('domain_event_bus');
 
 const product = {
@@ -253,6 +256,39 @@ describe('Invoice', () => {
         error => done(error),
         () => done()
       );
+  });
+
+  it('rejects a second invoice for the same order and rolls the transaction back', done => {
+    placeOrder().subscribe(
+      order => {
+        const first = invoiceFor(order.id);
+        const stockBefore = stock();
+        transaction.run(() => {
+          database.prepare('UPDATE product SET stock = 0 WHERE barcode = ?').run('0001');
+          const second = Invoice.issue({
+            id: 'second-invoice',
+            invoiceNumber: new InvoiceNumber({
+              series: first.series,
+              number: Number(first.number) + 1
+            }),
+            issuedAt: first.issuedAt,
+            order
+          });
+          return invoiceRepository.save({invoice: second});
+        }).subscribe(
+          () => done(new Error('should fail')),
+          error => {
+            expect(error.message).to.match(/UNIQUE/);
+            expect(count('SELECT COUNT(*) AS total FROM invoice')).to.equal(1);
+            expect(count('SELECT COUNT(*) AS total FROM invoice_line')).to.equal(lines.length);
+            expect(invoiceFor(order.id).id).to.equal(first.id);
+            expect(stock()).to.equal(stockBefore);
+            done();
+          }
+        );
+      },
+      error => done(error)
+    );
   });
 
   it('keeps the issued amounts when the product price changes', done => {

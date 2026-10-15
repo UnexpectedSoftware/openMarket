@@ -69,4 +69,35 @@ describe('invoice amount migration', () => {
       fs.rmSync(directory, {recursive: true, force: true});
     }
   });
+
+  it('replaces the plain order index with a unique one', () => {
+    const {directory, filename} = temporaryDatabase();
+    try {
+      const raw = new DatabaseSync(filename);
+      raw.exec(
+        'CREATE TABLE invoice (' +
+        'id TEXT PRIMARY KEY, series TEXT, number INTEGER, invoice_number TEXT, ' +
+        'issued_at TEXT, order_id TEXT, status TEXT, cancelled_at TEXT, total REAL)'
+      );
+      raw.exec('CREATE INDEX invoice_order_id ON invoice (order_id)');
+      raw.prepare(
+        'INSERT INTO invoice (id, series, number, invoice_number, issued_at, order_id, status, total) ' +
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).run('a', '2026', 1, '2026/000001', '2026-10-14T12:00:00.000Z', 'order-1', 'ISSUED', 1);
+      raw.close();
+
+      const connection = new SqliteConnection({filename});
+      const index = connection.database.prepare(`PRAGMA index_list('invoice')`).all()
+        .find(item => item.name === 'invoice_order_id');
+      expect(Number(index.unique)).to.equal(1);
+      expect(() => connection.database.prepare(
+        'INSERT INTO invoice (id, series, number, invoice_number, issued_at, order_id, status, total) ' +
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).run('b', '2026', 2, '2026/000002', '2026-10-14T12:00:00.000Z', 'order-1', 'ISSUED', 1))
+        .to.throw(/UNIQUE/);
+      connection.database.close();
+    } finally {
+      fs.rmSync(directory, {recursive: true, force: true});
+    }
+  });
 });
