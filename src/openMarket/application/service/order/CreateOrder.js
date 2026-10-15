@@ -8,6 +8,8 @@ import OrderCreated from "../../../domain/event/OrderCreated";
 import InvoiceIssued from "../../../domain/event/InvoiceIssued";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
 import Invoice from "../../../domain/invoice/Invoice";
+import Money from "../../../domain/money/Money";
+import Quantity from "../../../domain/money/Quantity";
 /** @import Order from "../../../domain/order/Order" */
 /** @import { OrderLine } from "../../../domain/order/Order" */
 /** @import OrderFactory from "../../../domain/order/OrderFactory" */
@@ -78,7 +80,7 @@ export default class CreateOrder {
         this._domainEventBus.save(new OrderCreated({
           id: order.id,
           createdAt: order.createdAt,
-          lines: order.lines
+          lines: order.lines.map(lineSnapshot)
         }));
         this._domainEventBus.save(new InvoiceIssued(facts(invoice)));
         lowStockProducts.forEach(product => {
@@ -139,7 +141,7 @@ export default class CreateOrder {
   _subtrackStock({order}){
     return Observable.from(order.lines)
       .flatMap(line => this._productRepository.findByBarcode({barcode: line.barcode})
-        .map(product => product.subtractStock({quantity: line.quantity}))
+        .map(product => product.subtractStock({quantity: stockUnits(line.quantity)}))
         .flatMap(product => this._productRepository.save({product}).map(() => product))
       )
       .toArray()
@@ -153,8 +155,8 @@ export default class CreateOrder {
 
 /**
  * Snapshot a subscriber can use without reading the invoice again.
+ * Euro fields are for display. Cent and milli fields are the exact amounts.
  * @param {Invoice} invoice
- * @returns {{id: string, series: string, number: number, invoiceNumber: string, issuedAt: string, orderId: string | null, lines: Array<{barcode: string, name: string, price: number, quantity: number, amount: number}>, total: number}}
  */
 function facts(invoice) {
   return {
@@ -164,7 +166,37 @@ function facts(invoice) {
     invoiceNumber: invoice.invoiceNumber.formatted,
     issuedAt: invoice.issuedAt,
     orderId: invoice.orderId,
-    lines: invoice.lines,
-    total: invoice.total
+    lines: invoice.lines.map(lineSnapshot),
+    total: invoice.total.toEuros(),
+    totalCents: invoice.total.cents
   };
+}
+
+/**
+ * @param {{barcode: string, name: string, price: Money, quantity: Quantity, amount?: Money}} line
+ * @returns {{barcode: string, name: string, price: number, quantity: number, amount: number, priceCents: number, quantityMilli: number, amountCents: number}}
+ */
+function lineSnapshot(line) {
+  const price = Money.from(line.price);
+  const quantity = Quantity.from(line.quantity);
+  const amount = line.amount == null ? price.times(quantity) : Money.from(line.amount);
+  return {
+    barcode: line.barcode,
+    name: line.name,
+    price: price.toEuros(),
+    quantity: quantity.units,
+    amount: amount.toEuros(),
+    priceCents: price.cents,
+    quantityMilli: quantity.milli,
+    amountCents: amount.cents
+  };
+}
+
+/**
+ * Stock is still stored in units. A weighed sale subtracts 0.35, not 350.
+ * @param {Quantity | number | string} quantity
+ * @returns {number}
+ */
+function stockUnits(quantity) {
+  return Quantity.from(quantity).units;
 }

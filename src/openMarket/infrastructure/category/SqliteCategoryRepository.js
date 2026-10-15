@@ -9,7 +9,7 @@ WITH product_totals AS (
   SELECT category_id,
          COUNT(*) AS product_count,
          COALESCE(SUM(stock), 0) AS stock_total,
-         COALESCE(SUM(base_price), 0) AS base_price_total
+         COALESCE(SUM(COALESCE(base_price_cents, CAST(ROUND(IFNULL(base_price, 0) * 100) AS INTEGER))), 0) / 100.0 AS base_price_total
   FROM product
   WHERE category_id IS NOT NULL
   GROUP BY category_id
@@ -19,7 +19,7 @@ sales AS (
          p.barcode AS barcode,
          COALESCE(p.name, '') AS name,
          SUM(s.quantity) AS quantity,
-         SUM(s.amount) AS amount
+         SUM(COALESCE(s.amount_cents, CAST(ROUND(s.amount * 100) AS INTEGER))) AS amount
   FROM product_sale_day s
   INNER JOIN product p ON p.barcode = s.barcode
   WHERE p.category_id IS NOT NULL

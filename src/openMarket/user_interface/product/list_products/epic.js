@@ -146,10 +146,10 @@ const listProductsDetailEpic = action$ =>
     }))
     .map(product => ({
       barcode: product.barcode,
-      basePrice: product.basePrice,
+      basePrice: product.basePrice.toEuros(),
       description: product.description,
       name: product.name,
-      price: product.price,
+      price: product.price.toEuros(),
       status: product.status,
       stock: product.stock,
       stockMin: product.stockMin,

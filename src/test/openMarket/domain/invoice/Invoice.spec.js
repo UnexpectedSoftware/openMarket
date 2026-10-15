@@ -18,6 +18,16 @@ function placed(lines, id = 'order-1') {
   return new Order({id, lines, date: orderDate}).place();
 }
 
+function plain(line) {
+  return {
+    barcode: line.barcode,
+    name: line.name,
+    cents: line.price.cents,
+    milli: line.quantity.milli,
+    amount: line.amount.cents
+  };
+}
+
 function issue(order) {
   return Invoice.issue({
     id: 'invoice-1',
@@ -68,19 +78,19 @@ describe('Invoice', () => {
     expect(invoice.orderId).to.equal('order-1');
     expect(invoice.status).to.equal(InvoiceStatus.ISSUED);
     expect(invoice.cancelledAt).to.equal(null);
-    expect(invoice.total).to.equal(order.total);
-    expect(invoice.total).to.equal(0.3);
-    expect(invoice.lines).to.deep.equal([
-      {barcode: '1', name: 'Milk', price: 0.1, quantity: 1, amount: 0.1},
-      {barcode: '2', name: 'Bread', price: 0.2, quantity: 1, amount: 0.2}
+    expect(invoice.total.equals(order.total)).to.equal(true);
+    expect(invoice.total.cents).to.equal(30);
+    expect(invoice.lines.map(plain)).to.deep.equal([
+      {barcode: '1', name: 'Milk', cents: 10, milli: 1000, amount: 10},
+      {barcode: '2', name: 'Bread', cents: 20, milli: 1000, amount: 20}
     ]);
 
     const returned = invoice.lines;
     returned[0].quantity = 4;
     returned.push({barcode: '3', name: 'Tea', price: 1, quantity: 1, amount: 1});
     expect(invoice.lines).to.have.lengthOf(2);
-    expect(invoice.lines[0].quantity).to.equal(1);
-    expect(invoice.total).to.equal(0.3);
+    expect(invoice.lines[0].quantity.milli).to.equal(1000);
+    expect(invoice.total.cents).to.equal(30);
   });
 
   it('returns stored amounts instead of calculating them again', () => {
@@ -95,10 +105,10 @@ describe('Invoice', () => {
       total: 9.99
     });
 
-    expect(invoice.lines[0].amount).to.equal(9.99);
-    expect(invoice.total).to.equal(9.99);
-    expect(invoice.lines[0].price).to.equal(0.1);
-    expect(invoice.lines[0].quantity).to.equal(3);
+    expect(invoice.lines[0].amount.cents).to.equal(999);
+    expect(invoice.total.cents).to.equal(999);
+    expect(invoice.lines[0].price.cents).to.equal(10);
+    expect(invoice.lines[0].quantity.milli).to.equal(3000);
   });
 
   it('copies a restored order without applying the order line rules again', () => {
@@ -110,20 +120,29 @@ describe('Invoice', () => {
     const invoice = issue(order);
 
     expect(invoice.orderId).to.equal('order-1');
-    expect(invoice.total).to.equal(0);
-    expect(invoice.lines).to.deep.equal([
-      {barcode: '1', name: 'Milk', price: 2, quantity: 0, amount: 0}
+    expect(invoice.total.cents).to.equal(0);
+    expect(invoice.lines.map(plain)).to.deep.equal([
+      {barcode: '1', name: 'Milk', cents: 200, milli: 0, amount: 0}
     ]);
+  });
+
+  it('copies weighed order cents without calculating them again', () => {
+    const order = placed([{barcode: '1', name: 'Ham', price: '18.50', quantity: '0.350'}]);
+    const invoice = issue(order);
+
+    expect(invoice.lines[0].amount.cents).to.equal(order.lines[0].amount.cents);
+    expect(invoice.total.cents).to.equal(648);
+    expect(invoice.total.equals(order.total)).to.equal(true);
   });
 
   it('accepts a fractional quantity and a zero price', () => {
     const weighed = issue(placed([{barcode: '1', name: 'Ham', price: 2, quantity: 0.5}]));
-    expect(weighed.lines[0].quantity).to.equal(0.5);
-    expect(weighed.lines[0].amount).to.equal(1);
-    expect(weighed.total).to.equal(1);
+    expect(weighed.lines[0].quantity.units).to.equal(0.5);
+    expect(weighed.lines[0].amount.cents).to.equal(100);
+    expect(weighed.total.cents).to.equal(100);
 
     const free = issue(placed([{barcode: '2', name: 'Bag', price: 0, quantity: 1}], 'order-2'));
-    expect(free.total).to.equal(0);
+    expect(free.total.cents).to.equal(0);
     expect(free.orderId).to.equal('order-2');
   });
 
@@ -137,7 +156,7 @@ describe('Invoice', () => {
     expect(invoice.cancelledAt).to.equal('2026-10-14T13:00:00.000Z');
     expect(invoice.invoiceNumber.formatted).to.equal('A/000001');
     expect(invoice.issuedAt).to.equal(issuedAt);
-    expect(invoice.total).to.equal(2);
+    expect(invoice.total.cents).to.equal(200);
     expect(invoice.lines).to.deep.equal(lines);
   });
 

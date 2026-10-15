@@ -1,17 +1,19 @@
 import moment from 'moment';
-import {add, multiply} from '../../infrastructure/service/floatCalculatorService';
+import Money from '../money/Money';
+import Quantity from '../money/Quantity';
 import OrderStatus from './OrderStatus';
 import EmptyOrderLinesError from './EmptyOrderLinesError';
 import InvalidOrderQuantityError from './InvalidOrderQuantityError';
 import OrderAlreadyPlacedError from './OrderAlreadyPlacedError';
 
 /**
- * One line stored on an order.
+ * One line stored on an order. Amount is the line total after one half-up rounding.
  * @typedef {object} OrderLine
  * @property {string} barcode
  * @property {string} name
- * @property {number} price
- * @property {number} quantity
+ * @property {Money} price
+ * @property {Quantity} quantity
+ * @property {Money} amount
  */
 
 /**
@@ -77,7 +79,7 @@ export default class Order {
     this._lines = copyLines(lines);
 
     /**
-     * @type {number}
+     * @type {Money}
      * @private
      */
     this._total = this._getTotalAmount();
@@ -99,11 +101,12 @@ export default class Order {
       barcode: line.barcode,
       name: line.name,
       price: line.price,
-      quantity: line.quantity
+      quantity: line.quantity,
+      amount: line.amount
     }));
   }
 
-  /** @returns {number} */
+  /** @returns {Money} */
   get total() {
     return this._total;
   }
@@ -116,14 +119,14 @@ export default class Order {
   /**
    * Adds a line while the order is still a draft. The quantity is whatever
    * the cashier typed, including zero. Placing the order accepts or rejects it.
-   * @param {OrderLine} line
+   * @param {{barcode: string, name: string, price: Money | number | string, quantity: Quantity | number | string}} line
    * @returns {Order}
    */
   addLine({barcode, name, price, quantity}) {
     if (this._status !== OrderStatus.DRAFT) {
       throw new OrderAlreadyPlacedError({id: this._id});
     }
-    this._lines.push({barcode, name, price, quantity});
+    this._lines.push(pricedLine({barcode, name, price, quantity}));
     this._total = this._getTotalAmount();
     return this;
   }
@@ -141,10 +144,11 @@ export default class Order {
       throw new EmptyOrderLinesError();
     }
     this._lines.forEach(line => {
-      const quantity = Number(line && line.quantity);
-      if (!Number.isFinite(quantity) || quantity <= 0) {
+      const quantity = line && line.quantity;
+      const units = quantity instanceof Quantity ? quantity.units : Number(quantity);
+      if (!(quantity instanceof Quantity) || quantity.milli <= 0) {
         throw new InvalidOrderQuantityError({
-          quantity: line && line.quantity,
+          quantity: units,
           barcode: line && line.barcode
         });
       }
@@ -154,28 +158,51 @@ export default class Order {
   }
 
   /**
-   * @returns {number}
+   * @returns {Money}
    * @private
    */
   _getTotalAmount() {
-    return this._lines.reduce((acc, element) =>
-      add(acc, multiply(element.price, element.quantity)), 0);
+    return this._lines.reduce((acc, element) => acc.plus(element.amount), Money.ofCents(0));
   }
 
 }
 
 /**
- * @param {OrderLine[] | null | undefined} lines
+ * @param {Array<{barcode: string, name: string, price: Money | number | string, quantity: Quantity | number | string, amount?: Money}> | null | undefined} lines
  * @returns {OrderLine[]}
  */
 function copyLines(lines) {
   if (!Array.isArray(lines)) {
     return [];
   }
-  return lines.map(line => ({
-    barcode: line && line.barcode,
-    name: line && line.name,
-    price: line && line.price,
-    quantity: line && line.quantity
-  }));
+  return lines.map(line => pricedLine(line || {}));
+}
+
+/**
+ * Price and quantity become value objects. A stored amount is kept.
+ * A missing amount is the one half-up product of price and quantity.
+ * @param {{barcode?: string, name?: string, price?: Money | number | string, quantity?: Quantity | number | string, amount?: Money | number | string}} line
+ * @returns {OrderLine}
+ */
+function pricedLine(line) {
+  const price = Money.from(line.price == null ? 0 : line.price);
+  const quantity = Quantity.from(line.quantity == null ? 0 : line.quantity);
+  const amount = line.amount == null ? price.times(nonNegative(quantity)) : Money.from(line.amount);
+  return {
+    barcode: line.barcode,
+    name: line.name,
+    price,
+    quantity,
+    amount
+  };
+}
+
+/**
+ * A negative quantity is stored so placing the order can reject it.
+ * The line amount of a negative quantity is zero until that check runs.
+ * @param {Quantity} quantity
+ * @returns {Quantity}
+ */
+function nonNegative(quantity) {
+  return quantity.milli < 0 ? Quantity.ofMilli(0) : quantity;
 }

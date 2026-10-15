@@ -1,5 +1,6 @@
 import {number} from "../../validations/formValidations";
-import {add, multiply} from "../../../infrastructure/service/floatCalculatorService";
+import Quantity from "../../../domain/money/Quantity";
+import {lineEuros, sumEuros} from "../../i18n/money";
 
 export const state = () => {
   return {
@@ -16,14 +17,15 @@ export const addProduct = ({ lines, product, quantity }) => {
   let productQuantity = quantity;
   if (undefined !== repeatedProduct) {
     lines = lines.filter(currentProduct => currentProduct.barcode !== product.barcode);
-    productQuantity = add(repeatedProduct.quantity,quantity);
+    productQuantity = Quantity.from(repeatedProduct.quantity).plus(Quantity.from(quantity)).units;
   }
+  const price = euroPrice(product.price);
   lines.push({
     barcode: product.barcode,
     name: product.name,
-    price: product.price,
+    price,
     quantity: productQuantity,
-    subtotal: multiply(productQuantity,product.price)
+    subtotal: lineEuros(price, productQuantity)
   });
 
   return {
@@ -40,7 +42,7 @@ export const updateQuantity = ({lines, barcode, quantity}) => {
   let newLines = lines.map(currentProduct => {
     if(number(quantity) === undefined && currentProduct.barcode === barcode ) {
       currentProduct.quantity = quantity;
-      currentProduct.subtotal = multiply(quantity,currentProduct.price);
+      currentProduct.subtotal = lineEuros(currentProduct.price, quantity);
     }
     return currentProduct;
   });
@@ -68,18 +70,31 @@ export const removeProduct = ({lines, barcode}) =>{
 export const loadOrder  = ({order}) =>
   ({
     order:{
-      lines: order.lines.map(line => ({...line,subtotal:multiply(line.quantity,line.price)})),
-      total: order.total,
+      lines: order.lines.map(line => {
+        const price = euroPrice(line.price);
+        const quantity = line.quantity != null && line.quantity.units != null ? line.quantity.units : line.quantity;
+        return {
+          barcode: line.barcode,
+          name: line.name,
+          price,
+          quantity,
+          subtotal: line.amount != null ? euroPrice(line.amount) : lineEuros(price, quantity)
+        };
+      }),
+      total: euroPrice(order.total),
       createdAt: order.createdAt
     },
     readonly:true
   });
 
 
-const calculateTotal = ({lines}) => {
-  let totalOrder = 0.0;
-  lines.forEach(product => totalOrder = add(totalOrder, multiply(product.quantity,product.price)));
-  return totalOrder;
+const calculateTotal = ({lines}) => sumEuros(lines.map(product => product.subtotal));
+
+function euroPrice(value) {
+  if (value != null && typeof value.toEuros === 'function') {
+    return value.toEuros();
+  }
+  return value;
 }
 
 

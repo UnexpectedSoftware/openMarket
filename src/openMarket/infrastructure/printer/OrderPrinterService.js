@@ -7,6 +7,7 @@
  * @property {number} quantity
  * @property {number} price
  * @property {number} subtotal
+ * @property {*} [amount]
  */
 
 /**
@@ -17,6 +18,20 @@
  */
 
 const MAX_CHARACTERS = 19;
+
+function displayEuros(value) {
+  if (value != null && typeof value.toEuros === 'function') {
+    return value.toEuros();
+  }
+  return value;
+}
+
+function displayUnits(value) {
+  if (value != null && typeof value.units === 'number' && typeof value.milli === 'number') {
+    return value.units;
+  }
+  return value;
+}
 
 export default class OrderPrinterService {
 
@@ -50,9 +65,9 @@ export default class OrderPrinterService {
       order.lines
         .map(line => ([
           { text: line.name.slice(0, MAX_CHARACTERS), align: 'LEFT', width: 0.40 },
-          { text: line.quantity, align: 'CENTER', width: 0.20 },
-          { text: line.price, align: 'CENTER', width: 0.20 },
-          { text: line.subtotal, align: 'CENTER', width: 0.20 }
+          { text: displayUnits(line.quantity), align: 'CENTER', width: 0.20 },
+          { text: displayEuros(line.price), align: 'CENTER', width: 0.20 },
+          { text: displayEuros(line.subtotal != null ? line.subtotal : line.amount), align: 'CENTER', width: 0.20 }
         ]))
         .forEach(row => printer.tableCustom(row));
 
@@ -60,7 +75,7 @@ export default class OrderPrinterService {
       printer.alignRight();
       printer.print('Total: ');
       printer.bold(true);
-      printer.print(order.total);
+      printer.print(displayEuros(order.total));
       printer.print('€');
       printer.newLine();
       printer.println('IVA incluido');

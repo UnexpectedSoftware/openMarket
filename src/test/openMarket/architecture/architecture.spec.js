@@ -44,15 +44,10 @@ const BANNED_SUFFIX_ALLOWED = [
 
 /** Existing debt, as "from -> to". Delete a line when you fix it. Never add one without Victor's OK. */
 const KNOWN_VIOLATIONS = [
-  'domain/order/Order.js -> infrastructure/service/floatCalculatorService',
-  'application/service/product/ProductSaleStatistics.js -> infrastructure/service/floatCalculatorService',
   'user_interface/category/epic.js -> infrastructure/service/ImageStore',
-  'user_interface/home/Container.js -> infrastructure/service/floatCalculatorService',
   'user_interface/home/epic.js -> infrastructure/service/ImageStore',
   'user_interface/home/epicFactory.js -> infrastructure/dic/Container',
-  'user_interface/order/list_orders/model.js -> infrastructure/service/floatCalculatorService',
   'user_interface/order/new_order/epic.js -> infrastructure/dic/Container',
-  'user_interface/order/new_order/model.js -> infrastructure/service/floatCalculatorService',
   'user_interface/order/new_product_dialog/epic.js -> infrastructure/dic/Container',
   'user_interface/product/list_products/epic.js -> infrastructure/service/ImageStore',
   'user_interface/product/new_product/epic.js -> infrastructure/service/ImageStore'

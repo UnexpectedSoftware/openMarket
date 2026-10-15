@@ -1,4 +1,5 @@
 import ProductStatus from "./ProductStatus";
+import Money from '../money/Money';
 /** @import Category from '../category/Category' */
 
 /**
@@ -10,8 +11,8 @@ export default class Product {
      * @param {string} params.barcode
      * @param {string} params.name
      * @param {string} params.description
-     * @param {number} params.price
-     * @param {number} params.basePrice
+     * @param {Money | number | string} params.price
+     * @param {Money | number | string} params.basePrice
      * @param {number} params.stock
      * @param {number} params.stockMin
      * @param {boolean} params.weighted
@@ -43,18 +44,17 @@ export default class Product {
     this._description = description;
 
       /**
-       *
-       * @type {number}
+       * @type {Money}
        * @private
        */
-    this._price = price;
+    this._price = Money.from(price == null ? 0 : price);
 
       /**
        * Price without profit
-       * @type {number}
+       * @type {Money}
        * @private
        */
-    this._basePrice = basePrice;
+    this._basePrice = Money.from(basePrice == null ? 0 : basePrice);
 
       /**
        *
@@ -113,10 +113,12 @@ export default class Product {
     return this._description;
   }
 
+  /** @returns {Money} */
   get price() {
     return this._price;
   }
 
+  /** @returns {Money} */
   get basePrice() {
     return this._basePrice;
   }

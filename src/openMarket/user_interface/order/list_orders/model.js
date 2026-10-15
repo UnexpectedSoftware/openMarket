@@ -1,4 +1,4 @@
-import {add} from "../../../infrastructure/service/floatCalculatorService";
+import {sumEuros} from "../../i18n/money";
 
 export const defaultLimit = 20;
 export const defaultOffset = 0;
@@ -23,5 +23,5 @@ export const state = () => {
 export const calculateTotal = ({orders}) => {
   return orders
     .map(order => order.total)
-    .reduce((acc,element) => add(acc,element),0)
+    .reduce((acc, element) => sumEuros([acc, element]), 0)
 }

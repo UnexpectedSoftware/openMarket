@@ -1,18 +1,19 @@
 /** @import ProductSaleStatisticsRepository from '../../domain/product/ProductSaleStatisticsRepository' */
 
 const FIND_SALE_DAY_SQL =
-  'SELECT quantity, amount FROM product_sale_day WHERE barcode = ? AND sold_on = ?';
+  'SELECT quantity, amount, amount_cents FROM product_sale_day WHERE barcode = ? AND sold_on = ?';
 
 const UPSERT_SALE_DAY_SQL =
-  'INSERT INTO product_sale_day (barcode, name, sold_on, quantity, amount) VALUES (?, ?, ?, ?, ?) ' +
+  'INSERT INTO product_sale_day (barcode, name, sold_on, quantity, amount, amount_cents) VALUES (?, ?, ?, ?, ?, ?) ' +
   'ON CONFLICT(barcode, sold_on) DO UPDATE SET ' +
-  'name = excluded.name, quantity = excluded.quantity, amount = excluded.amount';
+  'name = excluded.name, quantity = excluded.quantity, amount = excluded.amount, amount_cents = excluded.amount_cents';
 
 const SALE_DAY_PRESENT_SQL = 'SELECT 1 AS present FROM product_sale_day LIMIT 1';
 
 const ORDER_LINES_SQL =
   'SELECT o.created_at AS createdAt, l.barcode AS barcode, l.name AS name, ' +
-  'l.price AS price, l.quantity AS quantity ' +
+  'l.price AS price, l.quantity AS quantity, l.price_cents AS priceCents, ' +
+  'l.quantity_milli AS quantityMilli, l.amount_cents AS amountCents ' +
   'FROM line l INNER JOIN "order" o ON o.id = l.order_id';
 
 const DELETE_SALE_DAYS_SQL = 'DELETE FROM product_sale_day';
@@ -21,17 +22,21 @@ const CLAIM_ORDER_SQL =
   'INSERT INTO product_sale_order (order_id) VALUES (?) ON CONFLICT(order_id) DO NOTHING';
 
 const SERIES_BY_MONTH_SQL =
-  'SELECT strftime(\'%Y-%m\', sold_on) AS soldOn, SUM(quantity) AS quantity, SUM(amount) AS amount ' +
+  'SELECT strftime(\'%Y-%m\', sold_on) AS soldOn, SUM(quantity) AS quantity, ' +
+  'SUM(COALESCE(amount_cents, CAST(ROUND(amount * 100) AS INTEGER))) AS amount_cents ' +
   'FROM product_sale_day WHERE barcode = ? AND sold_on >= ? AND sold_on <= ? ' +
   'GROUP BY strftime(\'%Y-%m\', sold_on) ORDER BY soldOn ASC';
 
 const SERIES_BY_DAY_SQL =
-  'SELECT sold_on AS soldOn, quantity, amount FROM product_sale_day ' +
+  'SELECT sold_on AS soldOn, quantity, ' +
+  'COALESCE(amount_cents, CAST(ROUND(amount * 100) AS INTEGER)) AS amount_cents ' +
+  'FROM product_sale_day ' +
   'WHERE barcode = ? AND sold_on >= ? AND sold_on <= ? ORDER BY sold_on ASC';
 
 const MOST_SOLD_SQL =
   'SELECT d.barcode AS barcode, COALESCE(MAX(p.name), MAX(d.name)) AS name, ' +
-  'MAX(p.image_name) AS imageName, SUM(d.quantity) AS quantity, SUM(d.amount) AS amount ' +
+  'MAX(p.image_name) AS imageName, SUM(d.quantity) AS quantity, ' +
+  'SUM(COALESCE(d.amount_cents, CAST(ROUND(d.amount * 100) AS INTEGER))) AS amount_cents ' +
   'FROM product_sale_day d LEFT JOIN product p ON p.barcode = d.barcode ' +
   'WHERE d.sold_on >= ? AND d.sold_on <= ? ' +
   'GROUP BY d.barcode ' +

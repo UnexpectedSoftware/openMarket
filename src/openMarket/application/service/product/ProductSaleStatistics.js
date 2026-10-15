@@ -1,7 +1,8 @@
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/defer';
 import 'rxjs/add/observable/of';
-import {add} from '../../../infrastructure/service/floatCalculatorService';
+import Money from '../../../domain/money/Money';
+import Quantity from '../../../domain/money/Quantity';
 import {fillSeries, previousYearRange, resolveSalesWindow} from './salesWindows';
 /** @import ProductSaleStatisticsRepository from '../../../domain/product/ProductSaleStatisticsRepository' */
 /** @import { MostSoldProduct, SalePoint } from '../../../domain/product/ProductSaleStatisticsRepository' */
@@ -38,13 +39,13 @@ export default class ProductSaleStatistics {
         rows
       });
       const totals = series.reduce((sum, point) => ({
-        quantity: add(sum.quantity, point.quantity),
-        amount: add(sum.amount, point.amount)
-      }), {quantity: 0, amount: 0});
+        quantity: sum.quantity.plus(Quantity.fromDecimal(point.quantity || 0)),
+        amount: sum.amount.plus(Money.fromEuros(point.amount || 0))
+      }), {quantity: Quantity.ofMilli(0), amount: Money.ofCents(0)});
       return Observable.of({
         window: range.window,
-        quantity: totals.quantity,
-        amount: totals.amount,
+        quantity: totals.quantity.units,
+        amount: totals.amount.toEuros(),
         series
       });
     });

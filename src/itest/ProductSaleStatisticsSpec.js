@@ -50,7 +50,16 @@ describe('Product sale statistics', () => {
           expect(events[0]).to.be.instanceof(OrderCreated);
           expect(events[0].lines).to.have.lengthOf(2);
           expect(events[0].lines[0]).to.not.equal(lines[0]);
-          expect(events[0].lines[0]).to.deep.equal(lines[0]);
+          expect(events[0].lines[0]).to.deep.equal({
+            barcode: '0001',
+            name: 'Coca-Cola',
+            price: 0.55,
+            quantity: 2,
+            amount: 1.1,
+            priceCents: 55,
+            quantityMilli: 2000,
+            amountCents: 110
+          });
           expect(result.quantity).to.equal(6);
           expect(result.amount).to.equal(3.3);
         },

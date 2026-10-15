@@ -2,17 +2,18 @@ import InvoiceStatus from './InvoiceStatus';
 import InvoiceNumber from './InvoiceNumber';
 import InvalidInvoiceError from './InvalidInvoiceError';
 import InvoiceAlreadyCancelledError from './InvoiceAlreadyCancelledError';
-import {add, multiply} from '../money';
+import Money from '../money/Money';
+import Quantity from '../money/Quantity';
 /** @import Order from '../order/Order' */
 
 /**
- * One line stored on an invoice. `amount` is the line total in euros.
+ * One line stored on an invoice. `amount` is the line total in cents, copied from the order.
  * @typedef {object} InvoiceLine
  * @property {string} barcode
  * @property {string} name
- * @property {number} price
- * @property {number} quantity
- * @property {number} amount
+ * @property {Money} price
+ * @property {Quantity} quantity
+ * @property {Money} amount
  */
 
 /**
@@ -25,7 +26,7 @@ export default class Invoice {
   /**
    * Issues a new invoice from a placed order. The number comes from the caller, already allocated.
    * The order's lines are copied. They are not checked again.
-   * Line amounts and the total use the same cents arithmetic as the order total, and are fixed here.
+   * Line amounts and the total are copied from the order. They are not calculated again.
    * @param {object} params
    * @param {string} params.id
    * @param {InvoiceNumber} params.invoiceNumber
@@ -38,7 +39,6 @@ export default class Invoice {
       throw new InvalidInvoiceError({field: 'order', id: id == null ? undefined : String(id)});
     }
     const lines = issuedLines(order.lines);
-    const total = lines.reduce((sum, line) => add(sum, line.amount), 0);
     return new Invoice({
       id,
       invoiceNumber,
@@ -47,7 +47,7 @@ export default class Invoice {
       orderId: order.id,
       status: InvoiceStatus.ISSUED,
       cancelledAt: null,
-      total
+      total: order.total
     });
   }
 
@@ -61,7 +61,7 @@ export default class Invoice {
    * @param {string | null} [params.orderId]
    * @param {string} params.status
    * @param {string | null} [params.cancelledAt]
-   * @param {number} params.total Stored invoice total
+   * @param {Money | number | string} params.total Stored invoice total
    * @returns {Invoice}
    */
   static restore({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total}) {
@@ -77,7 +77,7 @@ export default class Invoice {
    * @param {string | null} [params.orderId]
    * @param {string} params.status
    * @param {string | null} [params.cancelledAt]
-   * @param {number} params.total
+   * @param {Money | number | string} params.total
    */
   constructor({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total}) {
     if (id == null || String(id).trim() === '') {
@@ -105,10 +105,7 @@ export default class Invoice {
     this._status = status;
     this._cancelledAt = status === InvoiceStatus.CANCELLED ? String(cancelledAt) : null;
     this._lines = storedLines(lines, this._id);
-    if (total == null || !Number.isFinite(Number(total))) {
-      throw new InvalidInvoiceError({field: 'total', id: this._id});
-    }
-    this._total = Number(total);
+    this._total = storedTotal(total, this._id);
   }
 
   /** @returns {string} */
@@ -152,7 +149,7 @@ export default class Invoice {
     return this._cancelledAt;
   }
 
-  /** @returns {number} */
+  /** @returns {Money} */
   get total() {
     return this._total;
   }
@@ -180,8 +177,8 @@ export default class Invoice {
 }
 
 /**
- * Line amounts for a new invoice. Same rounding as the order total.
- * @param {Array<{barcode: string, name: string, price: number, quantity: number}>} lines
+ * Copies the order lines. Amounts stay the ones the order already rounded.
+ * @param {Array<{barcode: string, name: string, price: Money, quantity: Quantity, amount: Money}>} lines
  * @returns {InvoiceLine[]}
  */
 function issuedLines(lines) {
@@ -191,14 +188,14 @@ function issuedLines(lines) {
   return lines.map(line => ({
     barcode: line.barcode == null ? '' : String(line.barcode),
     name: line.name == null ? '' : String(line.name),
-    price: line.price,
-    quantity: line.quantity,
-    amount: multiply(line.price, line.quantity)
+    price: Money.from(line.price),
+    quantity: Quantity.from(line.quantity),
+    amount: Money.from(line.amount)
   }));
 }
 
 /**
- * Copies stored lines. The amount is the stored number, not price times quantity.
+ * Copies stored lines. The amount is the stored money, not price times quantity.
  * @param {InvoiceLine[]} lines
  * @param {string} id
  * @returns {InvoiceLine[]}
@@ -208,15 +205,35 @@ function storedLines(lines, id) {
     throw new InvalidInvoiceError({field: 'lines', id});
   }
   return lines.map(line => {
-    if (line == null || line.amount == null || !Number.isFinite(Number(line.amount))) {
+    if (line == null || line.amount == null) {
       throw new InvalidInvoiceError({field: 'amount', id});
     }
-    return {
-      barcode: line.barcode == null ? '' : String(line.barcode),
-      name: line.name == null ? '' : String(line.name),
-      price: line.price,
-      quantity: line.quantity,
-      amount: Number(line.amount)
-    };
+    try {
+      return {
+        barcode: line.barcode == null ? '' : String(line.barcode),
+        name: line.name == null ? '' : String(line.name),
+        price: Money.from(line.price == null ? 0 : line.price),
+        quantity: Quantity.from(line.quantity == null ? 0 : line.quantity),
+        amount: Money.from(line.amount)
+      };
+    } catch (error) {
+      throw new InvalidInvoiceError({field: 'amount', id});
+    }
   });
+}
+
+/**
+ * @param {Money | number | string} total
+ * @param {string} id
+ * @returns {Money}
+ */
+function storedTotal(total, id) {
+  if (total == null) {
+    throw new InvalidInvoiceError({field: 'total', id});
+  }
+  try {
+    return Money.from(total);
+  } catch (error) {
+    throw new InvalidInvoiceError({field: 'total', id});
+  }
 }

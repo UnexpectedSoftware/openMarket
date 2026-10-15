@@ -136,6 +136,16 @@ describe('Domain event bus', () => {
         database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('from-live', event.id);
       }));
       const lines = [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 5}];
+      const snapshot = [{
+        barcode: '0001',
+        name: 'Coca-Cola',
+        price: 0.55,
+        quantity: 5,
+        amount: 2.75,
+        priceCents: 55,
+        quantityMilli: 5000,
+        amountCents: 275
+      }];
       let order = null;
       let failure = null;
 
@@ -153,7 +163,7 @@ describe('Domain event bus', () => {
       expect(durable).to.deep.equal([{
         open: false,
         id: order.id,
-        lines
+        lines: snapshot
       }]);
       expect(database.prepare('SELECT name FROM category WHERE id = ?').get('from-live').name).to.equal(order.id);
       expect(Number(database.prepare('SELECT stock FROM product WHERE barcode = ?').get('0001').stock)).to.equal(95);
@@ -164,7 +174,7 @@ describe('Domain event bus', () => {
       expect(rows[0].dispatchedAt).to.match(/^\d{4}-\d{2}-\d{2}T/);
       expect(rows[0].createdAt).to.match(/^\d{4}-\d{2}-\d{2}T/);
       expect(JSON.parse(rows[0].payload).createdAt).to.equal(order.createdAt);
-      expect(JSON.parse(rows[0].payload).lines).to.deep.equal(lines);
+      expect(JSON.parse(rows[0].payload).lines).to.deep.equal(snapshot);
       expect(rows[1].type).to.equal('InvoiceIssued');
       expect(JSON.parse(rows[1].payload).orderId).to.equal(order.id);
       expect(rows[1].dispatchedAt).to.match(/^\d{4}-\d{2}-\d{2}T/);

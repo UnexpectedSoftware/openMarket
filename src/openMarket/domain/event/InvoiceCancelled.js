@@ -24,10 +24,11 @@ export default class InvoiceCancelled {
    * @param {string} params.issuedAt
    * @param {string} params.cancelledAt
    * @param {string | null} params.orderId
-   * @param {Array<{barcode: string, name: string, price: number, quantity: number, amount: number}>} params.lines
+   * @param {Array<{barcode: string, name: string, price: number, quantity: number, amount: number, priceCents?: number, quantityMilli?: number, amountCents?: number}>} params.lines
    * @param {number} params.total
+   * @param {number} [params.totalCents]
    */
-  constructor({id, series, number, invoiceNumber, issuedAt, cancelledAt, orderId, lines, total}) {
+  constructor({id, series, number, invoiceNumber, issuedAt, cancelledAt, orderId, lines, total, totalCents}) {
     this.id = id;
     this.series = series;
     this.number = number;
@@ -35,14 +36,35 @@ export default class InvoiceCancelled {
     this.issuedAt = issuedAt;
     this.cancelledAt = cancelledAt;
     this.orderId = orderId == null ? null : orderId;
-    this.lines = (lines || []).map(line => ({
-      barcode: line.barcode,
-      name: line.name,
-      price: line.price,
-      quantity: line.quantity,
-      amount: line.amount
-    }));
+    this.lines = (lines || []).map(line => lineWithCents(line));
     this.total = total;
+    if (totalCents != null) {
+      this.totalCents = totalCents;
+    }
   }
 
+}
+
+/**
+ * @param {{barcode: string, name: string, price: number, quantity: number, amount: number, priceCents?: number, quantityMilli?: number, amountCents?: number}} line
+ * @returns {object}
+ */
+function lineWithCents(line) {
+  const copy = {
+    barcode: line.barcode,
+    name: line.name,
+    price: line.price,
+    quantity: line.quantity,
+    amount: line.amount
+  };
+  if (line.priceCents != null) {
+    copy.priceCents = line.priceCents;
+  }
+  if (line.quantityMilli != null) {
+    copy.quantityMilli = line.quantityMilli;
+  }
+  if (line.amountCents != null) {
+    copy.amountCents = line.amountCents;
+  }
+  return copy;
 }

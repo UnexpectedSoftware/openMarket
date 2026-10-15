@@ -8,13 +8,23 @@ import OrderAlreadyPlacedError from '../../../../openMarket/domain/order/OrderAl
 const date = '03/10/2026 10:00:00';
 const line = quantity => ({barcode: '1', name: 'Milk', price: 2, quantity});
 
+function plain(orderLine) {
+  return {
+    barcode: orderLine.barcode,
+    name: orderLine.name,
+    cents: orderLine.price.cents,
+    milli: orderLine.quantity.milli,
+    amount: orderLine.amount.cents
+  };
+}
+
 describe('Order', () => {
   it('keeps a draft with no lines until it is placed', () => {
     const order = Order.draft({id: '1', date});
 
     expect(order.isPlaced()).to.equal(false);
     expect(order.lines).to.deep.equal([]);
-    expect(order.total).to.equal(0);
+    expect(order.total.cents).to.equal(0);
     expect(() => order.place()).to.throw(EmptyOrderLinesError, 'Lines must not be empty');
     expect(order.isPlaced()).to.equal(false);
   });
@@ -52,8 +62,19 @@ describe('Order', () => {
     }).place();
 
     expect(order.isPlaced()).to.equal(true);
-    expect(order.lines[0].quantity).to.equal(0.5);
-    expect(order.total).to.equal(1);
+    expect(order.lines[0].quantity.units).to.equal(0.5);
+    expect(order.total.cents).to.equal(100);
+  });
+
+  it('rounds a weighed line half-up once', () => {
+    const order = new Order({
+      id: '1',
+      lines: [{barcode: '1', name: 'Ham', price: '18.50', quantity: '0.350'}],
+      date
+    }).place();
+
+    expect(order.lines[0].amount.cents).to.equal(648);
+    expect(order.total.cents).to.equal(648);
   });
 
   it('returns a copy of its lines', () => {
@@ -64,9 +85,15 @@ describe('Order', () => {
     returned[0].quantity = 9;
     returned[0].name = 'Changed';
 
-    expect(order.lines).to.deep.equal([line(2)]);
-    expect(order.total).to.equal(4);
-    expect(order.lines[0].quantity).to.equal(2);
+    expect(order.lines.map(plain)).to.deep.equal([{
+      barcode: '1',
+      name: 'Milk',
+      cents: 200,
+      milli: 2000,
+      amount: 400
+    }]);
+    expect(order.total.cents).to.equal(400);
+    expect(order.lines[0].quantity.milli).to.equal(2000);
   });
 
   it('places an order once', () => {
@@ -90,7 +117,7 @@ describe('Order', () => {
     expect(empty.isPlaced()).to.equal(true);
     expect(empty.lines).to.deep.equal([]);
     expect(zero.isPlaced()).to.equal(true);
-    expect(zero.lines[0].quantity).to.equal(0);
+    expect(zero.lines[0].quantity.milli).to.equal(0);
     expect(zero.place()).to.equal(zero);
     expect(() => zero.addLine(line(1))).to.throw(OrderAlreadyPlacedError);
   });

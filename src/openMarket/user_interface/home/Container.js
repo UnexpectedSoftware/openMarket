@@ -1,13 +1,13 @@
 import React, {Component} from "react";
 import {Bar} from 'react-chartjs-2';
 import moment from "moment";
-import { add } from "../../infrastructure/service/floatCalculatorService";
+import {formatMoney, sumEuros} from "../i18n/money";
 
 const BAR_COLOR = 'rgba(33, 150, 243, 0.35)';
 const BAR_BORDER = '#2196F3';
 
 function formatEuro(amount) {
-  return '€' + Number(amount).toFixed(2);
+  return formatMoney(amount);
 }
 
 export default class Container extends Component {
@@ -64,10 +64,7 @@ export default class Container extends Component {
   }
 
   render() {
-    const takings = this.props.statistics.totalAmountByDays.reduce(
-      (sum, day) => add(sum, day.total),
-      0
-    );
+    const takings = sumEuros(this.props.statistics.totalAmountByDays.map(day => day.total));
     return (
       <div>
         <div className="container dashboard">

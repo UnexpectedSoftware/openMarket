@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
 import ReactTable from 'react-table';
 import * as Rx from "rxjs";
+import {formatMoney} from "../../i18n/money";
 
 class ReduxForm extends Component {
 
@@ -28,7 +29,7 @@ class ReduxForm extends Component {
       {
         Header: 'Price',
         accessor: 'price',
-        Cell: (data) => data.value +" "+this.moneySymbol
+        Cell: (data) => formatMoney(data.value)
       },
       {
         Header: 'Quantity',
@@ -38,7 +39,7 @@ class ReduxForm extends Component {
       {
         Header: 'Subtotal',
         accessor: 'subtotal',
-        Cell: (data) => data.value +" "+this.moneySymbol
+        Cell: (data) => formatMoney(data.value)
       },
       {
         Header: 'Actions',
@@ -119,7 +120,7 @@ class ReduxForm extends Component {
           showPagination={false}
           showPageSizeOptions={false}
         />
-        <h3>{order.total+" "+this.moneySymbol}
+        <h3>{formatMoney(order.total)}
         {!readonly &&
           <a className="button" onClick={this.saveOrder}>
             <i className="fa fa-floppy-o" />
