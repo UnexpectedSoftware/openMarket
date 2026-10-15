@@ -1,5 +1,5 @@
 import * as homeActions from "./action";
-import moment from "moment";
+import {shopMoment} from "../i18n/shopTime";
 import 'rxjs/add/operator/switchMap';
 import container from '../../infrastructure/dic/Container'
 
@@ -9,8 +9,8 @@ export const makeHomePageLoadedEpic = ordersStatisticsUseCase => action$ =>
   action$
     .filter(action => action.type === homeActions.HOME_PAGE_LOADED)
     .flatMap(() => {
-      const endDate = moment();
-      const startDate = moment().subtract(calculationDays, 'days');
+      const endDate = shopMoment();
+      const startDate = shopMoment().subtract(calculationDays, 'days');
       return ordersStatisticsUseCase.calculateTotalAmountByDays({startDate, endDate});
     })
     .map(data => homeActions.homePageStatisticsTotalAmountByDayLoaded(data));
