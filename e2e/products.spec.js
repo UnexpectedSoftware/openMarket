@@ -78,10 +78,12 @@ test('edits a product from the catalog', async () => {
 
     await window.locator('input[name="name"]').fill('Whole milk');
     await window.locator('input[name="price"]').fill('3');
+    await window.locator('select[name="vatRate"]').selectOption('S1:10');
     await window.getByRole('button', {name: 'Save'}).click();
     await expect(window.getByText('Changes applied')).toBeVisible();
     await expect(window.getByText('Your changes were applied')).toBeVisible();
     await expect(window.locator('input[name="name"]')).toHaveValue('Whole milk');
+    await expect(window.locator('select[name="vatRate"]')).toHaveValue('S1:10');
     await expect(window.getByRole('heading', {name: "Let's edit a product!"})).toBeVisible();
 
     await openProductList(window);
@@ -89,6 +91,8 @@ test('edits a product from the catalog', async () => {
     const card = productCard(window, 'Whole milk');
     await expect(card).toBeVisible();
     await expect(card.locator('.product-card-price')).toHaveText(euros(3));
+    await card.getByRole('button', {name: 'View'}).click();
+    await expect(window.locator('select[name="vatRate"]')).toHaveValue('S1:10');
   } finally {
     await closeApp(app, userData);
   }

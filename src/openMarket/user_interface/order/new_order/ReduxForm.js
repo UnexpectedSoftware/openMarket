@@ -3,6 +3,7 @@ import { Field, reduxForm } from 'redux-form';
 import ReactTable from 'react-table';
 import * as Rx from "rxjs";
 import {formatMoney} from "../../i18n/money";
+import {vatLines} from "./model";
 
 class ReduxForm extends Component {
 
@@ -120,6 +121,11 @@ class ReduxForm extends Component {
           showPagination={false}
           showPageSizeOptions={false}
         />
+        <ul className="order-vat">
+          {vatLines(order.lines).map(row =>
+            <li key={row.label}>{row.label} {formatMoney(row.base)} {formatMoney(row.quota)}</li>
+          )}
+        </ul>
         <h3>{formatMoney(order.total)}
         {!readonly &&
           <a className="button" onClick={this.saveOrder}>

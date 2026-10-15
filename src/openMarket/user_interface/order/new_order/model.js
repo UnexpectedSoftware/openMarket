@@ -1,5 +1,7 @@
 import {number} from "../../validations/formValidations";
 import Quantity from "../../../domain/money/Quantity";
+import VatRate from "../../../domain/tax/VatRate";
+import VatBreakdown from "../../../domain/tax/VatBreakdown";
 import {lineEuros, sumEuros} from "../../i18n/money";
 
 export const state = () => {
@@ -25,7 +27,8 @@ export const addProduct = ({ lines, product, quantity }) => {
     name: product.name,
     price,
     quantity: productQuantity,
-    subtotal: lineEuros(price, productQuantity)
+    subtotal: lineEuros(price, productQuantity),
+    vat: vatOf(product.vatRate)
   });
 
   return {
@@ -78,7 +81,8 @@ export const loadOrder  = ({order}) =>
           name: line.name,
           price,
           quantity,
-          subtotal: line.amount != null ? euroPrice(line.amount) : lineEuros(price, quantity)
+          subtotal: line.amount != null ? euroPrice(line.amount) : lineEuros(price, quantity),
+          vat: vatOf(line.vatRate)
         };
       }),
       total: euroPrice(order.total),
@@ -89,6 +93,26 @@ export const loadOrder  = ({order}) =>
 
 
 const calculateTotal = ({lines}) => sumEuros(lines.map(product => product.subtotal));
+
+export function vatLines(lines) {
+  return VatBreakdown.fromLines((lines || []).map(line => ({
+    amount: line.subtotal,
+    vatRate: line.vat || VatRate.standard()
+  }))).map(row => ({
+    label: row.rate.kind === 'E' ? 'Exento ' + row.rate.cause
+      : row.rate.kind === 'N' ? 'No sujeto ' + row.rate.cause
+        : row.rate.percent + ' %',
+    base: row.base.toEuros(),
+    quota: row.quota.toEuros()
+  }));
+}
+
+function vatOf(rate) {
+  if (rate == null) {
+    return VatRate.standard().toJSON();
+  }
+  return VatRate.from(rate).toJSON();
+}
 
 function euroPrice(value) {
   if (value != null && typeof value.toEuros === 'function') {

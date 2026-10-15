@@ -81,6 +81,9 @@ async function fillProduct(window, product) {
   if (product.weighted) {
     await window.locator('input[name="weighted"]').check();
   }
+  if (product.vat) {
+    await window.locator('select[name="vatRate"]').selectOption(product.vat);
+  }
   const category = window.locator('select[name="categoryId"]');
   await expect(category.locator('option', {hasText: product.category})).toHaveCount(1);
   await category.selectOption({label: product.category});

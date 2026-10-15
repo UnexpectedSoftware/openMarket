@@ -12,7 +12,7 @@ import {centsOf, eurosOf, milliOf, unitsOf} from '../service/storedMoney';
 const INVOICE_COLUMNS = 'i.id, i.series, i.number, i.invoice_number, i.issued_at, i.order_id, ' +
   'i.status, i.cancelled_at, i.total, i.total_cents';
 const LINE_COLUMNS = 'l.barcode, l.name, l.price, l.quantity, l.amount, ' +
-  'l.price_cents, l.quantity_milli, l.amount_cents';
+  'l.price_cents, l.quantity_milli, l.amount_cents, l.vat_percent, l.vat_kind, l.vat_cause';
 
 const FIND_BY_ID_SQL = 'SELECT ' + INVOICE_COLUMNS + ', ' + LINE_COLUMNS +
   ' FROM invoice i INNER JOIN invoice_line l ON l.invoice_id = i.id' +
@@ -27,8 +27,15 @@ const INSERT_INVOICE_SQL = 'INSERT INTO invoice ' +
   'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
 const INSERT_LINE_SQL = 'INSERT INTO invoice_line ' +
-  '(invoice_id, position, barcode, name, price, quantity, amount, price_cents, quantity_milli, amount_cents) ' +
-  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  '(invoice_id, position, barcode, name, price, quantity, amount, price_cents, quantity_milli, amount_cents, vat_percent, vat_kind, vat_cause) ' +
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+const INSERT_VAT_SQL = 'INSERT INTO invoice_vat ' +
+  '(invoice_id, position, kind, percent, cause, base_cents, quota_cents, gross_cents) ' +
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
+
+const FIND_VAT_SQL = 'SELECT kind, percent, cause, base_cents, quota_cents, gross_cents ' +
+  'FROM invoice_vat WHERE invoice_id = ? ORDER BY position ASC';
 
 const UPDATE_CANCELLATION_SQL = 'UPDATE invoice SET status = ?, cancelled_at = ? WHERE id = ?';
 
@@ -103,7 +110,8 @@ export default class SqliteInvoiceRepository {
       if (rows.length === 0) {
         return Rx.Observable.empty();
       }
-      return Rx.Observable.of(this._mapper.toDomain({rows}));
+      const vatRows = this._database.prepare(FIND_VAT_SQL).all(rows[0].id);
+      return Rx.Observable.of(this._mapper.toDomain({rows, vatRows}));
     });
   }
 
@@ -135,7 +143,23 @@ export default class SqliteInvoiceRepository {
         eurosOf(line.amount),
         centsOf(line.price),
         milliOf(line.quantity),
-        centsOf(line.amount)
+        centsOf(line.amount),
+        line.vatRate.percent,
+        line.vatRate.kind,
+        line.vatRate.cause
+      );
+    });
+    const insertVat = this._database.prepare(INSERT_VAT_SQL);
+    invoice.breakdown.forEach((row, position) => {
+      insertVat.run(
+        invoice.id,
+        position,
+        row.rate.kind,
+        row.rate.percent,
+        row.rate.cause,
+        row.base.cents,
+        row.quota.cents,
+        row.gross.cents
       );
     });
   }

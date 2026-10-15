@@ -31,7 +31,7 @@ describe('new product reducer', () => {
     expect(reducer(editing, newProductSaved())).to.deep.equal({
       categories: [],
       statuses: [],
-      initialValues: { status: 'ENABLED' },
+      initialValues: { status: 'ENABLED', vatRate: 'S1:21' },
       edition: false,
       formKey: 3,
       imageLookup: idleLookup,
@@ -46,7 +46,10 @@ describe('new product reducer', () => {
   });
 
   it('starts a new product as enabled', () => {
-    expect(reducer(undefined, {type: '@@INIT'}).initialValues).to.deep.equal({ status: 'ENABLED' });
+    expect(reducer(undefined, {type: '@@INIT'}).initialValues).to.deep.equal({
+      status: 'ENABLED',
+      vatRate: 'S1:21'
+    });
   });
 
   it('stores a found image and drops it when an existing product is opened', () => {

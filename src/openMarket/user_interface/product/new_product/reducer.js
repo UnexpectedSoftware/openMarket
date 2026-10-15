@@ -5,6 +5,7 @@ import {
 } from './action';
 import {LIST_PRODUCTS_DETAIL_LOADED} from "../list_products/action";
 import ProductStatus from "../../../domain/product/ProductStatus";
+import VatRate from "../../../domain/tax/VatRate";
 import {DEFAULT_SALES_WINDOW} from "../../../application/service/product/salesWindows";
 
 function idleImageLookup() {
@@ -23,7 +24,7 @@ function emptySales() {
 const initialState = {
   categories: [],
   statuses: [],
-  initialValues: { status: ProductStatus.ENABLED },
+  initialValues: { status: ProductStatus.ENABLED, vatRate: VatRate.standard().code() },
   edition: false,
   formKey: 0,
   imageLookup: idleImageLookup(),

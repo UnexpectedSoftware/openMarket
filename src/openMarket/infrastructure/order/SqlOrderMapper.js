@@ -37,7 +37,12 @@ export default class SqlOrderMapper {
         quantity: quantityFromColumns(row.line_quantity_milli, row.line_quantity),
         amount: row.line_amount_cents == null
           ? undefined
-          : moneyFromColumns(row.line_amount_cents, null)
+          : moneyFromColumns(row.line_amount_cents, null),
+        vatRate: {
+          percent: row.line_vat_percent,
+          kind: row.line_vat_kind,
+          cause: row.line_vat_cause
+        }
       }))
       .toArray()
   }

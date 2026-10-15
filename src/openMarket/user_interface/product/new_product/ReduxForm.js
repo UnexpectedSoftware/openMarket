@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
-import {required, maxLength15, number, greaterThan0, greaterOrEqualsThan0} from '../../validations/formValidations';
+import {required, maxLength15, number, greaterThan0, greaterOrEqualsThan0, vatRateCode} from '../../validations/formValidations';
+import VatRate from '../../../domain/tax/VatRate';
 import ImageField from '../../components/ImageField';
 import placeholder from '../../resources/category-placeholder.svg';
 
@@ -96,6 +97,16 @@ class ReduxForm extends Component {
               <div className="product-fields">
                 <Field name="price" component={this.renderInput} type="text" placeholder="Price" validate={[required, greaterThan0, number]}/>
                 <Field name="basePrice" component={this.renderInput} type="text" placeholder="Base Price" validate={[required, greaterThan0, number]}/>
+              </div>
+              <div>
+                <label htmlFor="vatRate">IVA</label>
+                <div className="SelectContainer">
+                  <Field name="vatRate" component="select" validate={[required, vatRateCode]}>
+                    {VatRate.options().map(option =>
+                      <option value={option.code} key={option.code}>{option.label}</option>
+                    )}
+                  </Field>
+                </div>
               </div>
               <div className="product-fields">
                 <Field name="stock" component={this.renderInput} type="text" placeholder="Stock" validate={[required, greaterOrEqualsThan0, number]}/>

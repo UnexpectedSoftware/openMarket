@@ -4,6 +4,8 @@ import observableError from "../../../infrastructure/logging/observableError";
 import "rxjs/add/operator/do";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/toArray";
+import "rxjs/add/operator/defaultIfEmpty";
+import VatRate from "../../../domain/tax/VatRate";
 import OrderCreated from "../../../domain/event/OrderCreated";
 import InvoiceIssued from "../../../domain/event/InvoiceIssued";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
@@ -71,11 +73,14 @@ export default class CreateOrder {
    * @returns {Observable<Order>}
    */
   createOrder({lines}) {
-    return this._transaction.run(() => this._buildOrder({lines})
-      .flatMap(order => this._orderRepository.save({order})
-        .flatMap(saved => this._subtrackStock({order: saved}))
-        .flatMap(({order, lowStockProducts}) => this._issueInvoice({order})
-          .map(invoice => ({order, invoice, lowStockProducts}))))
+    const saved = this._transaction.run(() => this._loadProducts({lines})
+      .flatMap(products => {
+        const order = this._buildOrder({lines: stampVat(lines, products)});
+        return order.flatMap(draft => this._orderRepository.save({order: draft})
+          .flatMap(() => this._subtrackStock({order: draft, products}))
+          .flatMap(({lowStockProducts}) => this._issueInvoice({order: draft})
+            .map(invoice => ({order: draft, invoice, lowStockProducts}))));
+      })
       .do(({order, invoice, lowStockProducts}) => {
         this._domainEventBus.save(new OrderCreated({
           id: order.id,
@@ -92,14 +97,14 @@ export default class CreateOrder {
           }));
         });
       })
-      .map(({order}) => order))
-      .do(
-        () => {
-          this._domainEventBus.raise();
-          this._domainEventDispatcher.dispatch();
-        },
-        () => this._domainEventBus.discard()
-      );
+      .map(({order}) => order));
+    return saved.do(
+      () => {
+        this._domainEventBus.raise();
+        this._domainEventDispatcher.dispatch();
+      },
+      () => this._domainEventBus.discard()
+    );
   }
 
   _buildOrder({lines})  {
@@ -138,12 +143,41 @@ export default class CreateOrder {
       });
   }
 
-  _subtrackStock({order}){
+  /**
+   * Loads each barcode once, inside the sale transaction, before the lines are priced.
+   * @param {{lines: Array<{barcode: string}>}} command
+   * @returns {Observable<Map<string, *>>}
+   */
+  _loadProducts({lines}) {
+    const barcodes = [];
+    (lines || []).forEach(line => {
+      const barcode = line && line.barcode != null ? String(line.barcode) : '';
+      if (barcode !== '' && barcodes.indexOf(barcode) === -1) {
+        barcodes.push(barcode);
+      }
+    });
+    return Observable.from(barcodes)
+      .flatMap(barcode => this._productRepository.findByBarcode({barcode})
+        .map(product => ({barcode, product}))
+        .defaultIfEmpty({barcode, product: null}))
+      .toArray()
+      .map(rows => {
+        const loaded = new Map();
+        rows.forEach(row => loaded.set(row.barcode, row.product));
+        return loaded;
+      });
+  }
+
+  _subtrackStock({order, products}){
     return Observable.from(order.lines)
-      .flatMap(line => this._productRepository.findByBarcode({barcode: line.barcode})
-        .map(product => product.subtractStock({quantity: stockUnits(line.quantity)}))
-        .flatMap(product => this._productRepository.save({product}).map(() => product))
-      )
+      .flatMap(line => {
+        const product = products.get(String(line.barcode));
+        if (!product) {
+          return Observable.empty();
+        }
+        product.subtractStock({quantity: stockUnits(line.quantity)});
+        return this._productRepository.save({product}).map(() => product);
+      })
       .toArray()
       .map(products => ({
         order,
@@ -158,6 +192,20 @@ export default class CreateOrder {
  * Euro fields are for display. Cent and milli fields are the exact amounts.
  * @param {Invoice} invoice
  */
+/**
+ * Copies the product's rate onto the line. A missing product keeps the general rate.
+ * @param {Array<{barcode: string}>} lines
+ * @param {Map<string, *>} products
+ * @returns {Array<object>}
+ */
+function stampVat(lines, products) {
+  return (lines || []).map(line => {
+    const product = products.get(line && line.barcode != null ? String(line.barcode) : '');
+    const vatRate = product && product.vatRate != null ? product.vatRate : VatRate.standard();
+    return {...line, vatRate};
+  });
+}
+
 function facts(invoice) {
   return {
     id: invoice.id,

@@ -46,7 +46,8 @@ describe('reducers', () => {
             name: 'Ninja',
             price: 9.99,
             quantity: 1,
-            subtotal: 9.99
+            subtotal: 9.99,
+            vat: {kind: 'S1', percent: 21, cause: null}
           }],
         total: 9.99
         },
@@ -93,7 +94,8 @@ describe('reducers', () => {
             name: 'Ninja',
             price: 9.99,
             quantity: 2,
-            subtotal: 19.98
+            subtotal: 19.98,
+            vat: {kind: 'S1', percent: 21, cause: null}
           }],
           total: 19.98
         },
@@ -481,7 +483,8 @@ describe('reducers', () => {
               name: 'Ninja2',
               price: 0.6,
               quantity: 1,
-              subtotal: 0.6
+              subtotal: 0.6,
+              vat: {kind: 'S1', percent: 21, cause: null}
             }
           ],
           total: 0.6,

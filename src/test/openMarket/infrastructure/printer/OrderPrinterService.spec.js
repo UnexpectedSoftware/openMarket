@@ -38,7 +38,8 @@ describe('OrderPrinterService', () => {
     expect(lines[0]).to.equal('SUPER COMPRIN');
     expect(lines).to.include('NIF 476359906P');
     expect(lines).to.include('Very long product n|2|1.5|3');
-    expect(lines).to.include('IVA incluido');
+    expect(lines).to.include('IVA %|Base|Cuota');
+    expect(lines).to.include('21 %|2.48|0.52');
     expect(lines[lines.length - 1]).to.equal('cut');
   });
 });

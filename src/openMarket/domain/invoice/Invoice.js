@@ -4,6 +4,8 @@ import InvalidInvoiceError from './InvalidInvoiceError';
 import InvoiceAlreadyCancelledError from './InvoiceAlreadyCancelledError';
 import Money from '../money/Money';
 import Quantity from '../money/Quantity';
+import VatRate from '../tax/VatRate';
+import VatBreakdown from '../tax/VatBreakdown';
 /** @import Order from '../order/Order' */
 
 /**
@@ -14,6 +16,7 @@ import Quantity from '../money/Quantity';
  * @property {Money} price
  * @property {Quantity} quantity
  * @property {Money} amount
+ * @property {VatRate | {kind?: string, percent?: number, cause?: string | null}} vatRate
  */
 
 /**
@@ -47,7 +50,8 @@ export default class Invoice {
       orderId: order.id,
       status: InvoiceStatus.ISSUED,
       cancelledAt: null,
-      total: order.total
+      total: order.total,
+      breakdown: VatBreakdown.fromLines(lines)
     });
   }
 
@@ -62,10 +66,11 @@ export default class Invoice {
    * @param {string} params.status
    * @param {string | null} [params.cancelledAt]
    * @param {Money | number | string} params.total Stored invoice total
+   * @param {Array<{rate: VatRate | object, base: Money | number, quota: Money | number, gross: Money | number}>} [params.breakdown] Stored per-rate breakdown
    * @returns {Invoice}
    */
-  static restore({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total}) {
-    return new Invoice({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total});
+  static restore({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total, breakdown}) {
+    return new Invoice({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total, breakdown});
   }
 
   /**
@@ -78,8 +83,9 @@ export default class Invoice {
    * @param {string} params.status
    * @param {string | null} [params.cancelledAt]
    * @param {Money | number | string} params.total
+   * @param {Array<{rate: VatRate | object, base: Money | number, quota: Money | number, gross: Money | number}>} [params.breakdown]
    */
-  constructor({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total}) {
+  constructor({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total, breakdown}) {
     if (id == null || String(id).trim() === '') {
       throw new InvalidInvoiceError({field: 'id'});
     }
@@ -106,6 +112,7 @@ export default class Invoice {
     this._cancelledAt = status === InvoiceStatus.CANCELLED ? String(cancelledAt) : null;
     this._lines = storedLines(lines, this._id);
     this._total = storedTotal(total, this._id);
+    this._breakdown = storedBreakdown(breakdown, this._lines);
   }
 
   /** @returns {string} */
@@ -130,7 +137,21 @@ export default class Invoice {
       name: line.name,
       price: line.price,
       quantity: line.quantity,
-      amount: line.amount
+      amount: line.amount,
+      vatRate: line.vatRate
+    }));
+  }
+
+  /**
+   * Stored per-rate breakdown. Loading an invoice does not calculate it again.
+   * @returns {Array<{rate: VatRate, base: Money, quota: Money, gross: Money}>}
+   */
+  get breakdown() {
+    return this._breakdown.map(row => ({
+      rate: row.rate,
+      base: row.base,
+      quota: row.quota,
+      gross: row.gross
     }));
   }
 
@@ -178,7 +199,7 @@ export default class Invoice {
 
 /**
  * Copies the order lines. Amounts stay the ones the order already rounded.
- * @param {Array<{barcode: string, name: string, price: Money, quantity: Quantity, amount: Money}>} lines
+ * @param {Array<{barcode: string, name: string, price: Money, quantity: Quantity, amount: Money, vatRate?: VatRate | object}>} lines
  * @returns {InvoiceLine[]}
  */
 function issuedLines(lines) {
@@ -190,7 +211,8 @@ function issuedLines(lines) {
     name: line.name == null ? '' : String(line.name),
     price: Money.from(line.price),
     quantity: Quantity.from(line.quantity),
-    amount: Money.from(line.amount)
+    amount: Money.from(line.amount),
+    vatRate: line.vatRate == null ? VatRate.standard() : VatRate.from(line.vatRate)
   }));
 }
 
@@ -214,7 +236,8 @@ function storedLines(lines, id) {
         name: line.name == null ? '' : String(line.name),
         price: Money.from(line.price == null ? 0 : line.price),
         quantity: Quantity.from(line.quantity == null ? 0 : line.quantity),
-        amount: Money.from(line.amount)
+        amount: Money.from(line.amount),
+        vatRate: line.vatRate == null ? VatRate.standard() : VatRate.from(line.vatRate)
       };
     } catch (error) {
       throw new InvalidInvoiceError({field: 'amount', id});
@@ -227,6 +250,24 @@ function storedLines(lines, id) {
  * @param {string} id
  * @returns {Money}
  */
+/**
+ * Uses the stored rows. A caller that does not pass one gets the breakdown of the lines, once.
+ * @param {Array<{rate: VatRate | object, base: Money | number, quota: Money | number, gross: Money | number}> | null | undefined} breakdown
+ * @param {InvoiceLine[]} lines
+ * @returns {Array<{rate: VatRate, base: Money, quota: Money, gross: Money}>}
+ */
+function storedBreakdown(breakdown, lines) {
+  if (breakdown == null) {
+    return VatBreakdown.fromLines(lines);
+  }
+  return breakdown.map(row => ({
+    rate: VatRate.from(row.rate),
+    base: Money.from(row.base),
+    quota: Money.from(row.quota),
+    gross: Money.from(row.gross)
+  }));
+}
+
 function storedTotal(total, id) {
   if (total == null) {
     throw new InvalidInvoiceError({field: 'total', id});
