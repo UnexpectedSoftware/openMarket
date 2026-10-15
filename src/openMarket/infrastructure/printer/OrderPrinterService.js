@@ -1,3 +1,5 @@
+import 'rxjs/add/operator/defaultIfEmpty';
+import 'rxjs/add/operator/mergeMap';
 /** @import { Observable } from 'rxjs/Observable' */
 import VatBreakdown from '../../domain/tax/VatBreakdown';
 import Money from '../../domain/money/Money';
@@ -14,7 +16,10 @@ import Money from '../../domain/money/Money';
 
 /**
  * @typedef {object} PrintableOrder
+ * @property {string} [id]
  * @property {string} createdAt
+ * @property {string} [invoiceNumber]
+ * @property {{nif?: string, legalName?: string, tradeName?: string} | null} [issuer]
  * @property {PrintableLine[]} lines
  * @property {number} total
  */
@@ -63,8 +68,9 @@ function displayUnits(value) {
 
 export default class OrderPrinterService {
 
-  constructor({ printerConnection }){
+  constructor({ printerConnection, invoiceRepository }){
     this._connection = printerConnection;
+    this._invoices = invoiceRepository || null;
   }
 
   /**
@@ -72,14 +78,38 @@ export default class OrderPrinterService {
    * @returns {Observable<boolean>}
    */
   print({order}){
-    return this._connection.print((printer) => {
-      printer.alignCenter();
-      printer.setTextDoubleHeight();
-      printer.setTextDoubleWidth();
-      printer.println('SUPER COMPRIN');
-      printer.setTextNormal();
-      printer.println('NIF 476359906P');
-      printer.println(`Date ${order.createdAt} `);
+    if (!this._invoices || order == null || order.id == null) {
+      return this._connection.print(printer => this._fill(printer, order, null));
+    }
+    return this._invoices.findByOrderId({orderId: order.id})
+      .defaultIfEmpty(null)
+      .flatMap(invoice => this._connection.print(printer => this._fill(printer, order, invoice)));
+  }
+
+  /**
+   * @param {*} printer
+   * @param {PrintableOrder} order
+   * @param {import('../../domain/invoice/Invoice').default | null} invoice
+   */
+  _fill(printer, order, invoice) {
+    const issuer = invoice && invoice.issuer ? invoice.issuer : order.issuer;
+    const title = issuer && (issuer.tradeName || issuer.legalName);
+    const when = invoice ? `${invoice.issueDate} ${invoice.issuedAt}` : order.createdAt;
+    const number = invoice ? invoice.invoiceNumber.formatted : order.invoiceNumber;
+    printer.alignCenter();
+    printer.setTextDoubleHeight();
+    printer.setTextDoubleWidth();
+    if (title) {
+      printer.println(title);
+    }
+    printer.setTextNormal();
+    if (issuer && issuer.nif) {
+      printer.println('NIF ' + issuer.nif);
+    }
+    if (number) {
+      printer.println(number);
+    }
+    printer.println(`Date ${when} `);
       printer.drawLine();
       printer.alignLeft();
       printer.newLine();
@@ -120,7 +150,6 @@ export default class OrderPrinterService {
         ]);
       });
       printer.cut();
-    });
   }
 
 }

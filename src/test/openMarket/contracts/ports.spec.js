@@ -18,6 +18,7 @@ import InvoiceSequence from '../../../openMarket/domain/invoice/InvoiceSequence'
 import DomainEventRepository from '../../../openMarket/domain/event/DomainEventRepository';
 import PluginRepository from '../../../openMarket/domain/plugin/PluginRepository';
 import PluginSource from '../../../openMarket/domain/plugin/PluginSource';
+import ShopProfileRepository from '../../../openMarket/domain/shop/ShopProfileRepository';
 
 import RandomUUIDIdentity from '../../../openMarket/domain/RandomUUIDIdentity';
 import SequentialIdentity from '../../../openMarket/infrastructure/service/SequentialIdentity';
@@ -38,6 +39,7 @@ import SqliteInvoiceSequence from '../../../openMarket/infrastructure/invoice/Sq
 import SqliteDomainEventRepository from '../../../openMarket/infrastructure/event/SqliteDomainEventRepository';
 import SqlitePluginRepository from '../../../openMarket/infrastructure/plugins/SqlitePluginRepository';
 import FolderPluginSource from '../../../openMarket/infrastructure/plugins/FolderPluginSource';
+import SqliteShopProfileRepository from '../../../openMarket/infrastructure/shop/SqliteShopProfileRepository';
 
 describe('ports and adapters', () => {
   describeContract(Identity, RandomUUIDIdentity);
@@ -59,4 +61,5 @@ describe('ports and adapters', () => {
   describeContract(DomainEventRepository, SqliteDomainEventRepository);
   describeContract(PluginRepository, SqlitePluginRepository);
   describeContract(PluginSource, FolderPluginSource);
+  describeContract(ShopProfileRepository, SqliteShopProfileRepository);
 });

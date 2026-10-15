@@ -1,15 +1,15 @@
 import {sumEuros} from "../../i18n/money";
+import {shopMoment} from "../../i18n/shopTime";
 
 export const defaultLimit = 20;
 export const defaultOffset = 0;
-import moment from "moment";
 
 export const state = () => {
   return {
     orders: [],
     filters: {
-      startDate: moment().startOf("month").startOf("day"),
-      endDate: moment().endOf("day"),
+      startDate: shopMoment().startOf("month").startOf("day"),
+      endDate: shopMoment().endOf("day"),
       offset: defaultOffset,
       limit: defaultLimit
     },

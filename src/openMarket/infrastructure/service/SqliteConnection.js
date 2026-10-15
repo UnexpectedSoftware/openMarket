@@ -4,6 +4,7 @@ import { DatabaseSync } from 'node:sqlite';
 import Money from '../../domain/money/Money';
 import Quantity from '../../domain/money/Quantity';
 import VatBreakdown from '../../domain/tax/VatBreakdown';
+import SystemClock from './SystemClock';
 import sqliteDatabasePath from './sqliteDatabasePath';
 
 const SCHEMA = `
@@ -106,7 +107,15 @@ CREATE TABLE IF NOT EXISTS invoice (
   cancelled_at TEXT,
   total REAL NOT NULL,
   total_cents INTEGER,
+  issue_date TEXT,
+  type TEXT NOT NULL DEFAULT 'F2',
+  issuer_json TEXT,
+  corrects_invoice_id TEXT,
   UNIQUE (series, number)
+);
+CREATE TABLE IF NOT EXISTS setting (
+  key TEXT PRIMARY KEY,
+  value_json TEXT NOT NULL
 );
 CREATE TABLE IF NOT EXISTS invoice_line (
   invoice_id TEXT NOT NULL,
@@ -258,6 +267,47 @@ function migrateVatRates(database) {
   );
 }
 
+const ISSUER_MIGRATION = 'invoice_issuer_v1';
+
+/**
+ * Adds the local issue date and leaves issuer_json null on invoices that
+ * were issued before the shop profile existed.
+ * @param {{prepare: Function, exec: Function}} database
+ */
+function migrateIssuer(database) {
+  database.exec(`CREATE TABLE IF NOT EXISTS setting (
+    key TEXT PRIMARY KEY,
+    value_json TEXT NOT NULL
+  )`);
+  ensureColumn(database, 'invoice', 'issue_date', 'TEXT');
+  ensureColumn(database, 'invoice', 'type', "TEXT NOT NULL DEFAULT 'F2'");
+  ensureColumn(database, 'invoice', 'issuer_json', 'TEXT');
+  ensureColumn(database, 'invoice', 'corrects_invoice_id', 'TEXT');
+  const applied = database.prepare('SELECT name FROM schema_migration WHERE name = ?').get(ISSUER_MIGRATION);
+  if (applied || !hasColumn(database, 'invoice', 'issued_at')) {
+    if (!applied) {
+      database.prepare('INSERT INTO schema_migration (name, applied_at) VALUES (?, ?)').run(
+        ISSUER_MIGRATION,
+        new Date().toISOString()
+      );
+    }
+    return;
+  }
+  const clock = new SystemClock();
+  const rows = database.prepare('SELECT id, issued_at FROM invoice WHERE issue_date IS NULL').all();
+  if (rows.length > 0) {
+    dropInvoiceGuards(database);
+    const update = database.prepare('UPDATE invoice SET issue_date = ? WHERE id = ? AND issue_date IS NULL');
+    rows.forEach(row => {
+      update.run(clock.localDate({instant: row.issued_at}), row.id);
+    });
+  }
+  database.prepare('INSERT INTO schema_migration (name, applied_at) VALUES (?, ?)').run(
+    ISSUER_MIGRATION,
+    new Date().toISOString()
+  );
+}
+
 function tableColumns(database, table) {
   return database.prepare(`PRAGMA table_info(${table})`).all();
 }
@@ -280,7 +330,7 @@ function ensureColumn(database, table, column, definition) {
  */
 const INVOICE_GUARD_SQL = `
 CREATE TRIGGER IF NOT EXISTS invoice_forbid_rewrite
-BEFORE UPDATE OF series, number, invoice_number, issued_at, total, total_cents ON invoice
+BEFORE UPDATE OF series, number, invoice_number, issued_at, issue_date, type, issuer_json, corrects_invoice_id, total, total_cents ON invoice
 BEGIN
   SELECT RAISE(ABORT, 'An issued invoice cannot change its number, date, or total');
 END;
@@ -470,6 +520,7 @@ export default class SqliteConnection {
     backfillInvoiceLineAmounts(this._database);
     migrateMoneyCents(this._database);
     migrateVatRates(this._database);
+    migrateIssuer(this._database);
     ensureUniqueInvoiceOrder(this._database);
     dropInvoiceGuards(this._database);
     installInvoiceGuards(this._database);

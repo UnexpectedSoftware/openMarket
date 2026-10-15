@@ -69,6 +69,7 @@ class Navbar extends Component {
               <MenuItem key="4-2"><Link to="/list_orders">List Orders!</Link></MenuItem>
             </SubMenu>
             <MenuItem key="5"><Link to="/plugins">Plugins</Link></MenuItem>
+            <MenuItem key="6"><Link to="/settings">Settings</Link></MenuItem>
           </Menu>
         </div>
       </div>

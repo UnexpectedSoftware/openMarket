@@ -9,7 +9,7 @@ import {centsOf, eurosOf, milliOf, unitsOf} from '../service/storedMoney';
 /** @import Invoice from '../../domain/invoice/Invoice' */
 /** @import SqlInvoiceMapper from './SqlInvoiceMapper' */
 
-const INVOICE_COLUMNS = 'i.id, i.series, i.number, i.invoice_number, i.issued_at, i.order_id, ' +
+const INVOICE_COLUMNS = 'i.id, i.series, i.number, i.invoice_number, i.issued_at, i.issue_date, i.type, i.issuer_json, i.corrects_invoice_id, i.order_id, ' +
   'i.status, i.cancelled_at, i.total, i.total_cents';
 const LINE_COLUMNS = 'l.barcode, l.name, l.price, l.quantity, l.amount, ' +
   'l.price_cents, l.quantity_milli, l.amount_cents, l.vat_percent, l.vat_kind, l.vat_cause';
@@ -23,8 +23,12 @@ const FIND_BY_NUMBER_SQL = 'SELECT ' + INVOICE_COLUMNS + ', ' + LINE_COLUMNS +
   ' WHERE i.invoice_number = ? ORDER BY l.position ASC';
 
 const INSERT_INVOICE_SQL = 'INSERT INTO invoice ' +
-  '(id, series, number, invoice_number, issued_at, order_id, status, cancelled_at, total, total_cents) ' +
-  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  '(id, series, number, invoice_number, issued_at, issue_date, type, issuer_json, order_id, status, cancelled_at, total, total_cents) ' +
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+
+const FIND_BY_ORDER_SQL = 'SELECT ' + INVOICE_COLUMNS + ', ' + LINE_COLUMNS +
+  ' FROM invoice i INNER JOIN invoice_line l ON l.invoice_id = i.id' +
+  ' WHERE i.order_id = ? ORDER BY l.position ASC';
 
 const INSERT_LINE_SQL = 'INSERT INTO invoice_line ' +
   '(invoice_id, position, barcode, name, price, quantity, amount, price_cents, quantity_milli, amount_cents, vat_percent, vat_kind, vat_cause) ' +
@@ -100,6 +104,14 @@ export default class SqliteInvoiceRepository {
   }
 
   /**
+   * @param {{orderId: string}} params
+   * @returns {Observable<Invoice>}
+   */
+  findByOrderId({orderId}) {
+    return this._find(FIND_BY_ORDER_SQL, String(orderId));
+  }
+
+  /**
    * @param {string} sql
    * @param {string} key
    * @returns {Observable<Invoice>}
@@ -125,6 +137,9 @@ export default class SqliteInvoiceRepository {
       invoice.invoiceNumber.number,
       invoice.invoiceNumber.formatted,
       invoice.issuedAt,
+      invoice.issueDate,
+      invoice.type,
+      invoice.issuer ? JSON.stringify(invoice.issuer) : null,
       invoice.orderId,
       invoice.status,
       invoice.cancelledAt,

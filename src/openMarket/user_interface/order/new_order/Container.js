@@ -18,7 +18,10 @@ class Container extends Component {
   }
 
   componentWillMount() {
-    const { newOrderProductFetch } = this.props;
+    const { newOrderProductFetch, shopProfileRequested } = this.props;
+    if (shopProfileRequested) {
+      shopProfileRequested();
+    }
     this.keyPressSubject$ = new Rx.Subject();
     this.keyPressSubject$
       .map(event => ({key:event.key, value: event.target.value}))
@@ -39,11 +42,15 @@ class Container extends Component {
   }
 
   render() {
-    const { order, readonly, newOrderProductQuantityChange, newOrderProductDeleted } = this.props;
+    const { order, readonly, issuer, newOrderProductQuantityChange, newOrderProductDeleted } = this.props;
+    const issuerName = issuer && (issuer.tradeName || issuer.legalName);
 
     return (
       <div className="container-fluid">
         <h2>Let's {readonly ? 'edit an':'create a new'} order!</h2>
+        {issuer && issuer.nif ? (
+          <p className="shop-issuer">{issuerName} · NIF {issuer.nif}</p>
+        ) : null}
         <NewOrderReduxForm
           onDeleteProduct={newOrderProductDeleted}
           onQuantityChange={newOrderProductQuantityChange}

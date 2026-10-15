@@ -8,6 +8,10 @@ import {deliveringDomainEventBus} from '../../../support/domainEventBus';
 import CreateOrder from '../../../../../openMarket/application/service/order/CreateOrder';
 import RecordProductSales from '../../../../../openMarket/application/service/product/RecordProductSales';
 import SystemClock from '../../../../../openMarket/infrastructure/service/SystemClock';
+import ShopProfile from '../../../../../openMarket/domain/shop/ShopProfile';
+import TaxId from '../../../../../openMarket/domain/shop/TaxId';
+import InvoiceType from '../../../../../openMarket/domain/invoice/InvoiceType';
+import ErrorCode from '../../../../../openMarket/domain/error/ErrorCode';
 
 const lines = [{barcode: '0001', name: 'Cola', price: 0.55, quantity: 2}];
 const issuedAt = '2026-10-14T12:00:00.000Z';
@@ -35,18 +39,20 @@ describe('CreateOrder domain events', () => {
   let bus;
   let events;
   let invoices;
+  let storedInvoices;
   let sequenceCalls;
 
   beforeEach(() => {
     bus = deliveringDomainEventBus();
     events = [];
     invoices = [];
+    storedInvoices = [];
     sequenceCalls = [];
     bus.ofType(OrderCreated).subscribe(event => events.push(event));
     bus.ofType(InvoiceIssued).subscribe(event => invoices.push(event));
   });
 
-  function createOrder({onApply, failStock, throwOnApply, onDispatch, issuedAt: at = issuedAt} = {}) {
+  function createOrder({onApply, failStock, throwOnApply, onDispatch, issuedAt: at = issuedAt, shopProfileRepository} = {}) {
     const clock = new SystemClock();
     let allocated = 0;
     const recorder = new RecordProductSales({
@@ -73,9 +79,11 @@ describe('CreateOrder domain events', () => {
       productRepository: productRepository({fail: failStock}),
       invoiceRepository: {
         save({invoice}) {
+          storedInvoices.push(invoice);
           return Rx.Observable.of(invoice);
         }
       },
+      shopProfileRepository,
       invoiceSequence: {
         next({series}) {
           sequenceCalls.push(series);
@@ -93,6 +101,12 @@ describe('CreateOrder domain events', () => {
         now: () => at,
         localDate({instant}) {
           return clock.localDate({instant});
+        },
+        zonedNow() {
+          return clock.zoned({instant: at});
+        },
+        zoned({instant}) {
+          return clock.zoned({instant});
         }
       },
       domainEventBus: bus,
@@ -121,7 +135,8 @@ describe('CreateOrder domain events', () => {
           expect(invoices).to.have.lengthOf(1);
           expect(invoices[0].series).to.equal('2027');
           expect(invoices[0].invoiceNumber).to.equal('2027/000001');
-          expect(invoices[0].issuedAt).to.equal('2026-12-31T23:30:00.000Z');
+          expect(invoices[0].issuedAt).to.equal('2027-01-01T00:30:00+01:00');
+          expect(storedInvoices[0].issueDate).to.equal('2027-01-01');
         },
         error => done(error),
         () => done()
@@ -154,7 +169,7 @@ describe('CreateOrder domain events', () => {
           expect(invoices[0].id).to.equal('invoice-1');
           expect(invoices[0].invoiceNumber).to.equal('2026/000001');
           expect(invoices[0].orderId).to.equal('order-1');
-          expect(invoices[0].issuedAt).to.equal(issuedAt);
+          expect(invoices[0].issuedAt).to.equal(new SystemClock().zoned({instant: issuedAt}).local);
           expect(invoices[0].total).to.equal(1.1);
           expect(invoices[0].totalCents).to.equal(110);
           expect(invoices[0].lines).to.deep.equal([{
@@ -252,6 +267,60 @@ describe('CreateOrder domain events', () => {
             );
         }
       );
+  });
+
+  it('copies the shop onto the invoice and leaves that copy alone', (done) => {
+    let current = new ShopProfile({
+      nif: TaxId.parse('B12345674'),
+      legalName: 'Ultramarinos Pérez SL',
+      tradeName: 'Ultramarinos Pérez',
+      address: {street: 'Mayor 1', postalCode: '28001', city: 'Madrid', province: 'Madrid', country: 'ES'},
+      invoicingEnabled: true
+    });
+    createOrder({
+      shopProfileRepository: {find: () => Rx.Observable.of(current)}
+    }).createOrder({lines}).subscribe(
+      () => {
+        const invoice = storedInvoices[0];
+        expect(invoice.type).to.equal(InvoiceType.F2);
+        expect(invoice.issueDate).to.equal('2026-10-14');
+        expect(invoice.issuedAt).to.equal('2026-10-14T14:00:00+02:00');
+        expect(invoice.issuer).to.deep.equal({
+          nif: 'B12345674',
+          legalName: 'Ultramarinos Pérez SL',
+          tradeName: 'Ultramarinos Pérez',
+          address: {street: 'Mayor 1', postalCode: '28001', city: 'Madrid', province: 'Madrid', country: 'ES'}
+        });
+        current = new ShopProfile({
+          nif: TaxId.parse('12345678Z'),
+          legalName: 'Other Shop',
+          invoicingEnabled: true
+        });
+        expect(storedInvoices[0].issuer.legalName).to.equal('Ultramarinos Pérez SL');
+        expect(storedInvoices[0].issuer.nif).to.equal('B12345674');
+      },
+      error => done(error),
+      () => done()
+    );
+  });
+
+  it('refuses the sale when invoicing is on and the shop has no NIF', (done) => {
+    createOrder({
+      shopProfileRepository: {
+        find: () => Rx.Observable.of(new ShopProfile({
+          nif: null,
+          legalName: '',
+          invoicingEnabled: true
+        }))
+      }
+    }).createOrder({lines}).subscribe(
+      () => done(new Error('the sale was stored')),
+      error => {
+        expect(error.code).to.equal(ErrorCode.SHOP_PROFILE_INCOMPLETE);
+        expect(storedInvoices).to.have.lengthOf(0);
+        done();
+      }
+    );
   });
 });
 

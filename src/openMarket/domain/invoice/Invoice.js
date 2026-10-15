@@ -6,7 +6,17 @@ import Money from '../money/Money';
 import Quantity from '../money/Quantity';
 import VatRate from '../tax/VatRate';
 import VatBreakdown from '../tax/VatBreakdown';
+import InvoiceType from './InvoiceType';
 /** @import Order from '../order/Order' */
+
+/**
+ * Shop named on the invoice at the moment it was issued.
+ * @typedef {object} InvoiceIssuer
+ * @property {string} nif
+ * @property {string} legalName
+ * @property {string | null} [tradeName]
+ * @property {{street?: string, postalCode?: string, city?: string, province?: string, country?: string} | null} [address]
+ */
 
 /**
  * One line stored on an invoice. `amount` is the line total in cents, copied from the order.
@@ -33,11 +43,14 @@ export default class Invoice {
    * @param {object} params
    * @param {string} params.id
    * @param {InvoiceNumber} params.invoiceNumber
-   * @param {string} params.issuedAt
+   * @param {string} params.issuedAt Offset timestamp, or a UTC instant for a caller that has not zoned it
+   * @param {string} [params.issueDate] Shop-local calendar date `YYYY-MM-DD`
+   * @param {InvoiceIssuer | null} [params.issuer]
+   * @param {string} [params.type]
    * @param {Order} params.order
    * @returns {Invoice}
    */
-  static issue({id, invoiceNumber, issuedAt, order}) {
+  static issue({id, invoiceNumber, issuedAt, issueDate, issuer, type, order}) {
     if (order == null || typeof order.isPlaced !== 'function' || !order.isPlaced()) {
       throw new InvalidInvoiceError({field: 'order', id: id == null ? undefined : String(id)});
     }
@@ -46,6 +59,9 @@ export default class Invoice {
       id,
       invoiceNumber,
       issuedAt,
+      issueDate,
+      issuer: issuer || null,
+      type: type || InvoiceType.F2,
       lines,
       orderId: order.id,
       status: InvoiceStatus.ISSUED,
@@ -61,6 +77,10 @@ export default class Invoice {
    * @param {string} params.id
    * @param {InvoiceNumber} params.invoiceNumber
    * @param {string} params.issuedAt
+   * @param {string} [params.issueDate]
+   * @param {InvoiceIssuer | null} [params.issuer]
+   * @param {string} [params.type]
+   * @param {string | null} [params.correctsInvoiceId]
    * @param {InvoiceLine[]} params.lines Stored lines, including each line amount
    * @param {string | null} [params.orderId]
    * @param {string} params.status
@@ -69,8 +89,10 @@ export default class Invoice {
    * @param {Array<{rate: VatRate | object, base: Money | number, quota: Money | number, gross: Money | number}>} [params.breakdown] Stored per-rate breakdown
    * @returns {Invoice}
    */
-  static restore({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total, breakdown}) {
-    return new Invoice({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total, breakdown});
+  static restore({id, invoiceNumber, issuedAt, issueDate, issuer, type, lines, orderId, status, cancelledAt, total, breakdown, correctsInvoiceId}) {
+    return new Invoice({
+      id, invoiceNumber, issuedAt, issueDate, issuer, type, lines, orderId, status, cancelledAt, total, breakdown, correctsInvoiceId
+    });
   }
 
   /**
@@ -78,6 +100,10 @@ export default class Invoice {
    * @param {string} params.id
    * @param {InvoiceNumber} params.invoiceNumber
    * @param {string} params.issuedAt
+   * @param {string} [params.issueDate]
+   * @param {InvoiceIssuer | null} [params.issuer]
+   * @param {string} [params.type]
+   * @param {string | null} [params.correctsInvoiceId]
    * @param {InvoiceLine[]} params.lines
    * @param {string | null} [params.orderId]
    * @param {string} params.status
@@ -85,7 +111,7 @@ export default class Invoice {
    * @param {Money | number | string} params.total
    * @param {Array<{rate: VatRate | object, base: Money | number, quota: Money | number, gross: Money | number}>} [params.breakdown]
    */
-  constructor({id, invoiceNumber, issuedAt, lines, orderId, status, cancelledAt, total, breakdown}) {
+  constructor({id, invoiceNumber, issuedAt, issueDate, issuer, type, lines, orderId, status, cancelledAt, total, breakdown, correctsInvoiceId}) {
     if (id == null || String(id).trim() === '') {
       throw new InvalidInvoiceError({field: 'id'});
     }
@@ -107,6 +133,11 @@ export default class Invoice {
     this._id = String(id);
     this._invoiceNumber = invoiceNumber;
     this._issuedAt = String(issuedAt);
+    this._issueDate = issueDate || String(issuedAt).slice(0, 10);
+    this._type = type || InvoiceType.F2;
+    /** @type {InvoiceIssuer | null} */
+    this._issuer = issuer || null;
+    this._correctsInvoiceId = correctsInvoiceId || null;
     this._orderId = orderId == null || String(orderId).trim() === '' ? null : String(orderId);
     this._status = status;
     this._cancelledAt = status === InvoiceStatus.CANCELLED ? String(cancelledAt) : null;
@@ -128,6 +159,26 @@ export default class Invoice {
   /** @returns {string} */
   get issuedAt() {
     return this._issuedAt;
+  }
+
+  /** @returns {string} */
+  get issueDate() {
+    return this._issueDate;
+  }
+
+  /** @returns {string} */
+  get type() {
+    return this._type;
+  }
+
+  /** @returns {InvoiceIssuer | null} */
+  get issuer() {
+    return this._issuer ? {...this._issuer, address: this._issuer.address ? {...this._issuer.address} : null} : null;
+  }
+
+  /** @returns {string | null} */
+  get correctsInvoiceId() {
+    return this._correctsInvoiceId;
   }
 
   /** @returns {InvoiceLine[]} */
