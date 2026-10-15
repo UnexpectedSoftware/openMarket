@@ -1,3 +1,4 @@
+import moment from 'moment';
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/defer';
 import 'rxjs/add/observable/of';
@@ -13,10 +14,23 @@ import {fillSeries, previousYearRange, resolveSalesWindow} from './salesWindows'
 export default class ProductSaleStatistics {
 
   /**
-   * @param {{repository: ProductSaleStatisticsRepository}} deps
+   * @param {{repository: ProductSaleStatisticsRepository, clock?: {zonedNow: () => {local: string}}}} deps
    */
-  constructor({repository}) {
+  constructor({repository, clock}) {
     this._repository = repository;
+    this._clock = clock || null;
+  }
+
+  /**
+   * The shop's local day. Order dates are stamped in that zone, so a UTC host
+   * still counts a sale that happens after midnight in Madrid.
+   * @returns {moment.Moment}
+   */
+  _shopNow() {
+    if (!this._clock || typeof this._clock.zonedNow !== 'function') {
+      return moment();
+    }
+    return moment.parseZone(this._clock.zonedNow().local);
   }
 
   /**
@@ -25,7 +39,7 @@ export default class ProductSaleStatistics {
    */
   salesOfProduct({barcode, window}) {
     return Observable.defer(() => {
-      const range = resolveSalesWindow(window);
+      const range = resolveSalesWindow(window, this._shopNow());
       const rows = this._repository.series({
         barcode,
         startOn: range.startOn,
@@ -59,7 +73,7 @@ export default class ProductSaleStatistics {
    */
   mostSold({window, limit = 10}) {
     return Observable.defer(() => {
-      const range = resolveSalesWindow(window);
+      const range = resolveSalesWindow(window, this._shopNow());
       const previous = previousYearRange(range);
       const products = this._repository.mostSold({
         startOn: range.startOn,

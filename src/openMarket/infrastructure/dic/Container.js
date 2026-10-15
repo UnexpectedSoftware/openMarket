@@ -250,7 +250,8 @@ class Container {
 
   _productSaleStatisticsUseCase() {
     return new ProductSaleStatistics({
-      repository: this.getInstance({key: 'productSaleStatisticsRepository'})
+      repository: this.getInstance({key: 'productSaleStatisticsRepository'}),
+      clock: this.getInstance({key: 'systemClock'})
     });
   }
 
