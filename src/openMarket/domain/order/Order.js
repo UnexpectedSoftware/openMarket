@@ -1,6 +1,7 @@
 import moment from 'moment';
 import Money from '../money/Money';
 import Quantity from '../money/Quantity';
+import VatRate from '../tax/VatRate';
 import OrderStatus from './OrderStatus';
 import EmptyOrderLinesError from './EmptyOrderLinesError';
 import InvalidOrderQuantityError from './InvalidOrderQuantityError';
@@ -14,6 +15,7 @@ import OrderAlreadyPlacedError from './OrderAlreadyPlacedError';
  * @property {Money} price
  * @property {Quantity} quantity
  * @property {Money} amount
+ * @property {VatRate | {kind?: string, percent?: number, cause?: string | null}} vatRate
  */
 
 /**
@@ -102,7 +104,8 @@ export default class Order {
       name: line.name,
       price: line.price,
       quantity: line.quantity,
-      amount: line.amount
+      amount: line.amount,
+      vatRate: line.vatRate
     }));
   }
 
@@ -119,14 +122,14 @@ export default class Order {
   /**
    * Adds a line while the order is still a draft. The quantity is whatever
    * the cashier typed, including zero. Placing the order accepts or rejects it.
-   * @param {{barcode: string, name: string, price: Money | number | string, quantity: Quantity | number | string}} line
+   * @param {{barcode: string, name: string, price: Money | number | string, quantity: Quantity | number | string, vatRate?: VatRate | object}} line
    * @returns {Order}
    */
-  addLine({barcode, name, price, quantity}) {
+  addLine({barcode, name, price, quantity, vatRate}) {
     if (this._status !== OrderStatus.DRAFT) {
       throw new OrderAlreadyPlacedError({id: this._id});
     }
-    this._lines.push(pricedLine({barcode, name, price, quantity}));
+    this._lines.push(pricedLine({barcode, name, price, quantity, vatRate}));
     this._total = this._getTotalAmount();
     return this;
   }
@@ -181,7 +184,7 @@ function copyLines(lines) {
 /**
  * Price and quantity become value objects. A stored amount is kept.
  * A missing amount is the one half-up product of price and quantity.
- * @param {{barcode?: string, name?: string, price?: Money | number | string, quantity?: Quantity | number | string, amount?: Money | number | string}} line
+ * @param {{barcode?: string, name?: string, price?: Money | number | string, quantity?: Quantity | number | string, amount?: Money | number | string, vatRate?: VatRate | object | string}} line
  * @returns {OrderLine}
  */
 function pricedLine(line) {
@@ -193,7 +196,8 @@ function pricedLine(line) {
     name: line.name,
     price,
     quantity,
-    amount
+    amount,
+    vatRate: line.vatRate == null ? VatRate.standard() : VatRate.from(line.vatRate)
   };
 }
 

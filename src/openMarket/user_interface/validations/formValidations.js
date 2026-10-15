@@ -13,7 +13,17 @@ export const greaterThan0 = greaterThan(0);
 export const greaterOrEqualsThan0 = greaterOrEqualThan(0);
 
 
+import VatRate from '../../domain/tax/VatRate';
+
 export const number = n => !isNaN(parseFloat(n)) && isFinite(n) ? undefined : 'Must be a number'
+
+export const vatRateCode = value => {
+  if (value == null || value === '') {
+    return 'Choose a VAT rate';
+  }
+  const known = VatRate.options().some(option => option.code === value);
+  return known ? undefined : 'Choose a VAT rate';
+}
 
 
 

@@ -8,7 +8,8 @@ import observableError from "../logging/observableError";
 import {rethrow} from "../logging/ErrorLog";
 import {centsOf, eurosOf} from "../service/storedMoney";
 
-const PRODUCT_SELECT = 'SELECT p.barcode, p.name, p.description, p.stock_min, p.price, p.price_cents, p.stock, p.base_price, p.base_price_cents, p.status, p.weighted, p.image_name, ' +
+const PRODUCT_SELECT = 'SELECT p.barcode, p.name, p.description, p.stock_min, p.price, p.price_cents, p.stock, p.base_price, p.base_price_cents, ' +
+  'p.vat_percent, p.vat_kind, p.vat_cause, p.status, p.weighted, p.image_name, ' +
   'p.category_id as category_id, c.name as category_name ' +
   'FROM product p LEFT JOIN category c ON c.id = p.category_id';
 
@@ -56,13 +57,14 @@ const COUNT_WITHOUT_IMAGE_SQL = 'SELECT count(*) AS total FROM product ' +
 const SELECT_PRODUCT_IMAGE_SQL = 'SELECT image_name FROM product WHERE barcode = ?';
 
 const UPSERT_PRODUCT_SQL = 'INSERT INTO product ' +
-  '(barcode, base_price, base_price_cents, category_id, description, name, price, price_cents, status, stock, stock_min, weighted, image_name) ' +
-  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ' +
+  '(barcode, base_price, base_price_cents, category_id, description, name, price, price_cents, status, stock, stock_min, weighted, image_name, vat_percent, vat_kind, vat_cause) ' +
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ' +
   'ON CONFLICT(barcode) DO UPDATE SET base_price=excluded.base_price, base_price_cents=excluded.base_price_cents, ' +
   'category_id=excluded.category_id, description=excluded.description, name=excluded.name, ' +
   'price=excluded.price, price_cents=excluded.price_cents, status=excluded.status, ' +
   'stock=excluded.stock, stock_min=excluded.stock_min, weighted=excluded.weighted, ' +
-  'image_name=COALESCE(excluded.image_name, product.image_name)';
+  'image_name=COALESCE(excluded.image_name, product.image_name), ' +
+  'vat_percent=excluded.vat_percent, vat_kind=excluded.vat_kind, vat_cause=excluded.vat_cause';
 
 const UPDATE_PRODUCT_IMAGE_SQL = 'UPDATE product SET image_name = ? WHERE barcode = ?';
 
@@ -143,7 +145,10 @@ export default class SqliteProductRepository {
           this._queryService.sqlValue(product.stock),
           this._queryService.sqlValue(product.stockMin),
           this._queryService.bit(product.isWeighted),
-          imageName
+          imageName,
+          product.vatRate.percent,
+          product.vatRate.kind,
+          product.vatRate.cause
         );
       } catch (insertError) {
         if (imageName && imageName !== previousName) {

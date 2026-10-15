@@ -14,6 +14,7 @@
  * @property {Category} category
  * @property {string} [status]
  * @property {string | null} [imageName]
+ * @property {import('../tax/VatRate').default | object | string | null} [vatRate]
  */
 
 /**

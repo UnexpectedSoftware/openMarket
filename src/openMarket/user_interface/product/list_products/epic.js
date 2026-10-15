@@ -150,6 +150,7 @@ const listProductsDetailEpic = action$ =>
       description: product.description,
       name: product.name,
       price: product.price.toEuros(),
+      vatRate: product.vatRate.code(),
       status: product.status,
       stock: product.stock,
       stockMin: product.stockMin,

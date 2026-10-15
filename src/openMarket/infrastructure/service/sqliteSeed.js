@@ -106,6 +106,7 @@ export function replaceSqliteData(database, {categories = [], products = [], ord
     dropInvoiceGuards(database);
     database.exec('DELETE FROM domain_event_processing');
     database.exec('DELETE FROM domain_event');
+    database.exec('DELETE FROM invoice_vat');
     database.exec('DELETE FROM invoice_line');
     database.exec('DELETE FROM invoice');
     database.exec('DELETE FROM invoice_sequence');

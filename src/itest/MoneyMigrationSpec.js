@@ -104,7 +104,9 @@ describe('Money migration', () => {
 
     database.close();
     const again = new SqliteConnection({filename});
-    expect(again.database.prepare('SELECT COUNT(*) AS total FROM schema_migration').get().total).to.equal(1);
+    expect(again.database.prepare(
+      "SELECT COUNT(*) AS total FROM schema_migration WHERE name = 'money_integer_cents'"
+    ).get().total).to.equal(1);
     expect(again.database.prepare('SELECT total_cents FROM invoice').get().total_cents).to.equal(647);
     expect(again.database.prepare('SELECT amount_cents FROM invoice_line').get().amount_cents).to.equal(647);
     again.database.close();

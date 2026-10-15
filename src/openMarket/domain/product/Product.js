@@ -1,5 +1,6 @@
 import ProductStatus from "./ProductStatus";
 import Money from '../money/Money';
+import VatRate from '../tax/VatRate';
 /** @import Category from '../category/Category' */
 
 /**
@@ -19,8 +20,9 @@ export default class Product {
      * @param {Category} params.category
      * @param {string} params.status
      * @param {string | null} [params.imageName]
+     * @param {VatRate | object | string | null} [params.vatRate]
      */
-  constructor({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status, imageName = null }) {
+  constructor({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status, imageName = null, vatRate = null }) {
 
       /**
        *
@@ -98,6 +100,12 @@ export default class Product {
        */
     this._imageName = imageName || null;
 
+    /**
+     * @type {VatRate}
+     * @private
+     */
+    this._vatRate = vatRate == null ? VatRate.standard() : VatRate.from(vatRate);
+
   }
 
 
@@ -145,6 +153,20 @@ export default class Product {
 
   get imageName() {
     return this._imageName;
+  }
+
+  /** @returns {VatRate} */
+  get vatRate() {
+    return this._vatRate;
+  }
+
+  /**
+   * @param {{vatRate: VatRate | object | string}} change
+   * @returns {Product}
+   */
+  changeVatRate({vatRate}) {
+    this._vatRate = VatRate.from(vatRate);
+    return this;
   }
 
   /**

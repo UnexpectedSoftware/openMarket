@@ -23,7 +23,7 @@ export default class ProductFactoryImpl {
      * @param {Partial<NewProduct>} [product]
      * @returns {Product}
      */
-  createWith({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status = ProductStatus.ENABLED, imageName = null} = {}) {
+  createWith({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status = ProductStatus.ENABLED, imageName = null, vatRate = null} = {}) {
     return new Product({
       barcode,
       name,
@@ -35,7 +35,8 @@ export default class ProductFactoryImpl {
       weighted,
       category,
       status,
-      imageName
+      imageName,
+      vatRate
     });
   }
 

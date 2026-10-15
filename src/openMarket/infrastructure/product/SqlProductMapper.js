@@ -35,6 +35,11 @@ export default class SqlProductMapper {
         stockMin: persistenceProduct.stock_min,
         weighted: persistenceProduct.weighted,
         imageName: persistenceProduct.image_name,
+        vatRate: {
+          percent: persistenceProduct.vat_percent,
+          kind: persistenceProduct.vat_kind,
+          cause: persistenceProduct.vat_cause
+        },
         category: this._categoryFactory.createWithId({
           id: persistenceProduct.category_id,
           name: persistenceProduct.category_name

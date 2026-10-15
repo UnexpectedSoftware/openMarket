@@ -67,6 +67,7 @@ const saveProductEpic = action$ =>
       stock: action.product.stock,
       stockMin: action.product.stockMin,
       weighted: action.product.weighted,
+      vatRate: action.product.vatRate,
       categoryId: action.product.categoryId,
       status: action.product.status,
       imagePath: action.product.imagePath
@@ -139,6 +140,7 @@ const fetchProductEpic = action$ =>
       description: product.description,
       price: product.price.toEuros(),
       basePrice: product.basePrice.toEuros(),
+      vatRate: product.vatRate.code(),
       stock: product.stock,
       stockMin: product.stockMin,
       weighted: product.isWeighted,

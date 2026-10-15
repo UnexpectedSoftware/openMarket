@@ -113,6 +113,30 @@ test('sells, edits quantity, and warns on low stock', async () => {
   }
 });
 
+test('shows the VAT breakdown for the sold rate', async () => {
+  const {app, window, userData} = await launchApp();
+  try {
+    await createCategory(window, 'Dairy');
+    await createProduct(window, {
+      name: 'Milk',
+      barcode: '8400000000042',
+      price: 1.1,
+      basePrice: 1,
+      stock: 5,
+      stockMin: 1,
+      category: 'Dairy',
+      vat: 'S1:10'
+    });
+    await openNewOrder(window);
+    await scanBarcode(window, '8400000000042');
+    await expect(window.locator('.order-vat')).toContainText('10 %');
+    await expect(window.locator('.order-vat')).toContainText(euros(1));
+    await expect(window.locator('.order-vat')).toContainText(euros(0.1));
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
 test('sells a weighed product for 6,48 €', async () => {
   const {app, window, userData} = await launchApp();
   try {

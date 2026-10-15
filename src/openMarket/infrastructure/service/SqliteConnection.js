@@ -3,6 +3,7 @@ import path from 'path';
 import { DatabaseSync } from 'node:sqlite';
 import Money from '../../domain/money/Money';
 import Quantity from '../../domain/money/Quantity';
+import VatBreakdown from '../../domain/tax/VatBreakdown';
 import sqliteDatabasePath from './sqliteDatabasePath';
 
 const SCHEMA = `
@@ -19,6 +20,9 @@ CREATE TABLE IF NOT EXISTS product (
   base_price REAL,
   price_cents INTEGER,
   base_price_cents INTEGER,
+  vat_percent INTEGER NOT NULL DEFAULT 21,
+  vat_kind TEXT NOT NULL DEFAULT 'S1',
+  vat_cause TEXT,
   stock REAL,
   stock_min REAL,
   status TEXT,
@@ -40,7 +44,10 @@ CREATE TABLE IF NOT EXISTS line (
   quantity REAL,
   price_cents INTEGER,
   quantity_milli INTEGER,
-  amount_cents INTEGER
+  amount_cents INTEGER,
+  vat_percent INTEGER NOT NULL DEFAULT 21,
+  vat_kind TEXT NOT NULL DEFAULT 'S1',
+  vat_cause TEXT
 );
 CREATE TABLE IF NOT EXISTS product_sale_day (
   barcode TEXT NOT NULL,
@@ -112,6 +119,20 @@ CREATE TABLE IF NOT EXISTS invoice_line (
   price_cents INTEGER,
   quantity_milli INTEGER,
   amount_cents INTEGER,
+  vat_percent INTEGER NOT NULL DEFAULT 21,
+  vat_kind TEXT NOT NULL DEFAULT 'S1',
+  vat_cause TEXT,
+  PRIMARY KEY (invoice_id, position)
+);
+CREATE TABLE IF NOT EXISTS invoice_vat (
+  invoice_id TEXT NOT NULL,
+  position INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  percent INTEGER NOT NULL,
+  cause TEXT,
+  base_cents INTEGER NOT NULL,
+  quota_cents INTEGER NOT NULL,
+  gross_cents INTEGER NOT NULL,
   PRIMARY KEY (invoice_id, position)
 );
 CREATE TABLE IF NOT EXISTS schema_migration (
@@ -156,6 +177,87 @@ function historicalLineCents(price, quantity) {
   return storedCents(euros);
 }
 
+const VAT_RATES_MIGRATION = 'vat_rates_v1';
+
+/**
+ * Gives every product, order line and invoice line a 21 % S1 rate, and stores
+ * one 21 % breakdown for invoices that were issued before VAT existed.
+ * Historic rates are assumed. A second open finds the schema_migration row and skips.
+ * @param {{prepare: Function, exec: Function}} database
+ */
+function migrateVatRates(database) {
+  ensureColumn(database, 'product', 'vat_percent', "INTEGER NOT NULL DEFAULT 21");
+  ensureColumn(database, 'product', 'vat_kind', "TEXT NOT NULL DEFAULT 'S1'");
+  ensureColumn(database, 'product', 'vat_cause', 'TEXT');
+  ensureColumn(database, 'line', 'vat_percent', "INTEGER NOT NULL DEFAULT 21");
+  ensureColumn(database, 'line', 'vat_kind', "TEXT NOT NULL DEFAULT 'S1'");
+  ensureColumn(database, 'line', 'vat_cause', 'TEXT');
+  ensureColumn(database, 'invoice_line', 'vat_percent', "INTEGER NOT NULL DEFAULT 21");
+  ensureColumn(database, 'invoice_line', 'vat_kind', "TEXT NOT NULL DEFAULT 'S1'");
+  ensureColumn(database, 'invoice_line', 'vat_cause', 'TEXT');
+  database.exec(`CREATE TABLE IF NOT EXISTS invoice_vat (
+    invoice_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    kind TEXT NOT NULL,
+    percent INTEGER NOT NULL,
+    cause TEXT,
+    base_cents INTEGER NOT NULL,
+    quota_cents INTEGER NOT NULL,
+    gross_cents INTEGER NOT NULL,
+    PRIMARY KEY (invoice_id, position)
+  )`);
+  const applied = database.prepare('SELECT name FROM schema_migration WHERE name = ?').get(VAT_RATES_MIGRATION);
+  if (applied) {
+    return;
+  }
+  if (!hasColumn(database, 'invoice', 'id') || !hasColumn(database, 'invoice_line', 'invoice_id')) {
+    database.prepare('INSERT INTO schema_migration (name, applied_at) VALUES (?, ?)').run(
+      VAT_RATES_MIGRATION,
+      new Date().toISOString()
+    );
+    return;
+  }
+  dropInvoiceGuards(database);
+  const insert = database.prepare(
+    'INSERT INTO invoice_vat (invoice_id, position, kind, percent, cause, base_cents, quota_cents, gross_cents) ' +
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+  );
+  const invoices = database.prepare('SELECT id FROM invoice').all();
+  invoices.forEach(invoice => {
+    const present = database.prepare('SELECT 1 AS present FROM invoice_vat WHERE invoice_id = ?').get(invoice.id);
+    if (present) {
+      return;
+    }
+    const lines = database.prepare(
+      'SELECT amount, amount_cents, vat_percent, vat_kind, vat_cause FROM invoice_line WHERE invoice_id = ? ORDER BY position'
+    ).all(invoice.id);
+    const breakdown = VatBreakdown.fromLines(lines.map(line => ({
+      amount: line.amount_cents == null ? Money.fromEuros(line.amount == null ? 0 : line.amount) : Money.ofCents(Number(line.amount_cents)),
+      vatRate: {
+        percent: line.vat_percent == null ? 21 : Number(line.vat_percent),
+        kind: line.vat_kind || 'S1',
+        cause: line.vat_cause
+      }
+    })));
+    breakdown.forEach((row, position) => {
+      insert.run(
+        invoice.id,
+        position,
+        row.rate.kind,
+        row.rate.percent,
+        row.rate.cause,
+        row.base.cents,
+        row.quota.cents,
+        row.gross.cents
+      );
+    });
+  });
+  database.prepare('INSERT INTO schema_migration (name, applied_at) VALUES (?, ?)').run(
+    VAT_RATES_MIGRATION,
+    new Date().toISOString()
+  );
+}
+
 function tableColumns(database, table) {
   return database.prepare(`PRAGMA table_info(${table})`).all();
 }
@@ -197,6 +299,16 @@ BEFORE DELETE ON invoice_line
 BEGIN
   SELECT RAISE(ABORT, 'An issued invoice line cannot be deleted');
 END;
+CREATE TRIGGER IF NOT EXISTS invoice_vat_forbid_update
+BEFORE UPDATE ON invoice_vat
+BEGIN
+  SELECT RAISE(ABORT, 'An issued invoice VAT breakdown cannot change');
+END;
+CREATE TRIGGER IF NOT EXISTS invoice_vat_forbid_delete
+BEFORE DELETE ON invoice_vat
+BEGIN
+  SELECT RAISE(ABORT, 'An issued invoice VAT breakdown cannot be deleted');
+END;
 `;
 
 /** @param {{exec: Function}} database */
@@ -205,6 +317,8 @@ export function dropInvoiceGuards(database) {
   database.exec('DROP TRIGGER IF EXISTS invoice_line_forbid_update');
   database.exec('DROP TRIGGER IF EXISTS invoice_forbid_delete');
   database.exec('DROP TRIGGER IF EXISTS invoice_line_forbid_delete');
+  database.exec('DROP TRIGGER IF EXISTS invoice_vat_forbid_update');
+  database.exec('DROP TRIGGER IF EXISTS invoice_vat_forbid_delete');
 }
 
 /** @param {{exec: Function}} database */
@@ -355,6 +469,7 @@ export default class SqliteConnection {
     )`);
     backfillInvoiceLineAmounts(this._database);
     migrateMoneyCents(this._database);
+    migrateVatRates(this._database);
     ensureUniqueInvoiceOrder(this._database);
     dropInvoiceGuards(this._database);
     installInvoiceGuards(this._database);

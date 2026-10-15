@@ -1,4 +1,6 @@
 /** @import { Observable } from 'rxjs/Observable' */
+import VatBreakdown from '../../domain/tax/VatBreakdown';
+import Money from '../../domain/money/Money';
 
 /**
  * Receipt line. The ticket prints subtotal, which the order screen adds before printing.
@@ -24,6 +26,32 @@ function displayEuros(value) {
     return value.toEuros();
   }
   return value;
+}
+
+function vatRows(order) {
+  if (order.vat && order.vat.length) {
+    return order.vat;
+  }
+  if (order.breakdown && order.breakdown.length) {
+    return order.breakdown;
+  }
+  return VatBreakdown.fromLines((order.lines || []).map(line => ({
+    amount: line.amount != null ? line.amount : Money.fromEuros(line.subtotal == null ? 0 : line.subtotal),
+    vatRate: line.vatRate
+  })));
+}
+
+function vatLabel(rate) {
+  if (rate == null) {
+    return '21 %';
+  }
+  if (rate.kind === 'E') {
+    return 'Exento ' + rate.cause;
+  }
+  if (rate.kind === 'N') {
+    return 'No sujeto ' + rate.cause;
+  }
+  return String(rate.percent) + ' %';
 }
 
 function displayUnits(value) {
@@ -78,7 +106,19 @@ export default class OrderPrinterService {
       printer.print(displayEuros(order.total));
       printer.print('€');
       printer.newLine();
-      printer.println('IVA incluido');
+      printer.alignLeft();
+      printer.tableCustom([
+        { text: 'IVA %', align: 'LEFT', width: 0.34, bold: true },
+        { text: 'Base', align: 'RIGHT', width: 0.33, bold: true },
+        { text: 'Cuota', align: 'RIGHT', width: 0.33, bold: true }
+      ]);
+      vatRows(order).forEach(row => {
+        printer.tableCustom([
+          { text: vatLabel(row.rate), align: 'LEFT', width: 0.34 },
+          { text: displayEuros(row.base), align: 'RIGHT', width: 0.33 },
+          { text: displayEuros(row.quota), align: 'RIGHT', width: 0.33 }
+        ]);
+      });
       printer.cut();
     });
   }

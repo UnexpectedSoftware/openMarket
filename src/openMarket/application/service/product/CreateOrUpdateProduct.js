@@ -2,6 +2,7 @@
  * @class CreateOrUpdateProduct
  */
 import * as Rx from "rxjs";
+import VatRate from "../../../domain/tax/VatRate";
 /** @import { Observable } from 'rxjs/Observable' */
 /** @import CategoryRepository from '../../../domain/category/CategoryRepository' */
 /** @import ProductFactory from '../../../domain/product/ProductFactory' */
@@ -48,10 +49,11 @@ export default class CreateOrUpdateProduct {
    * @param {boolean} product.weighted
    * @param {string} product.categoryId
    * @param {string} product.status
+   * @param {string | VatRate | object | null} [product.vatRate]
    * @param {string | null} [product.imagePath] absolute path of a file to copy, when the user picked one
    * @returns {Observable<null>}
    */
-  createOrUpdate({ barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status, imagePath }) {
+  createOrUpdate({ barcode, name, description, price, basePrice, stock, stockMin, weighted, categoryId, status, vatRate, imagePath }) {
     return this._categoryRepository.findById({id: categoryId})
       .map(category => this._productFactory.createWith({
             barcode,
@@ -63,7 +65,8 @@ export default class CreateOrUpdateProduct {
             stockMin,
             weighted,
             category,
-            status
+            status,
+            vatRate: vatRate == null || vatRate === '' ? VatRate.standard() : VatRate.from(vatRate)
           }))
       .flatMap(product => this._productRepository.save({ product, imagePath }));
   }
