@@ -2,7 +2,6 @@ import { success, error, warning } from 'react-notification-system-redux';
 import {reset} from 'redux-form';
 import OpenMarket from "../../../application/index";
 import * as Rx from "rxjs";
-import container from '../../../infrastructure/dic/Container'
 import {record} from '../../../infrastructure/logging/ErrorLog'
 
 import {
@@ -21,14 +20,15 @@ const findProductUseCase = OpenMarket.get("products_find_use_case");
 const enableProductUseCase = OpenMarket.get("products_enable_use_case");
 const orderCreateUseCase = OpenMarket.get("orders_create_use_case");
 const domainEventBus = OpenMarket.get("domain_event_bus");
-const orderPrinterService = container.getInstance({key:'orderPrinterService'});
+const buildReceipt = OpenMarket.get('receipts_build_use_case');
+const printReceipt = OpenMarket.get('receipts_print_use_case');
 
 const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(enableProductUseCase)(reset);
 const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset)(error)(success);
 const lowStockWarningEpic = makeLowStockWarningEpic(domainEventBus)(warning);
 const productEnabledAgainEpic = makeProductEnabledAgainEpic(domainEventBus)(warning);
-const printerDialogEpic = makePrinterDialogEpic(orderPrinterService)(error);
-const printButtonClickedEpic = makePrintButtonClickedEpic(orderPrinterService)(error);
+const printerDialogEpic = makePrinterDialogEpic(buildReceipt)(printReceipt)(error);
+const printButtonClickedEpic = makePrintButtonClickedEpic(buildReceipt)(printReceipt)(error);
 const weightedDialogEpic  = makeWeightedDialogEpic(reset)
 
 export default action$ =>

@@ -44,6 +44,8 @@ class OpenMarket {
     this.deps.set('products_print_catalog_use_case', container.getInstance({key:'printProductCatalog'}));
     this.deps.set('plugins_list_use_case', container.getInstance({key:'listPlugins'}));
     this.deps.set('plugins_save_use_case', container.getInstance({key:'savePlugin'}));
+    this.deps.set('receipts_build_use_case', container.getInstance({key:'buildReceipt'}));
+    this.deps.set('receipts_print_use_case', container.getInstance({key:'printReceipt'}));
     this.deps.set('shop_get_profile_use_case', container.getInstance({key:'getShopProfile'}));
     this.deps.set('shop_update_profile_use_case', container.getInstance({key:'updateShopProfile'}));
     container.getInstance({key:'pluginHost'}).start();

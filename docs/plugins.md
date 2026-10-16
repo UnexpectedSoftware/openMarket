@@ -64,6 +64,7 @@ module.exports = {
 | `connection` | The shared SQLite connection. Use `connection.database` |
 | `config` | Saved settings for this plugin. Secret settings are not included |
 | `secrets` | `{get(key)}` returns a `Promise` of the secret, or `null`. Scoped to this plugin. Call it from a durable handler, never from `subscribeSync` |
+| `receipt` | `{register(slot, render)}`. Slots are `receipt.header.fiscal` and `receipt.footer`. `render(invoicePayload)` returns blocks and must be fast and local |
 | `events` | The event classes from `domain/event/registry.js` |
 
 ## Where plugins run
@@ -83,6 +84,19 @@ A `plugin.json` setting with `"secret": true` is a password or similar. The Plug
 `secrets.get(key)` reads it back. The promise exists because encryption is an IPC call. Use it from a durable handler. macOS uses the keychain and Windows uses DPAPI. On Linux, safeStorage uses basic text when the keyring cannot be selected before startup, and the Plugins page says the secret is stored with basic encryption.
 
 Certificate files stay on disk. Only the path is an ordinary setting. The password is the secret.
+
+## Receipt slots
+
+`receipt.register(slot, render)` adds blocks to the printed ticket. `slot` is `receipt.header.fiscal` (before the shop header) or `receipt.footer` (after the total). `render` receives the version 1 `InvoiceIssued` payload, or `null` when the order has no invoice, and returns an array of blocks:
+
+| `type` | Fields |
+| --- | --- |
+| `text` | `text`, optional `align` (`left`, `center`, `right`), `bold`, `size` (`normal`, `large`) |
+| `qr` | `data`, `sizeMm` from 30 to 40, `correction` `M` |
+| `line` | a rule |
+| `feed` | `lines`, how many blank lines |
+
+The renderer must be synchronous and must not call the network. If it throws, that slot prints nothing and the rest of the ticket still prints. Core does not know what the blocks mean.
 
 Use `events.OrderCreated` and the other classes on `events`. They are the same functions the bus uses. Anything else in OpenMarket is internal.
 

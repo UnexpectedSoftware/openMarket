@@ -60,16 +60,21 @@ function printFailed(errorNotification, err) {
   });
 }
 
-export const makePrinterDialogEpic = orderPrinterService => errorNotification => action$ =>
+function printReceipt(buildReceipt, printReceiptUseCase, order) {
+  return buildReceipt.build({orderId: order && order.id})
+    .flatMap(receipt => printReceiptUseCase.print({receipt}));
+}
+
+export const makePrinterDialogEpic = buildReceipt => printReceiptUseCase => errorNotification => action$ =>
   action$.filter(action => action.type === HIDE_PRINTER_DIALOG)
     .filter(action => true === action.payload.print)
-    .flatMap(action => orderPrinterService.print({order: action.payload.order})
+    .flatMap(action => printReceipt(buildReceipt, printReceiptUseCase, action.payload.order)
       .map(() => newOrderActions.printOrderFinished())
       .catch(err => Rx.Observable.of(printFailed(errorNotification, err))));
 
-export const makePrintButtonClickedEpic = orderPrinterService => errorNotification => action$ =>
+export const makePrintButtonClickedEpic = buildReceipt => printReceiptUseCase => errorNotification => action$ =>
   action$.filter(action => action.type === newOrderActions.PRINT_ORDER_BUTTON_CLICKED)
-    .flatMap(action => orderPrinterService.print({order: action.payload})
+    .flatMap(action => printReceipt(buildReceipt, printReceiptUseCase, action.payload)
       .map(() => newOrderActions.printOrderFinished())
       .catch(err => Rx.Observable.of(printFailed(errorNotification, err))));
 

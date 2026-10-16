@@ -17,6 +17,8 @@ function errorNotification(payload) {
 describe('Order print epics', () => {
   it('finishes when the ticket is accepted', (done) => {
     const epic = makePrinterDialogEpic({
+      build: () => Rx.Observable.of({blocks: []})
+    })({
       print: () => Rx.Observable.of(true)
     })(errorNotification);
     epic(Rx.Observable.of({
@@ -30,6 +32,8 @@ describe('Order print epics', () => {
 
   it('toasts a busy printer instead of failing the stream', (done) => {
     const epic = makePrintButtonClickedEpic({
+      build: () => Rx.Observable.of({blocks: []})
+    })({
       print: () => Rx.Observable.throw(new Error('Printer is busy'))
     })(errorNotification);
     epic(Rx.Observable.of({
