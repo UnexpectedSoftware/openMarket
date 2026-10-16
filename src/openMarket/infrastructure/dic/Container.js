@@ -1,5 +1,9 @@
 import PrinterConnection from "../printer/PrinterConnection";
 import OrderPrinterService from "../printer/OrderPrinterService";
+import EscPosReceiptRenderer from "../printer/EscPosReceiptRenderer";
+import ReceiptSlots from "../receipt/ReceiptSlots";
+import BuildReceipt from "../../application/service/receipt/BuildReceipt";
+import PrintReceipt from "../../application/service/receipt/PrintReceipt";
 import CatalogPrinterService from "../printer/CatalogPrinterService";
 import CategoryFactoryImpl from "../category/CategoryFactoryImpl";
 import RandomUUIDIdentity from "../../domain/RandomUUIDIdentity";
@@ -106,10 +110,32 @@ class Container {
     return new PrinterConnection();
   }
 
+  _receiptSlots() {
+    return new ReceiptSlots();
+  }
+
+  _escPosReceiptRenderer() {
+    return new EscPosReceiptRenderer();
+  }
+
   _orderPrinterService(){
     return new OrderPrinterService({
       printerConnection: this.getInstance({key: 'printerConnection'}),
-      invoiceRepository: this.getInstance({key: 'invoiceRepository'})
+      renderer: this.getInstance({key: 'escPosReceiptRenderer'})
+    });
+  }
+
+  _buildReceipt() {
+    return new BuildReceipt({
+      invoiceRepository: this.getInstance({key: 'invoiceRepository'}),
+      receiptSlots: this.getInstance({key: 'receiptSlots'}),
+      recordError: record
+    });
+  }
+
+  _printReceipt() {
+    return new PrintReceipt({
+      orderPrinterService: this.getInstance({key: 'orderPrinterService'})
     });
   }
 
@@ -511,7 +537,8 @@ class Container {
       loadPlugin,
       events: eventClasses(),
       recordError: record,
-      secretStore: this.getInstance({key: 'secretStore'})
+      secretStore: this.getInstance({key: 'secretStore'}),
+      receiptSlots: this.getInstance({key: 'receiptSlots'})
     });
   }
 

@@ -50,6 +50,7 @@ export default class PluginHost {
    * @param {Record<string, Function>} [deps.events]
    * @param {(error: any) => void} [deps.recordError]
    * @param {SecretStore} [deps.secretStore]
+   * @param {import('../receipt/ReceiptSlots').default} [deps.receiptSlots]
    */
   constructor({
     pluginSource,
@@ -60,7 +61,8 @@ export default class PluginHost {
     loadPlugin,
     events,
     recordError,
-    secretStore
+    secretStore,
+    receiptSlots
   }) {
     this._pluginSource = pluginSource;
     this._pluginRepository = pluginRepository;
@@ -71,6 +73,7 @@ export default class PluginHost {
     this._events = Object.freeze(events || eventClasses());
     this._recordError = typeof recordError === 'function' ? recordError : () => {};
     this._secretStore = secretStore || null;
+    this._receiptSlots = receiptSlots || null;
     this._started = false;
   }
 
@@ -153,6 +156,20 @@ export default class PluginHost {
         config: prepared.config,
         secrets: {
           get: key => this._readSecret(manifest.id, key)
+        },
+        receipt: {
+          register: (slot, render) => {
+            if (!this._receiptSlots) {
+              throw new Error('Receipt slots are not available');
+            }
+            const unsubscribe = this._receiptSlots.register({
+              pluginId: manifest.id,
+              slot,
+              render
+            });
+            undo.push(unsubscribe);
+            return unsubscribe;
+          }
         },
         events: this._events
       });
