@@ -6,6 +6,7 @@
  * @property {string} key
  * @property {string} label
  * @property {boolean} required
+ * @property {boolean} secret
  */
 
 /**

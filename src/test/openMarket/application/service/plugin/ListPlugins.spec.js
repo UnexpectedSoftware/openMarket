@@ -36,10 +36,12 @@ describe('ListPlugins', () => {
         description: 'Fixture',
         version: '1.0.0',
         settings: [],
+        storedSecrets: [],
         enabled: true,
         config: {nif: 'B'},
         lastError: 'Plugin sample failed'
       }]);
+      expect(page.encryption).to.deep.equal({available: false, backend: 'unknown'});
       done();
     }, done);
   });

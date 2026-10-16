@@ -45,7 +45,7 @@ describe('FolderPluginSource', () => {
       openmarket: '>=1.15.0 <2',
       main: 'index.js'
     });
-    expect(listed[0].settings).to.deep.equal([{key: 'nif', label: 'NIF', required: true}]);
+    expect(listed[0].settings).to.deep.equal([{key: 'nif', label: 'NIF', required: true, secret: false}]);
   });
 
   it('skips a bad manifest, a mismatched id, and a main path that escapes the folder', () => {

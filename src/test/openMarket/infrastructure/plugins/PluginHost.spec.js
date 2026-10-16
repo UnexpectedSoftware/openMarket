@@ -143,4 +143,67 @@ describe('PluginHost', () => {
       lines: []
     }))).to.not.throw();
   });
+
+  it('passes secrets for this plugin only and keeps them out of config', () => {
+    const values = {'sample:certificatePassword': 's3cret'};
+    const secretStore = {
+      put({pluginId, key, value}) {
+        values[pluginId + ':' + key] = value;
+        return Rx.Observable.of(null);
+      },
+      get({pluginId, key}) {
+        const value = values[pluginId + ':' + key];
+        return Rx.Observable.of(value == null ? null : value);
+      }
+    };
+    const contexts = {};
+    const rows = [{
+      pluginId: 'sample',
+      enabled: true,
+      config: {nif: 'B', certificatePassword: 's3cret'},
+      lastError: null
+    }, {
+      pluginId: 'other',
+      enabled: true,
+      config: {},
+      lastError: null
+    }];
+    const pluginHost = new PluginHost({
+      pluginSource: {
+        list: () => Rx.Observable.of([
+          manifest({
+            settings: [
+              {key: 'nif', label: 'NIF', required: false, secret: false},
+              {key: 'certificatePassword', label: 'Certificate password', required: true, secret: true}
+            ]
+          }),
+          manifest({id: 'other', directory: '/tmp/other', settings: []})
+        ]),
+        directory: () => '/tmp/plugins'
+      },
+      pluginRepository: memoryRepository(rows),
+      domainEventBus: deliveringDomainEventBus(),
+      connection: {},
+      appVersion: '1.15.0',
+      events: {OrderCreated},
+      secretStore,
+      loadPlugin: () => ({
+        register(received) {
+          contexts[received.config.nif || 'other'] = received;
+        }
+      })
+    });
+
+    pluginHost.start();
+
+    expect(contexts.B.config).to.deep.equal({nif: 'B'});
+    expect(rows.find(row => row.pluginId === 'sample').config.certificatePassword).to.equal(undefined);
+    return Promise.all([
+      contexts.B.secrets.get('certificatePassword'),
+      contexts.other.secrets.get('certificatePassword')
+    ]).then(([own, foreign]) => {
+      expect(own).to.equal('s3cret');
+      expect(foreign).to.equal(null);
+    });
+  });
 });

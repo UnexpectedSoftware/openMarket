@@ -44,7 +44,7 @@ A folder with a bad manifest is skipped. One bad folder does not hide the others
 
 ```js
 module.exports = {
-  register({apiVersion, eventBus, connection, config, events}) {
+  register({apiVersion, eventBus, connection, config, secrets, events}) {
     eventBus.subscribeSync(events.OrderCreated, event => {
       // fast, local, deterministic
     });
@@ -62,8 +62,27 @@ module.exports = {
 | `apiVersion` | `1` |
 | `eventBus` | `subscribeSync`, `subscribeDurable`, and `ofType` only |
 | `connection` | The shared SQLite connection. Use `connection.database` |
-| `config` | Saved settings for this plugin |
+| `config` | Saved settings for this plugin. Secret settings are not included |
+| `secrets` | `{get(key)}` returns a `Promise` of the secret, or `null`. Scoped to this plugin. Call it from a durable handler, never from `subscribeSync` |
 | `events` | The event classes from `domain/event/registry.js` |
+
+## Where plugins run
+
+Plugins stay in the renderer for apiVersion 1. `PluginHost` starts from `application/index.js`, and that file is bundled into the renderer. The sync subscriber has to use the same SQLite connection as the sale, and that connection lives in the renderer. Moving plugins to the main process would split that connection. apiVersion stays 1. A later apiVersion can move core and plugins together when the window turns `contextIsolation` on.
+
+The window is created with `nodeIntegration`, without `contextIsolation` or the sandbox. That is what makes Node built-ins available. It is not a sandbox.
+
+## Node APIs
+
+A plugin loads through `createRequire`, so `require('node:fs')`, `require('node:https')`, `require('node:tls')`, and `require('node:crypto')` work, including `https.request({pfx, passphrase})` for mTLS. Durable handlers run after the sale commits and must be asynchronous. Do not use a synchronous network call. A sync handler stays local and fast.
+
+## Secrets
+
+A `plugin.json` setting with `"secret": true` is a password or similar. The Plugins page uses a password field. The value is encrypted with Electron `safeStorage` in the main process and stored as ciphertext in `plugin_secret`. It is never written to `plugin_state.config_json` and it is not passed in `config`.
+
+`secrets.get(key)` reads it back. The promise exists because encryption is an IPC call. Use it from a durable handler. macOS uses the keychain and Windows uses DPAPI. On Linux, safeStorage uses basic text when the keyring cannot be selected before startup, and the Plugins page says the secret is stored with basic encryption.
+
+Certificate files stay on disk. Only the path is an ordinary setting. The password is the secret.
 
 Use `events.OrderCreated` and the other classes on `events`. They are the same functions the bus uses. Anything else in OpenMarket is internal.
 
