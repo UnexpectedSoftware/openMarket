@@ -7,16 +7,16 @@
   padding: $sp-base / 2;
   position: relative;
   text-align: center;
-  color: $c-grey-darkest;
-  background: $c-grey-lightest;
-  border: 1px dashed $c-grey;
+  color: var(--om-color-text-muted);
+  background: var(--om-color-surface-alt);
+  border: 1px dashed var(--om-color-text-muted);
   cursor: pointer;
   @include border-radius;
 
   &.is-over,
   &:focus-within {
-    border-color: $c-primary;
-    background: $c-primary-lightest;
+    border-color: var(--om-color-primary);
+    background: var(--om-color-primary-soft);
   }
 
   img {
@@ -47,8 +47,8 @@
 
 .category-card {
   width: 200px;
-  background: $c-white;
-  border: 1px solid $c-grey-light;
+  background: var(--om-color-surface);
+  border: 1px solid var(--om-color-border);
   overflow: hidden;
   @include border-radius;
 
@@ -65,18 +65,18 @@
 
 .category-card-photo {
   position: relative;
-  background: $c-grey-lightest;
+  background: var(--om-color-surface-alt);
 
   img {
     display: block;
     width: 100%;
     height: 140px;
     object-fit: cover;
-    background: $c-grey-lightest;
+    background: var(--om-color-surface-alt);
   }
 
   &.is-over img {
-    outline: 2px solid $c-primary;
+    outline: 2px solid var(--om-color-primary);
     outline-offset: -2px;
   }
 }
@@ -104,11 +104,12 @@
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.92);
-  color: $c-base;
+  background: var(--om-color-surface);
+  opacity: 0.92;
+  color: var(--om-color-text);
   font-size: 1.3rem;
   line-height: 1;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--om-shadow-md);
 
   .fa {
     padding-right: 0;
@@ -129,12 +130,12 @@
   border: 0;
   border-radius: 0;
   background: transparent;
-  color: $c-base;
+  color: var(--om-color-text);
   font: inherit;
   line-height: 1.4;
 
   &:focus {
-    background: $c-primary-lightest;
+    background: var(--om-color-primary-soft);
   }
 
   &:disabled {
@@ -146,7 +147,7 @@
   display: block;
   margin: 0;
   padding: 0 $sp-base / 2 $sp-base / 4;
-  color: $c-warning;
+  color: var(--om-color-danger);
   font-size: 1.2rem;
 }
 
@@ -164,7 +165,7 @@
   dt {
     flex: 0 0 76px;
     margin: 0;
-    color: $c-grey-darkest;
+    color: var(--om-color-text-muted);
     font-size: 1.2rem;
     font-weight: normal;
     white-space: nowrap;
@@ -177,7 +178,7 @@
     flex: 1;
     min-width: 0;
     margin: 0;
-    color: $c-base;
+    color: var(--om-color-text);
     font-size: 1.2rem;
   }
 }
@@ -199,9 +200,9 @@
   width: calc(100% - #{$sp-base});
   margin: 0 $sp-base / 2 $sp-base / 2;
   padding: 0.4rem 0.8rem;
-  color: $c-warning;
-  background: $c-white;
-  border: 1px solid $c-warning;
+  color: var(--om-color-danger);
+  background: var(--om-color-surface);
+  border: 1px solid var(--om-color-danger);
   border-radius: 999px;
   font-size: 1.3rem;
 

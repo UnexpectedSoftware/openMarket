@@ -13,8 +13,8 @@
 
 .plugin-restart {
   padding: $sp-base / 2;
-  background: $c-primary-lightest;
-  border: 1px solid $c-primary-light;
+  background: var(--om-color-primary-soft);
+  border: 1px solid var(--om-color-primary-soft);
 }
 
 .plugin-cards {
@@ -26,8 +26,8 @@
 .plugin-card {
   width: 22rem;
   padding: $sp-base;
-  border: 1px solid $c-grey-light;
-  background: $c-white;
+  border: 1px solid var(--om-color-border);
+  background: var(--om-color-surface);
 
   h2 {
     margin: 0 0 $sp-base / 2;
@@ -40,7 +40,7 @@
 }
 
 .plugin-card-version {
-  color: $c-grey-darkest;
+  color: var(--om-color-text-muted);
 }
 
 .plugin-setting {
@@ -60,5 +60,5 @@
 }
 
 .plugin-card-error {
-  color: $c-alert;
+  color: var(--om-color-danger);
 }

@@ -1,0 +1,89 @@
+import * as Rx from 'rxjs';
+import 'rxjs/add/observable/merge';
+import 'rxjs/add/observable/of';
+import 'rxjs/add/operator/catch';
+import 'rxjs/add/operator/do';
+import 'rxjs/add/operator/filter';
+import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/mergeMap';
+import {error, success} from 'react-notification-system-redux';
+import {userText} from '../../infrastructure/logging/ErrorLog';
+import {
+  THEME_CHANGE_REQUESTED,
+  THEME_CHANGED,
+  THEME_PREVIEW_DISCARD_REQUESTED,
+  THEME_PREVIEW_DISCARDED,
+  THEME_PREVIEW_REQUESTED,
+  THEME_PREVIEWED,
+  themeChanged,
+  themePreviewDiscarded,
+  themePreviewed
+} from './action';
+
+/**
+ * @param {string} theme
+ */
+export function applyTheme(theme) {
+  if (typeof document !== 'undefined' && document.documentElement) {
+    document.documentElement.dataset.theme = theme;
+  }
+}
+
+const savedToast = () => success({
+  title: 'Tema guardado',
+  message: 'La apariencia se ha guardado',
+  position: 'tr',
+  autoDismiss: 4
+});
+
+/**
+ * @param {*} failure
+ */
+function failedToast(failure) {
+  return error({
+    title: 'El tema no se ha guardado',
+    message: userText(failure, 'El tema no se ha guardado'),
+    position: 'tr',
+    autoDismiss: 4
+  });
+}
+
+/**
+ * Paints `data-theme` before Redux tells the charts to render again.
+ * @param {{changeTheme: {changeTheme: Function}}} deps
+ */
+export function makeAppearanceEpic({changeTheme}) {
+  const preview = action$ => action$
+    .filter(action => action.type === THEME_PREVIEW_REQUESTED)
+    .map(action => {
+      applyTheme(action.theme);
+      return themePreviewed(action.theme);
+    });
+
+  const discard = action$ => action$
+    .filter(action => action.type === THEME_PREVIEW_DISCARD_REQUESTED)
+    .map(action => {
+      applyTheme(action.theme);
+      return themePreviewDiscarded(action.theme);
+    });
+
+  const save = action$ => action$
+    .filter(action => action.type === THEME_CHANGE_REQUESTED)
+    .flatMap(action => changeTheme.changeTheme({theme: action.theme})
+      .flatMap(preferences => {
+        const theme = preferences.theme.id;
+        applyTheme(theme);
+        return Rx.Observable.of(themeChanged(theme), savedToast());
+      })
+      .catch(failure => Rx.Observable.of(failedToast(failure))));
+
+  const paint = action$ => action$
+    .filter(action =>
+      action.type === THEME_CHANGED ||
+      action.type === THEME_PREVIEWED ||
+      action.type === THEME_PREVIEW_DISCARDED)
+    .do(action => applyTheme(action.theme))
+    .filter(() => false);
+
+  return action$ => Rx.Observable.merge(preview(action$), discard(action$), save(action$), paint(action$));
+}

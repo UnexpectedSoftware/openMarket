@@ -88,3 +88,51 @@ test('prints a plugin QR before the shop header', async () => {
     await closeApp(second.app, userData);
   }
 });
+
+test('changing the theme does not change the receipt blocks', async () => {
+  test.setTimeout(120000);
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
+  const session = await launchApp({userData, env: FAKE_PRINTER});
+  try {
+    await createCategory(session.window, 'Dairy');
+    await createProduct(session.window, {
+      name: 'Milk',
+      barcode: '8400000000011',
+      price: 2,
+      basePrice: 1,
+      stock: 10,
+      stockMin: 2,
+      category: 'Dairy'
+    });
+
+    async function sell() {
+      await openNewOrder(session.window);
+      await scanBarcode(session.window, '8400000000011');
+      await session.window.locator('h3 a.button', {hasText: 'Save'}).click();
+      await expect(session.window.getByRole('heading', {name: 'Do you want a ticket?!'})).toBeVisible();
+      await session.window.getByRole('button', {name: 'YES!'}).click();
+      await expect(session.window.getByText('Do you want a ticket?!')).toHaveCount(0);
+    }
+
+    await sell();
+    const logFile = path.join(userData, 'printer-log.jsonl');
+    await expect.poll(() => fs.existsSync(logFile)).toBe(true);
+    const before = fs.readFileSync(logFile, 'utf8').trim().split('\n').map(line => JSON.parse(line));
+
+    await session.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
+    await session.window.getByRole('radio', {name: 'Unexpected Neon', exact: true}).click();
+    await session.window.getByRole('button', {name: 'Guardar', exact: true}).click();
+    await expect(session.window.getByText('Tema guardado').first()).toBeVisible();
+    await expect.poll(() => session.window.evaluate(() => document.documentElement.dataset.theme))
+      .toBe('unexpected-neon');
+
+    await sell();
+    const after = fs.readFileSync(logFile, 'utf8').trim().split('\n').map(line => JSON.parse(line));
+    const second = after.slice(before.length);
+    expect(second.map(call => call.name)).toEqual(before.map(call => call.name));
+    const milk = calls => calls.filter(call => call.name === 'println' && String(call.args[0]).indexOf('Milk') === 0);
+    expect(milk(second)).toEqual(milk(before));
+  } finally {
+    await closeApp(session.app, userData);
+  }
+});

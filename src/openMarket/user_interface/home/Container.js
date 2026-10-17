@@ -2,9 +2,7 @@ import React, {Component} from "react";
 import {Bar} from 'react-chartjs-2';
 import moment from "moment";
 import {formatMoney, sumEuros} from "../i18n/money";
-
-const BAR_COLOR = 'rgba(33, 150, 243, 0.35)';
-const BAR_BORDER = '#2196F3';
+import {themeColor} from "../style/themeColor";
 
 function formatEuro(amount) {
   return formatMoney(amount);
@@ -53,10 +51,10 @@ export default class Container extends Component {
       datasets: [
         {
           label: 'Takings',
-          backgroundColor: BAR_COLOR,
-          borderColor: BAR_BORDER,
+          backgroundColor: themeColor('chart-bar'),
+          borderColor: themeColor('chart-bar-border'),
           borderWidth: 1,
-          hoverBackgroundColor: 'rgba(33, 150, 243, 0.55)',
+          hoverBackgroundColor: themeColor('chart-bar-hover'),
           data: days.map(data => data.total)
         }
       ]
@@ -74,7 +72,7 @@ export default class Container extends Component {
             <span className="dashboard-takings-label">Takings</span>
           </p>
           <div className="dashboard-chart">
-            <Bar data={this.mapChartData()} options={this._chartOptions} />
+            <Bar key={this.props.theme} data={this.mapChartData()} options={this._chartOptions} />
           </div>
         </div>
       </div>

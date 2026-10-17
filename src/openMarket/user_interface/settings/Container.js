@@ -1,5 +1,6 @@
 import React, {Component} from 'react';
 import ReduxForm from './ReduxForm';
+import ThemePicker from './ThemePicker';
 
 function fields(settings) {
   return {
@@ -46,11 +47,22 @@ export default class Container extends Component {
   }
 
   render() {
-    const {settings} = this.props;
+    const {settings, appearance} = this.props;
+    const theme = appearance || {theme: 'mercado', applied: 'mercado'};
+    const picker = (
+      <ThemePicker
+        theme={theme.theme}
+        applied={theme.applied}
+        onPreview={this.props.themePreviewRequested}
+        onSave={this.props.themeChangeRequested}
+        onDiscard={this.props.themePreviewDiscardRequested}
+      />
+    );
     if (!settings.loaded) {
       return (
         <section className="settings-page">
           <h2>Settings</h2>
+          {picker}
           {settings.error ? <p className="settings-error" role="alert">{settings.error}</p> : <p>Loading shop settings…</p>}
         </section>
       );
@@ -58,6 +70,7 @@ export default class Container extends Component {
     return (
       <section className="settings-page">
         <h2>Settings</h2>
+        {picker}
         <form className="settings-shop" onSubmit={this._save}>
           <h3>Comercio</h3>
           <ReduxForm values={this.state} onChange={this._change} error={settings.error} />

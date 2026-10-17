@@ -1,7 +1,7 @@
 input[type="text"] {
-  color: $c-base;
-  background-color: $c-white;
-  border: 1px solid $c-base;
+  color: var(--om-color-text);
+  background-color: var(--om-color-surface);
+  border: 1px solid var(--om-color-border-strong);
   padding: $sp-base/2;
   @include border-radius;
 
@@ -10,6 +10,6 @@ input[type="text"] {
   }
 }
 input[type="checkbox"] {
-  background-color: $c-white;
-  border: 1px solid $c-base;
+  background-color: var(--om-color-surface);
+  border: 1px solid var(--om-color-border-strong);
 }

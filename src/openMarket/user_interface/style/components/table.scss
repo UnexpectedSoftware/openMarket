@@ -3,19 +3,19 @@
   width: 48px;
   height: 48px;
   object-fit: cover;
-  background: $c-grey-lightest;
+  background: var(--om-color-surface-alt);
 }
 
 .ReactTable {
   width: 100%;
-  border-color: $c-grey-darkest;
+  border-color: var(--om-color-text-muted);
 
 
   .rt-thead.-header {
 	box-shadow: none;
 	font-size: 1.6rem;
-	background: $c-grey-darkest;
-	color: $c-white;
+	background: var(--om-color-text-muted);
+	color: var(--om-color-primary-contrast);
   }
 
   .rt-thead .rt-th {
@@ -29,25 +29,25 @@
 	  border: none;
 
 	  &:nth-child(even) {
-		background: $c-grey-lightest;
+		background: var(--om-color-surface-alt);
 	  }
 	}
 
 	.rt-td {
-	  border-right: 1px dashed $c-grey;
+	  border-right: 1px dashed var(--om-color-text-muted);
 	}
   }
 
   .rt-noData {
-	border: 1px solid $c-base;
+	border: 1px solid var(--om-color-text);
 	@include border-radius();
-	background: $c-white;
-	color: $c-base;
+	background: var(--om-color-surface);
+	color: var(--om-color-text);
   }
 
   .-pagination {
 	box-shadow: none;
-	border-top: 1px solid $c-grey-darkest;
+	border-top: 1px solid var(--om-color-text-muted);
 	padding: $sp-base/2;
 
 	.-previous, .-next {
@@ -55,15 +55,15 @@
 	}
 
 	.-btn {
-	  background-color: $c-primary;
-	  border: 1px solid $c-primary;
-	  color: $c-white;
+	  background-color: var(--om-color-primary);
+	  border: 1px solid var(--om-color-primary);
+	  color: var(--om-color-primary-contrast);
 	  padding: $sp-base/2 $sp-base;
 	  @include border-radius();
 	  @include transition();
 
 	  &:not([disabled]):hover {
-		background-color: $c-primary;
+		background-color: var(--om-color-primary);
 		opacity: 0.8;
 		@include border-radius();
 		@include transition();

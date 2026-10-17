@@ -17,7 +17,7 @@ form {
   }
 
   .error {
-	color: $c-warning;
+	color: var(--om-color-danger);
 	margin-left: 30%;
 	margin-bottom: $sp-base;
 	display: block;
@@ -40,7 +40,7 @@ form {
   }
   select {
 	-webkit-appearance: none;
-	border: 1px solid $c-base;
+	border: 1px solid var(--om-color-border-strong);
 	@include border-radius();
 	background: none;
 	padding: $sp-base/2;

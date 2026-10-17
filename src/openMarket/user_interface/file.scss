@@ -1,4 +1,4 @@
-@import "./style/settings/tokens.scss";
+@import "./style/settings/themes.scss";
 @import "../../../node_modules/font-awesome/css/font-awesome.css";
 @import "../../../node_modules/react-table/react-table.css";
 @import '../../../node_modules/react-datepicker/dist/react-datepicker.css';
@@ -23,10 +23,10 @@
 
 body {
   position: relative;
-  color: $c-font;
+  color: var(--om-color-text);
   height: 100vh;
-  background-color: $c-white;
-  font-family: $f-family;
+  background-color: var(--om-color-surface);
+  font-family: var(--om-font-sans);
   // overflow-y: hidden;
   font-size: 1.4rem;
 }
@@ -47,15 +47,15 @@ h1 {
 }
 
 h2 {
-  color: $c-base;
+  color: var(--om-color-text);
   font-size: 2.2rem;
   margin: $sp-base/2 0 $sp-base*1.5;
-  border-bottom: 1px solid $c-base;
+  border-bottom: 1px solid var(--om-color-text);
   padding-bottom: $sp-base/4;
 }
 
 h3 {
-  color: $c-base;
+  color: var(--om-color-text);
   font-size: 1.9rem;
   margin: $sp-base/2 0 $sp-base*1.5;
 
@@ -133,7 +133,7 @@ li {
 }
 
 a {
-  color: $c-primary;
+  color: var(--om-color-primary);
   text-decoration: none;
 }
 

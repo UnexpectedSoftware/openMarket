@@ -70,7 +70,7 @@
       "ratio": 5.16,
       "AA": true,
       "AAA": false,
-      "required": 3.0
+      "required": 3
     },
     {
       "fg": "success",
@@ -103,6 +103,14 @@
       "AA": null,
       "AAA": false,
       "required": null
+    },
+    {
+      "fg": "borderStrong",
+      "bg": "surface",
+      "ratio": 3.46,
+      "AA": true,
+      "AAA": false,
+      "required": 3
     }
   ],
   "mostrador-noche": [
@@ -176,7 +184,7 @@
       "ratio": 9.41,
       "AA": true,
       "AAA": true,
-      "required": 3.0
+      "required": 3
     },
     {
       "fg": "success",
@@ -209,6 +217,14 @@
       "AA": null,
       "AAA": false,
       "required": null
+    },
+    {
+      "fg": "borderStrong",
+      "bg": "surface",
+      "ratio": 3.5,
+      "AA": true,
+      "AAA": false,
+      "required": 3
     }
   ],
   "ultramarinos": [
@@ -282,7 +298,7 @@
       "ratio": 6.04,
       "AA": true,
       "AAA": false,
-      "required": 3.0
+      "required": 3
     },
     {
       "fg": "success",
@@ -315,6 +331,14 @@
       "AA": null,
       "AAA": false,
       "required": null
+    },
+    {
+      "fg": "borderStrong",
+      "bg": "surface",
+      "ratio": 3.48,
+      "AA": true,
+      "AAA": false,
+      "required": 3
     }
   ],
   "unexpected-neon": [
@@ -388,7 +412,7 @@
       "ratio": 12.38,
       "AA": true,
       "AAA": true,
-      "required": 3.0
+      "required": 3
     },
     {
       "fg": "success",
@@ -421,6 +445,14 @@
       "AA": null,
       "AAA": false,
       "required": null
+    },
+    {
+      "fg": "borderStrong",
+      "bg": "surface",
+      "ratio": 3.47,
+      "AA": true,
+      "AAA": false,
+      "required": 3
     }
   ]
 }

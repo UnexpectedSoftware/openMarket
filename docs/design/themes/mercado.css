@@ -18,6 +18,13 @@
   --om-color-border: #D6DCE4;
   --om-color-focus: #1D58D0;
   --om-color-overlay: rgba(20,26,35,0.48);
+  --om-color-border-strong: #878A8F;
+  --om-color-primary-soft: rgba(29,88,208,0.16);
+  --om-color-success-soft: rgba(21,122,58,0.16);
+  --om-color-danger-soft: rgba(192,38,45,0.16);
+  --om-chart-bar: rgba(29,88,208,0.35);
+  --om-chart-bar-border: #1D58D0;
+  --om-chart-bar-hover: rgba(29,88,208,0.55);
   --om-gradient-primary: linear-gradient(var(--om-color-primary), var(--om-color-primary));
   --om-gradient-header: none;
   --om-font-sans: "Inter", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;

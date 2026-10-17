@@ -21,7 +21,7 @@ CSS custom properties on `:root`, overridden per theme with `[data-theme="<name>
 
 | Category | Tokens | Notes |
 |---|---|---|
-| Colour | `--om-color-background`, `-surface`, `-surface-alt`, `-text`, `-text-muted`, `-primary`, `-primary-hover`, `-primary-contrast`, `-accent`, `-accent-contrast`, `-success`, `-warning`, `-danger`, `-border`, `-focus`, `-overlay` | Name by **role**, never by hue (`--om-color-danger`, not `--om-red`). Text pairs must reach 4.5:1, UI parts 3:1 (`contrast.json`). |
+| Colour | `--om-color-background`, `-surface`, `-surface-alt`, `-text`, `-text-muted`, `-primary`, `-primary-hover`, `-primary-contrast`, `-primary-soft`, `-accent`, `-accent-contrast`, `-success`, `-success-soft`, `-warning`, `-danger`, `-danger-soft`, `-border`, `-border-strong`, `-focus`, `-overlay` | Name by **role**, never by hue (`--om-color-danger`, not `--om-red`). Text pairs must reach 4.5:1, UI parts 3:1 (`contrast.json`). `--om-color-border` is a decorative divider. Inputs and other controls use `--om-color-border-strong` (≥ 3:1). Charts use `--om-chart-bar`, `-bar-border`, `-bar-hover`. |
 | Spacing | `--om-space-0` … `--om-space-9` (0, 4, 8, 12, 16, 20, 24, 32, 40, 56 px) | Use the scale for padding, margin and gaps. No other values. |
 | Type | `--om-font-sans`, `-display`, `-mono`, `-numeric`, `--om-font-feature-numeric`; `--om-font-size-xs` … `-3xl`, `-total`; `--om-font-weight-regular/medium/bold`; `--om-line-height-tight/normal`; `--om-letter-spacing-heading/label` | Base size 16 px. Money uses `--om-font-numeric` + `font-feature-settings: var(--om-font-feature-numeric)`. |
 | Radius | `--om-radius-sm/md/lg/pill` | Controls use `--om-control-radius`, buttons `--om-button-radius`. |

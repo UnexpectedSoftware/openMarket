@@ -20,10 +20,14 @@
     "danger": "#AE2A1F",
     "border": "#E3D5BF",
     "focus": "#9A3B20",
-    "overlay": "rgba(42,31,23,0.5)"
+    "overlay": "rgba(42,31,23,0.5)",
+    "borderStrong": "#8E8781",
+    "primarySoft": "rgba(154,59,32,0.16)",
+    "successSoft": "rgba(59,115,52,0.16)",
+    "dangerSoft": "rgba(174,42,31,0.16)"
   },
   "gradient": {
-    "primary": "none",
+    "primary": "linear-gradient(var(--om-color-primary), var(--om-color-primary))",
     "header": "none"
   },
   "font": {
@@ -108,6 +112,11 @@
     "minWidth": "150px",
     "imageHeight": "100px",
     "radius": "18px"
+  },
+  "chart": {
+    "bar": "rgba(154,59,32,0.35)",
+    "barBorder": "#9A3B20",
+    "barHover": "rgba(154,59,32,0.55)"
   },
   "shell": {
     "railWidth": "88px",

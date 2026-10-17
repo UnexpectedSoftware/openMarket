@@ -1,9 +1,9 @@
 button,
 input[type="button"],
 .button {
-  color: $c-white;
-  background-color: $c-primary;
-  border: 1px solid $c-primary;
+  color: var(--om-color-primary-contrast);
+  background-color: var(--om-color-primary);
+  border: 1px solid var(--om-color-primary);
   padding: $sp-base/2 $sp-base;
   @include transition;
   @include border-radius;

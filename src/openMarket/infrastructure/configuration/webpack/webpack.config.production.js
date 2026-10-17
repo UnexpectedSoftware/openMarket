@@ -71,7 +71,10 @@ export default merge(baseConfig, {
     new HtmlWebpackPlugin({
       filename: 'app.html',
       template: path.join(root, 'src/openMarket/user_interface/app.html'),
-      inject: true
+      // A classic script at the end of <body> sets data-theme before first paint.
+      // A deferred head script can paint :root (Mercado) first.
+      inject: 'body',
+      scriptLoading: 'blocking'
     }),
     new webpack.NormalModuleReplacementPlugin(
       /[\\/]infrastructure[\\/]dev[\\/]index\.js$/,

@@ -20,7 +20,11 @@
     "danger": "#FF4D7A",
     "border": "#444444",
     "focus": "#00FFFF",
-    "overlay": "rgba(0,0,0,0.7)"
+    "overlay": "rgba(0,0,0,0.7)",
+    "borderStrong": "#777777",
+    "primarySoft": "rgba(255,0,255,0.16)",
+    "successSoft": "rgba(57,255,136,0.16)",
+    "dangerSoft": "rgba(255,77,122,0.16)"
   },
   "gradient": {
     "primary": "linear-gradient(45deg, #FF00FF, #00FFFF)",
@@ -108,6 +112,11 @@
     "minWidth": "150px",
     "imageHeight": "96px",
     "radius": "4px"
+  },
+  "chart": {
+    "bar": "rgba(255,0,255,0.35)",
+    "barBorder": "#FF00FF",
+    "barHover": "rgba(255,0,255,0.55)"
   },
   "shell": {
     "railWidth": "88px",
