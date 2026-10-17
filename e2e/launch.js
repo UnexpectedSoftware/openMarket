@@ -51,20 +51,24 @@ function euros(amount) {
   return new Intl.NumberFormat('es-ES', {style: 'currency', currency: 'EUR'}).format(amount);
 }
 
-async function chooseMenu(window, menu, linkName) {
-  const title = window.locator('.rc-menu-submenu-title', {hasText: menu}).first();
-  const link = window.getByRole('link', {name: linkName});
-  // The horizontal menu closes about 100ms after the pointer leaves it.
-  // Re-enter from the title and click before that timer wins.
-  await expect(async () => {
-    await window.locator('h1').hover();
-    await title.hover();
-    await link.click({timeout: 1000});
-  }).toPass({timeout: 8000});
+const RAIL_LINKS = {
+  'new Order!': 'Vender',
+  'List Orders!': 'Pedidos',
+  'List Products!': 'Productos'
+};
+
+async function chooseMenu(window, _menu, linkName) {
+  if (linkName === 'new Product!') {
+    await window.getByRole('link', {name: 'Productos', exact: true}).click();
+    await window.getByRole('link', {name: 'Nuevo producto', exact: true}).click();
+    return;
+  }
+  const label = RAIL_LINKS[linkName] || linkName;
+  await window.getByRole('link', {name: label, exact: true}).click();
 }
 
 async function createCategory(window, name) {
-  await window.getByRole('link', {name: 'Categories'}).click();
+  await window.getByRole('link', {name: 'Categorías', exact: true}).click();
   const draft = window.locator('.category-card.is-draft');
   await expect(draft).toBeVisible();
   await draft.getByRole('textbox', {name: 'Category name'}).fill(name);

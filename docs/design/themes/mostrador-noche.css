@@ -78,4 +78,7 @@
   --om-tile-min-width: 168px;
   --om-tile-image-height: 92px;
   --om-tile-radius: 10px;
+  --om-rail-width: 88px;
+  --om-rail-item-height: 64px;
+  --om-header-height: 56px;
 }

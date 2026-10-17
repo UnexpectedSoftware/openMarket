@@ -1,7 +1,7 @@
+@import "./style/settings/tokens.scss";
 @import "../../../node_modules/font-awesome/css/font-awesome.css";
 @import "../../../node_modules/react-table/react-table.css";
 @import '../../../node_modules/react-datepicker/dist/react-datepicker.css';
-@import '../../../node_modules/rc-menu/assets/index.css';
 @import "./style/settings/settings.scss";
 @import "./style/generics/normalize.scss";
 @import "./style/utils/mixins/transition.scss";
@@ -13,7 +13,7 @@
 @import "./style/components/forms.scss";
 @import "./style/components/table.scss";
 @import "./style/components/calendar.scss";
-@import "./style/components/navbar.scss";
+@import "./style/components/navrail.scss";
 @import "./style/components/dashboard.scss";
 @import "./style/components/categories.scss";
 @import "./style/components/products.scss";
@@ -32,10 +32,18 @@ body {
 }
 
 h1 {
-  color: $c-white;
-  font-size: 2.6rem;
-  padding: $sp-base;
-  background-color: $c-primary-darkest;
+  margin: 0;
+  padding: 0;
+  color: var(--om-color-primary-contrast);
+  background-color: transparent;
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-xl);
+  font-weight: var(--om-font-weight-bold);
+}
+
+:focus-visible {
+  outline: 3px solid var(--om-color-focus);
+  outline-offset: 2px;
 }
 
 h2 {
@@ -57,40 +65,49 @@ h3 {
 }
 
 .header {
-  background-color: $c-primary-lightest;
-  border-bottom: 1px solid $c-primary-lightest;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--om-space-4);
+  height: var(--om-header-height);
+  padding: 0 var(--om-space-4);
+  background-color: var(--om-color-primary);
+  color: var(--om-color-primary-contrast);
+  box-shadow: var(--om-shadow-sm);
 
   h1 {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+    color: inherit;
+    font-size: var(--om-font-size-lg);
   }
 
   .header-aside {
     display: inline-flex;
     align-items: center;
-    gap: 1.6rem;
+    gap: var(--om-space-4);
+    margin-left: auto;
   }
 
   .app-version {
-    font-size: 1.4rem;
-    font-weight: normal;
+    font-family: var(--om-font-sans);
+    font-size: var(--om-font-size-sm);
+    font-weight: var(--om-font-weight-medium);
   }
 
   .fetch-progress {
     display: inline-flex;
     align-items: center;
-    gap: 0.6rem;
-    font-size: 1.3rem;
-    font-weight: normal;
+    gap: var(--om-space-2);
+    font-family: var(--om-font-sans);
+    font-size: var(--om-font-size-sm);
+    font-weight: var(--om-font-weight-medium);
   }
 
   .fetch-progress-spinner {
-    width: 1.2rem;
-    height: 1.2rem;
-    border: 2px solid rgba(255, 255, 255, 0.35);
-    border-top-color: $c-white;
-    border-radius: 50%;
+    width: var(--om-space-3);
+    height: var(--om-space-3);
+    border: 2px solid var(--om-color-primary-contrast);
+    border-top-color: transparent;
+    border-radius: var(--om-radius-md);
     animation: fetch-spin 0.8s linear infinite;
   }
 }

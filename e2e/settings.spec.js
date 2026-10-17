@@ -13,7 +13,7 @@ test('saves the shop and shows its NIF on a new order', async () => {
   const first = await launchApp({userData});
   try {
     await first.window.setViewportSize({width: 1366, height: 768});
-    await first.window.getByRole('link', {name: 'Settings'}).click();
+    await first.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
     await expect(first.window.getByRole('heading', {name: 'Comercio'})).toBeVisible();
     await first.window.getByRole('textbox', {name: 'NIF'}).fill('B12345674');
     await first.window.getByRole('textbox', {name: 'Razón social'}).fill('Ultramarinos Pérez SL');
@@ -27,7 +27,7 @@ test('saves the shop and shows its NIF on a new order', async () => {
 
   const second = await launchApp({userData});
   try {
-    await second.window.getByRole('link', {name: 'Settings'}).click();
+    await second.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
     await expect(second.window.getByRole('textbox', {name: 'NIF'})).toHaveValue('B12345674');
     await expect(second.window.getByRole('textbox', {name: 'Razón social'})).toHaveValue('Ultramarinos Pérez SL');
     await chooseMenu(second.window, 'Orders', 'new Order!');

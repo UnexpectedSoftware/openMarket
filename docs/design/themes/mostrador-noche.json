@@ -108,5 +108,10 @@
     "minWidth": "168px",
     "imageHeight": "92px",
     "radius": "10px"
+  },
+  "shell": {
+    "railWidth": "88px",
+    "railItemHeight": "64px",
+    "headerHeight": "56px"
   }
 }

@@ -13,6 +13,16 @@
   }
 }
 
+.catalog-heading-actions {
+  display: flex;
+  align-items: center;
+  gap: $sp-base;
+}
+
+.catalog-new-product {
+  font-weight: bold;
+}
+
 .catalog-print {
   border: 0;
   background: transparent;
@@ -139,7 +149,6 @@
     color: $c-base;
     padding: $sp-base / 4 $sp-base * 2.2 $sp-base / 4 $sp-base / 2;
     font-size: 1.4rem;
-    outline: 0;
     cursor: pointer;
     @include border-radius(12px);
   }

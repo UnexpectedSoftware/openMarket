@@ -1,0 +1,112 @@
+.app-shell {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: var(--om-color-background);
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.app-main {
+  flex: 1;
+  min-width: 0;
+  background: var(--om-color-background);
+}
+
+.skip-link {
+  padding: var(--om-space-1) var(--om-space-2);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+  font-weight: var(--om-font-weight-medium);
+  color: var(--om-color-primary-contrast);
+  background: transparent;
+  border-radius: var(--om-radius-md);
+}
+
+.skip-link:focus {
+  color: var(--om-color-text);
+  background: var(--om-color-surface);
+  box-shadow: var(--om-shadow-sm);
+}
+
+.nav-rail {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 var(--om-rail-width);
+  width: var(--om-rail-width);
+  background: var(--om-color-surface);
+  border-right: 1px solid var(--om-color-border);
+}
+
+.nav-rail-list {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  margin: 0;
+  padding: var(--om-space-2) 0;
+  list-style: none;
+}
+
+.nav-rail-end {
+  margin-top: auto;
+}
+
+.nav-rail-link,
+.nav-rail-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 var(--om-space-1);
+  padding: var(--om-space-1);
+  color: var(--om-color-text-muted);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+  font-weight: var(--om-font-weight-medium);
+  text-align: center;
+  border-radius: var(--om-radius-md);
+}
+
+.nav-rail-link {
+  flex-direction: column;
+  gap: var(--om-space-1);
+  min-height: var(--om-rail-item-height);
+}
+
+.nav-rail-link .fa {
+  font-size: var(--om-font-size-lg);
+}
+
+.nav-rail-secondary {
+  margin-top: var(--om-space-1);
+  margin-bottom: var(--om-space-2);
+}
+
+.nav-rail-link:hover,
+.nav-rail-secondary:hover,
+.nav-rail-link.is-active,
+.nav-rail-secondary.is-active {
+  background: var(--om-color-surface-alt);
+  color: var(--om-color-primary);
+}
+
+.nav-rail-link.is-active,
+.nav-rail-secondary.is-active {
+  font-weight: var(--om-font-weight-bold);
+  box-shadow: var(--om-shadow-sm);
+}
+
+.nav-rail-link:hover,
+.nav-rail-secondary:hover {
+  color: var(--om-color-primary-hover);
+}
+
+.nav-rail-link.is-active:hover,
+.nav-rail-secondary.is-active:hover {
+  color: var(--om-color-primary);
+}
