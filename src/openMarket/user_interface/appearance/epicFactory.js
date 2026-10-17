@@ -9,12 +9,14 @@ import 'rxjs/add/operator/mergeMap';
 import {error, success} from 'react-notification-system-redux';
 import {userText} from '../../infrastructure/logging/ErrorLog';
 import {
+  THEME_CHANGE_FAILED,
   THEME_CHANGE_REQUESTED,
   THEME_CHANGED,
   THEME_PREVIEW_DISCARD_REQUESTED,
   THEME_PREVIEW_DISCARDED,
   THEME_PREVIEW_REQUESTED,
   THEME_PREVIEWED,
+  themeChangeFailed,
   themeChanged,
   themePreviewDiscarded,
   themePreviewed
@@ -69,17 +71,25 @@ export function makeAppearanceEpic({changeTheme}) {
 
   const save = action$ => action$
     .filter(action => action.type === THEME_CHANGE_REQUESTED)
-    .flatMap(action => changeTheme.changeTheme({theme: action.theme})
-      .flatMap(preferences => {
-        const theme = preferences.theme.id;
-        applyTheme(theme);
-        return Rx.Observable.of(themeChanged(theme), savedToast());
-      })
-      .catch(failure => Rx.Observable.of(failedToast(failure))));
+    .flatMap(action => {
+      applyTheme(action.theme);
+      return changeTheme.changeTheme({theme: action.theme})
+        .flatMap(preferences => {
+          const theme = preferences.theme.id;
+          applyTheme(theme);
+          return Rx.Observable.of(themeChanged(theme), savedToast());
+        })
+        .catch(failure => {
+          const theme = action.previous || 'mercado';
+          applyTheme(theme);
+          return Rx.Observable.of(themeChangeFailed(theme), failedToast(failure));
+        });
+    });
 
   const paint = action$ => action$
     .filter(action =>
       action.type === THEME_CHANGED ||
+      action.type === THEME_CHANGE_FAILED ||
       action.type === THEME_PREVIEWED ||
       action.type === THEME_PREVIEW_DISCARDED)
     .do(action => applyTheme(action.theme))

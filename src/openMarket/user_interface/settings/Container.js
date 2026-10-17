@@ -23,6 +23,7 @@ export default class Container extends Component {
     this.state = fields(props.settings);
     this._change = this._change.bind(this);
     this._save = this._save.bind(this);
+    this._persistTheme = this._persistTheme.bind(this);
   }
 
   componentWillMount() {
@@ -41,8 +42,20 @@ export default class Container extends Component {
     this.setState({[name]: value});
   }
 
+  _persistTheme(applied) {
+    if (!this.props.themeChangeRequested || !applied) {
+      return;
+    }
+    const saved = this.props.appearance && this.props.appearance.theme;
+    this.props.themeChangeRequested(applied, saved || 'mercado');
+  }
+
   _save(event) {
     event.preventDefault();
+    const appearance = this.props.appearance || {};
+    if (appearance.applied && appearance.applied !== appearance.theme) {
+      this._persistTheme(appearance.applied);
+    }
     this.props.shopProfileSaveRequested(this.state);
   }
 
@@ -54,7 +67,7 @@ export default class Container extends Component {
         theme={theme.theme}
         applied={theme.applied}
         onPreview={this.props.themePreviewRequested}
-        onSave={this.props.themeChangeRequested}
+        onSave={this._persistTheme}
         onDiscard={this.props.themePreviewDiscardRequested}
       />
     );
