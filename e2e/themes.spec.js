@@ -1,8 +1,22 @@
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
+const {DatabaseSync} = require('node:sqlite');
 const {test, expect} = require('@playwright/test');
 const {assertDist, launchApp, closeApp} = require('./launch');
+
+function storedTheme(userData) {
+  const database = new DatabaseSync(path.join(userData, 'openmarket.sqlite'), {
+    readOnly: true,
+    timeout: 5000
+  });
+  try {
+    const row = database.prepare('SELECT value_json FROM setting WHERE key = ?').get('appearance');
+    return row ? JSON.parse(row.value_json).theme : null;
+  } finally {
+    database.close();
+  }
+}
 
 const THEMES = [
   {id: 'mercado', name: 'Mercado'},
@@ -22,6 +36,72 @@ const SCREENS = [
 
 test.beforeAll(() => {
   assertDist();
+});
+
+test('a saved theme stays after leaving Settings', async () => {
+  test.setTimeout(120000);
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
+  const session = await launchApp({userData});
+  try {
+    await session.window.setViewportSize({width: 1366, height: 768});
+    await session.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
+    await session.window.getByRole('radio', {name: 'Mostrador Noche', exact: true}).click();
+    await expect.poll(() => session.window.evaluate(() => document.documentElement.dataset.theme))
+      .toBe('mostrador-noche');
+    await session.window.getByRole('button', {name: 'Guardar', exact: true}).click();
+    await expect(session.window.getByText('Tema guardado').first()).toBeVisible();
+
+    await session.window.getByRole('link', {name: 'Vender', exact: true}).click();
+    await expect(session.window.getByRole('heading', {name: "Let's create a new order!"})).toBeVisible();
+    await expect.poll(() => session.window.evaluate(() => document.documentElement.dataset.theme))
+      .toBe('mostrador-noche');
+
+    await session.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
+    await expect(session.window.getByRole('radio', {name: 'Mostrador Noche', exact: true}))
+      .toHaveAttribute('aria-checked', 'true');
+
+    expect(storedTheme(userData)).toBe('mostrador-noche');
+  } finally {
+    await closeApp(session.app, userData);
+  }
+});
+
+test('the shop Save confirmation keeps the theme after leaving Settings', async () => {
+  test.setTimeout(120000);
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
+  const session = await launchApp({userData});
+  try {
+    await session.window.setViewportSize({width: 1366, height: 768});
+    await session.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
+    await expect(session.window.getByRole('heading', {name: 'Comercio'})).toBeVisible();
+    await session.window.getByRole('radio', {name: 'Mostrador Noche', exact: true}).click();
+    await expect.poll(() => session.window.evaluate(() => document.documentElement.dataset.theme))
+      .toBe('mostrador-noche');
+
+    await session.window.getByRole('button', {name: 'Save', exact: true}).click();
+    await expect(session.window.getByRole('status')).toHaveText('Shop saved');
+    await expect(session.window.getByText('Tema guardado').first()).toBeVisible();
+
+    await session.window.getByRole('link', {name: 'Vender', exact: true}).click();
+    await expect(session.window.getByRole('heading', {name: "Let's create a new order!"})).toBeVisible();
+    await expect.poll(() => session.window.evaluate(() => document.documentElement.dataset.theme))
+      .toBe('mostrador-noche');
+    expect(storedTheme(userData)).toBe('mostrador-noche');
+  } finally {
+    await closeApp(session.app, userData, {keep: true});
+  }
+
+  const restarted = await launchApp({userData});
+  try {
+    await restarted.window.waitForURL(/app\.html/, {waitUntil: 'domcontentloaded'});
+    await expect.poll(() => restarted.window.evaluate(() => document.documentElement.dataset.theme))
+      .toBe('mostrador-noche');
+    await restarted.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
+    await expect(restarted.window.getByRole('radio', {name: 'Mostrador Noche', exact: true}))
+      .toHaveAttribute('aria-checked', 'true');
+  } finally {
+    await closeApp(restarted.app, userData);
+  }
 });
 
 test('each theme persists and is applied before the first paint', async () => {
