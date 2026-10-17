@@ -11,7 +11,6 @@ How the redesign lands, one phase per PR series. Each phase keeps the existing e
 
 ## Phase 2 — Full themes + switcher
 - Plan: [plans/phase-2-themes.md](plans/phase-2-themes.md)
-- Plan: [plans/phase-2-themes.md](plans/phase-2-themes.md)
 - All tokens from `themes/all-themes.css`; migrate SCSS colour variables to tokens (OM-32 #95).
 - Themes: Mercado #114, Mostrador Noche #115, Ultramarinos #116, Unexpected Neon #117; theme switcher (per device, stored in settings).
 - Contrast test over every theme JSON (part of OM-17 #80).
