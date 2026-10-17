@@ -2,7 +2,7 @@
 
 How the redesign lands, one phase per PR series. Each phase keeps the existing e2e tests green and ends with screenshots in the PR. Tokens and rules: [DESIGN.md](DESIGN.md).
 
-## Phase 1 — Shell + base tokens
+## Phase 1 — Shell + base tokens ✅ done (#132)
 - Always-visible left-rail navigation replacing the hover menu — #112 (fixes OM-14 #77, root cause of flaky UI tests OM-11 #74).
 - App layout and header: rail + content area, no 1024 px cap (OM-15 #78), header with title, progress and version.
 - Minimal `--om-*` variables the shell uses (Mercado values), loaded globally; focus outline (OM-09 #72).
@@ -10,6 +10,7 @@ How the redesign lands, one phase per PR series. Each phase keeps the existing e
 - Mockups: `mockups/A-sell.webp` (rail + header), `mockups/A-orders.webp`. Before: `before/04-menu-products-open.webp`.
 
 ## Phase 2 — Full themes + switcher
+- Plan: [plans/phase-2-themes.md](plans/phase-2-themes.md)
 - All tokens from `themes/all-themes.css`; migrate SCSS colour variables to tokens (OM-32 #95).
 - Themes: Mercado #114, Mostrador Noche #115, Ultramarinos #116, Unexpected Neon #117; theme switcher (per device, stored in settings).
 - Contrast test over every theme JSON (part of OM-17 #80).
