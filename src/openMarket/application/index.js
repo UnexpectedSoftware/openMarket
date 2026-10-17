@@ -48,6 +48,8 @@ class OpenMarket {
     this.deps.set('receipts_print_use_case', container.getInstance({key:'printReceipt'}));
     this.deps.set('shop_get_profile_use_case', container.getInstance({key:'getShopProfile'}));
     this.deps.set('shop_update_profile_use_case', container.getInstance({key:'updateShopProfile'}));
+    this.deps.set('appearance_get_use_case', container.getInstance({key:'getAppearancePreferences'}));
+    this.deps.set('appearance_change_theme_use_case', container.getInstance({key:'changeTheme'}));
     container.getInstance({key:'pluginHost'}).start();
     container.getInstance({key:'recordProductSales'}).start();
     container.getInstance({key:'domainEventDispatcher'}).start();

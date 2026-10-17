@@ -72,6 +72,9 @@ import {electronSecretBridge} from "../plugins/electronSecretBridge";
 import SqliteShopProfileRepository from "../shop/SqliteShopProfileRepository";
 import GetShopProfile from "../../application/service/shop/GetShopProfile";
 import UpdateShopProfile from "../../application/service/shop/UpdateShopProfile";
+import SqliteAppearancePreferencesRepository from "../appearance/SqliteAppearancePreferencesRepository";
+import GetAppearancePreferences from "../../application/service/appearance/GetAppearancePreferences";
+import ChangeTheme from "../../application/service/appearance/ChangeTheme";
 const env = process.env.NODE_ENV
 
 class Container {
@@ -427,6 +430,24 @@ class Container {
   _updateShopProfile() {
     return new UpdateShopProfile({
       shopProfileRepository: this.getInstance({key: 'shopProfileRepository'})
+    });
+  }
+
+  _appearancePreferencesRepository() {
+    return new SqliteAppearancePreferencesRepository({
+      connection: this.getInstance({key: 'sqliteConnection'})
+    });
+  }
+
+  _getAppearancePreferences() {
+    return new GetAppearancePreferences({
+      appearancePreferencesRepository: this.getInstance({key: 'appearancePreferencesRepository'})
+    });
+  }
+
+  _changeTheme() {
+    return new ChangeTheme({
+      appearancePreferencesRepository: this.getInstance({key: 'appearancePreferencesRepository'})
     });
   }
 

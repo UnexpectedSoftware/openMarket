@@ -1,12 +1,11 @@
 import React from 'react';
+import {connect} from 'react-redux';
 import {Bar} from 'react-chartjs-2';
 import moment from 'moment';
 import SalesWindowSelect from './SalesWindowSelect';
 import {formatUnits} from './formatUnits';
 import {formatMoney} from '../i18n/money';
-
-const BAR_COLOR = 'rgba(33, 150, 243, 0.35)';
-const BAR_BORDER = '#2196F3';
+import {themeColor} from '../style/themeColor';
 
 const chartOptions = {
   maintainAspectRatio: false,
@@ -39,16 +38,16 @@ function chartData(series) {
     ),
     datasets: [{
       label: 'Sold',
-      backgroundColor: BAR_COLOR,
-      borderColor: BAR_BORDER,
+      backgroundColor: themeColor('chart-bar'),
+      borderColor: themeColor('chart-bar-border'),
       borderWidth: 1,
-      hoverBackgroundColor: 'rgba(33, 150, 243, 0.55)',
+      hoverBackgroundColor: themeColor('chart-bar-hover'),
       data: series.map(point => point.quantity)
     }]
   };
 }
 
-export default function ProductSales({sales, onWindowChange}) {
+function ProductSales({sales, onWindowChange, theme}) {
   const series = sales.series || [];
   return (
     <section className="product-block product-sales">
@@ -62,9 +61,13 @@ export default function ProductSales({sales, onWindowChange}) {
       </p>
       {series.length > 0 ? (
         <div className="dashboard-chart">
-          <Bar data={chartData(series)} options={chartOptions} />
+          <Bar key={theme} data={chartData(series)} options={chartOptions} />
         </div>
       ) : null}
     </section>
   );
 }
+
+export default connect(state => ({
+  theme: state.appearance ? state.appearance.applied : 'mercado'
+}))(ProductSales);

@@ -5,7 +5,8 @@ import * as homeActions from './action';
 
 function mapStateToProps(state) {
   return {
-    statistics: state.statistics
+    statistics: state.statistics,
+    theme: state.appearance ? state.appearance.applied : 'mercado'
   };
 }
 

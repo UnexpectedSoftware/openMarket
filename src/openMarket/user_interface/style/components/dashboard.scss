@@ -1,6 +1,6 @@
 .dashboard-takings {
   margin: 0 0 $sp-base * 2;
-  color: $c-primary-darkest;
+  color: var(--om-color-primary-hover);
   font-size: 4rem;
   font-weight: bold;
   line-height: 1;
@@ -9,7 +9,7 @@
 .dashboard-takings-label {
   display: block;
   margin-top: $sp-base / 2;
-  color: $c-grey-darkest;
+  color: var(--om-color-text-muted);
   font-size: 1.4rem;
   font-weight: normal;
 }
@@ -30,7 +30,7 @@
   flex-direction: column;
   gap: 4px;
   margin: 0 0 $sp-base * 1.5;
-  color: $c-grey-darkest;
+  color: var(--om-color-text-muted);
   font-size: 1.2rem;
   font-weight: normal;
 }
@@ -41,7 +41,7 @@
 }
 
 .most-sold-empty {
-  color: $c-grey-darkest;
+  color: var(--om-color-text-muted);
 }
 
 @mixin most-sold-columns {
@@ -67,7 +67,7 @@ button.most-sold-item {
   float: none;
   margin: 0;
   padding: 8px 0;
-  color: $c-base;
+  color: var(--om-color-text);
   background: transparent;
   border: 0;
   border-radius: 8px;
@@ -79,17 +79,17 @@ button.most-sold-item {
 
   &:hover,
   &:focus {
-    background: $c-grey-lightest;
+    background: var(--om-color-surface-alt);
     opacity: 1;
   }
 
   &:hover .most-sold-bar,
   &:focus .most-sold-bar {
-    background: rgba($c-primary, 0.55);
+    background: var(--om-chart-bar-hover);
   }
 
   &:focus {
-    outline: 2px solid $c-primary;
+    outline: 2px solid var(--om-color-focus);
     outline-offset: 2px;
   }
 }
@@ -105,8 +105,8 @@ button.most-sold-item {
     width: 72px;
     height: 72px;
     object-fit: contain;
-    background: $c-white;
-    border: 1px solid $c-grey-light;
+    background: var(--om-color-surface);
+    border: 1px solid var(--om-color-border);
     border-radius: 8px;
   }
 }
@@ -136,9 +136,9 @@ button.most-sold-item {
   bottom: 0;
   left: 0;
   background:
-    linear-gradient($c-grey-light, $c-grey-light) left top / 1px 100% no-repeat,
-    linear-gradient($c-grey-light, $c-grey-light) 50% top / 1px 100% no-repeat,
-    linear-gradient($c-grey-light, $c-grey-light) right top / 1px 100% no-repeat;
+    linear-gradient(var(--om-color-border), var(--om-color-border)) left top / 1px 100% no-repeat,
+    linear-gradient(var(--om-color-border), var(--om-color-border)) 50% top / 1px 100% no-repeat,
+    linear-gradient(var(--om-color-border), var(--om-color-border)) right top / 1px 100% no-repeat;
   pointer-events: none;
 }
 
@@ -147,12 +147,12 @@ button.most-sold-item {
   top: 4px;
   bottom: 4px;
   left: 0;
-  background: rgba($c-primary, 0.35);
-  border: 1px solid $c-primary;
+  background: var(--om-chart-bar);
+  border: 1px solid var(--om-chart-bar-border);
 }
 
 .most-sold-value {
-  color: $c-base;
+  color: var(--om-color-text);
   font-size: 1.4rem;
   font-weight: bold;
   line-height: 1;
@@ -166,22 +166,22 @@ button.most-sold-item {
   text-align: right;
 
   &.is-up {
-    color: #2E7D32;
+    color: var(--om-color-success);
   }
 
   &.is-down {
-    color: $c-alert;
+    color: var(--om-color-danger);
   }
 
   &.is-flat,
   &.is-none {
-    color: $c-grey;
+    color: var(--om-color-text-muted);
   }
 }
 
 .most-sold-scale {
   margin-top: 4px;
-  color: $c-grey-darkest;
+  color: var(--om-color-text-muted);
   font-size: 1.2rem;
   line-height: 1;
 }
@@ -189,7 +189,7 @@ button.most-sold-item {
 .most-sold-axis {
   position: relative;
   height: 1.8rem;
-  border-top: 1px solid $c-grey;
+  border-top: 1px solid var(--om-color-text-muted);
 
   span {
     position: absolute;

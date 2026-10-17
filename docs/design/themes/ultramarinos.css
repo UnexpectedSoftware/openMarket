@@ -17,6 +17,13 @@
   --om-color-border: #E3D5BF;
   --om-color-focus: #9A3B20;
   --om-color-overlay: rgba(42,31,23,0.5);
+  --om-color-border-strong: #8E8781;
+  --om-color-primary-soft: rgba(154,59,32,0.16);
+  --om-color-success-soft: rgba(59,115,52,0.16);
+  --om-color-danger-soft: rgba(174,42,31,0.16);
+  --om-chart-bar: rgba(154,59,32,0.35);
+  --om-chart-bar-border: #9A3B20;
+  --om-chart-bar-hover: rgba(154,59,32,0.55);
   --om-gradient-primary: linear-gradient(var(--om-color-primary), var(--om-color-primary));
   --om-gradient-header: none;
   --om-font-sans: "DM Sans", "Nunito Sans", "Segoe UI", system-ui, sans-serif;

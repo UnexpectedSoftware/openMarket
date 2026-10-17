@@ -37,16 +37,70 @@
 }
 
 .settings-error {
-  color: $c-alert;
+  color: var(--om-color-danger);
 }
 
 .settings-saved {
   padding: $sp-base / 2;
-  background: $c-primary-lightest;
-  border: 1px solid $c-primary-light;
+  background: var(--om-color-primary-soft);
+  border: 1px solid var(--om-color-primary-soft);
 }
 
 .shop-issuer {
   margin: 0 0 $sp-base;
-  color: $c-grey-darkest;
+  color: var(--om-color-text-muted);
+}
+
+.settings-appearance {
+  margin-bottom: var(--om-space-6);
+}
+
+.theme-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--om-space-3);
+  max-width: 40rem;
+}
+
+.theme-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--om-space-2);
+  width: 16rem;
+  margin: 0;
+  padding: var(--om-space-3);
+  color: var(--om-color-text);
+  text-align: left;
+  background: var(--om-color-surface);
+  border: 1px solid var(--om-color-border-strong);
+  border-radius: var(--om-radius-md);
+  box-shadow: var(--om-shadow-sm);
+  cursor: pointer;
+}
+
+.theme-card.is-selected {
+  box-shadow: var(--om-shadow-focus);
+}
+
+.theme-card-name {
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+  font-weight: var(--om-font-weight-medium);
+}
+
+.theme-swatches {
+  display: flex;
+  gap: var(--om-space-1);
+}
+
+.theme-swatch {
+  width: var(--om-space-6);
+  height: var(--om-space-6);
+  border: 1px solid var(--om-color-border-strong);
+  border-radius: var(--om-radius-sm);
+}
+
+.theme-save {
+  float: none;
+  margin-top: var(--om-space-3);
 }

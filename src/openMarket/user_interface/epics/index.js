@@ -9,6 +9,7 @@ import newProductDialogEpic from '../order/new_product_dialog/epic'
 import fetchImagesEpic from '../image/epic';
 import pluginsEpic from '../plugin/epic';
 import settingsEpic from '../settings/epic';
+import appearanceEpic from '../appearance/epic';
 
 export const rootEpic = combineEpics(
   newProductEpic,
@@ -20,5 +21,6 @@ export const rootEpic = combineEpics(
   newProductDialogEpic,
   fetchImagesEpic,
   pluginsEpic,
-  settingsEpic
+  settingsEpic,
+  appearanceEpic
 );

@@ -97,7 +97,7 @@ input,
 optgroup,
 select,
 textarea {
-  font-family: $f-family;
+  font-family: var(--om-font-sans);
   font-size: 100%;
   line-height: 1.15;
   margin: 0;
