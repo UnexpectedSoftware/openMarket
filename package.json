@@ -1,7 +1,7 @@
 {
   "name": "OpenMarket",
   "productName": "OpenMarket",
-  "version": "1.22.0",
+  "version": "1.23.0",
   "description": "Desktop application to administrate a generic market with stocks, products, categories etc...",
   "main": "dist/main.js",
   "scripts": {
@@ -131,7 +131,6 @@
     "lodash": "^4.17.21",
     "moment": "^2.30.1",
     "node-thermal-printer": "1.0.5",
-    "rc-menu": "^5.1.2",
     "react": "^15.7.0",
     "react-chartjs-2": "^2.11.2",
     "react-datepicker": "^0.48.0",

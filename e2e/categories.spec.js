@@ -41,7 +41,7 @@ test('creates a category from the blank card', async () => {
   const image = path.join(userData, 'pixel.png');
   const text = path.join(userData, 'note.txt');
   try {
-    await window.getByRole('link', {name: 'Categories'}).click();
+    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
     const draft = window.locator('.category-card.is-draft');
     await expect(draft).toBeVisible();
     await expect(window.locator('.category-add')).toHaveCount(0);
@@ -72,7 +72,7 @@ test('creates a category from the blank card', async () => {
     await expect(draft.getByRole('textbox', {name: 'Category name'})).toHaveValue('');
 
     await window.reload();
-    await window.getByRole('link', {name: 'Categories'}).click();
+    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
     await expect((await cardNamed(window, 'Inline Plain')).locator('img')).not.toHaveAttribute('src', /^data:image/);
     await expect((await cardNamed(window, 'Inline Photo')).locator('img')).toHaveAttribute('src', /^data:image\/png/);
     await expect(draft.getByRole('textbox', {name: 'Category name'})).toHaveValue('');
@@ -91,7 +91,7 @@ test('edits a category on the card', async () => {
   const {app, window, userData} = await launchApp();
   const image = path.join(userData, 'pixel.png');
   try {
-    await window.getByRole('link', {name: 'Categories'}).click();
+    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
     const draft = window.locator('.category-card.is-draft');
     await draft.getByRole('textbox', {name: 'Category name'}).fill('Inline Plain');
     await draft.getByRole('button', {name: 'Save'}).click();
@@ -137,12 +137,14 @@ test('edits a category on the card', async () => {
     await window.screenshot({path: path.join(root, 'test-results/categories.png')});
 
     await window.reload();
-    await window.getByRole('link', {name: 'Categories'}).click();
+    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
     await expect((await cardNamed(window, 'Inline Plain renamed')).locator('img')).toHaveAttribute('src', /^data:image\/png/);
     await expect((await cardNamed(window, 'Inline Photo')).locator('img')).not.toHaveAttribute('src', /^data:image/);
 
     await app.evaluate(({BrowserWindow}) => {
-      BrowserWindow.getAllWindows()[0].setContentSize(380, 720);
+      const browserWindow = BrowserWindow.getAllWindows()[0];
+      browserWindow.setMinimumSize(380, 700);
+      browserWindow.setContentSize(380, 720);
     });
     await window.evaluate(() => {
       location.hash = '#/categories';
@@ -193,7 +195,7 @@ test('shows totals and deletes an empty category', async () => {
       stockMin: 1,
       category: 'Stocked'
     });
-    await window.getByRole('link', {name: 'Categories'}).click();
+    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
     const stocked = await cardNamed(window, 'Stocked');
     await expect(fact(stocked, 'Products')).toHaveText('1');
     await expect(fact(stocked, 'Value')).toHaveText(euros(1.5));
@@ -208,7 +210,7 @@ test('shows totals and deletes an empty category', async () => {
     await window.locator('h3 a.button', {hasText: 'Save'}).click();
     await dismissTicket(window);
 
-    await window.getByRole('link', {name: 'Categories'}).click();
+    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
     const sold = await cardNamed(window, 'Stocked');
     await expect(fact(sold, 'Products')).toHaveText('1');
     await expect(fact(sold, 'Value')).toHaveText(euros(1.5));
@@ -217,7 +219,7 @@ test('shows totals and deletes an empty category', async () => {
     await fact(sold, 'Most sold').getByRole('link', {name: 'Milk'}).click();
     await expect(window.getByRole('heading', {name: "Let's edit a product!"})).toBeVisible();
     await expect(window.locator('input[name="name"]')).toHaveValue('Milk');
-    await window.getByRole('link', {name: 'Categories'}).click();
+    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
 
     const emptyAgain = await cardNamed(window, 'Empty Shelf');
     window.once('dialog', async (dialog) => {

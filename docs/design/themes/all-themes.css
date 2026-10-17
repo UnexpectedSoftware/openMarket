@@ -79,6 +79,9 @@
   --om-tile-min-width: 150px;
   --om-tile-image-height: 96px;
   --om-tile-radius: 12px;
+  --om-rail-width: 88px;
+  --om-rail-item-height: 64px;
+  --om-header-height: 56px;
 }
 
 /* OpenMarket theme: Mostrador Noche (high-contrast dark) — generated from tokens JSON */
@@ -161,6 +164,9 @@
   --om-tile-min-width: 168px;
   --om-tile-image-height: 92px;
   --om-tile-radius: 10px;
+  --om-rail-width: 88px;
+  --om-rail-item-height: 64px;
+  --om-header-height: 56px;
 }
 
 /* OpenMarket theme: Ultramarinos (warm boutique) — generated from tokens JSON */
@@ -243,6 +249,9 @@
   --om-tile-min-width: 150px;
   --om-tile-image-height: 100px;
   --om-tile-radius: 18px;
+  --om-rail-width: 88px;
+  --om-rail-item-height: 64px;
+  --om-header-height: 56px;
 }
 
 /* OpenMarket theme: Unexpected Neon (retro arcade) — generated from tokens JSON */
@@ -325,4 +334,7 @@
   --om-tile-min-width: 150px;
   --om-tile-image-height: 96px;
   --om-tile-radius: 4px;
+  --om-rail-width: 88px;
+  --om-rail-item-height: 64px;
+  --om-header-height: 56px;
 }

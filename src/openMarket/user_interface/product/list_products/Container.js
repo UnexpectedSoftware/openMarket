@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import {Link} from 'react-router';
 import placeholder from '../../resources/category-placeholder.svg';
 import {formatMoney} from '../../i18n/money';
 import {catalogLimit, defaultCatalogSort, NAME_ASC, NAME_DESC, STOCK_ASC, STOCK_DESC} from './model';
@@ -171,14 +172,17 @@ class Container extends Component {
       <div className="container-fluid">
         <div className="catalog-heading">
           <h2>List Products</h2>
-          <button
-            type="button"
-            className="catalog-print"
-            aria-label="Print product list"
-            onClick={() => this.props.listProductsPrint()}
-          >
-            <i className="fa fa-print" aria-hidden="true" />
-          </button>
+          <div className="catalog-heading-actions">
+            <Link to="/create_product" className="catalog-new-product">Nuevo producto</Link>
+            <button
+              type="button"
+              className="catalog-print"
+              aria-label="Print product list"
+              onClick={() => this.props.listProductsPrint()}
+            >
+              <i className="fa fa-print" aria-hidden="true" />
+            </button>
+          </div>
         </div>
         <div className="catalog-layout">
           <aside className="catalog-filters">
