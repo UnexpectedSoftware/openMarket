@@ -1,39 +1,47 @@
 import React, {Component} from 'react';
-import {Link} from 'react-router';
+import Dialog from '../../components/Dialog';
 import WeightedDialogForm from './ReduxForm';
 
 class Container extends Component {
 
-  constructor(props,context) {
+  constructor(props, context) {
     super(props, context);
+    this.quantityFocus = {current: null};
+    this.handleSubmit = this.handleSubmit.bind(this);
+    this.cancel = this.cancel.bind(this);
+    this.setQuantityNode = this.setQuantityNode.bind(this);
   }
 
-  handleSubmit = (values) => {
-    const { hideWeightedDialog, weightedDialog } = this.props;
-    hideWeightedDialog({product:weightedDialog.product,quantity:values.quantity});
+  handleSubmit(values) {
+    const {hideWeightedDialog, weightedDialog} = this.props;
+    hideWeightedDialog({product: weightedDialog.product, quantity: values.quantity});
   }
 
+  cancel() {
+    this.props.cancelWeightedDialog();
+  }
+
+  setQuantityNode(node) {
+    this.quantityFocus.current = node;
+  }
 
   render() {
-    const { weightedDialog } = this.props;
-    if(!weightedDialog.visible) return null;
+    const {weightedDialog} = this.props;
+    const visible = !!(weightedDialog && weightedDialog.visible);
     return (
-      <div className="dialog-Modal">
-        <div className="dialog-ModalControlX">
-          <div className="dialog-ModalControlY">
-            <div className="dialog-ModalContainer">
-              <div className="dialog-Modal-header">
-                <h2>Weight!</h2>
-              </div>
-              <div className="dialog-Modal-main">
-                <WeightedDialogForm
-                  onSubmit={this.handleSubmit}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Dialog
+        open={visible}
+        title="Peso (kg)"
+        onClose={this.cancel}
+        initialFocusRef={this.quantityFocus}
+      >
+        {visible ? (
+          <WeightedDialogForm
+            quantityRef={this.setQuantityNode}
+            onSubmit={this.handleSubmit}
+          />
+        ) : null}
+      </Dialog>
     );
   }
 }

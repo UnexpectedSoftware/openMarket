@@ -6,8 +6,8 @@ import 'rxjs/add/operator/do';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/mergeMap';
-import {error, success} from 'react-notification-system-redux';
 import {userText} from '../../infrastructure/logging/ErrorLog';
+import {toast} from '../components/toast';
 import {
   THEME_CHANGE_FAILED,
   THEME_CHANGE_REQUESTED,
@@ -31,23 +31,13 @@ export function applyTheme(theme) {
   }
 }
 
-const savedToast = () => success({
-  title: 'Tema guardado',
-  message: 'La apariencia se ha guardado',
-  position: 'tr',
-  autoDismiss: 4
-});
+const savedToast = () => toast.success('Tema guardado', 'La apariencia se ha guardado');
 
 /**
  * @param {*} failure
  */
 function failedToast(failure) {
-  return error({
-    title: 'El tema no se ha guardado',
-    message: userText(failure, 'El tema no se ha guardado'),
-    position: 'tr',
-    autoDismiss: 4
-  });
+  return toast.error('El tema no se ha guardado', userText(failure, 'El tema no se ha guardado'));
 }
 
 /**

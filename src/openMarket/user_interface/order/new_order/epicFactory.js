@@ -8,6 +8,7 @@ import ProductEnabledAgain from "../../../domain/event/ProductEnabledAgain";
 import ProductStatus from "../../../domain/product/ProductStatus";
 import ErrorCode from "../../../domain/error/ErrorCode";
 import {record, userText} from "../../../infrastructure/logging/ErrorLog";
+import {toast} from "../../components/toast";
 
 export const makeNewOrderProductFetchEpic = findProductUseCase => enableProductUseCase => resetForm => action$ =>
   action$
@@ -21,42 +22,33 @@ export const makeNewOrderProductFetchEpic = findProductUseCase => enableProductU
       .mergeMap(nextAction => Rx.Observable.of(resetForm('new_order'), nextAction))
     );
 
-export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => errorNotification => successNotification => action$ =>
+export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => action$ =>
   action$
     .filter(action => action.type === newOrderActions.NEW_ORDER_SAVE)
     .flatMap(action =>
       orderCreateUseCase.createOrder({lines:action.order.lines})
         .map(savedOrder => newOrderActions.newOrderSaved(savedOrder))
-        .mergeMap(action => Rx.Observable.of(successNotification({
-          // Date.now() alone matches a low-stock toast created in the same turn.
-          uid: `order-saved-${action.payload.id}`,
-          title: 'Order saved!',
-          message: 'Order is saved in database',
-          position: 'tr',
-          autoDismiss: 4
-        }),resetForm('new_order'),action))
+        .mergeMap(action => Rx.Observable.of(toast.success(
+          'Order saved!',
+          'Order is saved in database',
+          {uid: `order-saved-${action.payload.id}`}
+        ), resetForm('new_order'), action))
         .catch(err => {
           record(err);
           const message = userText(err, 'Order was not saved');
-          return Rx.Observable.of(errorNotification({
-            uid: `order-not-saved-${Date.now()}`,
-            title: err && err.code === ErrorCode.ORDER_LINES_EMPTY ? 'Empty lines!' : 'Order was not saved',
+          const notice = toast.error(
+            err && err.code === ErrorCode.ORDER_LINES_EMPTY ? 'Empty lines!' : 'Order was not saved',
             message,
-            position: 'tr',
-            autoDismiss: 5
-          }))
-            .mergeMap(action => Rx.Observable.of(resetForm('new_order'), action));
+            {uid: `order-not-saved-${Date.now()}`}
+          );
+          return Rx.Observable.of(resetForm('new_order'), notice);
         })
     );
 
-function printFailed(errorNotification, err) {
+function printFailed(err) {
   record(err);
-  return errorNotification({
-    uid: `print-failed-${Date.now()}`,
-    title: 'Print failed',
-    message: userText(err, 'Print failed'),
-    position: 'tr',
-    autoDismiss: 4
+  return toast.error('Print failed', userText(err, 'Print failed'), {
+    uid: `print-failed-${Date.now()}`
   });
 }
 
@@ -65,18 +57,18 @@ function printReceipt(buildReceipt, printReceiptUseCase, order) {
     .flatMap(receipt => printReceiptUseCase.print({receipt}));
 }
 
-export const makePrinterDialogEpic = buildReceipt => printReceiptUseCase => errorNotification => action$ =>
+export const makePrinterDialogEpic = buildReceipt => printReceiptUseCase => action$ =>
   action$.filter(action => action.type === HIDE_PRINTER_DIALOG)
     .filter(action => true === action.payload.print)
     .flatMap(action => printReceipt(buildReceipt, printReceiptUseCase, action.payload.order)
       .map(() => newOrderActions.printOrderFinished())
-      .catch(err => Rx.Observable.of(printFailed(errorNotification, err))));
+      .catch(err => Rx.Observable.of(printFailed(err))));
 
-export const makePrintButtonClickedEpic = buildReceipt => printReceiptUseCase => errorNotification => action$ =>
+export const makePrintButtonClickedEpic = buildReceipt => printReceiptUseCase => action$ =>
   action$.filter(action => action.type === newOrderActions.PRINT_ORDER_BUTTON_CLICKED)
     .flatMap(action => printReceipt(buildReceipt, printReceiptUseCase, action.payload)
       .map(() => newOrderActions.printOrderFinished())
-      .catch(err => Rx.Observable.of(printFailed(errorNotification, err))));
+      .catch(err => Rx.Observable.of(printFailed(err))));
 
 export const makeWeightedDialogEpic = resetForm => action$ =>
   action$.ofType(weightedDialogActions.HIDE_WEIGHTED_DIALOG)
@@ -90,22 +82,18 @@ export const makeNewOrderSavedEpic = action$ =>
   action$.ofType(newOrderActions.NEW_ORDER_SAVED)
     .map(action => showPrinterDialog(action.payload));
 
-export const makeLowStockWarningEpic = domainEventBus => warningNotification => () =>
+export const makeLowStockWarningEpic = domainEventBus => () =>
   domainEventBus.ofType(ProductWithLowStock)
-    .map(event => warningNotification({
-      uid: `low-stock-${event.barcode}-${event.stock}`,
-      title: 'Stock is low',
-      message: `${event.name} has ${event.stock} left (minimum ${event.stockMin}).`,
-      position: 'tr',
-      autoDismiss: 8
-    }))
+    .map(event => toast.warning(
+      'Stock is low',
+      `${event.name} has ${event.stock} left (minimum ${event.stockMin}).`,
+      {uid: `low-stock-${event.barcode}-${event.stock}`}
+    ))
 
-export const makeProductEnabledAgainEpic = domainEventBus => warningNotification => () =>
+export const makeProductEnabledAgainEpic = domainEventBus => () =>
   domainEventBus.ofType(ProductEnabledAgain)
-    .map(event => warningNotification({
-      uid: `product-enabled-${event.barcode}`,
-      title: 'Product enabled',
-      message: `${event.name} has been enabled again and the stock was increased by +1.`,
-      position: 'tr',
-      autoDismiss: 8
-    }))
+    .map(event => toast.warning(
+      'Product enabled',
+      `${event.name} has been enabled again and the stock was increased by +1.`,
+      {uid: `product-enabled-${event.barcode}`}
+    ))

@@ -71,7 +71,7 @@ test('prints a plugin QR before the shop header', async () => {
     });
     await openNewOrder(second.window);
     await scanBarcode(second.window, '8400000000011');
-    await second.window.locator('h3 a.button', {hasText: 'Save'}).click();
+    await second.window.locator('h3 button', {hasText: 'Save'}).click();
     await expect(second.window.getByRole('heading', {name: 'Do you want a ticket?!'})).toBeVisible();
     await second.window.getByRole('button', {name: 'YES!'}).click();
     const logFile = path.join(userData, 'printer-log.jsonl');
@@ -108,7 +108,7 @@ test('changing the theme does not change the receipt blocks', async () => {
     async function sell() {
       await openNewOrder(session.window);
       await scanBarcode(session.window, '8400000000011');
-      await session.window.locator('h3 a.button', {hasText: 'Save'}).click();
+      await session.window.locator('h3 button', {hasText: 'Save'}).click();
       await expect(session.window.getByRole('heading', {name: 'Do you want a ticket?!'})).toBeVisible();
       await session.window.getByRole('button', {name: 'YES!'}).click();
       await expect(session.window.getByText('Do you want a ticket?!')).toHaveCount(0);

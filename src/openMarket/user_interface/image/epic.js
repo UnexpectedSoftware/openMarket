@@ -1,5 +1,4 @@
 import {ipcRenderer} from 'electron';
-import {success, error} from 'react-notification-system-redux';
 import OpenMarket from '../../application/index';
 import {categoriesPageLoaded} from '../category/action';
 import {listProductsFetch} from '../product/list_products/action';
@@ -9,8 +8,6 @@ import {makeFetchImagesEpic} from './epicFactory';
 
 const fetchImagesEpic = makeFetchImagesEpic({
   fetchCatalogImages: OpenMarket.get('images_fetch_use_case'),
-  successNotification: success,
-  errorNotification: error,
   listen(onFetch) {
     ipcRenderer.on(FETCH_IMAGES_CHANNEL, onFetch);
     return () => ipcRenderer.removeListener(FETCH_IMAGES_CHANNEL, onFetch);

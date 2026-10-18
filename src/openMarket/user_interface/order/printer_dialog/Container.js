@@ -1,47 +1,40 @@
 import React, {Component} from 'react';
+import Button from '../../components/Button';
+import Dialog from '../../components/Dialog';
 
 class Container extends Component {
 
-  constructor(props,context) {
+  constructor(props, context) {
     super(props, context);
-    this.closeDialog = this.closeDialog.bind(this);
+    this.handleOK = this.handleOK.bind(this);
+    this.handleKO = this.handleKO.bind(this);
   }
 
-  closeDialog(e){
-    const { dialogHide } = this.props;
-    dialogHide();
+  handleOK() {
+    const {hidePrinterDialog, printerDialog} = this.props;
+    hidePrinterDialog({order: printerDialog.order, print: true});
   }
 
-  handleOK = (values) => {
-    const { hidePrinterDialog, printerDialog } = this.props;
-    hidePrinterDialog({order:printerDialog.order,print:true});
+  handleKO() {
+    const {hidePrinterDialog, printerDialog} = this.props;
+    hidePrinterDialog({order: printerDialog.order, print: false});
   }
-
-  handleKO = (values) => {
-    const { hidePrinterDialog, printerDialog } = this.props;
-    hidePrinterDialog({order:printerDialog.order,print:false});
-  }
-
 
   render() {
-    const { printerDialog } = this.props;
-    if(!printerDialog.visible) return null;
+    const {printerDialog} = this.props;
+    const visible = !!(printerDialog && printerDialog.visible);
     return (
-      <div className="dialog-Modal">
-        <div className="dialog-ModalControlX">
-          <div className="dialog-ModalControlY">
-            <div className="dialog-ModalContainer">
-              <div className="dialog-Modal-header">
-                <h2>Do you want a ticket?! <a className="close" onClick={this.closeDialog}><i className="fa fa-times"></i></a></h2>
-              </div>
-              <div className="dialog-Modal-main">
-                <button onClick={this.handleOK}>YES!</button>
-                <button onClick={this.handleKO}>NO</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Dialog
+        open={visible}
+        title="Do you want a ticket?!"
+        onClose={this.handleKO}
+        actions={visible ? (
+          <span className="om-gallery-row">
+            <Button type="button" onClick={this.handleOK}>YES!</Button>
+            <Button type="button" variant="secondary" onClick={this.handleKO}>NO</Button>
+          </span>
+        ) : null}
+      />
     );
   }
 }

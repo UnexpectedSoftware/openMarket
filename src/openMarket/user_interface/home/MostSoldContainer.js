@@ -1,4 +1,6 @@
 import React, {Component} from 'react';
+import EmptyState from '../components/EmptyState';
+import Spinner from '../components/Spinner';
 import SalesWindowSelect from '../sales/SalesWindowSelect';
 import {DEFAULT_SALES_WINDOW} from '../../application/service/product/salesWindows';
 import MostSoldChart from './MostSoldChart';
@@ -31,8 +33,10 @@ export default class MostSoldContainer extends Component {
           {products.length > 0 ? (
             <MostSoldChart products={products} onOpen={this.onOpen} />
           ) : mostSold.loaded ? (
-            <p className="most-sold-empty">No sales in this period.</p>
-          ) : null}
+            <EmptyState title="No sales in this period." />
+          ) : (
+            <Spinner label="Loading sales" />
+          )}
         </div>
       </div>
     );

@@ -207,7 +207,7 @@ test('shows totals and deletes an empty category', async () => {
     await expect(window.getByRole('heading', {name: "Let's create a new order!"})).toBeVisible();
     await scanBarcode(window, '8400000000011');
     await expect(orderRow(window, 'Milk').locator('input')).toHaveValue('1');
-    await window.locator('h3 a.button', {hasText: 'Save'}).click();
+    await window.locator('h3').getByRole('button', {name: 'Save'}).click();
     await dismissTicket(window);
 
     await window.getByRole('link', {name: 'Categorías', exact: true}).click();

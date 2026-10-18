@@ -1,0 +1,98 @@
+.om-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--om-space-1);
+  margin-bottom: var(--om-space-3);
+}
+
+.om-field-label {
+  display: block;
+  width: auto;
+  margin: 0;
+  padding: 0;
+  color: var(--om-color-text);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+  font-weight: var(--om-font-weight-medium);
+  letter-spacing: var(--om-letter-spacing-label);
+}
+
+.om-field-control-row {
+  display: flex;
+  align-items: center;
+  gap: var(--om-space-2);
+}
+
+.om-field-control {
+  box-sizing: border-box;
+  display: block;
+  width: 100%;
+  min-height: var(--om-control-height);
+  margin: 0;
+  padding: 0 var(--om-space-3);
+  color: var(--om-color-text);
+  background: var(--om-color-surface);
+  border: var(--om-button-border-width) solid var(--om-color-border-strong);
+  border-radius: var(--om-control-radius);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-md);
+  line-height: var(--om-line-height-normal);
+
+  &:focus-visible {
+    outline: 3px solid var(--om-color-focus);
+    outline-offset: 2px;
+    box-shadow: var(--om-shadow-focus);
+  }
+}
+
+textarea.om-field-control {
+  min-height: calc(var(--om-control-height) * 2);
+  padding-top: var(--om-space-2);
+  padding-bottom: var(--om-space-2);
+  resize: vertical;
+}
+
+.om-field.has-error .om-field-control {
+  border-color: var(--om-color-danger);
+}
+
+.om-field-suffix {
+  flex: 0 0 auto;
+  color: var(--om-color-text-muted);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+}
+
+.om-field-hint,
+.om-field-error {
+  margin: 0;
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+}
+
+.om-field-hint {
+  color: var(--om-color-text-muted);
+}
+
+.om-field-error {
+  color: var(--om-color-danger);
+}
+
+.om-field--check {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--om-space-2);
+
+  input {
+    width: auto;
+    min-height: var(--om-control-height);
+    min-width: var(--om-control-height);
+    margin: 0;
+  }
+
+  label {
+    width: auto;
+    margin: 0;
+    padding: 0;
+  }
+}

@@ -1,6 +1,6 @@
 import React, {Component} from "react";
-import {Link} from "react-router";
 import ReactTable from "react-table";
+import Button from "../../components/Button";
 import DatePicker from 'react-datepicker';
 import moment from "moment";
 import { defaultLimit } from './model';
@@ -41,7 +41,9 @@ class Container extends Component {
 
   renderDetailOrder (data) {
     const { listOrderDetail } = this.props;
-    return (<a onClick={(e) => {listOrderDetail(data.row.id);}}>View</a>);
+    return (
+      <Button type="button" variant="ghost" onClick={() => listOrderDetail(data.row.id)}>View</Button>
+    );
   }
 
 

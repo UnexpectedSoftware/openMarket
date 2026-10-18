@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import Button from '../components/Button';
 
 class PluginCard extends Component {
 
@@ -65,9 +66,9 @@ class PluginCard extends Component {
           Enabled
         </label>
         {settings.length > 0 ? (
-          <button type="button" className="button" onClick={() => this._save(plugin, plugin.enabled)}>
+          <Button type="button" onClick={() => this._save(plugin, plugin.enabled)}>
             Save
-          </button>
+          </Button>
         ) : null}
         {plugin.lastError ? <p className="plugin-card-error" role="alert">{plugin.lastError}</p> : null}
       </article>

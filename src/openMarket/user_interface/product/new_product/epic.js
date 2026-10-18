@@ -3,8 +3,8 @@ import os from 'os';
 import path from 'path';
 import OpenMarket from "../../../application/index";
 import * as Rx from "rxjs";
-import { success, error } from 'react-notification-system-redux';
 import { LOCATION_CHANGE } from 'react-router-redux';
+import {toast} from '../../components/toast';
 import * as newProductActions from "./action";
 import {reset} from 'redux-form';
 import {makeProductCloseEpic, makeProductSalesEpic} from "./epicFactory";
@@ -46,12 +46,7 @@ function forgetFetched() {
 }
 
 function lookupError(title, message) {
-  return error({
-    title,
-    message,
-    position: 'tr',
-    autoDismiss: 4
-  });
+  return toast.error(title, message);
 }
 
 
@@ -75,38 +70,28 @@ const saveProductEpic = action$ =>
       .map(() => newProductActions.newProductSaved({ edition: action.product.edition }))
       .catch(saveError => {
         record(saveError);
-        return Rx.Observable.of(error({
-          title: 'Product was not saved',
-          message: userText(saveError, 'Product was not saved'),
-          position: 'tr',
-          autoDismiss: 4
-        }));
+        return Rx.Observable.of(toast.error(
+          'Product was not saved',
+          userText(saveError, 'Product was not saved')
+        ));
       }));
 
-const savedToast = edition => success(edition ? {
-  title: 'Changes applied',
-  message: 'Your changes were applied',
-  position: 'tr',
-  autoDismiss: 4
-} : {
-  title: 'Product saved!',
-  message: 'Product saved in database',
-  position: 'tr',
-  autoDismiss: 4
-});
+const savedToast = edition => edition
+  ? toast.success('Changes applied', 'Your changes were applied')
+  : toast.success('Product saved!', 'Product saved in database');
 
 const savedProductEpic = action$ =>
   action$.ofType(newProductActions.NEW_PRODUCT_SAVED)
     .mergeMap(action => {
-      const toast = savedToast(action.edition);
+      const notice = savedToast(action.edition);
       if (action.edition) {
-        return Rx.Observable.of(toast);
+        return Rx.Observable.of(notice);
       }
       return Rx.Observable.of(
         reset('new_product'),
         newProductActions.newProductFetchCategories(),
         newProductActions.productFetchStatuses(),
-        toast
+        notice
       );
     });
 

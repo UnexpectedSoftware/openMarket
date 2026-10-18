@@ -24,7 +24,7 @@ test('creates a product', async () => {
     await chooseMenu(window, 'Products', 'new Product!');
     await expect(window.getByRole('heading', {name: "Let's create a new product!"})).toBeVisible();
     await window.getByRole('button', {name: 'Save'}).click();
-    await expect(window.locator('.error', {hasText: 'Required'}).first()).toBeVisible();
+    await expect(window.getByRole('alert').filter({hasText: 'Required'}).first()).toBeVisible();
     await expect(window.getByText('Product saved!')).toHaveCount(0);
 
     await fillProduct(window, {

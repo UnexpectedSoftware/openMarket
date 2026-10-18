@@ -1,8 +1,8 @@
 import * as listProductsActions from './action';
 import * as Rx from 'rxjs';
 import {push} from 'react-router-redux';
-import {success, error} from 'react-notification-system-redux';
 import OpenMarket from '../../../application/index';
+import {toast} from '../../components/toast';
 import ImageStore, {imagesDirectory} from '../../../infrastructure/service/ImageStore';
 import {record, userText} from '../../../infrastructure/logging/ErrorLog';
 import {catalogLimit, defaultCatalogSort} from './model';
@@ -168,17 +168,13 @@ const listProductsDetailEpic = action$ =>
       )
     );
 
-const disabledToast = () => success({
-  title: 'Product disabled',
-  message: 'It stays on the catalog and drops out of the low stock list.',
-  position: 'tr',
-  autoDismiss: 4
-});
+const disabledToast = () => toast.success(
+  'Product disabled',
+  'It stays on the catalog and drops out of the low stock list.'
+);
 
 const printCatalogEpic = makePrintCatalogEpic({
   printProductCatalog: OpenMarket.get('products_print_catalog_use_case'),
-  successNotification: success,
-  errorNotification: error,
   catalogPrintProgressed: listProductsActions.catalogPrintProgressed,
   catalogPrintFinished: listProductsActions.catalogPrintFinished
 });
@@ -193,12 +189,10 @@ const listProductsDisableEpic = action$ =>
         ))
         .catch(disableError => {
           record(disableError);
-          return Rx.Observable.of(error({
-            title: 'Product was not disabled',
-            message: userText(disableError, 'Product was not disabled'),
-            position: 'tr',
-            autoDismiss: 4
-          }));
+          return Rx.Observable.of(toast.error(
+            'Product was not disabled',
+            userText(disableError, 'Product was not disabled')
+          ));
         })
     );
 

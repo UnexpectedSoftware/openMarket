@@ -1,6 +1,7 @@
 import * as Rx from 'rxjs';
 import {catalogLimit, defaultCatalogSort} from '../product/list_products/model';
 import {record, userText} from '../../infrastructure/logging/ErrorLog';
+import {toast} from '../components/toast';
 
 export function fetchImagesMessage(summary) {
   const products = summary.productsUpdated;
@@ -45,8 +46,6 @@ function refreshOpenList(observer, store, actions) {
 
 export function makeFetchImagesEpic({
   fetchCatalogImages,
-  successNotification,
-  errorNotification,
   listen,
   categoriesPageLoaded,
   listProductsFetch,
@@ -58,21 +57,17 @@ export function makeFetchImagesEpic({
     let running = false;
     const onFetch = () => {
       if (running) {
-        observer.next(successNotification({
-          title: 'Already fetching images',
-          message: 'A fetch is already running',
-          position: 'tr',
-          autoDismiss: 4
-        }));
+        observer.next(toast.success(
+          'Already fetching images',
+          'A fetch is already running'
+        ));
         return;
       }
       running = true;
-      observer.next(successNotification({
-        title: 'Fetching images',
-        message: 'Product and category photos will be added in the background',
-        position: 'tr',
-        autoDismiss: 4
-      }));
+      observer.next(toast.success(
+        'Fetching images',
+        'Product and category photos will be added in the background'
+      ));
       fetchCatalogImages.execute().subscribe(
         value => {
           if (value && value.progress) {
@@ -81,24 +76,20 @@ export function makeFetchImagesEpic({
           }
           running = false;
           observer.next(imageFetchFinished());
-          observer.next(successNotification({
-            title: 'Images ready',
-            message: fetchImagesMessage(value),
-            position: 'tr',
-            autoDismiss: 4
-          }));
+          observer.next(toast.success(
+            'Images ready',
+            fetchImagesMessage(value)
+          ));
           refreshOpenList(observer, store, actions);
         },
         fetchError => {
           record(fetchError);
           running = false;
           observer.next(imageFetchFinished());
-          observer.next(errorNotification({
-            title: 'Could not fetch images',
-            message: userText(fetchError, 'Could not fetch images'),
-            position: 'tr',
-            autoDismiss: 4
-          }));
+          observer.next(toast.error(
+            'Could not fetch images',
+            userText(fetchError, 'Could not fetch images')
+          ));
         }
       );
     };

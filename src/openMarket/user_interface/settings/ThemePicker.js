@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import Button from '../components/Button';
 import Theme from '../../domain/appearance/Theme';
 
 const NAMES = {
@@ -108,9 +109,9 @@ export default class ThemePicker extends Component {
         <div className="theme-picker" role="radiogroup" aria-labelledby="appearance-heading">
           {cards}
         </div>
-        <button type="button" className="button theme-save" onClick={this._save}>
+        <Button type="button" className="theme-save" onClick={this._save}>
           Guardar
-        </button>
+        </Button>
       </section>
     );
   }

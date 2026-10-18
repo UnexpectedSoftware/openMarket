@@ -1,0 +1,36 @@
+.om-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--om-space-6);
+  padding: 0 var(--om-space-2);
+  border-radius: var(--om-radius-pill);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-xs);
+  font-weight: var(--om-font-weight-medium);
+  line-height: var(--om-line-height-tight);
+}
+
+.om-badge--neutral {
+  background: var(--om-color-surface-alt);
+  color: var(--om-color-text);
+}
+
+.om-badge--success {
+  background: var(--om-color-success-soft);
+  color: var(--om-color-success);
+}
+
+.om-badge--warning {
+  background: var(--om-color-surface-alt);
+  color: var(--om-color-warning);
+}
+
+.om-badge--danger {
+  background: var(--om-color-danger-soft);
+  color: var(--om-color-danger);
+}
+
+.om-badge--primary {
+  background: var(--om-color-primary-soft);
+  color: var(--om-color-primary);
+}

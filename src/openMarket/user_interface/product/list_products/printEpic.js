@@ -1,15 +1,7 @@
 import * as Rx from 'rxjs';
 import {LIST_PRODUCTS_PRINT} from './action';
 import {record, userText} from '../../../infrastructure/logging/ErrorLog';
-
-function toast(title, message) {
-  return {
-    title,
-    message,
-    position: 'tr',
-    autoDismiss: 4
-  };
-}
+import {toast} from '../../components/toast';
 
 function filtersFrom(store) {
   const state = store && store.getState ? store.getState() : {};
@@ -37,8 +29,6 @@ function failureMessage(printError) {
 
 export function makePrintCatalogEpic({
   printProductCatalog,
-  successNotification,
-  errorNotification,
   catalogPrintProgressed,
   catalogPrintFinished
 }) {
@@ -46,17 +36,17 @@ export function makePrintCatalogEpic({
     let running = false;
     const subscription = action$.filter(action => action.type === LIST_PRODUCTS_PRINT).subscribe(() => {
       if (running) {
-        observer.next(successNotification(toast(
+        observer.next(toast.success(
           'Already printing products',
           'A print is already running'
-        )));
+        ));
         return;
       }
       running = true;
-      observer.next(successNotification(toast(
+      observer.next(toast.success(
         'Printing products',
         'The product list will be printed in the background'
-      )));
+      ));
       printProductCatalog.execute(filtersFrom(store)).subscribe(
         value => {
           if (value && value.progress) {
@@ -66,26 +56,26 @@ export function makePrintCatalogEpic({
           running = false;
           observer.next(catalogPrintFinished());
           if (!value || !value.printed) {
-            observer.next(successNotification(toast(
+            observer.next(toast.success(
               'Nothing to print',
               'No products match these filters'
-            )));
+            ));
             return;
           }
           const printed = value.printed;
-          observer.next(successNotification(toast(
+          observer.next(toast.success(
             'Products printed',
             printed === 1 ? 'Printed 1 product.' : `Printed ${printed} products.`
-          )));
+          ));
         },
         printError => {
           record(printError);
           running = false;
           observer.next(catalogPrintFinished());
-          observer.next(errorNotification(toast(
+          observer.next(toast.error(
             'Could not print products',
             failureMessage(printError)
-          )));
+          ));
         }
       );
     });

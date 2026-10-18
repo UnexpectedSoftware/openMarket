@@ -17,7 +17,7 @@ import catalogPrintReducer from '../product/list_products/printReducer';
 import pluginsReducer from '../plugin/reducer';
 import settingsReducer from '../settings/reducer';
 import appearanceReducer from '../appearance/reducer';
-import {reducer as notifications} from 'react-notification-system-redux';
+import notifications from './notifications';
 
 
 export const rootReducer = combineReducers({

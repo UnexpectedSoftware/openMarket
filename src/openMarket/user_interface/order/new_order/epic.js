@@ -1,4 +1,3 @@
-import { success, error, warning } from 'react-notification-system-redux';
 import {reset} from 'redux-form';
 import OpenMarket from "../../../application/index";
 import * as Rx from "rxjs";
@@ -24,11 +23,11 @@ const buildReceipt = OpenMarket.get('receipts_build_use_case');
 const printReceipt = OpenMarket.get('receipts_print_use_case');
 
 const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(enableProductUseCase)(reset);
-const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset)(error)(success);
-const lowStockWarningEpic = makeLowStockWarningEpic(domainEventBus)(warning);
-const productEnabledAgainEpic = makeProductEnabledAgainEpic(domainEventBus)(warning);
-const printerDialogEpic = makePrinterDialogEpic(buildReceipt)(printReceipt)(error);
-const printButtonClickedEpic = makePrintButtonClickedEpic(buildReceipt)(printReceipt)(error);
+const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset);
+const lowStockWarningEpic = makeLowStockWarningEpic(domainEventBus);
+const productEnabledAgainEpic = makeProductEnabledAgainEpic(domainEventBus);
+const printerDialogEpic = makePrinterDialogEpic(buildReceipt)(printReceipt);
+const printButtonClickedEpic = makePrintButtonClickedEpic(buildReceipt)(printReceipt);
 const weightedDialogEpic  = makeWeightedDialogEpic(reset)
 
 export default action$ =>

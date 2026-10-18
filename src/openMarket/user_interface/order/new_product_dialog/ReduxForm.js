@@ -1,57 +1,41 @@
-import React, { Component } from 'react';
-import { Field, reduxForm } from 'redux-form';
-import {greaterThan0, number, required} from "../../validations/formValidations";
+import React, {Component} from 'react';
+import {Field, reduxForm} from 'redux-form';
+import Button from '../../components/Button';
+import NumberField from '../../components/NumberField';
+import TextField from '../../components/TextField';
+import reduxFormField from '../../components/reduxFormField';
+import {greaterThan0, number, required} from '../../validations/formValidations';
+
+const textField = reduxFormField(TextField);
+const priceField = reduxFormField(NumberField);
 
 class ReduxForm extends Component {
 
-  constructor(props,context) {
+  constructor(props, context) {
     super(props, context);
-    this.renderInput = this.renderInput.bind(this);
     this.save = this.save.bind(this);
   }
 
-  save(e){
-    const { handleSubmit} = this.props;
-    handleSubmit(e);
+  save(event) {
+    this.props.handleSubmit(event);
   }
-
-  renderInput = field => (
-    <div>
-      <label htmlFor={field.placeholder}>{field.placeholder}</label>
-      <input ref={(input) => this.quantityInput = input} {...field.input} type={field.type} onKeyPress={field.onkeypress}/>
-      {field.meta.touched &&
-      field.meta.error &&
-      <span className="error">{field.meta.error}</span>}
-    </div>
-  );
 
   render() {
     const {close} = this.props;
     return (
-      <form onKeyPress={event => {if (event.which === 13 /* Enter */) { event.preventDefault();}}}>
-
-        <Field name="barcode" component={this.renderInput} type="text" placeholder="Barcode" validate={[required]}/>
-        <Field name="name" component={this.renderInput} type="text" placeholder="Name" validate={required}/>
-        <Field name="price" component={this.renderInput} type="text" placeholder="Price" validate={[required, greaterThan0, number]}/>
-
-        <a className="button" onClick={this.save}>
-          <i className="fa fa-floppy-o" />
-          Save
-        </a>
-
-        <a className="button" onClick={close}>
-          <i className="fa" />
-          Cancel
-        </a>
+      <form onKeyPress={event => { if (event.which === 13) { event.preventDefault(); } }}>
+        <Field name="barcode" component={textField} label="Barcode" validate={[required]} />
+        <Field name="name" component={textField} label="Name" validate={required} />
+        <Field name="price" component={priceField} label="Price" unit="€" validate={[required, greaterThan0, number]} />
+        <div className="om-gallery-row">
+          <Button type="button" icon="floppy-o" onClick={this.save}>Save</Button>
+          <Button type="button" variant="secondary" onClick={close}>Cancel</Button>
+        </div>
       </form>
     );
   }
 }
 
-
-
 export default reduxForm({
   form: 'new_product_dialog'
 })(ReduxForm);
-
-
