@@ -5,8 +5,9 @@ import 'rxjs/add/observable/of';
 import Money from '../../../domain/money/Money';
 import Quantity from '../../../domain/money/Quantity';
 import {fillSeries, previousYearRange, resolveSalesWindow} from './salesWindows';
-/** @import ProductSaleStatisticsRepository from '../../../domain/product/ProductSaleStatisticsRepository' */
-/** @import { MostSoldProduct, SalePoint } from '../../../domain/product/ProductSaleStatisticsRepository' */
+/** @typedef {import('../../../domain/product/ProductSaleStatisticsRepository').default} ProductSaleStatisticsRepository */
+/** @typedef {import('../../../domain/product/ProductSaleStatisticsRepository').MostSoldProduct} MostSoldProduct */
+/** @typedef {import('../../../domain/product/ProductSaleStatisticsRepository').SalePoint} SalePoint */
 
 /**
  * Sales of one product, and the products that sold the most, over a named window.

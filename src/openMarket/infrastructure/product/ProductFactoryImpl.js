@@ -1,8 +1,8 @@
 import Product from '../../domain/product/Product';
 import ProductStatus from "../../domain/product/ProductStatus";
-/** @import ProductFactory from '../../domain/product/ProductFactory' */
-/** @import { NewProduct } from '../../domain/product/ProductFactory' */
-/** @import Identity from '../../domain/Identity' */
+/** @typedef {import('../../domain/product/ProductFactory').default} ProductFactory */
+/** @typedef {import('../../domain/product/ProductFactory').NewProduct} NewProduct */
+/** @typedef {import('../../domain/Identity').default} Identity */
 
 /** @implements {ProductFactory} */
 export default class ProductFactoryImpl {

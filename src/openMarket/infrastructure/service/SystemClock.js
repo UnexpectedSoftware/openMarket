@@ -1,4 +1,4 @@
-/** @import Clock from '../../domain/Clock' */
+/** @typedef {import('../../domain/Clock').default} Clock */
 
 /** Shop timezone when none is configured. Spain does not change the instant, only the calendar date. */
 const DEFAULT_TIME_ZONE = 'Europe/Madrid';

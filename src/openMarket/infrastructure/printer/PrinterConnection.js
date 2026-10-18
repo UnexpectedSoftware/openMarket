@@ -4,7 +4,7 @@ import printer from 'node-thermal-printer';
 import * as Rx from 'rxjs';
 import PrinterBusyError from '../../domain/error/PrinterBusyError';
 import {userDataDirectory} from '../service/sqliteDatabasePath';
-/** @import { Observable } from 'rxjs/Observable' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 
 /**
  * Subset of node-thermal-printer used by the ticket and catalog jobs.

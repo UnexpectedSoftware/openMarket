@@ -3,7 +3,7 @@ import TaxId from '../../../domain/shop/TaxId';
 import ShopProfile from '../../../domain/shop/ShopProfile';
 import ShopProfileIncompleteError from '../../../domain/shop/ShopProfileIncompleteError';
 import observableError from '../../../infrastructure/logging/observableError';
-/** @import ShopProfileRepository from '../../../domain/shop/ShopProfileRepository' */
+/** @typedef {import('../../../domain/shop/ShopProfileRepository').default} ShopProfileRepository */
 
 /**
  * Saves the shop profile from the Settings screen.

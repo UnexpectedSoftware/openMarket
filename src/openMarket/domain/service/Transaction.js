@@ -1,4 +1,4 @@
-/** @import { Observable } from 'rxjs/Observable' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 
 /**
  * One boundary around several repository writes. They commit together or roll back together.

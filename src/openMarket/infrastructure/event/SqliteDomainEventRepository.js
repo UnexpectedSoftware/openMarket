@@ -1,5 +1,5 @@
-/** @import DomainEventRepository from '../../domain/event/DomainEventRepository' */
-/** @import SqliteConnection from '../service/SqliteConnection' */
+/** @typedef {import('../../domain/event/DomainEventRepository').default} DomainEventRepository */
+/** @typedef {import('../service/SqliteConnection').default} SqliteConnection */
 
 const SAVE_EVENT_SQL =
   'INSERT INTO domain_event (id, type, payload, aggregate_id, created_at) VALUES (?, ?, ?, ?, ?)';

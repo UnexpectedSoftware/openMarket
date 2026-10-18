@@ -1,7 +1,7 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Order from '../../../domain/order/Order' */
-/** @import OrderRepository from '../../../domain/order/OrderRepository' */
-/** @import { OrderListItem } from '../../../domain/order/OrderRepository' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/order/Order').default} Order */
+/** @typedef {import('../../../domain/order/OrderRepository').default} OrderRepository */
+/** @typedef {import('../../../domain/order/OrderRepository').OrderListItem} OrderListItem */
 
 export default class ListAllOrders {
 

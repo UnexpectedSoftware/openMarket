@@ -1,5 +1,5 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import SellPreferences from './SellPreferences' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('./SellPreferences').default} SellPreferences */
 
 /**
  * Port: whether the till prints a ticket on its own.

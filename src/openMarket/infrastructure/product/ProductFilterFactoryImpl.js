@@ -1,5 +1,5 @@
 import ProductFilter from '../../domain/product/ProductFilter';
-/** @import ProductFilterFactory from '../../domain/product/ProductFilterFactory' */
+/** @typedef {import('../../domain/product/ProductFilterFactory').default} ProductFilterFactory */
 
 /** @implements {ProductFilterFactory} */
 export default class ProductFilterFactoryImpl {

@@ -2,8 +2,8 @@ import * as Rx from 'rxjs';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/defer';
 import {rethrow} from '../logging/ErrorLog';
-/** @import PluginRepository from '../../domain/plugin/PluginRepository' */
-/** @import { PluginState } from '../../domain/plugin/PluginRepository' */
+/** @typedef {import('../../domain/plugin/PluginRepository').default} PluginRepository */
+/** @typedef {import('../../domain/plugin/PluginRepository').PluginState} PluginState */
 
 const UPSERT_SQL = 'INSERT INTO plugin_state (plugin_id, enabled, config_json, last_error) ' +
   'VALUES (?, ?, ?, ?) ' +

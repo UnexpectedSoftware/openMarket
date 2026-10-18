@@ -3,8 +3,8 @@ import 'rxjs/add/observable/defer';
 import 'rxjs/add/observable/of';
 import InvoiceNumber from '../../domain/invoice/InvoiceNumber';
 import {rethrow} from '../logging/ErrorLog';
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import InvoiceSequence from '../../domain/invoice/InvoiceSequence' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../domain/invoice/InvoiceSequence').default} InvoiceSequence */
 
 const NEXT_SQL = 'INSERT INTO invoice_sequence (series, last_number) VALUES (?, 1) ' +
   'ON CONFLICT(series) DO UPDATE SET last_number = last_number + 1 ' +

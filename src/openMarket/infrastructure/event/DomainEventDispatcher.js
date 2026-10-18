@@ -1,6 +1,6 @@
 import {record} from '../logging/ErrorLog';
-/** @import DomainEventBus from '../../domain/service/DomainEventBus' */
-/** @import Transaction from '../../domain/service/Transaction' */
+/** @typedef {import('../../domain/service/DomainEventBus').default} DomainEventBus */
+/** @typedef {import('../../domain/service/Transaction').default} Transaction */
 
 const DEFAULT_INTERVAL_MS = 1000;
 

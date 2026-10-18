@@ -1,7 +1,7 @@
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/defer';
-/** @import AppearancePreferencesRepository from '../../../domain/appearance/AppearancePreferencesRepository' */
-/** @import AppearancePreferences from '../../../domain/appearance/AppearancePreferences' */
+/** @typedef {import('../../../domain/appearance/AppearancePreferencesRepository').default} AppearancePreferencesRepository */
+/** @typedef {import('../../../domain/appearance/AppearancePreferences').default} AppearancePreferences */
 
 /**
  * Reads the till theme before the first paint and for the Settings screen.

@@ -1,6 +1,6 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import CategoryRepository from '../../../domain/category/CategoryRepository' */
-/** @import CategoryFactory from '../../../domain/category/CategoryFactory' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/category/CategoryRepository').default} CategoryRepository */
+/** @typedef {import('../../../domain/category/CategoryFactory').default} CategoryFactory */
 
 /**
  * @class CreateCategory

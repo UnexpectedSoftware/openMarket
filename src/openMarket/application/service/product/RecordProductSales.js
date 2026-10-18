@@ -1,7 +1,7 @@
 import OrderCreated from '../../../domain/event/OrderCreated';
 import {record} from '../../../infrastructure/logging/ErrorLog';
-/** @import ProductSaleStatisticsRepository from '../../../domain/product/ProductSaleStatisticsRepository' */
-/** @import DomainEventBus from '../../../domain/service/DomainEventBus' */
+/** @typedef {import('../../../domain/product/ProductSaleStatisticsRepository').default} ProductSaleStatisticsRepository */
+/** @typedef {import('../../../domain/service/DomainEventBus').default} DomainEventBus */
 
 /**
  * Keeps product_sale_day in step with sales.

@@ -8,8 +8,8 @@ import Money from '../../../domain/money/Money';
 import Quantity from '../../../domain/money/Quantity';
 import VatRate from '../../../domain/tax/VatRate';
 import VatBreakdown from '../../../domain/tax/VatBreakdown';
-/** @import InvoiceRepository from '../../../domain/invoice/InvoiceRepository' */
-/** @import ReceiptSlots from '../../../infrastructure/receipt/ReceiptSlots' */
+/** @typedef {import('../../../domain/invoice/InvoiceRepository').default} InvoiceRepository */
+/** @typedef {import('../../../infrastructure/receipt/ReceiptSlots').default} ReceiptSlots */
 
 /**
  * A cart line the payment sheet can preview. This is not an invoice line.

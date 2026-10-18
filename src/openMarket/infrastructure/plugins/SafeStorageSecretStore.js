@@ -4,7 +4,7 @@ import 'rxjs/add/observable/fromPromise';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/map';
 import {rethrow} from '../logging/ErrorLog';
-/** @import SecretStore from '../../domain/plugin/SecretStore' */
+/** @typedef {import('../../domain/plugin/SecretStore').default} SecretStore */
 
 const UPSERT_SQL = 'INSERT INTO plugin_secret (plugin_id, key, ciphertext) VALUES (?, ?, ?) ' +
   'ON CONFLICT(plugin_id, key) DO UPDATE SET ciphertext = excluded.ciphertext';

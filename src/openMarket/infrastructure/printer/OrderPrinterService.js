@@ -1,6 +1,6 @@
 import 'rxjs/add/operator/map';
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import EscPosReceiptRenderer from './EscPosReceiptRenderer' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('./EscPosReceiptRenderer').default} EscPosReceiptRenderer */
 
 /**
  * Sends one receipt document to the printer. The blocks are already decided.

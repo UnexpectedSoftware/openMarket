@@ -2,8 +2,8 @@ import "rxjs/add/operator/defaultIfEmpty";
 import "rxjs/add/operator/mergeMap";
 import ProductNotFoundError from "../../../domain/product/ProductNotFoundError";
 import observableError from "../../../infrastructure/logging/observableError";
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import ProductRepository from '../../../domain/product/ProductRepository' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/product/ProductRepository').default} ProductRepository */
 
 /**
  * @class DisableProduct

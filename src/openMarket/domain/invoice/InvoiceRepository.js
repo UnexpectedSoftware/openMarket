@@ -1,5 +1,5 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Invoice from './Invoice' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('./Invoice').default} Invoice */
 
 /**
  * Port: the shop's invoices, as a collection.

@@ -1,5 +1,5 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import ShopProfile from './ShopProfile' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('./ShopProfile').default} ShopProfile */
 
 /**
  * Port: the single shop profile.

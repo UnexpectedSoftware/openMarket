@@ -1,10 +1,10 @@
 import * as Rx from 'rxjs';
 import PrintFailedError from '../../../domain/error/PrintFailedError';
 import {record} from '../../../infrastructure/logging/ErrorLog';
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Product from '../../../domain/product/Product' */
-/** @import ProductRepository from '../../../domain/product/ProductRepository' */
-/** @import { CatalogQuery } from '../../../domain/product/ProductRepository' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/product/Product').default} Product */
+/** @typedef {import('../../../domain/product/ProductRepository').default} ProductRepository */
+/** @typedef {import('../../../domain/product/ProductRepository').CatalogQuery} CatalogQuery */
 
 export const CATALOG_PRINT_PAGE_SIZE = 20;
 

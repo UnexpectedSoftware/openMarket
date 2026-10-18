@@ -1,6 +1,6 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import OrderRepository from '../../../domain/order/OrderRepository' */
-/** @import { DailyTotal } from '../../../domain/order/OrderRepository' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/order/OrderRepository').default} OrderRepository */
+/** @typedef {import('../../../domain/order/OrderRepository').DailyTotal} DailyTotal */
 
 export default class OrdersStatistics {
   /**

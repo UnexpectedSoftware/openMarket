@@ -5,12 +5,12 @@ import InvoiceCancelled from '../../../domain/event/InvoiceCancelled';
 import {cancelledPayload} from '../../../domain/invoice/invoicePayload';
 import InvoiceNotFoundError from '../../../domain/invoice/InvoiceNotFoundError';
 import observableError from '../../../infrastructure/logging/observableError';
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Invoice from '../../../domain/invoice/Invoice' */
-/** @import InvoiceRepository from '../../../domain/invoice/InvoiceRepository' */
-/** @import Clock from '../../../domain/Clock' */
-/** @import DomainEventBus from '../../../domain/service/DomainEventBus' */
-/** @import Transaction from '../../../domain/service/Transaction' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/invoice/Invoice').default} Invoice */
+/** @typedef {import('../../../domain/invoice/InvoiceRepository').default} InvoiceRepository */
+/** @typedef {import('../../../domain/Clock').default} Clock */
+/** @typedef {import('../../../domain/service/DomainEventBus').default} DomainEventBus */
+/** @typedef {import('../../../domain/service/Transaction').default} Transaction */
 
 /**
  * Cancels an issued invoice. The number and the lines stay.

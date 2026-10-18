@@ -1,7 +1,7 @@
 import * as Rx from 'rxjs';
 import SellPreferences from '../../domain/shop/SellPreferences';
 import {rethrow} from '../logging/ErrorLog';
-/** @import SellPreferencesRepository from '../../domain/shop/SellPreferencesRepository' */
+/** @typedef {import('../../domain/shop/SellPreferencesRepository').default} SellPreferencesRepository */
 
 const KEY = 'sell_auto_print';
 const FIND_SQL = 'SELECT value_json FROM setting WHERE key = ?';

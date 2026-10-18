@@ -1,6 +1,6 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Product from '../../../domain/product/Product' */
-/** @import ProductRepository from '../../../domain/product/ProductRepository' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/product/Product').default} Product */
+/** @typedef {import('../../../domain/product/ProductRepository').default} ProductRepository */
 
 /**
  * @class FindProductById

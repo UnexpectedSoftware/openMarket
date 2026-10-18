@@ -1,4 +1,4 @@
-/** @import ProductSaleStatisticsRepository from '../../domain/product/ProductSaleStatisticsRepository' */
+/** @typedef {import('../../domain/product/ProductSaleStatisticsRepository').default} ProductSaleStatisticsRepository */
 
 const FIND_SALE_DAY_SQL =
   'SELECT quantity, amount, amount_cents FROM product_sale_day WHERE barcode = ? AND sold_on = ?';

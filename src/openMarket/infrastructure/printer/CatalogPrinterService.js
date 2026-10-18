@@ -1,5 +1,5 @@
 import ProductStatus from '../../domain/product/ProductStatus';
-/** @import { Observable } from 'rxjs/Observable' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 
 function stockText(stock) {
   if (stock == null || Number.isNaN(Number(stock))) {

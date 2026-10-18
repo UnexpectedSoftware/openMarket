@@ -1,5 +1,5 @@
-/** @import Order from './Order' */
-/** @import { OrderLine } from './Order' */
+/** @typedef {import('./Order').default} Order */
+/** @typedef {import('./Order').OrderLine} OrderLine */
 
 /**
  * Port for building a draft order. Placing it is a separate step.

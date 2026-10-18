@@ -1,6 +1,6 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Category from './Category' */
-/** @import CategorySummary from './CategorySummary' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('./Category').default} Category */
+/** @typedef {import('./CategorySummary').default} CategorySummary */
 
 /**
  * Port for the category collection.

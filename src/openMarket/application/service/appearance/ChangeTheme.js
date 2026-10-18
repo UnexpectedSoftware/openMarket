@@ -1,7 +1,7 @@
 import 'rxjs/add/operator/mergeMap';
 import observableError from '../../../infrastructure/logging/observableError';
-/** @import AppearancePreferencesRepository from '../../../domain/appearance/AppearancePreferencesRepository' */
-/** @import AppearancePreferences from '../../../domain/appearance/AppearancePreferences' */
+/** @typedef {import('../../../domain/appearance/AppearancePreferencesRepository').default} AppearancePreferencesRepository */
+/** @typedef {import('../../../domain/appearance/AppearancePreferences').default} AppearancePreferences */
 
 /**
  * Stores the theme the cashier picked on this till.

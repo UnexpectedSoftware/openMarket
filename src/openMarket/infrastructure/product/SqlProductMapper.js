@@ -1,9 +1,9 @@
 import * as Rx from "rxjs";
 import {moneyFromColumns} from "../service/storedMoney";
-/** @import ProductFactory from '../../domain/product/ProductFactory' */
-/** @import CategoryFactory from '../../domain/category/CategoryFactory' */
-/** @import Product from '../../domain/product/Product' */
-/** @import { Observable } from 'rxjs/Observable' */
+/** @typedef {import('../../domain/product/ProductFactory').default} ProductFactory */
+/** @typedef {import('../../domain/category/CategoryFactory').default} CategoryFactory */
+/** @typedef {import('../../domain/product/Product').default} Product */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 
 export default class SqlProductMapper {
 

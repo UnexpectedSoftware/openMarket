@@ -1,4 +1,4 @@
-/** @import { Observable } from 'rxjs/Observable' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 
 /**
  * Stored enabled flag and config for one plugin.

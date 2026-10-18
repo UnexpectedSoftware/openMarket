@@ -3,9 +3,9 @@ import {Subject} from 'rxjs/Subject';
 import {aggregateId, hydrate, typeName} from '../event/registry';
 import SyncSubscriberOutsideTransactionError from '../event/SyncSubscriberOutsideTransactionError';
 import {DEAD, DONE, FAILED, PENDING, PROCESSING} from './domainEventStatus';
-/** @import DomainEventRepository from '../event/DomainEventRepository' */
-/** @import Identity from '../Identity' */
-/** @import Clock from '../Clock' */
+/** @typedef {import('../event/DomainEventRepository').default} DomainEventRepository */
+/** @typedef {import('../Identity').default} Identity */
+/** @typedef {import('../Clock').default} Clock */
 
 const DEFAULT_MAX_ATTEMPTS = 5;
 const ERROR_LIMIT = 500;

@@ -1,4 +1,4 @@
-/** @import Invoice from './Invoice' */
+/** @typedef {import('./Invoice').default} Invoice */
 
 /**
  * Public InvoiceIssued payload, schema version 1.

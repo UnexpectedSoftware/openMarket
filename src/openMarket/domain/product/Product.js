@@ -1,7 +1,7 @@
 import ProductStatus from "./ProductStatus";
 import Money from '../money/Money';
 import VatRate from '../tax/VatRate';
-/** @import Category from '../category/Category' */
+/** @typedef {import('../category/Category').default} Category */
 
 /**
  * @class Product
