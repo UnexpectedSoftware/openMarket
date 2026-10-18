@@ -1,4 +1,4 @@
-/** @import ProductFilter from './ProductFilter' */
+/** @typedef {import('./ProductFilter').default} ProductFilter */
 
 /**
  * Port for building a product list filter.

@@ -2,7 +2,7 @@ import * as Rx from 'rxjs';
 import ShopProfile from '../../domain/shop/ShopProfile';
 import TaxId from '../../domain/shop/TaxId';
 import {rethrow} from '../logging/ErrorLog';
-/** @import ShopProfileRepository from '../../domain/shop/ShopProfileRepository' */
+/** @typedef {import('../../domain/shop/ShopProfileRepository').default} ShopProfileRepository */
 
 const KEY = 'shop_profile';
 const FIND_SQL = 'SELECT value_json FROM setting WHERE key = ?';

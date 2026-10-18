@@ -1,7 +1,7 @@
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/defer';
-/** @import SellPreferencesRepository from '../../../domain/shop/SellPreferencesRepository' */
-/** @import SellPreferences from '../../../domain/shop/SellPreferences' */
+/** @typedef {import('../../../domain/shop/SellPreferencesRepository').default} SellPreferencesRepository */
+/** @typedef {import('../../../domain/shop/SellPreferences').default} SellPreferences */
 
 /**
  * Reads whether the till prints a ticket as soon as the sale is saved.

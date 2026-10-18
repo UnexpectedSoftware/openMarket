@@ -1,6 +1,6 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Product from './Product' */
-/** @import ProductFilter from './ProductFilter' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('./Product').default} Product */
+/** @typedef {import('./ProductFilter').default} ProductFilter */
 
 /**
  * @typedef {object} CatalogQuery

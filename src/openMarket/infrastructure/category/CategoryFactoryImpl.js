@@ -1,6 +1,6 @@
 import Category from '../../domain/category/Category';
-/** @import CategoryFactory from '../../domain/category/CategoryFactory' */
-/** @import Identity from '../../domain/Identity' */
+/** @typedef {import('../../domain/category/CategoryFactory').default} CategoryFactory */
+/** @typedef {import('../../domain/Identity').default} Identity */
 
 /** @implements {CategoryFactory} */
 export default class CategoryFactoryImpl {

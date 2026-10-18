@@ -1,5 +1,5 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import ProductImageSource from '../../../domain/image/ProductImageSource' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/image/ProductImageSource').default} ProductImageSource */
 
 /**
  * Downloads one product photo for a barcode.

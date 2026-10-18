@@ -1,4 +1,4 @@
-/** @import { Observable } from 'rxjs/Observable' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 
 /**
  * Port: finds a product photo for a barcode.

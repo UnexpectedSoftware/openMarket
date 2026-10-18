@@ -1,5 +1,5 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Order from './Order' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('./Order').default} Order */
 
 /**
  * One row of the order list.

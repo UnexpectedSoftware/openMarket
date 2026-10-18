@@ -4,11 +4,11 @@ import "rxjs/add/operator/do";
 import ProductEnabledAgain from "../../../domain/event/ProductEnabledAgain";
 import ProductNotFoundError from "../../../domain/product/ProductNotFoundError";
 import observableError from "../../../infrastructure/logging/observableError";
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Product from '../../../domain/product/Product' */
-/** @import ProductRepository from '../../../domain/product/ProductRepository' */
-/** @import DomainEventBus from '../../../domain/service/DomainEventBus' */
-/** @import Transaction from '../../../domain/service/Transaction' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/product/Product').default} Product */
+/** @typedef {import('../../../domain/product/ProductRepository').default} ProductRepository */
+/** @typedef {import('../../../domain/service/DomainEventBus').default} DomainEventBus */
+/** @typedef {import('../../../domain/service/Transaction').default} Transaction */
 
 /**
  * Puts a disabled product back on sale when a cashier scans it.

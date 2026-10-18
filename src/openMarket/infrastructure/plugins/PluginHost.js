@@ -4,12 +4,12 @@ import PluginSettingsIncompleteError from '../../domain/plugin/PluginSettingsInc
 import {eventClasses} from '../../domain/event/registry';
 import {openMarketCompatibility} from './semverRange';
 import scopedEventBus from './scopedEventBus';
-/** @import PluginSource from '../../domain/plugin/PluginSource' */
-/** @import { PluginManifest } from '../../domain/plugin/PluginSource' */
-/** @import PluginRepository from '../../domain/plugin/PluginRepository' */
-/** @import { PluginState } from '../../domain/plugin/PluginRepository' */
-/** @import DomainEventBus from '../../domain/service/DomainEventBus' */
-/** @import SecretStore from '../../domain/plugin/SecretStore' */
+/** @typedef {import('../../domain/plugin/PluginSource').default} PluginSource */
+/** @typedef {import('../../domain/plugin/PluginSource').PluginManifest} PluginManifest */
+/** @typedef {import('../../domain/plugin/PluginRepository').default} PluginRepository */
+/** @typedef {import('../../domain/plugin/PluginRepository').PluginState} PluginState */
+/** @typedef {import('../../domain/service/DomainEventBus').default} DomainEventBus */
+/** @typedef {import('../../domain/plugin/SecretStore').default} SecretStore */
 
 export const PLUGIN_API_VERSION = 1;
 

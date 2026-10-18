@@ -1,4 +1,4 @@
-/** @import Category from './Category' */
+/** @typedef {import('./Category').default} Category */
 
 /**
  * Port for building a category.

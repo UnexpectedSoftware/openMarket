@@ -1,6 +1,6 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Category from '../../../domain/category/Category' */
-/** @import CategoryRepository from '../../../domain/category/CategoryRepository' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/category/Category').default} Category */
+/** @typedef {import('../../../domain/category/CategoryRepository').default} CategoryRepository */
 
 /**
  * @class FindCategoryById

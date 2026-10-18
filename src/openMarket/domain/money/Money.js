@@ -1,6 +1,6 @@
 import InvalidMoneyError from './InvalidMoneyError';
 import scaledInteger from './scaledInteger';
-/** @import Quantity from './Quantity' */
+/** @typedef {import('./Quantity').default} Quantity */
 
 /**
  * An amount of euros stored as an integer number of cents.

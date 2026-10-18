@@ -1,7 +1,7 @@
 import * as Rx from "rxjs";
 import { toStoredBound } from "../service/sqliteDates";
 import {centsOf, eurosOf, milliOf, moneyFromColumns, unitsOf} from "../service/storedMoney";
-/** @import OrderRepository from "../../domain/order/OrderRepository" */
+/** @typedef {import("../../domain/order/OrderRepository").default} OrderRepository */
 
 const DISPLAY_CREATED_AT = "strftime('%d/%m/%Y %H:%M:%S', created_at)";
 const DISPLAY_DAY = "strftime('%d/%m/%Y', created_at)";

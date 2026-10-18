@@ -1,5 +1,5 @@
-/** @import Category from '../category/Category' */
-/** @import Product from './Product' */
+/** @typedef {import('../category/Category').default} Category */
+/** @typedef {import('./Product').default} Product */
 
 /**
  * @typedef {object} NewProduct

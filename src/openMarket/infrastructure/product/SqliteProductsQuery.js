@@ -1,8 +1,8 @@
 import * as Rx from 'rxjs';
 import ProductStatus from '../../domain/product/ProductStatus';
 import {moneyFromColumns} from '../service/storedMoney';
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import ProductsQuery from '../../domain/product/ProductsQuery' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../domain/product/ProductsQuery').default} ProductsQuery */
 /** @typedef {import('../../domain/product/ProductsQuery').SaleTile} SaleTile */
 
 const LIST_FOR_SALE_SQL =

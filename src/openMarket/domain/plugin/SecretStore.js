@@ -1,4 +1,4 @@
-/** @import { Observable } from 'rxjs/Observable' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 
 /**
  * Port: encrypted settings for one plugin. The value is never written as plaintext.

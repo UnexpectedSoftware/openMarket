@@ -4,10 +4,10 @@ import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/empty';
 import {rethrow} from '../logging/ErrorLog';
 import {centsOf, eurosOf, milliOf, unitsOf} from '../service/storedMoney';
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import InvoiceRepository from '../../domain/invoice/InvoiceRepository' */
-/** @import Invoice from '../../domain/invoice/Invoice' */
-/** @import SqlInvoiceMapper from './SqlInvoiceMapper' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../domain/invoice/InvoiceRepository').default} InvoiceRepository */
+/** @typedef {import('../../domain/invoice/Invoice').default} Invoice */
+/** @typedef {import('./SqlInvoiceMapper').default} SqlInvoiceMapper */
 
 const INVOICE_COLUMNS = 'i.id, i.series, i.number, i.invoice_number, i.issued_at, i.issue_date, i.type, i.issuer_json, i.corrects_invoice_id, i.order_id, ' +
   'i.status, i.cancelled_at, i.total, i.total_cents';

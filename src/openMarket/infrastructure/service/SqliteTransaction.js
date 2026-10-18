@@ -2,9 +2,9 @@ import * as Rx from 'rxjs';
 import 'rxjs/add/operator/toArray';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/catch';
-/** @import Transaction from '../../domain/service/Transaction' */
-/** @import SqliteConnection from './SqliteConnection' */
-/** @import { Observable } from 'rxjs/Observable' */
+/** @typedef {import('../../domain/service/Transaction').default} Transaction */
+/** @typedef {import('./SqliteConnection').default} SqliteConnection */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 
 /**
  * Commits only after the work observable completes, then emits its values.

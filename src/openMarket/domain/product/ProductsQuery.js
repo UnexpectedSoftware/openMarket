@@ -1,4 +1,4 @@
-/** @import { Observable } from 'rxjs/Observable' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 
 /**
  * One product tile on the sell screen. A read model, not a Product.

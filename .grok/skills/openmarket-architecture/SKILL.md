@@ -31,9 +31,9 @@ Checklist:
 import * as Rx from 'rxjs';
 import ProductNotFoundError from '../../../domain/product/ProductNotFoundError';
 import observableError from '../../../infrastructure/logging/observableError';
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import ProductRepository from '../../../domain/product/ProductRepository' */
-/** @import Product from '../../../domain/product/Product' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/product/ProductRepository').default} ProductRepository */
+/** @typedef {import('../../../domain/product/Product').default} Product */
 
 /**
  * Sets a counted stock level after a stocktake.
@@ -129,8 +129,8 @@ export default class Supplier {
 
 ```js
 // src/openMarket/domain/supplier/SupplierRepository.js
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Supplier from './Supplier' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('./Supplier').default} Supplier */
 
 /**
  * Port: the shop's suppliers, as a collection.
@@ -197,10 +197,10 @@ export default class SqlSupplierMapper {
 // src/openMarket/infrastructure/supplier/SqliteSupplierRepository.js
 import * as Rx from 'rxjs';
 import {rethrow} from '../logging/ErrorLog';
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import SupplierRepository from '../../domain/supplier/SupplierRepository' */
-/** @import Supplier from '../../domain/supplier/Supplier' */
-/** @import SqlSupplierMapper from './SqlSupplierMapper' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../domain/supplier/SupplierRepository').default} SupplierRepository */
+/** @typedef {import('../../domain/supplier/Supplier').default} Supplier */
+/** @typedef {import('./SqlSupplierMapper').default} SqlSupplierMapper */
 
 const UPSERT_SUPPLIER_SQL = 'INSERT INTO supplier (id, name, nif) VALUES (?, ?, ?) ' +
   'ON CONFLICT(id) DO UPDATE SET name = excluded.name, nif = excluded.nif';
@@ -356,7 +356,7 @@ return this._transaction.run(() => this._productRepository.save({product}).do(()
 // src/openMarket/application/service/product/LogStockAdjustments.js (handler)
 import StockAdjusted from '../../../domain/event/StockAdjusted';
 import {record} from '../../../infrastructure/logging/ErrorLog';
-/** @import DomainEventBus from '../../../domain/service/DomainEventBus' */
+/** @typedef {import('../../../domain/service/DomainEventBus').default} DomainEventBus */
 
 export default class LogStockAdjustments {
   /** @param {{domainEventBus: DomainEventBus, adjustmentRepository: any}} deps */
@@ -473,7 +473,7 @@ The loader is `src/openMarket/infrastructure/plugins/`. A plugin is not source i
 - [ ] Durable events are saved, and live events are recorded, inside the caller's transaction. `raise()` after commit drains the bus queue, and `discard()` runs when the transaction fails. The bus and `SqliteTransaction` do not reference each other
 - [ ] Typed `AppError` with an `ErrorCode`, and no `new Error('…')` for shop failures
 - [ ] Container factory added. Facade key added if the UI needs it.
-- [ ] JSDoc: destructured params, `@import`, `@implements` on adapters, no `.ts` files
+- [ ] JSDoc: destructured params, `@typedef {import()}`, `@implements` on adapters, no `.ts` files and no `/** @import */`
 - [ ] Tests: unit (ports faked), contract line for new adapters, itest for SQL
 
 ## Finish (every recipe)

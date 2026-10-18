@@ -3,8 +3,8 @@ import path from 'path';
 import * as Rx from 'rxjs';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/observable/defer';
-/** @import PluginSource from '../../domain/plugin/PluginSource' */
-/** @import { PluginManifest } from '../../domain/plugin/PluginSource' */
+/** @typedef {import('../../domain/plugin/PluginSource').default} PluginSource */
+/** @typedef {import('../../domain/plugin/PluginSource').PluginManifest} PluginManifest */
 
 const PLUGIN_ID = /^[a-z][a-z0-9-]*$/;
 

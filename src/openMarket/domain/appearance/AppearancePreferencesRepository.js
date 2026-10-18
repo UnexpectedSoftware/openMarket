@@ -1,5 +1,5 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import AppearancePreferences from './AppearancePreferences' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('./AppearancePreferences').default} AppearancePreferences */
 
 /**
  * Port: the till's appearance, as one stored preference.

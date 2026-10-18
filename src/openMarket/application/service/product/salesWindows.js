@@ -1,7 +1,7 @@
 import moment from 'moment';
 import UnknownSalesWindowError from '../../../domain/error/UnknownSalesWindowError';
 import {raise} from '../../../infrastructure/logging/ErrorLog';
-/** @import { SalePoint } from '../../../domain/product/ProductSaleStatisticsRepository' */
+/** @typedef {import('../../../domain/product/ProductSaleStatisticsRepository').SalePoint} SalePoint */
 
 export const DEFAULT_SALES_WINDOW = 'last_7_days';
 

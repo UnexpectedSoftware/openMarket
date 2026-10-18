@@ -1,5 +1,5 @@
 import PluginSubscriberNameError from '../../domain/plugin/PluginSubscriberNameError';
-/** @import DomainEventBus from '../../domain/service/DomainEventBus' */
+/** @typedef {import('../../domain/service/DomainEventBus').default} DomainEventBus */
 
 /**
  * The only bus a plugin receives. Durable names are prefixed with the plugin id.

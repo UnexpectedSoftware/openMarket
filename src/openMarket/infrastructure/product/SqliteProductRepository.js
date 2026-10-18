@@ -1,5 +1,5 @@
 import * as Rx from "rxjs";
-/** @import ProductRepository from "../../domain/product/ProductRepository" */
+/** @typedef {import("../../domain/product/ProductRepository").default} ProductRepository */
 import ProductStatus from "../../domain/product/ProductStatus";
 import ProductNotFoundError from "../../domain/product/ProductNotFoundError";
 import InvalidProductPageError from "../../domain/product/InvalidProductPageError";

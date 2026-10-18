@@ -1,6 +1,6 @@
 import * as Rx from 'rxjs';
 import {record} from './ErrorLog';
-/** @import { ErrorObservable } from 'rxjs/observable/ErrorObservable' */
+/** @typedef {import('rxjs/observable/ErrorObservable').ErrorObservable} ErrorObservable */
 
 /**
  * Records the error, then fails the observable with the same object.

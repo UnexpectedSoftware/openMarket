@@ -1,6 +1,6 @@
 import 'rxjs/add/operator/mergeMap';
-/** @import SellPreferencesRepository from '../../../domain/shop/SellPreferencesRepository' */
-/** @import SellPreferences from '../../../domain/shop/SellPreferences' */
+/** @typedef {import('../../../domain/shop/SellPreferencesRepository').default} SellPreferencesRepository */
+/** @typedef {import('../../../domain/shop/SellPreferences').default} SellPreferences */
 
 /**
  * Stores the till's auto-print choice. The Settings screen is a later phase.

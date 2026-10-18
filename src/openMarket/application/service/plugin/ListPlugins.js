@@ -5,10 +5,10 @@ import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/toArray';
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import PluginSource from '../../../domain/plugin/PluginSource' */
-/** @import PluginRepository from '../../../domain/plugin/PluginRepository' */
-/** @import SecretStore from '../../../domain/plugin/SecretStore' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/plugin/PluginSource').default} PluginSource */
+/** @typedef {import('../../../domain/plugin/PluginRepository').default} PluginRepository */
+/** @typedef {import('../../../domain/plugin/SecretStore').default} SecretStore */
 
 /**
  * Lists discovered plugins with the enabled flag stored for each one.

@@ -1,6 +1,6 @@
 import Order from "../../domain/order/Order";
-/** @import OrderFactory from "../../domain/order/OrderFactory" */
-/** @import { OrderLine } from "../../domain/order/Order" */
+/** @typedef {import("../../domain/order/OrderFactory").default} OrderFactory */
+/** @typedef {import("../../domain/order/Order").OrderLine} OrderLine */
 
 /** @implements {OrderFactory} */
 export default class OrderFactoryImpl {

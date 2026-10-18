@@ -19,17 +19,17 @@ import Quantity from "../../../domain/money/Quantity";
 import ErrorCode from "../../../domain/error/ErrorCode";
 import InvalidOrderLineError from "../../../domain/order/InvalidOrderLineError";
 import InvalidOrderQuantityError from "../../../domain/order/InvalidOrderQuantityError";
-/** @import Order from "../../../domain/order/Order" */
-/** @import { OrderLine } from "../../../domain/order/Order" */
-/** @import OrderFactory from "../../../domain/order/OrderFactory" */
-/** @import OrderRepository from "../../../domain/order/OrderRepository" */
-/** @import ProductRepository from "../../../domain/product/ProductRepository" */
-/** @import InvoiceRepository from "../../../domain/invoice/InvoiceRepository" */
-/** @import InvoiceSequence from "../../../domain/invoice/InvoiceSequence" */
-/** @import Identity from "../../../domain/Identity" */
-/** @import Clock from "../../../domain/Clock" */
-/** @import DomainEventBus from "../../../domain/service/DomainEventBus" */
-/** @import Transaction from "../../../domain/service/Transaction" */
+/** @typedef {import("../../../domain/order/Order").default} Order */
+/** @typedef {import("../../../domain/order/Order").OrderLine} OrderLine */
+/** @typedef {import("../../../domain/order/OrderFactory").default} OrderFactory */
+/** @typedef {import("../../../domain/order/OrderRepository").default} OrderRepository */
+/** @typedef {import("../../../domain/product/ProductRepository").default} ProductRepository */
+/** @typedef {import("../../../domain/invoice/InvoiceRepository").default} InvoiceRepository */
+/** @typedef {import("../../../domain/invoice/InvoiceSequence").default} InvoiceSequence */
+/** @typedef {import("../../../domain/Identity").default} Identity */
+/** @typedef {import("../../../domain/Clock").default} Clock */
+/** @typedef {import("../../../domain/service/DomainEventBus").default} DomainEventBus */
+/** @typedef {import("../../../domain/service/Transaction").default} Transaction */
 
 /**
  * @class CreateOrder

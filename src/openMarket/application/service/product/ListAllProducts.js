@@ -1,8 +1,9 @@
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import Product from '../../../domain/product/Product' */
-/** @import ProductFilterFactory from '../../../domain/product/ProductFilterFactory' */
-/** @import ProductRepository from '../../../domain/product/ProductRepository' */
-/** @import { CatalogCursor, CatalogQuery } from '../../../domain/product/ProductRepository' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/product/Product').default} Product */
+/** @typedef {import('../../../domain/product/ProductFilterFactory').default} ProductFilterFactory */
+/** @typedef {import('../../../domain/product/ProductRepository').default} ProductRepository */
+/** @typedef {import('../../../domain/product/ProductRepository').CatalogCursor} CatalogCursor */
+/** @typedef {import('../../../domain/product/ProductRepository').CatalogQuery} CatalogQuery */
 
 /**
  * @class ListAllProducts

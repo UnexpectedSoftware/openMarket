@@ -3,10 +3,10 @@
  */
 import * as Rx from "rxjs";
 import VatRate from "../../../domain/tax/VatRate";
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import CategoryRepository from '../../../domain/category/CategoryRepository' */
-/** @import ProductFactory from '../../../domain/product/ProductFactory' */
-/** @import ProductRepository from '../../../domain/product/ProductRepository' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/category/CategoryRepository').default} CategoryRepository */
+/** @typedef {import('../../../domain/product/ProductFactory').default} ProductFactory */
+/** @typedef {import('../../../domain/product/ProductRepository').default} ProductRepository */
 
 export default class CreateOrUpdateProduct {
   /**

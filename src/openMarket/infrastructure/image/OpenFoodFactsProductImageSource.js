@@ -1,7 +1,7 @@
 import os from 'os';
 import * as Rx from 'rxjs';
 import {isProductBarcode} from '../../domain/image/barcode';
-/** @import ProductImageSource from '../../domain/image/ProductImageSource' */
+/** @typedef {import('../../domain/image/ProductImageSource').default} ProductImageSource */
 import {IMAGE_MAX_BYTES} from '../service/ImageStore';
 import {fetchWithRetry, pause, writeFetchedImage} from './downloadImage';
 

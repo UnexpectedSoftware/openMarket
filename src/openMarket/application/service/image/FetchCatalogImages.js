@@ -2,11 +2,11 @@ import fs from 'fs';
 import * as Rx from 'rxjs';
 import {isProductBarcode} from '../../../domain/image/barcode';
 import {record} from '../../../infrastructure/logging/ErrorLog';
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import CategoryImageSource from '../../../domain/image/CategoryImageSource' */
-/** @import ProductImageSource from '../../../domain/image/ProductImageSource' */
-/** @import CategoryRepository from '../../../domain/category/CategoryRepository' */
-/** @import ProductRepository from '../../../domain/product/ProductRepository' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/image/CategoryImageSource').default} CategoryImageSource */
+/** @typedef {import('../../../domain/image/ProductImageSource').default} ProductImageSource */
+/** @typedef {import('../../../domain/category/CategoryRepository').default} CategoryRepository */
+/** @typedef {import('../../../domain/product/ProductRepository').default} ProductRepository */
 
 export const PRODUCT_BATCH_SIZE = 20;
 

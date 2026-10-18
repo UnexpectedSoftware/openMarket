@@ -1,7 +1,7 @@
 import os from 'os';
 import * as Rx from 'rxjs';
 import {IMAGE_MAX_BYTES} from '../service/ImageStore';
-/** @import CategoryImageSource from '../../domain/image/CategoryImageSource' */
+/** @typedef {import('../../domain/image/CategoryImageSource').default} CategoryImageSource */
 import {fetchWithRetry, IMAGE_EXTENSIONS, pause, writeFetchedImage} from './downloadImage';
 import {openMarketUserAgent} from './OpenFoodFactsProductImageSource';
 

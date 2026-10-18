@@ -1,7 +1,7 @@
 import * as Rx from 'rxjs';
 import AppearancePreferences from '../../domain/appearance/AppearancePreferences';
 import {rethrow} from '../logging/ErrorLog';
-/** @import AppearancePreferencesRepository from '../../domain/appearance/AppearancePreferencesRepository' */
+/** @typedef {import('../../domain/appearance/AppearancePreferencesRepository').default} AppearancePreferencesRepository */
 
 const KEY = 'appearance';
 const FIND_SQL = 'SELECT value_json FROM setting WHERE key = ?';

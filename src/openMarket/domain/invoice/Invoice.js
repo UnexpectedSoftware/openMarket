@@ -8,7 +8,7 @@ import VatRate from '../tax/VatRate';
 import VatBreakdown from '../tax/VatBreakdown';
 import InvoiceType from './InvoiceType';
 import {lineKind} from '../order/lineValidity';
-/** @import Order from '../order/Order' */
+/** @typedef {import('../order/Order').default} Order */
 
 /**
  * Shop named on the invoice at the moment it was issued.

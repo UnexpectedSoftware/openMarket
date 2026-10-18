@@ -1,4 +1,4 @@
-/** @import Identity from '../../domain/Identity' */
+/** @typedef {import('../../domain/Identity').default} Identity */
 
 /** @implements {Identity} */
 export default class SequentialIdentity {

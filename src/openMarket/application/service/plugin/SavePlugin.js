@@ -8,10 +8,10 @@ import 'rxjs/add/operator/toArray';
 import PluginNotFoundError from '../../../domain/plugin/PluginNotFoundError';
 import PluginSettingsIncompleteError from '../../../domain/plugin/PluginSettingsIncompleteError';
 import observableError from '../../../infrastructure/logging/observableError';
-/** @import { Observable } from 'rxjs/Observable' */
-/** @import PluginSource from '../../../domain/plugin/PluginSource' */
-/** @import PluginRepository from '../../../domain/plugin/PluginRepository' */
-/** @import SecretStore from '../../../domain/plugin/SecretStore' */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../../domain/plugin/PluginSource').default} PluginSource */
+/** @typedef {import('../../../domain/plugin/PluginRepository').default} PluginRepository */
+/** @typedef {import('../../../domain/plugin/SecretStore').default} SecretStore */
 
 /**
  * @param {*} config

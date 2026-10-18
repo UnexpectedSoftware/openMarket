@@ -1,5 +1,5 @@
 import * as Rx from "rxjs";
-/** @import CategoryRepository from "../../domain/category/CategoryRepository" */
+/** @typedef {import("../../domain/category/CategoryRepository").default} CategoryRepository */
 import CategoryNotFoundError from "../../domain/category/CategoryNotFoundError";
 import CategoryNotEmptyError from "../../domain/category/CategoryNotEmptyError";
 import {raise, rethrow} from "../logging/ErrorLog";
