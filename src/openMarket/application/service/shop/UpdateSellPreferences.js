@@ -1,0 +1,26 @@
+import 'rxjs/add/operator/mergeMap';
+/** @import SellPreferencesRepository from '../../../domain/shop/SellPreferencesRepository' */
+/** @import SellPreferences from '../../../domain/shop/SellPreferences' */
+
+/**
+ * Stores the till's auto-print choice. The Settings screen is a later phase.
+ */
+export default class UpdateSellPreferences {
+
+  /** @param {{sellPreferencesRepository: SellPreferencesRepository}} deps */
+  constructor({sellPreferencesRepository}) {
+    this._sellPreferencesRepository = sellPreferencesRepository;
+  }
+
+  /**
+   * @param {{autoPrint?: boolean}} command
+   * @returns {import('rxjs/Observable').Observable<SellPreferences>}
+   */
+  update({autoPrint}) {
+    return this._sellPreferencesRepository.find()
+      .flatMap(preferences => this._sellPreferencesRepository.save({
+        preferences: preferences.withAutoPrint(autoPrint === true)
+      }));
+  }
+
+}

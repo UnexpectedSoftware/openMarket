@@ -7,6 +7,7 @@ import EmptyState from '../../components/EmptyState';
 import Money from '../../../domain/money/Money';
 import Quantity from '../../../domain/money/Quantity';
 import {formatMoney} from '../../i18n/money';
+import PluginSlot from '../../components/PluginSlot';
 import {lineAmount, lineIsValid, vatRows} from './model';
 
 /**
@@ -41,6 +42,7 @@ export default class Cart extends Component {
           ) : lines.map((line, index) => this.renderLine(line, index, readonly, lowSet))}
         </div>
         <footer className="sell-footer">
+          <PluginSlot name="sell.cart.footer" />
           <ul className="order-vat">
             {rows.map(row => (
               <li key={row.label}>

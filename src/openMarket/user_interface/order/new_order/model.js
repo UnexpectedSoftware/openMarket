@@ -18,7 +18,10 @@ export const state = () => ({
   lowStockBarcodes: [],
   lastOrder: null,
   tiles: [],
-  tilesStatus: 'idle'
+  tilesStatus: 'idle',
+  saving: false,
+  previewHtml: '',
+  reprintHtml: ''
 });
 
 /**

@@ -149,7 +149,7 @@ export default class Dialog extends Component {
     return (
       <div className="om-dialog-overlay">
         <div
-          className="om-dialog"
+          className={this.props.className ? 'om-dialog ' + this.props.className : 'om-dialog'}
           role={role}
           aria-modal="true"
           aria-labelledby={this.titleId}

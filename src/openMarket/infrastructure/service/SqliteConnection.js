@@ -35,7 +35,10 @@ CREATE TABLE IF NOT EXISTS "order" (
   id TEXT PRIMARY KEY,
   created_at TEXT,
   total REAL,
-  total_cents INTEGER
+  total_cents INTEGER,
+  payment_method TEXT,
+  tendered_cents INTEGER,
+  change_cents INTEGER
 );
 CREATE TABLE IF NOT EXISTS line (
   order_id TEXT,
@@ -325,6 +328,26 @@ function hasColumn(database, table, column) {
 }
 
 const ORDER_LINE_KIND_MIGRATION = 'order_line_kind_v1';
+const ORDER_PAYMENT_MIGRATION = 'order_payment_v1';
+
+/**
+ * Adds the payment columns. Existing orders stay unpaid (all three null).
+ * A second open finds the schema_migration row and does not insert it again.
+ * @param {{prepare: Function, exec: Function}} database
+ */
+function migrateOrderPayment(database) {
+  ensureColumn(database, '"order"', 'payment_method', 'TEXT');
+  ensureColumn(database, '"order"', 'tendered_cents', 'INTEGER');
+  ensureColumn(database, '"order"', 'change_cents', 'INTEGER');
+  const applied = database.prepare('SELECT name FROM schema_migration WHERE name = ?').get(ORDER_PAYMENT_MIGRATION);
+  if (applied) {
+    return;
+  }
+  database.prepare('INSERT INTO schema_migration (name, applied_at) VALUES (?, ?)').run(
+    ORDER_PAYMENT_MIGRATION,
+    new Date().toISOString()
+  );
+}
 
 /**
  * Adds the line kind used by Venta libre. Existing rows stay PRODUCT.
@@ -551,6 +574,7 @@ export default class SqliteConnection {
     migrateVatRates(this._database);
     migrateIssuer(this._database);
     migrateOrderLineKind(this._database);
+    migrateOrderPayment(this._database);
     ensureUniqueInvoiceOrder(this._database);
     dropInvoiceGuards(this._database);
     installInvoiceGuards(this._database);

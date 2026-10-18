@@ -79,18 +79,26 @@ export default class CreateOrder {
   /**
    * Places the order, stores it with its invoice, and subtracts stock.
    * Those writes commit together. The series is the shop's local year of the issue time.
-   * @param {{lines: OrderLine[]}} order
+   * A payment, when present, is checked against the order total before the insert.
+   * It is not copied onto the invoice payload.
+   * @param {{lines: OrderLine[], payment?: {method?: string, tendered?: *, tenderedCents?: number}}} order
    * @returns {Observable<Order>}
    */
-  createOrder({lines}) {
+  createOrder({lines, payment}) {
     const saved = this._transaction.run(() => this._loadProfile()
       .flatMap(profile => this._loadProducts({lines})
       .flatMap(products => {
         const order = this._buildOrder({lines: stampVat(lines, products)});
-        return order.flatMap(draft => this._orderRepository.save({order: draft})
-          .flatMap(() => this._subtrackStock({order: draft, products}))
-          .flatMap(({lowStockProducts}) => this._issueInvoice({order: draft, profile})
-            .map(invoice => ({order: draft, invoice, lowStockProducts}))));
+        return order.flatMap(draft => {
+          const settled = applyPayment(draft, payment);
+          if (settled.error) {
+            return observableError(settled.error);
+          }
+          return this._orderRepository.save({order: settled.order})
+          .flatMap(() => this._subtrackStock({order: settled.order, products}))
+          .flatMap(({lowStockProducts}) => this._issueInvoice({order: settled.order, profile})
+            .map(invoice => ({order: settled.order, invoice, lowStockProducts})));
+        });
       }))
       .do(({order, invoice, lowStockProducts}) => {
         this._domainEventBus.save(new OrderCreated({
@@ -233,11 +241,23 @@ export default class CreateOrder {
 }
 
 /**
- * Copies the product's rate onto the line. A missing product keeps the general rate.
- * @param {Array<{kind?: 'PRODUCT' | 'FREE', barcode?: string}>} lines
- * @param {Map<string, *>} products
- * @returns {Array<object>}
+ * Attaches a payment when the caller sent one. A missing payment leaves the order as it was.
+ * @param {Order} order
+ * @param {{method?: string, tendered?: *, tenderedCents?: number} | null | undefined} payment
+ * @returns {{order: Order, error?: *}}
  */
+function applyPayment(order, payment) {
+  if (payment == null) {
+    return {order};
+  }
+  try {
+    order.recordPayment(payment);
+    return {order};
+  } catch (error) {
+    return {order, error};
+  }
+}
+
 /**
  * addLine reports every refusal as an invalid line. A quantity that is not
  * a positive number stays the quantity error the sale already raised.
@@ -256,6 +276,12 @@ function saleError(error) {
   return error;
 }
 
+/**
+ * Copies the product's rate onto the line. A missing product keeps the general rate.
+ * @param {Array<{kind?: 'PRODUCT' | 'FREE', barcode?: string}>} lines
+ * @param {Map<string, *>} products
+ * @returns {Array<object>}
+ */
 function stampVat(lines, products) {
   return (lines || []).map(line => {
     if (line && line.kind === 'FREE') {

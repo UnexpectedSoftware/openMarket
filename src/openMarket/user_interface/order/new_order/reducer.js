@@ -8,7 +8,11 @@ import {
   NEW_ORDER_NOTE_LOW_STOCK,
   SALE_TILES_REQUESTED,
   SALE_TILES_LOADED,
-  SALE_TILES_FAILED
+  SALE_TILES_FAILED,
+  NEW_ORDER_SAVE,
+  PAYMENT_FAILED,
+  PAYMENT_PREVIEW_LOADED,
+  REPRINT_PREVIEW_LOADED
 } from './action';
 import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, loadOrder} from './model';
 import {LIST_ORDER_DETAIL_LOADED} from '../list_orders/action';
@@ -25,7 +29,10 @@ function keep(current, next) {
     lowStockBarcodes: current.lowStockBarcodes || [],
     lastOrder: current.lastOrder || null,
     tiles: current.tiles || [],
-    tilesStatus: current.tilesStatus || 'idle'
+    tilesStatus: current.tilesStatus || 'idle',
+    saving: !!current.saving,
+    previewHtml: current.previewHtml || '',
+    reprintHtml: current.reprintHtml || ''
   };
 }
 
@@ -79,6 +86,18 @@ export default function reducer(current = initialState(), action) {
 
     case SALE_TILES_FAILED:
       return {...current, tilesStatus: 'error'};
+
+    case NEW_ORDER_SAVE:
+      return {...current, saving: true};
+
+    case PAYMENT_FAILED:
+      return {...current, saving: false};
+
+    case PAYMENT_PREVIEW_LOADED:
+      return {...current, previewHtml: action.payload || ''};
+
+    case REPRINT_PREVIEW_LOADED:
+      return {...current, reprintHtml: action.payload || ''};
 
     case NEW_ORDER_SAVED:
       return {

@@ -13,7 +13,10 @@ function mapStateToProps(state) {
     tiles: state.newOrder.tiles,
     tilesStatus: state.newOrder.tilesStatus,
     lowStockBarcodes: state.newOrder.lowStockBarcodes,
-    lastOrder: state.newOrder.lastOrder
+    lastOrder: state.newOrder.lastOrder,
+    saving: state.newOrder.saving,
+    previewHtml: state.newOrder.previewHtml,
+    reprintHtml: state.newOrder.reprintHtml
   };
 }
 
