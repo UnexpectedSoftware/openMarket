@@ -9,7 +9,9 @@ metadata:
 
 # OpenMarket architecture recipes
 
-Root `AGENTS.md` has the rules. This skill has the **how**. Pick one recipe, follow its file checklist in order, then run **Finish** (at the end).
+Root `AGENTS.md` has the rules. This skill has the **how**.
+
+Dependency rule: outer layers (UI, infrastructure, application) may depend on the domain, and the UI may use domain value objects directly. Only the reverse is forbidden (domain must not import application, infrastructure or UI; application must not import infrastructure adapters or UI). Pick one recipe, follow its file checklist in order, then run **Finish** (at the end).
 The examples use a made-up `Supplier` context and an `AdjustStock` use case. Rename them to fit your task. Match the surrounding code style (2-space indent, RxJS 5 `Rx.Observable`, named-object constructor params).
 
 ---
@@ -396,7 +398,8 @@ Decide which case you're in:
 
 | Need | Where |
 |---|---|
-| Aggregates for a screen (list, filter, page) | a finder on the aggregate's repository port (`findCatalog`, `findAllByDates`), returning aggregates or small row DTOs |
+| **Data for a redesigned screen (preferred for new reads)** | a query port `domain/<ctx>/<Name>Query.js` returning plain read models (e.g. `OrdersQuery.listSummaries()` → `OrderSummary {id, createdAt, totalCents, lineCount}`), adapter `infrastructure/<ctx>/Sqlite<Name>Query.js` on the same DB, exposed through a read use case/facade key. Never rehydrate aggregates for display; repositories serve write use cases. Apply when a screen is redesigned (orders in Phase 5 first), not as a big-bang refactor |
+| Existing screens not yet redesigned (list, filter, page) | a finder on the aggregate's repository port (`findCatalog`, `findAllByDates`), returning aggregates or small row DTOs |
 | Long SQL clause building or row folding for that finder | `infrastructure/<ctx>/Sqlite<Name>QueryService.js`, injected **only** into `Sqlite<Name>Repository` (constructor `queryService`). Not a port, never imported outside infrastructure |
 | A report or statistics read model (sums per day, most sold) | its **own** read port `domain/<ctx>/<Thing>Repository.js` + `Sqlite<Thing>Repository` (precedent: `ProductSaleStatisticsRepository`, kept current by the `RecordProductSales` handler), plus a use case that reads it |
 

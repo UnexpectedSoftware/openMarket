@@ -11,9 +11,30 @@ UI work: read `docs/design/DESIGN.md` and use the `openmarket-design` skill (see
 | `domain/` | Aggregates (`Product`, `Order`, `Category`), value objects, ports (`@interface` classes), domain events (`domain/event/`), errors (`*Error` + `error/ErrorCode.js`) | other domain files only. No fs, sqlite, electron, react |
 | `application/` | Use cases in `application/service/<context>/<VerbNoun>.js`; the facade `application/index.js` | `domain/`, `infrastructure/logging/` (error logging). Only `index.js` may import the container |
 | `infrastructure/` | Adapters (`Sqlite<Name>Repository`, `Sql<Name>Mapper`, `<Name>FactoryImpl`, `OpenFoodFacts…Source`), SQL helpers (`Sqlite<Name>QueryService`), printer, logging, DI container `dic/Container.js` | anything below it |
-| `user_interface/` | React/Redux/epics | `application/index.js` (`OpenMarket.get('<key>')`), `domain/` for read-only constants and events, `infrastructure/logging/` |
+| `user_interface/` | React/Redux/epics | `application/index.js` (`OpenMarket.get('<key>')`), `domain/` (value objects such as `Money`, `VatRate`, `VatBreakdown`, constants, events), `infrastructure/logging/` |
 
-The dependency rule: dependencies point inwards (UI → application → domain). Infrastructure implements domain ports and is wired in `infrastructure/dic/Container.js`. `src/test/openMarket/architecture/architecture.spec.js` enforces this.
+The dependency rule: dependencies point inwards. Outer layers (UI, infrastructure, application) **may** depend on the domain, and the UI may use domain value objects (`Money`, `Quantity`, `VatRate`, `VatBreakdown`) directly. That coupling is fine. Only the reverse is forbidden: the domain never imports application, infrastructure or UI, and application never imports infrastructure (except `logging/` and the container in `index.js`) or UI. Infrastructure implements domain ports and is wired in `infrastructure/dic/Container.js`. `src/test/openMarket/architecture/architecture.spec.js` enforces this.
+
+## Reads and writes (CQRS-lite)
+
+- **Write side:** repositories load and save aggregates and are used only by write use cases. Aggregate invariants exist for writes.
+- **Read side:** a screen that needs data gets it from a **query port** that returns plain read models (DTOs shaped for that screen), never rehydrated aggregates. Port: `domain/<ctx>/<Name>Query.js` (same place as the other ports). Adapter: `infrastructure/<ctx>/Sqlite<Name>Query.js`, on the same SQLite database. No projections or events are needed.
+- Apply this incrementally as screens are redesigned (the Phase 5 orders screen first). Don't refactor existing reads just for this.
+
+```js
+// domain/order/OrdersQuery.js (port)
+/** @typedef {{id: number, createdAt: string, totalCents: number, lineCount: number}} OrderSummary */
+/** @interface */
+export default class OrdersQuery {
+  /** @param {{from: string, to: string}} range @returns {Observable<OrderSummary[]>} */
+  listSummaries(range) { throw new Error('OrdersQuery#listSummaries must be implemented'); }
+}
+// infrastructure/order/SqliteOrdersQuery.js: /** @implements {OrdersQuery} */, one SELECT … GROUP BY,
+// rows mapped to plain OrderSummary objects. Exposed through a thin read use case / facade key
+// (for example 'orders_list_summaries_query').
+```
+
+The UI uses application use cases for writes and queries for reads, and may use domain value objects.
 
 Plugins are not a layer. `infrastructure/plugins/` is the loader. Plugin implementations are folders in the user-data `plugins` directory (`~/.config/OpenMarket/plugins` on this machine), not source in this repository. Domain and application do not import them. See `docs/plugins.md`.
 
@@ -22,6 +43,7 @@ Plugins are not a layer. `infrastructure/plugins/` is the loader. Plugin impleme
 | Thing | Name / place |
 |---|---|
 | Persistence port | `domain/<ctx>/<Name>Repository.js`, an `@interface` class whose methods throw `'<Port>#<method> must be implemented'` |
+| Query port (read side) | `domain/<ctx>/<Name>Query.js`, returning plain read models; adapter `infrastructure/<ctx>/Sqlite<Name>Query.js` |
 | Persistence adapter | `infrastructure/<ctx>/Sqlite<Name>Repository.js` |
 | SQL helper for one repository | `infrastructure/<ctx>/Sqlite<Name>QueryService.js`. Injected only into that repository, never into use cases |
 | Row ↔ aggregate | `infrastructure/<ctx>/Sql<Name>Mapper.js` |
