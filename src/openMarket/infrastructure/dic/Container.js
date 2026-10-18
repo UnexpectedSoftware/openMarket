@@ -40,6 +40,7 @@ import SqliteCategoryRepository from "../category/SqliteCategoryRepository";
 import SqliteCategoryQueryService from "../category/SqliteCategoryQueryService";
 import ImageStore, {imagesDirectory} from "../service/ImageStore";
 import SqliteProductRepository from "../product/SqliteProductRepository";
+import SqliteProductsQuery from "../product/SqliteProductsQuery";
 import SqliteProductQueryService from "../product/SqliteProductQueryService";
 import SqliteProductSaleStatisticsRepository from "../product/SqliteProductSaleStatisticsRepository";
 import SqliteProductSaleQueryService from "../product/SqliteProductSaleQueryService";
@@ -248,6 +249,13 @@ class Container {
       productMapper: this.getInstance({key: 'productMapper'}),
       images: this.getInstance({key: 'productImageStore'}),
       queryService: this.getInstance({key: 'sqliteProductQueryService'})
+    });
+  }
+
+  _productsQuery() {
+    return new SqliteProductsQuery({
+      connection: this.getInstance({key: 'sqliteConnection'}),
+      images: this.getInstance({key: 'productImageStore'})
     });
   }
 

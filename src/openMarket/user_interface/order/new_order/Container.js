@@ -1,71 +1,526 @@
 import React, {Component} from 'react';
-import {Link} from 'react-router';
-import NewOrderReduxForm from './ReduxForm';
+import {PageHeader} from '../../components/PageHeader';
+import TextField from '../../components/TextField';
+import NumberField, {parseDecimal} from '../../components/NumberField';
+import Select from '../../components/Select';
+import Button from '../../components/Button';
+import Dialog from '../../components/Dialog';
+import EmptyState from '../../components/EmptyState';
+import Skeleton from '../../components/Skeleton';
+import Money from '../../../domain/money/Money';
+import Quantity from '../../../domain/money/Quantity';
+import VatRate from '../../../domain/tax/VatRate';
+import {formatMoney} from '../../i18n/money';
+import {lineIsValid} from './model';
+import {isScannerBurst, applyShortcut} from './input';
+import Cart from './Cart';
 import WeightedDialog from '../weighted_dialog/ReduxConnector';
 import PrinterDialog from '../printer_dialog/ReduxConnector';
 import NewProductDialog from '../new_product_dialog/ReduxConnector';
-import * as Rx from "rxjs";
+
+const TILE_LIMIT = 24;
 
 class Container extends Component {
 
-  handleSubmit = (values) => {
-    const { newOrderSave , order } = this.props;
-    newOrderSave(order);
-  }
-
-  handleKeyPress = (e) => {
-    this.keyPressSubject$.next(e);
+  constructor(props) {
+    super(props);
+    this.state = {
+      search: '',
+      selected: -1,
+      freeOpen: false,
+      helpOpen: false,
+      freeDescription: 'Venta libre',
+      freeAmount: '',
+      freeVat: VatRate.standard().code()
+    };
+    this.searchRef = {current: null};
+    this.freeAmountRef = {current: null};
+    this._burst = emptyBurst();
+    this._dialogWasOpen = false;
+    this.onWindowKey = this.onWindowKey.bind(this);
+    this.onWindowFocus = this.onWindowFocus.bind(this);
+    this.onSearch = this.onSearch.bind(this);
+    this.focusSearch = this.focusSearch.bind(this);
+    this.charge = this.charge.bind(this);
+    this.openFree = this.openFree.bind(this);
+    this.closeFree = this.closeFree.bind(this);
+    this.confirmFree = this.confirmFree.bind(this);
+    this.openHelp = this.openHelp.bind(this);
+    this.closeHelp = this.closeHelp.bind(this);
+    this.setSearchNode = this.setSearchNode.bind(this);
+    this.setFreeAmountNode = this.setFreeAmountNode.bind(this);
+    this.onFreeDescription = this.onFreeDescription.bind(this);
+    this.onFreeAmount = this.onFreeAmount.bind(this);
+    this.onFreeVat = this.onFreeVat.bind(this);
+    this.printOrder = this.printOrder.bind(this);
   }
 
   componentWillMount() {
-    const { newOrderProductFetch, shopProfileRequested } = this.props;
-    if (shopProfileRequested) {
-      shopProfileRequested();
+    if (this.props.shopProfileRequested) {
+      this.props.shopProfileRequested();
     }
-    this.keyPressSubject$ = new Rx.Subject();
-    this.keyPressSubject$
-      .map(event => ({key:event.key, value: event.target.value}))
-      .filter(data => data.key === 'Enter')
-      .filter(data => data.value)
-      .map(data => newOrderProductFetch(data.value))
-      .subscribe();
+  }
+
+  componentDidMount() {
+    document.addEventListener('keydown', this.onWindowKey, true);
+    window.addEventListener('focus', this.onWindowFocus);
+    if (!this.props.readonly && this.props.saleTilesRequested) {
+      this.props.saleTilesRequested({text: '', limit: TILE_LIMIT});
+    }
+    this.focusSearch();
+  }
+
+  componentDidUpdate(previous) {
+    const before = previous.order && previous.order.lines ? previous.order.lines.length : 0;
+    const after = this.props.order && this.props.order.lines ? this.props.order.lines.length : 0;
+    if (before > 0 && after === 0 && !this.props.readonly && this.props.saleTilesRequested) {
+      this.props.saleTilesRequested({text: this.state.search || '', limit: TILE_LIMIT});
+    }
+    if (after !== before) {
+      const selected = after === 0 ? -1 : after - 1;
+      if (after > before && this.state.selected !== selected) {
+        this.setState({selected});
+      } else if (this.state.selected >= after && this.state.selected !== selected) {
+        this.setState({selected});
+      }
+      this.focusSearch();
+    }
   }
 
   componentWillUnmount() {
-    const { newOrderClosed } = this.props;
-    newOrderClosed();
+    document.removeEventListener('keydown', this.onWindowKey, true);
+    window.removeEventListener('focus', this.onWindowFocus);
+    if (this.props.newOrderClosed) {
+      this.props.newOrderClosed();
+    }
+  }
+
+  setSearchNode(node) {
+    this.searchRef.current = node;
+  }
+
+  setFreeAmountNode(node) {
+    this.freeAmountRef.current = node;
+  }
+
+  focusSearch() {
+    if (this.props.readonly) {
+      return;
+    }
+    if (document.querySelector('[role="dialog"]')) {
+      return;
+    }
+    const node = this.searchRef.current;
+    if (node && node.focus && document.activeElement !== node) {
+      node.focus();
+    }
+  }
+
+  onWindowFocus() {
+    this.focusSearch();
+  }
+
+  onSearch(event) {
+    const text = event.target.value;
+    this.setState({search: text});
+    if (this.props.saleTilesRequested) {
+      this.props.saleTilesRequested({text, limit: TILE_LIMIT});
+    }
+  }
+
+  lookup(barcode) {
+    const code = barcode == null ? '' : String(barcode).trim();
+    this._burst = emptyBurst();
+    this.setState({search: ''});
+    if (this.props.saleTilesRequested) {
+      this.props.saleTilesRequested({text: '', limit: TILE_LIMIT});
+    }
+    if (code && this.props.newOrderProductFetch) {
+      this.props.newOrderProductFetch(code);
+    }
+    this.focusSearch();
+  }
+
+  canCharge() {
+    const lines = this.props.order && this.props.order.lines ? this.props.order.lines : [];
+    return !this.props.readonly && lines.length > 0 && lines.every(lineIsValid);
+  }
+
+  charge() {
+    if (!this.canCharge()) {
+      return;
+    }
+    this.props.newOrderSave(this.props.order);
   }
 
   printOrder() {
-    const { printOrderButtonClicked, order } = this.props;
-    printOrderButtonClicked(order);
+    const order = this.props.readonly ? this.props.order : this.props.lastOrder;
+    if (order && this.props.printOrderButtonClicked) {
+      this.props.printOrderButtonClicked(order);
+    }
+  }
+
+  openFree() {
+    this.setState({
+      freeOpen: true,
+      freeDescription: 'Venta libre',
+      freeAmount: '',
+      freeVat: VatRate.standard().code()
+    });
+  }
+
+  closeFree() {
+    this.setState({freeOpen: false}, this.focusSearch);
+  }
+
+  confirmFree() {
+    const amount = parseDecimal(this.state.freeAmount);
+    const description = String(this.state.freeDescription || '').trim();
+    if (!description || amount == null || amount <= 0) {
+      return;
+    }
+    this.props.newOrderFreeLineAdded({
+      description,
+      amount,
+      vatRate: this.state.freeVat
+    });
+    this.setState({freeOpen: false}, this.focusSearch);
+  }
+
+  openHelp() {
+    this.setState({helpOpen: true});
+  }
+
+  closeHelp() {
+    this.setState({helpOpen: false}, this.focusSearch);
+  }
+
+  onFreeDescription(event) {
+    this.setState({freeDescription: event.target.value});
+  }
+
+  onFreeAmount(value) {
+    this.setState({freeAmount: value});
+  }
+
+  onFreeVat(event) {
+    this.setState({freeVat: event.target.value});
+  }
+
+  editWeighted(line) {
+    if (!this.props.showWeightedDialog) {
+      return;
+    }
+    this.props.showWeightedDialog({
+      barcode: line.barcode,
+      name: line.name,
+      price: line.unitPrice,
+      isWeighted: true,
+      replaceQuantity: true,
+      initialQuantity: line.quantity.units
+    });
+  }
+
+  adjustLast(delta) {
+    const lines = this.props.order && this.props.order.lines ? this.props.order.lines : [];
+    for (let index = lines.length - 1; index >= 0; index -= 1) {
+      const line = lines[index];
+      if (line.kind === 'FREE') {
+        continue;
+      }
+      if (line.weighted) {
+        this.editWeighted(line);
+        return;
+      }
+      const next = line.quantity.plus(Quantity.from(delta));
+      const units = next.milli < 0 ? 0 : next.units;
+      this.props.newOrderProductQuantityChange({barcode: line.barcode, quantityChanged: units});
+      this.focusSearch();
+      return;
+    }
+  }
+
+  moveSelection(delta) {
+    const lines = this.props.order && this.props.order.lines ? this.props.order.lines : [];
+    if (!lines.length) {
+      return;
+    }
+    const current = this.state.selected < 0 ? (delta > 0 ? -1 : 0) : this.state.selected;
+    let next = current + delta;
+    if (next < 0) {
+      next = 0;
+    }
+    if (next >= lines.length) {
+      next = lines.length - 1;
+    }
+    this.setState({selected: next});
+  }
+
+  removeSelected() {
+    const lines = this.props.order && this.props.order.lines ? this.props.order.lines : [];
+    if (!lines.length) {
+      return;
+    }
+    const index = this.state.selected >= 0 && this.state.selected < lines.length
+      ? this.state.selected
+      : lines.length - 1;
+    const line = lines[index];
+    this.props.newOrderProductDeleted(line.barcode, index);
+    this.focusSearch();
+  }
+
+  onWindowKey(event) {
+    if (this.props.readonly) {
+      return;
+    }
+    if (document.querySelector('[role="dialog"]')) {
+      if (event.key === 'Escape') {
+        setTimeout(this.focusSearch, 0);
+      }
+      this._burst = emptyBurst();
+      return;
+    }
+    if (this.takeScanner(event)) {
+      return;
+    }
+    const action = applyShortcut(event, {searchEmpty: !this.state.search});
+    if (!action) {
+      return;
+    }
+    if (action === 'charge') {
+      event.preventDefault();
+      this.charge();
+    } else if (action === 'free') {
+      event.preventDefault();
+      this.openFree();
+    } else if (action === 'reprint') {
+      event.preventDefault();
+      this.printOrder();
+    } else if (action === 'quantity-up') {
+      event.preventDefault();
+      this.adjustLast(1);
+    } else if (action === 'quantity-down') {
+      event.preventDefault();
+      this.adjustLast(-1);
+    } else if (action === 'remove') {
+      event.preventDefault();
+      this.removeSelected();
+    } else if (action === 'select-up') {
+      event.preventDefault();
+      this.moveSelection(-1);
+    } else if (action === 'select-down') {
+      event.preventDefault();
+      this.moveSelection(1);
+    } else if (action === 'clear-search') {
+      event.preventDefault();
+      this.setState({search: ''});
+      if (this.props.saleTilesRequested) {
+        this.props.saleTilesRequested({text: '', limit: TILE_LIMIT});
+      }
+    } else if (action === 'help') {
+      event.preventDefault();
+      this.openHelp();
+    }
+  }
+
+  takeScanner(event) {
+    const key = event.key;
+    if (key === 'Enter') {
+      const search = event.target && event.target.name === 'barcode';
+      if (isScannerBurst(this._burst.times) && this._burst.buffer) {
+        event.preventDefault();
+        const code = this._burst.buffer;
+        this._burst = emptyBurst();
+        this.lookup(code);
+        return true;
+      }
+      if (search) {
+        event.preventDefault();
+        const value = event.target.value == null ? '' : String(event.target.value).trim();
+        this._burst = emptyBurst();
+        if (value) {
+          this.lookup(value);
+        }
+        return true;
+      }
+      this._burst = emptyBurst();
+      return false;
+    }
+    if (!key || key.length !== 1 || event.ctrlKey || event.altKey || event.metaKey) {
+      return false;
+    }
+    const now = typeof event.timeStamp === 'number' ? event.timeStamp : Date.now();
+    const previous = this._burst.times.length ? this._burst.times[this._burst.times.length - 1] : null;
+    const fast = previous != null && now - previous < 30;
+    if (!fast) {
+      this._burst = {
+        times: [now],
+        buffer: key,
+        snapshot: event.target && event.target.value != null ? event.target.value : '',
+        field: event.target,
+        active: false
+      };
+      return false;
+    }
+    if (!this._burst.active) {
+      this._burst.active = true;
+      restoreField(this._burst.field, this._burst.snapshot);
+    }
+    event.preventDefault();
+    this._burst.buffer += key;
+    this._burst.times.push(now);
+    return true;
   }
 
   render() {
-    const { order, readonly, issuer, newOrderProductQuantityChange, newOrderProductDeleted } = this.props;
+    const {order, readonly, issuer, tiles, tilesStatus, lowStockBarcodes} = this.props;
     const issuerName = issuer && (issuer.tradeName || issuer.legalName);
-
+    const subtitle = issuer && issuer.nif ? issuerName + ' · NIF ' + issuer.nif : undefined;
+    const amount = parseDecimal(this.state.freeAmount);
+    const freeValid = String(this.state.freeDescription || '').trim() !== '' && amount != null && amount > 0;
     return (
-      <div className="container-fluid">
-        <h2>Let's {readonly ? 'edit an':'create a new'} order!</h2>
-        {issuer && issuer.nif ? (
-          <p className="shop-issuer">{issuerName} · NIF {issuer.nif}</p>
-        ) : null}
-        <NewOrderReduxForm
-          onDeleteProduct={newOrderProductDeleted}
-          onQuantityChange={newOrderProductQuantityChange}
-          onSubmit={this.handleSubmit}
-          order={order}
-          findProduct={this.handleKeyPress.bind(this)}
-          printOrder={this.printOrder.bind(this)}
-          readonly={readonly}
-        />
-        <WeightedDialog/>
-        <PrinterDialog/>
-        <NewProductDialog/>
+      <div className={readonly ? 'sell sell-readonly' : 'sell'}>
+        {readonly ? null : (
+          <div className="sell-catalog">
+            <PageHeader title="Vender" subtitle={subtitle} />
+            <div className="sell-search">
+              <TextField
+                id="sell-search"
+                name="barcode"
+                label="Buscar o escanear"
+                value={this.state.search}
+                onChange={this.onSearch}
+                inputRef={this.setSearchNode}
+                autoFocus
+              />
+            </div>
+            {this.renderGrid(tiles, tilesStatus)}
+          </div>
+        )}
+        <div className={readonly ? 'sell-catalog' : undefined}>
+          {readonly ? <PageHeader title="Pedido" subtitle={subtitle} /> : null}
+          <Cart
+            order={order}
+            readonly={readonly}
+            selected={this.state.selected}
+            lowStockBarcodes={lowStockBarcodes}
+            onSelect={index => this.setState({selected: index})}
+            onQuantityChange={this.props.newOrderProductQuantityChange}
+            onChanged={this.focusSearch}
+            onDelete={this.props.newOrderProductDeleted}
+            onEditWeighted={line => this.editWeighted(line)}
+            onCharge={this.charge}
+            onPrint={this.printOrder}
+          />
+        </div>
+        <Dialog
+          open={this.state.freeOpen}
+          title="Venta libre"
+          onClose={this.closeFree}
+          initialFocusRef={this.freeAmountRef}
+          actions={(
+            <Button type="button" disabled={!freeValid} onClick={this.confirmFree}>Guardar</Button>
+          )}
+        >
+          <TextField
+            id="free-description"
+            label="Descripción"
+            value={this.state.freeDescription}
+            onChange={this.onFreeDescription}
+          />
+          <NumberField
+            id="free-amount"
+            label="Importe"
+            unit="€"
+            decimals={2}
+            value={this.state.freeAmount}
+            onChange={this.onFreeAmount}
+            inputRef={this.setFreeAmountNode}
+          />
+          <Select
+            id="free-vat"
+            label="IVA"
+            value={this.state.freeVat}
+            options={VatRate.options().map(option => ({value: option.code, label: option.label}))}
+            onChange={this.onFreeVat}
+          />
+        </Dialog>
+        <Dialog open={this.state.helpOpen} title="Atajos" onClose={this.closeHelp}>
+          <ul className="sell-help">
+            <li>F12 o Ctrl+Enter: Cobrar</li>
+            <li>F8: Venta libre</li>
+            <li>+ y −: cantidad de la última línea</li>
+            <li>Supr: quitar la línea seleccionada</li>
+            <li>Flechas: seleccionar una línea</li>
+            <li>Esc: limpiar la búsqueda</li>
+            <li>F9: reimprimir el último ticket</li>
+          </ul>
+        </Dialog>
+        <WeightedDialog />
+        <PrinterDialog />
+        <NewProductDialog />
       </div>
     );
   }
+
+  renderGrid(tiles, tilesStatus) {
+    const list = tiles || [];
+    return (
+      <div className="sell-grid">
+        <button type="button" className="sell-tile sell-tile-free" onClick={this.openFree}>
+          <span className="sell-tile-name">Venta libre</span>
+          <span>F8</span>
+        </button>
+        {tilesStatus === 'loading' && list.length === 0 ? <Skeleton lines={3} /> : null}
+        {tilesStatus === 'error' ? (
+          <EmptyState icon="exclamation-triangle" title="No se pudieron cargar los productos" />
+        ) : null}
+        {tilesStatus !== 'error' && tilesStatus !== 'loading' && list.length === 0 ? (
+          <EmptyState icon="barcode" title="No hay productos" />
+        ) : null}
+        {list.map(tile => (
+          <button
+            type="button"
+            className="sell-tile"
+            key={tile.barcode}
+            onClick={() => this.lookup(tile.barcode)}
+          >
+            {tile.imageUrl ? <img src={tile.imageUrl} alt="" /> : null}
+            <span className="sell-tile-name">{tile.name}</span>
+            <span className="sell-tile-price">{formatMoney(Money.ofCents(tile.priceCents))}</span>
+            {tile.lowStock || (this.props.lowStockBarcodes || []).indexOf(tile.barcode) !== -1 ? (
+              <span>Stock bajo</span>
+            ) : null}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+}
+
+function emptyBurst() {
+  return {times: [], buffer: '', snapshot: '', field: null, active: false};
+}
+
+/**
+ * Puts the field back to the value it had before a scanner burst.
+ * The first scanned character may already have landed in the control.
+ * @param {HTMLInputElement | null} field
+ * @param {string} snapshot
+ */
+function restoreField(field, snapshot) {
+  if (!field || field.value == null) {
+    return;
+  }
+  const prototype = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+  const next = snapshot == null ? '' : snapshot;
+  if (prototype && prototype.set) {
+    prototype.set.call(field, next);
+  } else {
+    field.value = next;
+  }
+  field.dispatchEvent(new Event('input', {bubbles: true}));
 }
 
 export default Container;

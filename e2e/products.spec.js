@@ -192,11 +192,11 @@ test('filters the catalog and disables a product', async () => {
     await window.getByRole('checkbox', {name: 'Low stock'}).uncheck();
 
     await chooseMenu(window, 'Orders', 'new Order!');
-    await expect(window.getByRole('heading', {name: "Let's create a new order!"})).toBeVisible();
+    await expect(window.getByRole('heading', {name: "Vender"})).toBeVisible();
     await scanBarcode(window, '8400000000011');
     await expect(window.getByText('Product enabled')).toBeVisible();
     await expect(window.getByText('Milk has been enabled again and the stock was increased by +1.')).toBeVisible();
-    const quantity = window.locator('.rt-tbody .rt-tr').filter({hasText: 'Milk'}).locator('input');
+    const quantity = window.locator('.sell-line').filter({hasText: 'Milk'}).locator('input');
     await expect(quantity).toHaveValue('1');
     await expect(window.getByText('Order saved!')).toHaveCount(0);
   } finally {

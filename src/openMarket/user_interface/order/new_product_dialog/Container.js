@@ -28,7 +28,7 @@ class Container extends Component {
     return (
       <Dialog
         open={visible}
-        title="Product not found!, Do you want to create it just now?"
+        title="Crear producto"
         onClose={this.closeDialog}
       >
         {visible ? (

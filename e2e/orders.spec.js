@@ -22,15 +22,15 @@ test.beforeAll(() => {
 
 async function openNewOrder(window) {
   await chooseMenu(window, 'Orders', 'new Order!');
-  await expect(window.getByRole('heading', {name: "Let's create a new order!"})).toBeVisible();
+  await expect(window.getByRole('heading', {name: 'Vender'})).toBeVisible();
 }
 
 async function saveOrder(window) {
-  await window.locator('h3').getByRole('button', {name: 'Save'}).click();
+  await window.getByRole('button', {name: 'Cobrar'}).click();
 }
 
 async function expectSubtotal(window, name, amount) {
-  await expect(orderRow(window, name).locator('.rt-td').nth(3)).toHaveText(euros(amount));
+  await expect(orderRow(window, name).locator('.sell-line-subtotal')).toHaveText(euros(amount));
 }
 
 async function openStartCalendar(window) {
@@ -84,11 +84,11 @@ test('sells, edits quantity, and warns on low stock', async () => {
     await setQuantity(window, 'Milk', 0);
     await expectSubtotal(window, 'Milk', 0);
     await expectOrderTotal(window, 0);
-    await saveOrder(window);
-    await expect(window.getByText('Order was not saved')).toBeVisible();
-    await expect(window.getByText('Quantity must be greater than 0')).toBeVisible();
+    await expect(orderRow(window, 'Milk')).toHaveAttribute('aria-invalid', 'true');
+    await expect(window.getByText('Cantidad no válida')).toBeVisible();
+    await expect(window.getByRole('button', {name: 'Cobrar'})).toBeDisabled();
     await expect(window.getByText('Order saved!')).toHaveCount(0);
-    await expect(window.getByText('Do you want a ticket?!')).toHaveCount(0);
+    await expect(window.getByText('¿Imprimir ticket?')).toHaveCount(0);
     await expect(orderRow(window, 'Milk')).toBeVisible();
 
     await setQuantity(window, 'Milk', 2);
@@ -103,7 +103,7 @@ test('sells, edits quantity, and warns on low stock', async () => {
     await expect(window.getByText(/Bread has \d+ left/)).toHaveCount(0);
     await dismissTicket(window);
     await expect(orderRow(window, 'Milk')).toHaveCount(0);
-    await expect(window.getByText('No rows found')).toBeVisible();
+    await expect(window.getByText('El ticket está vacío')).toBeVisible();
 
     await openProductList(window);
     await expect(productCard(window, 'Milk').locator('.product-card-stock')).toHaveText('3');
@@ -156,7 +156,7 @@ test('sells a weighed product for 6,48 €', async () => {
     const dialog = window.getByRole('dialog');
     await expect(dialog.getByRole('heading', {name: 'Peso (kg)'})).toBeVisible();
     await dialog.locator('input[name="quantity"]').fill('0.35');
-    await dialog.getByRole('button', {name: 'Save'}).click();
+    await dialog.getByRole('button', {name: 'Añadir'}).click();
     await expect(orderRow(window, 'Ham').locator('input')).toHaveValue('0.35');
     await expectSubtotal(window, 'Ham', 6.48);
     await expectOrderTotal(window, 6.48);
@@ -205,14 +205,14 @@ test('lists an order and opens its detail', async () => {
     await expect(window.locator('h3')).toHaveText(euros(2));
 
     await row.getByText('View', {exact: true}).click();
-    await expect(window.getByRole('heading', {name: "Let's edit an order!"})).toBeVisible();
+    await expect(window.getByRole('heading', {name: 'Pedido'})).toBeVisible();
     await expect(window.locator('input[name="barcode"]')).toHaveCount(0);
     await expect(window.getByRole('button', {name: 'Save'})).toHaveCount(0);
     const quantity = orderRow(window, 'Milk').locator('input');
     await expect(quantity).toHaveValue('1');
     await expect(quantity).toHaveAttribute('readonly', '');
     await expectSubtotal(window, 'Milk', 2);
-    await expect(window.getByRole('button', {name: 'Print!'})).toBeVisible();
+    await expect(window.getByRole('button', {name: 'Imprimir'})).toBeVisible();
   } finally {
     await closeApp(app, userData);
   }
@@ -237,9 +237,9 @@ test('closes the ticket dialog from the close control without printing', async (
     await scanBarcode(window, '8400000000097');
     await saveOrder(window);
     const dialog = window.getByRole('dialog');
-    await expect(dialog.getByRole('heading', {name: 'Do you want a ticket?!'})).toBeVisible();
+    await expect(dialog.getByRole('heading', {name: '¿Imprimir ticket?'})).toBeVisible();
     await dialog.getByRole('button', {name: 'Close'}).click();
-    await expect(window.getByText('Do you want a ticket?!')).toHaveCount(0);
+    await expect(window.getByText('¿Imprimir ticket?')).toHaveCount(0);
     expect(pageErrors).toEqual([]);
   } finally {
     await closeApp(app, userData);

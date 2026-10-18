@@ -48,7 +48,8 @@ CREATE TABLE IF NOT EXISTS line (
   amount_cents INTEGER,
   vat_percent INTEGER NOT NULL DEFAULT 21,
   vat_kind TEXT NOT NULL DEFAULT 'S1',
-  vat_cause TEXT
+  vat_cause TEXT,
+  kind TEXT NOT NULL DEFAULT 'PRODUCT'
 );
 CREATE TABLE IF NOT EXISTS product_sale_day (
   barcode TEXT NOT NULL,
@@ -137,6 +138,7 @@ CREATE TABLE IF NOT EXISTS invoice_line (
   vat_percent INTEGER NOT NULL DEFAULT 21,
   vat_kind TEXT NOT NULL DEFAULT 'S1',
   vat_cause TEXT,
+  kind TEXT NOT NULL DEFAULT 'PRODUCT',
   PRIMARY KEY (invoice_id, position)
 );
 CREATE TABLE IF NOT EXISTS invoice_vat (
@@ -320,6 +322,27 @@ function tableColumns(database, table) {
 
 function hasColumn(database, table, column) {
   return tableColumns(database, table).some(columnInfo => columnInfo.name === column);
+}
+
+const ORDER_LINE_KIND_MIGRATION = 'order_line_kind_v1';
+
+/**
+ * Adds the line kind used by Venta libre. Existing rows stay PRODUCT.
+ * A second open finds the schema_migration row and does not insert it again.
+ * `barcode` stays as it is: FREE lines store ''.
+ * @param {{prepare: Function, exec: Function}} database
+ */
+function migrateOrderLineKind(database) {
+  ensureColumn(database, 'line', 'kind', "TEXT NOT NULL DEFAULT 'PRODUCT'");
+  ensureColumn(database, 'invoice_line', 'kind', "TEXT NOT NULL DEFAULT 'PRODUCT'");
+  const applied = database.prepare('SELECT name FROM schema_migration WHERE name = ?').get(ORDER_LINE_KIND_MIGRATION);
+  if (applied) {
+    return;
+  }
+  database.prepare('INSERT INTO schema_migration (name, applied_at) VALUES (?, ?)').run(
+    ORDER_LINE_KIND_MIGRATION,
+    new Date().toISOString()
+  );
 }
 
 function ensureColumn(database, table, column, definition) {
@@ -527,6 +550,7 @@ export default class SqliteConnection {
     migrateMoneyCents(this._database);
     migrateVatRates(this._database);
     migrateIssuer(this._database);
+    migrateOrderLineKind(this._database);
     ensureUniqueInvoiceOrder(this._database);
     dropInvoiceGuards(this._database);
     installInvoiceGuards(this._database);

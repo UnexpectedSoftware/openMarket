@@ -1,55 +1,107 @@
 import {
-  NEW_ORDER_PRODUCT_FETCHED, NEW_ORDER_PRODUCT_QUANTITY_CHANGE, NEW_ORDER_PRODUCT_DELETED, NEW_ORDER_SAVED,
-  NEW_ORDER_CLOSED
+  NEW_ORDER_PRODUCT_FETCHED,
+  NEW_ORDER_PRODUCT_QUANTITY_CHANGE,
+  NEW_ORDER_PRODUCT_DELETED,
+  NEW_ORDER_FREE_LINE_ADDED,
+  NEW_ORDER_SAVED,
+  NEW_ORDER_CLOSED,
+  NEW_ORDER_NOTE_LOW_STOCK,
+  SALE_TILES_REQUESTED,
+  SALE_TILES_LOADED,
+  SALE_TILES_FAILED
 } from './action';
-import {state, addProduct, updateQuantity, removeProduct, loadOrder} from './model';
-import {LIST_ORDER_DETAIL_LOADED} from "../list_orders/action";
-import { LOCATION_CHANGE } from 'react-router-redux';
+import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, loadOrder} from './model';
+import {LIST_ORDER_DETAIL_LOADED} from '../list_orders/action';
+import {LOCATION_CHANGE} from 'react-router-redux';
 
-const initialState = state();
+/**
+ * Keeps the grid, the low-stock set, and the last ticket across a cart edit.
+ * @param {object} current
+ * @param {object} next
+ */
+function keep(current, next) {
+  return {
+    ...next,
+    lowStockBarcodes: current.lowStockBarcodes || [],
+    lastOrder: current.lastOrder || null,
+    tiles: current.tiles || [],
+    tilesStatus: current.tilesStatus || 'idle'
+  };
+}
 
-export default function reducer(state = initialState, action) {
-
+export default function reducer(current = initialState(), action) {
   switch (action.type) {
     case NEW_ORDER_PRODUCT_FETCHED:
-      return addProduct(
-        {
-          lines: [...state.order.lines],
-          product: action.payload.product,
-          quantity: action.payload.quantity
-        });
+      return keep(current, addProduct({
+        lines: current.order.lines,
+        product: action.payload.product,
+        quantity: action.payload.quantity,
+        lowStockBarcodes: current.lowStockBarcodes,
+        replace: action.payload.replace
+      }));
+
+    case NEW_ORDER_FREE_LINE_ADDED:
+      return keep(current, addFreeLine({
+        lines: current.order.lines,
+        description: action.payload.description,
+        amount: action.payload.amount,
+        vatRate: action.payload.vatRate
+      }));
 
     case NEW_ORDER_PRODUCT_QUANTITY_CHANGE:
-     return updateQuantity(
-       {
-         barcode: action.payload.barcode,
-         quantity: action.payload.quantityChanged,
-         lines: [...state.order.lines]
-       });
+      return keep(current, updateQuantity({
+        barcode: action.payload.barcode,
+        quantity: action.payload.quantityChanged,
+        lines: current.order.lines
+      }));
 
     case NEW_ORDER_PRODUCT_DELETED:
-      return removeProduct(
-        {
-          lines: [...state.order.lines],
-          barcode: action.barcode
-        });
+      return keep(current, removeProduct({
+        lines: current.order.lines,
+        barcode: action.barcode,
+        index: action.index
+      }));
+
+    case NEW_ORDER_NOTE_LOW_STOCK: {
+      const barcode = action.payload && action.payload.barcode;
+      const known = current.lowStockBarcodes || [];
+      if (!barcode || known.indexOf(barcode) !== -1) {
+        return current;
+      }
+      return {...current, lowStockBarcodes: known.concat(barcode)};
+    }
+
+    case SALE_TILES_REQUESTED:
+      return {...current, tilesStatus: 'loading'};
+
+    case SALE_TILES_LOADED:
+      return {...current, tiles: action.payload || [], tilesStatus: 'ready'};
+
+    case SALE_TILES_FAILED:
+      return {...current, tilesStatus: 'error'};
 
     case NEW_ORDER_SAVED:
-      return initialState;
+      return {
+        ...initialState(),
+        lowStockBarcodes: current.lowStockBarcodes || [],
+        lastOrder: action.payload || null,
+        tiles: current.tiles || [],
+        tilesStatus: current.tilesStatus || 'idle'
+      };
 
     case LIST_ORDER_DETAIL_LOADED:
-      return loadOrder({
-        order: action.payload
-      })
+      return keep(current, loadOrder({order: action.payload}));
 
     case NEW_ORDER_CLOSED:
-      return initialState;
+      return initialState();
 
     case LOCATION_CHANGE:
-      if(action.payload.action === 'POP') return initialState;
+      if (action.payload.action === 'POP') {
+        return initialState();
+      }
+      return current;
 
     default:
-      return state;
+      return current;
   }
-
 }

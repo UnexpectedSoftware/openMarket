@@ -16,6 +16,9 @@ import Invoice from "../../../domain/invoice/Invoice";
 import {issuedPayload} from "../../../domain/invoice/invoicePayload";
 import Money from "../../../domain/money/Money";
 import Quantity from "../../../domain/money/Quantity";
+import ErrorCode from "../../../domain/error/ErrorCode";
+import InvalidOrderLineError from "../../../domain/order/InvalidOrderLineError";
+import InvalidOrderQuantityError from "../../../domain/order/InvalidOrderQuantityError";
 /** @import Order from "../../../domain/order/Order" */
 /** @import { OrderLine } from "../../../domain/order/Order" */
 /** @import OrderFactory from "../../../domain/order/OrderFactory" */
@@ -118,10 +121,21 @@ export default class CreateOrder {
   _buildOrder({lines})  {
     return Observable.create(observer => {
       try {
-        const order = this._orderFactory.createWith({lines}).place();
-        observer.next(order);
+        const order = this._orderFactory.createWith({});
+        (lines || []).forEach(line => {
+          if (line && line.kind === 'FREE') {
+            order.addFreeLine({
+              description: line.description || line.name,
+              amount: line.amount != null ? line.amount : line.price,
+              vatRate: line.vatRate
+            });
+          } else {
+            order.addLine(line);
+          }
+        });
+        observer.next(order.place());
       } catch (error) {
-        observer.error(record(error));
+        observer.error(record(saleError(error)));
       }
       observer.complete();
     })
@@ -170,12 +184,15 @@ export default class CreateOrder {
 
   /**
    * Loads each barcode once, inside the sale transaction, before the lines are priced.
-   * @param {{lines: Array<{barcode: string}>}} command
+   * @param {{lines: Array<{kind?: 'PRODUCT' | 'FREE', barcode?: string}>}} command
    * @returns {Observable<Map<string, *>>}
    */
   _loadProducts({lines}) {
     const barcodes = [];
     (lines || []).forEach(line => {
+      if (line && line.kind === 'FREE') {
+        return;
+      }
       const barcode = line && line.barcode != null ? String(line.barcode) : '';
       if (barcode !== '' && barcodes.indexOf(barcode) === -1) {
         barcodes.push(barcode);
@@ -196,6 +213,9 @@ export default class CreateOrder {
   _subtrackStock({order, products}){
     return Observable.from(order.lines)
       .flatMap(line => {
+        if (line && line.kind === 'FREE') {
+          return Observable.empty();
+        }
         const product = products.get(String(line.barcode));
         if (!product) {
           return Observable.empty();
@@ -214,14 +234,38 @@ export default class CreateOrder {
 
 /**
  * Copies the product's rate onto the line. A missing product keeps the general rate.
- * @param {Array<{barcode: string}>} lines
+ * @param {Array<{kind?: 'PRODUCT' | 'FREE', barcode?: string}>} lines
  * @param {Map<string, *>} products
  * @returns {Array<object>}
  */
+/**
+ * addLine reports every refusal as an invalid line. A quantity that is not
+ * a positive number stays the quantity error the sale already raised.
+ * @param {*} error
+ * @returns {*}
+ */
+function saleError(error) {
+  if (error instanceof InvalidOrderLineError
+    && error.context
+    && error.context.reason === ErrorCode.ORDER_QUANTITY_INVALID) {
+    return new InvalidOrderQuantityError({
+      quantity: error.context.quantity,
+      barcode: error.context.barcode
+    });
+  }
+  return error;
+}
+
 function stampVat(lines, products) {
   return (lines || []).map(line => {
+    if (line && line.kind === 'FREE') {
+      return line;
+    }
     const product = products.get(line && line.barcode != null ? String(line.barcode) : '');
     const vatRate = product && product.vatRate != null ? product.vatRate : VatRate.standard();
+    if (product && typeof product.isWeighted === 'boolean') {
+      return {...line, vatRate, weighted: product.isWeighted};
+    }
     return {...line, vatRate};
   });
 }

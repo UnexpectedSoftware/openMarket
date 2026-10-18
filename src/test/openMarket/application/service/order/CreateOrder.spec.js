@@ -12,6 +12,8 @@ import ShopProfile from '../../../../../openMarket/domain/shop/ShopProfile';
 import TaxId from '../../../../../openMarket/domain/shop/TaxId';
 import InvoiceType from '../../../../../openMarket/domain/invoice/InvoiceType';
 import ErrorCode from '../../../../../openMarket/domain/error/ErrorCode';
+import Money from '../../../../../openMarket/domain/money/Money';
+import VatRate from '../../../../../openMarket/domain/tax/VatRate';
 
 const lines = [{barcode: '0001', name: 'Cola', price: 0.55, quantity: 2}];
 const issuedAt = '2026-10-14T12:00:00.000Z';
@@ -52,7 +54,7 @@ describe('CreateOrder domain events', () => {
     bus.ofType(InvoiceIssued).subscribe(event => invoices.push(event));
   });
 
-  function createOrder({onApply, failStock, throwOnApply, onDispatch, issuedAt: at = issuedAt, shopProfileRepository} = {}) {
+  function createOrder({onApply, failStock, throwOnApply, onDispatch, issuedAt: at = issuedAt, shopProfileRepository, repository} = {}) {
     const clock = new SystemClock();
     let allocated = 0;
     const recorder = new RecordProductSales({
@@ -76,7 +78,7 @@ describe('CreateOrder domain events', () => {
           return Rx.Observable.of(order);
         }
       },
-      productRepository: productRepository({fail: failStock}),
+      productRepository: repository || productRepository({fail: failStock}),
       invoiceRepository: {
         save({invoice}) {
           storedInvoices.push(invoice);
@@ -323,6 +325,51 @@ describe('CreateOrder domain events', () => {
         expect(storedInvoices).to.have.lengthOf(0);
         done();
       }
+    );
+  });
+
+  it('sells a free-amount line without touching stock', (done) => {
+    const subtracted = [];
+    const repository = {
+      findByBarcode() {
+        return Rx.Observable.of({
+          vatRate: VatRate.of({kind: 'S1', percent: 21}),
+          isWeighted: false,
+          subtractStock({quantity}) {
+            subtracted.push(quantity);
+            return this;
+          },
+          isStockLow() {
+            return false;
+          }
+        });
+      },
+      save({product}) {
+        return Rx.Observable.of(product);
+      }
+    };
+    createOrder({repository}).createOrder({
+      lines: [
+        {kind: 'PRODUCT', barcode: '0001', name: 'Cola', price: 1.1, quantity: 1},
+        {kind: 'FREE', name: 'Venta libre', price: Money.from('3.50'), vatRate: VatRate.of({kind: 'S1', percent: 10})}
+      ]
+    }).subscribe(
+      order => {
+        expect(subtracted).to.deep.equal([1]);
+        expect(order.total.cents).to.equal(460);
+        expect(order.lines.map(line => line.kind)).to.deep.equal(['PRODUCT', 'FREE']);
+        expect(order.lines[1].barcode).to.equal('');
+        expect(order.lines[1].amount.cents).to.equal(350);
+        expect(invoices[0].lines.map(line => line.vat)).to.deep.equal([
+          {kind: 'S1', percent: 21, cause: null},
+          {kind: 'S1', percent: 10, cause: null}
+        ]);
+        expect(invoices[0].lines[0]).to.not.have.property('kind');
+        expect(invoices[0].totalCents).to.equal(460);
+        expect(invoices[0].vatBreakdown.map(row => row.percent)).to.deep.equal([21, 10]);
+      },
+      error => done(error),
+      () => done()
     );
   });
 });

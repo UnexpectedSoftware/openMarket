@@ -9,6 +9,7 @@ import ProductStatus from "../../../domain/product/ProductStatus";
 import ErrorCode from "../../../domain/error/ErrorCode";
 import {record, userText} from "../../../infrastructure/logging/ErrorLog";
 import {toast} from "../../components/toast";
+import "rxjs/add/operator/switchMap";
 
 export const makeNewOrderProductFetchEpic = findProductUseCase => enableProductUseCase => resetForm => action$ =>
   action$
@@ -26,7 +27,7 @@ export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => action$ =
   action$
     .filter(action => action.type === newOrderActions.NEW_ORDER_SAVE)
     .flatMap(action =>
-      orderCreateUseCase.createOrder({lines:action.order.lines})
+      orderCreateUseCase.createOrder({lines: commandLines(action.order && action.order.lines)})
         .map(savedOrder => newOrderActions.newOrderSaved(savedOrder))
         .mergeMap(action => Rx.Observable.of(toast.success(
           'Order saved!',
@@ -74,7 +75,8 @@ export const makeWeightedDialogEpic = resetForm => action$ =>
   action$.ofType(weightedDialogActions.HIDE_WEIGHTED_DIALOG)
     .map(action => newOrderActions.newOrderProductFetched({
       product:action.payload.product,
-      quantity:action.payload.quantity
+      quantity:action.payload.quantity,
+      replace: action.payload.replace
     }))
     .mergeMap(action => Rx.Observable.of(resetForm('new_order'),action));
 
@@ -84,11 +86,51 @@ export const makeNewOrderSavedEpic = action$ =>
 
 export const makeLowStockWarningEpic = domainEventBus => () =>
   domainEventBus.ofType(ProductWithLowStock)
-    .map(event => toast.warning(
-      'Stock is low',
-      `${event.name} has ${event.stock} left (minimum ${event.stockMin}).`,
-      {uid: `low-stock-${event.barcode}-${event.stock}`}
+    .mergeMap(event => Rx.Observable.of(
+      toast.warning(
+        'Stock is low',
+        `${event.name} has ${event.stock} left (minimum ${event.stockMin}).`,
+        {uid: `low-stock-${event.barcode}-${event.stock}`}
+      ),
+      newOrderActions.noteLowStock({barcode: event.barcode})
     ))
+
+export const makeProductNotFoundEpic = action$ =>
+  action$.ofType(newOrderActions.NEW_ORDER_PRODUCT_NOT_FOUND)
+    .map(() => toast.error(
+      'Producto no encontrado',
+      'Crear producto',
+      {uid: `product-not-found-${Date.now()}`}
+    ))
+
+export const makeSaleTilesEpic = productsQuery => action$ =>
+  action$.ofType(newOrderActions.SALE_TILES_REQUESTED)
+    .switchMap(action => productsQuery.listForSale(action.payload || {})
+      .map(tiles => newOrderActions.saleTilesLoaded(tiles))
+      .catch(() => Rx.Observable.of(newOrderActions.saleTilesFailed())))
+
+/**
+ * The cart stores Money and Quantity. CreateOrder still receives price, quantity, and kind.
+ * @param {object[] | null | undefined} lines
+ * @returns {object[]}
+ */
+function commandLines(lines) {
+  return (lines || []).map(line => {
+    const kind = line && line.kind === 'FREE' ? 'FREE' : 'PRODUCT';
+    const price = line && (line.unitPrice != null ? line.unitPrice : line.price);
+    return {
+      kind,
+      barcode: kind === 'FREE' ? '' : (line && line.barcode),
+      name: line && line.name,
+      description: line && line.name,
+      price,
+      quantity: line && line.quantity,
+      vatRate: line && (line.vatRate || line.vat),
+      weighted: line && line.weighted,
+      amount: kind === 'FREE' ? price : undefined
+    };
+  });
+}
 
 export const makeProductEnabledAgainEpic = domainEventBus => () =>
   domainEventBus.ofType(ProductEnabledAgain)

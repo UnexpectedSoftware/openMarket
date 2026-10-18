@@ -4,6 +4,9 @@ import ErrorCode from '../../../../openMarket/domain/error/ErrorCode';
 import EmptyOrderLinesError from '../../../../openMarket/domain/order/EmptyOrderLinesError';
 import InvalidOrderQuantityError from '../../../../openMarket/domain/order/InvalidOrderQuantityError';
 import OrderAlreadyPlacedError from '../../../../openMarket/domain/order/OrderAlreadyPlacedError';
+import InvalidOrderLineError from '../../../../openMarket/domain/order/InvalidOrderLineError';
+import Money from '../../../../openMarket/domain/money/Money';
+import VatRate from '../../../../openMarket/domain/tax/VatRate';
 
 const date = '03/10/2026 10:00:00';
 const line = quantity => ({barcode: '1', name: 'Milk', price: 2, quantity});
@@ -46,12 +49,53 @@ describe('Order', () => {
     expect(order.isPlaced()).to.equal(false);
   });
 
-  it('rejects a negative quantity when the order is placed and stays a draft', () => {
-    const order = Order.draft({id: '1', date})
-      .addLine(line(-1));
+  it('rejects a negative quantity before the line is added', () => {
+    const order = Order.draft({id: '1', date});
 
-    expect(() => order.place()).to.throw('Quantity must be greater than 0');
+    expect(() => order.addLine(line(-1))).to.throw(InvalidOrderLineError, 'Quantity must be greater than 0');
+    expect(order.lines).to.deep.equal([]);
     expect(order.isPlaced()).to.equal(false);
+  });
+
+  it('rejects a fraction on a whole-unit product', () => {
+    const order = Order.draft({id: '1', date});
+
+    expect(() => order.addLine({...line(0.5), weighted: false})).to.throw(InvalidOrderLineError);
+    expect(order.lines).to.deep.equal([]);
+    expect(() => new Order({
+      id: '1',
+      lines: [{...line(0.5), weighted: false}],
+      date
+    }).place()).to.throw(InvalidOrderLineError);
+  });
+
+  it('adds a free-amount line with quantity 1 and no barcode', () => {
+    const order = Order.draft({id: '1', date})
+      .addFreeLine({
+        description: ' Venta libre ',
+        amount: Money.from('3.50'),
+        vatRate: VatRate.of({kind: 'S1', percent: 10})
+      })
+      .place();
+
+    expect(order.lines[0].kind).to.equal('FREE');
+    expect(order.lines[0].barcode).to.equal('');
+    expect(order.lines[0].name).to.equal('Venta libre');
+    expect(order.lines[0].quantity.milli).to.equal(1000);
+    expect(order.lines[0].amount.cents).to.equal(350);
+    expect(order.lines[0].vatRate.code()).to.equal('S1:10');
+    expect(order.total.cents).to.equal(350);
+  });
+
+  it('refuses a free line without a description or a positive amount', () => {
+    const order = Order.draft({id: '1', date});
+
+    expect(() => order.addFreeLine({description: '  ', amount: 1})).to.throw(InvalidOrderLineError);
+    expect(() => order.addFreeLine({description: 'Venta libre', amount: 0})).to.throw(InvalidOrderLineError);
+    expect(() => order.addFreeLine({description: 'Venta libre', amount: -1})).to.throw(InvalidOrderLineError);
+    expect(order.lines).to.deep.equal([]);
+    order.addLine(line(1)).place();
+    expect(() => order.addFreeLine({description: 'Venta libre', amount: 1})).to.throw(OrderAlreadyPlacedError);
   });
 
   it('accepts a fractional quantity when the order is placed', () => {

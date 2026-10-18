@@ -370,7 +370,7 @@ describe('Order Epics', () => {
       const actions$ = makeLowStockWarningEpic(bus)();
 
       actions$
-        .take(2)
+        .take(4)
         .toArray()
         .subscribe(
           actions => expect(actions).to.deep.equal([
@@ -383,6 +383,7 @@ describe('Order Epics', () => {
               uid: 'low-stock-0001-4',
               level: 'warning'
             },
+            {type: 'NEW_ORDER_NOTE_LOW_STOCK', payload: {barcode: '0001'}},
             {
               type: 'RNS_SHOW_NOTIFICATION',
               title: 'Stock is low',
@@ -391,7 +392,8 @@ describe('Order Epics', () => {
               autoDismiss: 2.5,
               uid: 'low-stock-0002-0',
               level: 'warning'
-            }
+            },
+            {type: 'NEW_ORDER_NOTE_LOW_STOCK', payload: {barcode: '0002'}}
           ]),
           error => done(new Error(error)),
           () => done()

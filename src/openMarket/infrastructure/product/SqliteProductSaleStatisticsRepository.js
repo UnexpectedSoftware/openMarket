@@ -11,7 +11,7 @@ const UPSERT_SALE_DAY_SQL =
 const SALE_DAY_PRESENT_SQL = 'SELECT 1 AS present FROM product_sale_day LIMIT 1';
 
 const ORDER_LINES_SQL =
-  'SELECT o.created_at AS createdAt, l.barcode AS barcode, l.name AS name, ' +
+  'SELECT o.created_at AS createdAt, l.barcode AS barcode, l.name AS name, l.kind AS kind, ' +
   'l.price AS price, l.quantity AS quantity, l.price_cents AS priceCents, ' +
   'l.quantity_milli AS quantityMilli, l.amount_cents AS amountCents ' +
   'FROM line l INNER JOIN "order" o ON o.id = l.order_id';

@@ -102,7 +102,7 @@ export default class SqliteProductSaleQueryService {
 
   _groupLine(groups, line) {
     const barcode = line.barcode;
-    if (barcode == null || String(barcode) === '') {
+    if (line.kind === 'FREE' || barcode == null || String(barcode) === '') {
       return;
     }
     let price;

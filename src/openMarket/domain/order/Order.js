@@ -2,20 +2,26 @@ import moment from 'moment';
 import Money from '../money/Money';
 import Quantity from '../money/Quantity';
 import VatRate from '../tax/VatRate';
+import ErrorCode from '../error/ErrorCode';
 import OrderStatus from './OrderStatus';
 import EmptyOrderLinesError from './EmptyOrderLinesError';
 import InvalidOrderQuantityError from './InvalidOrderQuantityError';
+import InvalidOrderLineError from './InvalidOrderLineError';
 import OrderAlreadyPlacedError from './OrderAlreadyPlacedError';
+import {lineKind, validateLine} from './lineValidity';
 
 /**
  * One line stored on an order. Amount is the line total after one half-up rounding.
+ * `kind` is PRODUCT (a catalog barcode) or FREE (an amount with no product).
  * @typedef {object} OrderLine
+ * @property {'PRODUCT' | 'FREE'} [kind]
  * @property {string} barcode
  * @property {string} name
  * @property {Money} price
  * @property {Quantity} quantity
  * @property {Money} amount
  * @property {VatRate | {kind?: string, percent?: number, cause?: string | null}} vatRate
+ * @property {boolean} [weighted] Whole-unit products reject a fraction. Omitted means unknown.
  */
 
 /**
@@ -99,14 +105,21 @@ export default class Order {
 
   /** @returns {OrderLine[]} */
   get lines() {
-    return this._lines.map(line => ({
-      barcode: line.barcode,
-      name: line.name,
-      price: line.price,
-      quantity: line.quantity,
-      amount: line.amount,
-      vatRate: line.vatRate
-    }));
+    return this._lines.map(line => {
+      const copy = {
+        kind: lineKind(line.kind),
+        barcode: line.barcode == null ? '' : line.barcode,
+        name: line.name,
+        price: line.price,
+        quantity: line.quantity,
+        amount: line.amount,
+        vatRate: line.vatRate
+      };
+      if (typeof line.weighted !== 'boolean') {
+        return copy;
+      }
+      return {...copy, weighted: line.weighted};
+    });
   }
 
   /** @returns {Money} */
@@ -120,23 +133,74 @@ export default class Order {
   }
 
   /**
-   * Adds a line while the order is still a draft. The quantity is whatever
-   * the cashier typed, including zero. Placing the order accepts or rejects it.
-   * @param {{barcode: string, name: string, price: Money | number | string, quantity: Quantity | number | string, vatRate?: VatRate | object}} line
+   * Adds a catalog line while the order is still a draft.
+   * A line that cannot be sold is refused and the order stays unchanged.
+   * A free-amount line uses {@link Order#addFreeLine}.
+   * @param {{kind?: 'PRODUCT' | 'FREE', barcode: string, name: string, price: Money | number | string, quantity: Quantity | number | string, vatRate?: VatRate | object, weighted?: boolean}} line
    * @returns {Order}
    */
-  addLine({barcode, name, price, quantity, vatRate}) {
-    if (this._status !== OrderStatus.DRAFT) {
-      throw new OrderAlreadyPlacedError({id: this._id});
+  addLine(line) {
+    this._requireDraft();
+    if (line && line.kind === 'FREE') {
+      throw new InvalidOrderLineError({
+        barcode: line.barcode,
+        reason: ErrorCode.ORDER_LINE_INVALID
+      });
     }
-    this._lines.push(pricedLine({barcode, name, price, quantity, vatRate}));
+    const check = validateLine(line);
+    if (!check.valid) {
+      throw new InvalidOrderLineError({
+        quantity: line && line.quantity,
+        barcode: line && line.barcode,
+        reason: check.code
+      });
+    }
+    this._lines.push(pricedLine({...line, kind: 'PRODUCT'}));
     this._total = this._getTotalAmount();
     return this;
   }
 
   /**
-   * Draft to placed. Empty lines, or a quantity that is not a positive number,
+   * Adds an amount that is not a product. The quantity is 1 and there is no barcode.
+   * The description is the line name. The amount is VAT included and must be above zero.
+   * @param {{description?: string, amount?: Money | number | string, vatRate?: VatRate | object}} [line]
+   * @returns {Order}
+   */
+  addFreeLine({description, amount, vatRate} = {}) {
+    this._requireDraft();
+    const name = description == null ? '' : String(description).trim();
+    if (name === '') {
+      throw new InvalidOrderLineError({reason: ErrorCode.ORDER_LINE_INVALID});
+    }
+    let money;
+    try {
+      money = Money.from(amount);
+    } catch (error) {
+      throw new InvalidOrderLineError({reason: ErrorCode.ORDER_LINE_INVALID});
+    }
+    const check = validateLine({kind: 'FREE', amount: money});
+    if (!check.valid) {
+      throw new InvalidOrderLineError({reason: check.code});
+    }
+    const rate = vatRate == null ? VatRate.standard() : VatRate.from(vatRate);
+    this._lines.push({
+      kind: 'FREE',
+      barcode: '',
+      name,
+      price: money,
+      quantity: Quantity.from(1),
+      amount: money,
+      vatRate: rate,
+      weighted: false
+    });
+    this._total = this._getTotalAmount();
+    return this;
+  }
+
+  /**
+   * Draft to placed. Empty lines, or a line that cannot be sold,
    * leave the order as a draft. Placing an order that is already placed does nothing.
+   * A quantity that is not a positive number still raises {@link InvalidOrderQuantityError}.
    * @returns {Order}
    */
   place() {
@@ -147,17 +211,22 @@ export default class Order {
       throw new EmptyOrderLinesError();
     }
     this._lines.forEach(line => {
-      const quantity = line && line.quantity;
-      const units = quantity instanceof Quantity ? quantity.units : Number(quantity);
-      if (!(quantity instanceof Quantity) || quantity.milli <= 0) {
-        throw new InvalidOrderQuantityError({
-          quantity: units,
-          barcode: line && line.barcode
-        });
+      const check = validateLine(line);
+      if (!check.valid) {
+        throw lineError(line, check.code);
       }
     });
     this._status = OrderStatus.PLACED;
     return this;
+  }
+
+  /**
+   * @private
+   */
+  _requireDraft() {
+    if (this._status !== OrderStatus.DRAFT) {
+      throw new OrderAlreadyPlacedError({id: this._id});
+    }
   }
 
   /**
@@ -184,21 +253,50 @@ function copyLines(lines) {
 /**
  * Price and quantity become value objects. A stored amount is kept.
  * A missing amount is the one half-up product of price and quantity.
- * @param {{barcode?: string, name?: string, price?: Money | number | string, quantity?: Quantity | number | string, amount?: Money | number | string, vatRate?: VatRate | object | string}} line
+ * @param {{kind?: 'PRODUCT' | 'FREE', barcode?: string, name?: string, price?: Money | number | string, quantity?: Quantity | number | string, amount?: Money | number | string, vatRate?: VatRate | object | string, weighted?: boolean}} line
  * @returns {OrderLine}
  */
 function pricedLine(line) {
   const price = Money.from(line.price == null ? 0 : line.price);
   const quantity = Quantity.from(line.quantity == null ? 0 : line.quantity);
   const amount = line.amount == null ? price.times(nonNegative(quantity)) : Money.from(line.amount);
-  return {
-    barcode: line.barcode,
-    name: line.name,
+  const kind = lineKind(line.kind);
+  const priced = {
+    kind,
+    barcode: kind === 'FREE' || line.barcode == null ? '' : line.barcode,
+    name: line.name == null ? '' : line.name,
     price,
     quantity,
     amount,
     vatRate: line.vatRate == null ? VatRate.standard() : VatRate.from(line.vatRate)
   };
+  if (typeof line.weighted !== 'boolean') {
+    return priced;
+  }
+  return {...priced, weighted: line.weighted};
+}
+
+/**
+ * A quantity that is not a positive number keeps the quantity error.
+ * Every other refusal is an invalid line. Placing and adding share this.
+ * @param {{quantity?: *, barcode?: string} | null | undefined} line
+ * @param {string} code
+ * @returns {InvalidOrderQuantityError | InvalidOrderLineError}
+ */
+function lineError(line, code) {
+  const quantity = line && line.quantity;
+  const units = quantity instanceof Quantity ? quantity.units : Number(quantity);
+  if (code === ErrorCode.ORDER_QUANTITY_INVALID) {
+    return new InvalidOrderQuantityError({
+      quantity: units,
+      barcode: line && line.barcode
+    });
+  }
+  return new InvalidOrderLineError({
+    quantity: units,
+    barcode: line && line.barcode,
+    reason: code
+  });
 }
 
 /**
