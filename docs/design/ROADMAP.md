@@ -9,7 +9,7 @@ How the redesign lands, one phase per PR series. Each phase keeps the existing e
 - Plan: [plans/phase-1-shell.md](plans/phase-1-shell.md)
 - Mockups: `mockups/A-sell.webp` (rail + header), `mockups/A-orders.webp`. Before: `before/04-menu-products-open.webp`.
 
-## Phase 2 — Full themes + switcher
+## Phase 2 — Full themes + switcher ✅ done (#134, #135)
 - Plan: [plans/phase-2-themes.md](plans/phase-2-themes.md)
 - All tokens from `themes/all-themes.css`; migrate SCSS colour variables to tokens (OM-32 #95).
 - Themes: Mercado #114, Mostrador Noche #115, Ultramarinos #116, Unexpected Neon #117; theme switcher (per device, stored in settings).
@@ -17,6 +17,7 @@ How the redesign lands, one phase per PR series. Each phase keeps the existing e
 - Mockups/previews: `themes/preview-*.webp`.
 
 ## Phase 3 — Shared components
+- Plan: [plans/phase-3-components.md](plans/phase-3-components.md)
 - `components/`: Button, Card/Tile, Table, Dialog/Sheet, Toast config (max 3, OM-18 #81), EmptyState, Field (label + error), Stepper.
 - Replace action anchors with buttons and tie labels (OM-10 #73), 44 px targets (OM-16 #79).
 - Mockups: `mockups/A-sell.webp`, `mockups/A-payment.webp`, `mockups/A-products.webp`.
