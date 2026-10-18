@@ -31,3 +31,4 @@ How the redesign lands, one phase per PR series. Each phase keeps the existing e
 
 ## Final — Accessibility pass
 - #113 (OM-17 #80, OM-09 #72, OM-10 #73): automated contrast + target-size checks, keyboard walk-through of every screen.
+
