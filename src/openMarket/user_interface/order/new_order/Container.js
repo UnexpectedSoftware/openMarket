@@ -14,6 +14,7 @@ import {formatMoney} from '../../i18n/money';
 import {lineIsValid} from './model';
 import {isScannerBurst, applyShortcut} from './input';
 import Cart from './Cart';
+import PaymentSheet from './PaymentSheet';
 import WeightedDialog from '../weighted_dialog/ReduxConnector';
 import PrinterDialog from '../printer_dialog/ReduxConnector';
 import NewProductDialog from '../new_product_dialog/ReduxConnector';
@@ -29,6 +30,11 @@ class Container extends Component {
       selected: -1,
       freeOpen: false,
       helpOpen: false,
+      paymentOpen: false,
+      payMethod: 'cash',
+      tendered: '',
+      previewOpen: true,
+      reprintOpen: false,
       freeDescription: 'Venta libre',
       freeAmount: '',
       freeVat: VatRate.standard().code()
@@ -42,6 +48,14 @@ class Container extends Component {
     this.onSearch = this.onSearch.bind(this);
     this.focusSearch = this.focusSearch.bind(this);
     this.charge = this.charge.bind(this);
+    this.closePayment = this.closePayment.bind(this);
+    this.confirmPayment = this.confirmPayment.bind(this);
+    this.onPayMethod = this.onPayMethod.bind(this);
+    this.onTendered = this.onTendered.bind(this);
+    this.togglePreview = this.togglePreview.bind(this);
+    this.openReprint = this.openReprint.bind(this);
+    this.closeReprint = this.closeReprint.bind(this);
+    this.printLast = this.printLast.bind(this);
     this.openFree = this.openFree.bind(this);
     this.closeFree = this.closeFree.bind(this);
     this.confirmFree = this.confirmFree.bind(this);
@@ -75,6 +89,9 @@ class Container extends Component {
     const after = this.props.order && this.props.order.lines ? this.props.order.lines.length : 0;
     if (before > 0 && after === 0 && !this.props.readonly && this.props.saleTilesRequested) {
       this.props.saleTilesRequested({text: this.state.search || '', limit: TILE_LIMIT});
+    }
+    if (before > 0 && after === 0 && this.state.paymentOpen) {
+      this.setState({paymentOpen: false, tendered: ''});
     }
     if (after !== before) {
       const selected = after === 0 ? -1 : after - 1;
@@ -150,7 +167,67 @@ class Container extends Component {
     if (!this.canCharge()) {
       return;
     }
-    this.props.newOrderSave(this.props.order);
+    this.setState({
+      paymentOpen: true,
+      payMethod: 'cash',
+      tendered: '',
+      previewOpen: true
+    });
+    if (this.props.paymentPreviewRequested) {
+      this.props.paymentPreviewRequested({
+        lines: this.props.order.lines,
+        issuer: this.props.issuer
+      });
+    }
+  }
+
+  closePayment() {
+    this.setState({paymentOpen: false}, this.focusSearch);
+  }
+
+  onPayMethod(payMethod) {
+    this.setState({payMethod});
+  }
+
+  onTendered(tendered) {
+    this.setState({tendered});
+  }
+
+  togglePreview() {
+    this.setState({previewOpen: !this.state.previewOpen});
+  }
+
+  confirmPayment(payment) {
+    if (!payment || this.props.saving) {
+      return;
+    }
+    this.props.newOrderSave(this.props.order, {
+      method: payment.method,
+      tenderedCents: payment.tenderedCents
+    });
+  }
+
+  openReprint() {
+    const order = this.props.lastOrder;
+    if (!order || !order.id) {
+      return;
+    }
+    this.setState({reprintOpen: true});
+    if (this.props.reprintPreviewRequested) {
+      this.props.reprintPreviewRequested({orderId: order.id});
+    }
+  }
+
+  closeReprint() {
+    this.setState({reprintOpen: false}, this.focusSearch);
+  }
+
+  printLast() {
+    const order = this.props.lastOrder;
+    this.setState({reprintOpen: false}, this.focusSearch);
+    if (order && this.props.printOrderButtonClicked) {
+      this.props.printOrderButtonClicked(order);
+    }
   }
 
   printOrder() {
@@ -295,7 +372,7 @@ class Container extends Component {
       this.openFree();
     } else if (action === 'reprint') {
       event.preventDefault();
-      this.printOrder();
+      this.openReprint();
     } else if (action === 'quantity-up') {
       event.preventDefault();
       this.adjustLast(1);
@@ -453,8 +530,36 @@ class Container extends Component {
             <li>Supr: quitar la línea seleccionada</li>
             <li>Flechas: seleccionar una línea</li>
             <li>Esc: limpiar la búsqueda</li>
-            <li>F9: reimprimir el último ticket</li>
+            <li>F9: vista previa del último ticket</li>
           </ul>
+        </Dialog>
+        <PaymentSheet
+          open={this.state.paymentOpen}
+          total={order && order.total}
+          method={this.state.payMethod}
+          tendered={this.state.tendered}
+          saving={this.props.saving}
+          previewHtml={this.props.previewHtml}
+          previewOpen={this.state.previewOpen}
+          onMethod={this.onPayMethod}
+          onTendered={this.onTendered}
+          onTogglePreview={this.togglePreview}
+          onConfirm={this.confirmPayment}
+          onClose={this.closePayment}
+        />
+        <Dialog
+          open={this.state.reprintOpen}
+          title="Ticket"
+          onClose={this.closeReprint}
+          actions={(
+            <Button type="button" icon="print" onClick={this.printLast}>Imprimir</Button>
+          )}
+        >
+          {this.props.reprintHtml ? (
+            <div className="om-receipt-preview" dangerouslySetInnerHTML={{__html: this.props.reprintHtml}} />
+          ) : (
+            <p className="payment-preview-wait">Preparando el ticket…</p>
+          )}
         </Dialog>
         <WeightedDialog />
         <PrinterDialog />

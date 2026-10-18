@@ -22,6 +22,7 @@ import PluginSource from '../../../openMarket/domain/plugin/PluginSource';
 import SecretStore from '../../../openMarket/domain/plugin/SecretStore';
 import ShopProfileRepository from '../../../openMarket/domain/shop/ShopProfileRepository';
 import AppearancePreferencesRepository from '../../../openMarket/domain/appearance/AppearancePreferencesRepository';
+import SellPreferencesRepository from '../../../openMarket/domain/shop/SellPreferencesRepository';
 
 import RandomUUIDIdentity from '../../../openMarket/domain/RandomUUIDIdentity';
 import SequentialIdentity from '../../../openMarket/infrastructure/service/SequentialIdentity';
@@ -46,6 +47,7 @@ import FolderPluginSource from '../../../openMarket/infrastructure/plugins/Folde
 import SafeStorageSecretStore from '../../../openMarket/infrastructure/plugins/SafeStorageSecretStore';
 import SqliteShopProfileRepository from '../../../openMarket/infrastructure/shop/SqliteShopProfileRepository';
 import SqliteAppearancePreferencesRepository from '../../../openMarket/infrastructure/appearance/SqliteAppearancePreferencesRepository';
+import SqliteSellPreferencesRepository from '../../../openMarket/infrastructure/shop/SqliteSellPreferencesRepository';
 
 describe('ports and adapters', () => {
   describeContract(Identity, RandomUUIDIdentity);
@@ -71,4 +73,5 @@ describe('ports and adapters', () => {
   describeContract(SecretStore, SafeStorageSecretStore);
   describeContract(ShopProfileRepository, SqliteShopProfileRepository);
   describeContract(AppearancePreferencesRepository, SqliteAppearancePreferencesRepository);
+  describeContract(SellPreferencesRepository, SqliteSellPreferencesRepository);
 });

@@ -17,11 +17,16 @@ export const NEW_ORDER_ERRORS_FOUND = 'NEW_ORDER_ERRORS_FOUND';
 export const NEW_ORDER_CLOSED = 'NEW_ORDER_CLOSED';
 export const PRINT_ORDER_BUTTON_CLICKED = 'PRINT_ORDER_BUTTON_CLICKED';
 export const PRINT_ORDER_FINISHED = 'PRINT_ORDER_FINISHED';
+export const PAYMENT_FAILED = 'PAYMENT_FAILED';
+export const PAYMENT_PREVIEW_REQUESTED = 'PAYMENT_PREVIEW_REQUESTED';
+export const PAYMENT_PREVIEW_LOADED = 'PAYMENT_PREVIEW_LOADED';
+export const REPRINT_PREVIEW_REQUESTED = 'REPRINT_PREVIEW_REQUESTED';
+export const REPRINT_PREVIEW_LOADED = 'REPRINT_PREVIEW_LOADED';
 
 
 
 export const newOrderSaved = payload => ({ type: NEW_ORDER_SAVED, payload });
-export const newOrderSave = order => ({ type: NEW_ORDER_SAVE,order});
+export const newOrderSave = (order, payment) => ({ type: NEW_ORDER_SAVE, order, payment});
 
 export const newOrderProductFetched = payload => ({ type: NEW_ORDER_PRODUCT_FETCHED,payload});
 export const newOrderProductFetch = barcode => ({ type: NEW_ORDER_PRODUCT_FETCH,barcode});
@@ -38,5 +43,10 @@ export const saleTilesFailed = () => ({ type: SALE_TILES_FAILED });
 export const newOrderClosed = () => ({ type: NEW_ORDER_CLOSED});
 export const printOrderButtonClicked = payload => ({ type: PRINT_ORDER_BUTTON_CLICKED, payload});
 export const printOrderFinished = () => ({ type: PRINT_ORDER_FINISHED});
+export const paymentFailed = () => ({ type: PAYMENT_FAILED });
+export const paymentPreviewRequested = payload => ({ type: PAYMENT_PREVIEW_REQUESTED, payload });
+export const paymentPreviewLoaded = payload => ({ type: PAYMENT_PREVIEW_LOADED, payload });
+export const reprintPreviewRequested = payload => ({ type: REPRINT_PREVIEW_REQUESTED, payload });
+export const reprintPreviewLoaded = payload => ({ type: REPRINT_PREVIEW_LOADED, payload });
 export const newOrderErrorsFound = payload => ({ type: NEW_ORDER_ERRORS_FOUND,payload});
 

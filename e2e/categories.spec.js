@@ -11,6 +11,7 @@ const {
   createProduct,
   orderRow,
   scanBarcode,
+  confirmPayment,
   dismissTicket
 } = require('./launch');
 
@@ -208,6 +209,7 @@ test('shows totals and deletes an empty category', async () => {
     await scanBarcode(window, '8400000000011');
     await expect(orderRow(window, 'Milk').locator('input')).toHaveValue('1');
     await window.getByRole('button', {name: 'Cobrar'}).click();
+    await confirmPayment(window);
     await dismissTicket(window);
 
     await window.getByRole('link', {name: 'Categorías', exact: true}).click();

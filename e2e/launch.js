@@ -139,11 +139,25 @@ async function expectOrderTotal(window, amount) {
   await expect(window.locator('.order-total')).toContainText(euros(amount));
 }
 
+async function confirmPayment(window, {method = 'cash', tendered} = {}) {
+  const sheet = window.getByRole('dialog');
+  await expect(sheet.getByRole('heading', {name: 'Cobrar'})).toBeVisible();
+  if (method === 'card') {
+    await sheet.getByRole('button', {name: 'Tarjeta', exact: true}).click();
+  } else if (tendered != null) {
+    await sheet.locator('#payment-tendered').fill(String(tendered));
+  } else {
+    await sheet.getByRole('button', {name: 'Exacto', exact: true}).click();
+  }
+  await sheet.getByRole('button', {name: 'Confirmar'}).click();
+  await expect(window.getByRole('heading', {name: 'Cobrar'})).toHaveCount(0);
+}
+
 async function dismissTicket(window) {
-  await expect(window.getByRole('heading', {name: '¿Imprimir ticket?'})).toBeVisible();
-  await expect(window.getByRole('button', {name: 'YES!'})).toBeVisible();
-  await window.getByRole('button', {name: 'NO'}).click();
-  await expect(window.getByText('¿Imprimir ticket?')).toHaveCount(0);
+  const print = window.getByRole('button', {name: 'Imprimir ticket'});
+  await expect(print).toBeVisible();
+  await window.locator('.notification').filter({hasText: 'Imprimir ticket'}).locator('.notification-dismiss').click();
+  await expect(print).toHaveCount(0);
 }
 
 module.exports = {
@@ -162,5 +176,6 @@ module.exports = {
   scanBarcode,
   setQuantity,
   expectOrderTotal,
+  confirmPayment,
   dismissTicket
 };

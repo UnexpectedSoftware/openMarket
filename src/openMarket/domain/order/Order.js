@@ -9,6 +9,7 @@ import InvalidOrderQuantityError from './InvalidOrderQuantityError';
 import InvalidOrderLineError from './InvalidOrderLineError';
 import OrderAlreadyPlacedError from './OrderAlreadyPlacedError';
 import {lineKind, validateLine} from './lineValidity';
+import Payment from '../payment/Payment';
 
 /**
  * One line stored on an order. Amount is the line total after one half-up rounding.
@@ -48,10 +49,11 @@ export default class Order {
    * @param {string} params.id
    * @param {OrderLine[]} params.lines
    * @param {string} params.date
+   * @param {Payment | null} [params.payment]
    * @returns {Order}
    */
-  static restore({id, lines, date}) {
-    return new Order({id, lines, date, status: OrderStatus.PLACED});
+  static restore({id, lines, date, payment}) {
+    return new Order({id, lines, date, status: OrderStatus.PLACED, payment: payment || null});
   }
 
   /**
@@ -60,8 +62,9 @@ export default class Order {
    * @param {OrderLine[]} [params.lines]
    * @param {string} [params.date]
    * @param {string} [params.status]
+   * @param {Payment | null} [params.payment]
    */
-  constructor({id, lines = [], date = moment().format('DD/MM/YYYY HH:mm:ss'), status = OrderStatus.DRAFT} = {}) {
+  constructor({id, lines = [], date = moment().format('DD/MM/YYYY HH:mm:ss'), status = OrderStatus.DRAFT, payment = null} = {}) {
     /**
      * @type {string}
      * @private
@@ -91,6 +94,12 @@ export default class Order {
      * @private
      */
     this._total = this._getTotalAmount();
+
+    /**
+     * @type {Payment | null}
+     * @private
+     */
+    this._payment = payment instanceof Payment ? payment : null;
   }
 
   /** @returns {string} */
@@ -125,6 +134,31 @@ export default class Order {
   /** @returns {Money} */
   get total() {
     return this._total;
+  }
+
+  /** @returns {Payment | null} */
+  get payment() {
+    return this._payment;
+  }
+
+  /**
+   * Records how this order is paid. The change is checked against the total
+   * with the same {@link Payment} the till uses.
+   * @param {Payment | {method?: string, tendered?: Money | number | string, tenderedCents?: number}} payment
+   * @returns {Order}
+   */
+  recordPayment(payment) {
+    const tendered = payment instanceof Payment
+      ? Money.ofCents(payment.tenderedCents)
+      : (payment && payment.tendered != null
+        ? payment.tendered
+        : (payment && payment.tenderedCents != null ? Money.ofCents(payment.tenderedCents) : undefined));
+    this._payment = Payment.settle({
+      total: this._total,
+      method: payment && payment.method,
+      tendered
+    });
+    return this;
   }
 
   /** @returns {boolean} */

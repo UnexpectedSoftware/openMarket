@@ -1,5 +1,6 @@
 import * as Rx from "rxjs";
 import Order from "../../domain/order/Order";
+import Payment from "../../domain/payment/Payment";
 import {lineKind} from "../../domain/order/lineValidity";
 import {moneyFromColumns, quantityFromColumns} from "../service/storedMoney";
 
@@ -14,7 +15,8 @@ export default class SqlOrderMapper {
       (orderData, lines) => Order.restore({
         id: orderData.id,
         lines,
-        date: orderData.created_at
+        date: orderData.created_at,
+        payment: orderData.payment
       })
     )
   }
@@ -25,7 +27,12 @@ export default class SqlOrderMapper {
       .map(firstRow => ({
         id: firstRow.id,
         created_at: firstRow.created_at,
-        total: firstRow.total
+        total: firstRow.total,
+        payment: Payment.restore({
+          method: firstRow.payment_method,
+          tenderedCents: firstRow.tendered_cents,
+          changeCents: firstRow.change_cents
+        })
       }))
   }
 

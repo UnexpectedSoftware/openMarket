@@ -14,13 +14,20 @@ export const MAX_VISIBLE_TOASTS = 3;
  */
 export function toastOptions(level, title, message, extra) {
   const provided = extra && extra.uid;
-  return {
+  const options = {
     title: title,
     message: message,
     position: TOAST_POSITION,
     autoDismiss: level === 'error' ? ERROR_DISMISS_SECONDS : SUCCESS_DISMISS_SECONDS,
     uid: provided || (level + ':' + title + ':' + message)
   };
+  if (extra && extra.autoDismiss != null) {
+    options.autoDismiss = extra.autoDismiss;
+  }
+  if (extra && extra.action) {
+    options.action = extra.action;
+  }
+  return options;
 }
 
 /**

@@ -13,6 +13,7 @@ const {
   scanBarcode,
   setQuantity,
   expectOrderTotal,
+  confirmPayment,
   dismissTicket
 } = require('./launch');
 
@@ -27,6 +28,7 @@ async function openNewOrder(window) {
 
 async function saveOrder(window) {
   await window.getByRole('button', {name: 'Cobrar'}).click();
+  await confirmPayment(window);
 }
 
 async function expectSubtotal(window, name, amount) {
@@ -97,7 +99,7 @@ test('sells, edits quantity, and warns on low stock', async () => {
     await expectOrderTotal(window, 5);
     await saveOrder(window);
     await expect(window.getByText('Order saved!')).toBeVisible();
-    await expect(window.getByText('Order is saved in database')).toBeVisible();
+    await expect(window.getByText(/Cambio/)).toBeVisible();
     await expect(window.getByText('Stock is low')).toHaveCount(1);
     await expect(window.getByText('Milk has 3 left (minimum 4).')).toBeVisible();
     await expect(window.getByText(/Bread has \d+ left/)).toHaveCount(0);
@@ -218,7 +220,7 @@ test('lists an order and opens its detail', async () => {
   }
 });
 
-test('closes the ticket dialog from the close control without printing', async () => {
+test('offers the ticket from the saved toast and dismisses it without printing', async () => {
   const {app, window, userData} = await launchApp();
   const pageErrors = [];
   window.on('pageerror', error => pageErrors.push(error.message));
@@ -236,10 +238,10 @@ test('closes the ticket dialog from the close control without printing', async (
     await openNewOrder(window);
     await scanBarcode(window, '8400000000097');
     await saveOrder(window);
-    const dialog = window.getByRole('dialog');
-    await expect(dialog.getByRole('heading', {name: '¿Imprimir ticket?'})).toBeVisible();
-    await dialog.getByRole('button', {name: 'Close'}).click();
-    await expect(window.getByText('¿Imprimir ticket?')).toHaveCount(0);
+    await expect(window.getByRole('heading', {name: '¿Imprimir ticket?'})).toHaveCount(0);
+    await expect(window.getByRole('button', {name: 'Imprimir ticket'})).toBeVisible();
+    await dismissTicket(window);
+    await expect(window.getByRole('button', {name: 'Imprimir ticket'})).toHaveCount(0);
     expect(pageErrors).toEqual([]);
   } finally {
     await closeApp(app, userData);

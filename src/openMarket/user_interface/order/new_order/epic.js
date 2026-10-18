@@ -8,7 +8,8 @@ import {
   makeNewOrderSaveEpic,
   makePrintButtonClickedEpic,
   makePrinterDialogEpic,
-  makeNewOrderSavedEpic,
+  makePaymentPreviewEpic,
+  makeReprintPreviewEpic,
   makeWeightedDialogEpic,
   makeLowStockWarningEpic,
   makeProductEnabledAgainEpic,
@@ -24,22 +25,24 @@ const domainEventBus = OpenMarket.get("domain_event_bus");
 const buildReceipt = OpenMarket.get('receipts_build_use_case');
 const printReceipt = OpenMarket.get('receipts_print_use_case');
 const productsQuery = OpenMarket.get('products_list_for_sale_query');
+const getSellPreferences = OpenMarket.get('sell_get_preferences_use_case');
 
 const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(enableProductUseCase)(reset);
-const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset);
+const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase, getSellPreferences)(reset);
 const lowStockWarningEpic = makeLowStockWarningEpic(domainEventBus);
 const productEnabledAgainEpic = makeProductEnabledAgainEpic(domainEventBus);
 const printerDialogEpic = makePrinterDialogEpic(buildReceipt)(printReceipt);
 const printButtonClickedEpic = makePrintButtonClickedEpic(buildReceipt)(printReceipt);
 const weightedDialogEpic  = makeWeightedDialogEpic(reset)
 
-export default action$ =>
+export default (action$, store) =>
   Rx.Observable.merge(
     orderProductFetchEpic(action$),
-    orderSaveEpic(action$),
+    orderSaveEpic(action$, store),
     printerDialogEpic(action$),
     printButtonClickedEpic(action$),
-    makeNewOrderSavedEpic(action$),
+    makePaymentPreviewEpic(buildReceipt)(action$),
+    makeReprintPreviewEpic(buildReceipt)(action$),
     weightedDialogEpic(action$),
     makeProductNotFoundEpic(action$),
     makeSaleTilesEpic(productsQuery)(action$),

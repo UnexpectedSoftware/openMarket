@@ -2,14 +2,18 @@ import * as newOrderActions from "./action";
 import * as weightedDialogActions from "../weighted_dialog/action";
 import * as Rx from "rxjs";
 import {HIDE_PRINTER_DIALOG} from "../printer_dialog/action";
-import {showPrinterDialog} from "../printer_dialog/action";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
 import ProductEnabledAgain from "../../../domain/event/ProductEnabledAgain";
 import ProductStatus from "../../../domain/product/ProductStatus";
 import ErrorCode from "../../../domain/error/ErrorCode";
+import Money from "../../../domain/money/Money";
 import {record, userText} from "../../../infrastructure/logging/ErrorLog";
+import {formatMoney} from "../../i18n/money";
 import {toast} from "../../components/toast";
 import "rxjs/add/operator/switchMap";
+import "rxjs/add/operator/defaultIfEmpty";
+import "rxjs/add/observable/of";
+import "rxjs/add/observable/from";
 
 export const makeNewOrderProductFetchEpic = findProductUseCase => enableProductUseCase => resetForm => action$ =>
   action$
@@ -23,17 +27,19 @@ export const makeNewOrderProductFetchEpic = findProductUseCase => enableProductU
       .mergeMap(nextAction => Rx.Observable.of(resetForm('new_order'), nextAction))
     );
 
-export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => action$ =>
+export const makeNewOrderSaveEpic = (orderCreateUseCase, getSellPreferences) => resetForm => (action$, store) =>
   action$
     .filter(action => action.type === newOrderActions.NEW_ORDER_SAVE)
     .flatMap(action =>
-      orderCreateUseCase.createOrder({lines: commandLines(action.order && action.order.lines)})
-        .map(savedOrder => newOrderActions.newOrderSaved(savedOrder))
-        .mergeMap(action => Rx.Observable.of(toast.success(
-          'Order saved!',
-          'Order is saved in database',
-          {uid: `order-saved-${action.payload.id}`}
-        ), resetForm('new_order'), action))
+      orderCreateUseCase.createOrder({
+        lines: commandLines(action.order && action.order.lines),
+        payment: action.payment
+      })
+        .flatMap(savedOrder => sellPreferences(getSellPreferences)
+          .map(preferences => ({savedOrder, preferences})))
+        .mergeMap(({savedOrder, preferences}) => Rx.Observable.from(
+          savedActions({savedOrder, preferences, resetForm, store})
+        ))
         .catch(err => {
           record(err);
           const message = userText(err, 'Order was not saved');
@@ -42,7 +48,7 @@ export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => action$ =
             message,
             {uid: `order-not-saved-${Date.now()}`}
           );
-          return Rx.Observable.of(resetForm('new_order'), notice);
+          return Rx.Observable.of(resetForm('new_order'), notice, newOrderActions.paymentFailed());
         })
     );
 
@@ -80,9 +86,22 @@ export const makeWeightedDialogEpic = resetForm => action$ =>
     }))
     .mergeMap(action => Rx.Observable.of(resetForm('new_order'),action));
 
-export const makeNewOrderSavedEpic = action$ =>
-  action$.ofType(newOrderActions.NEW_ORDER_SAVED)
-    .map(action => showPrinterDialog(action.payload));
+export const makePaymentPreviewEpic = buildReceipt => action$ =>
+  action$.ofType(newOrderActions.PAYMENT_PREVIEW_REQUESTED)
+    .switchMap(action => buildReceipt.preview({
+      lines: action.payload && action.payload.lines,
+      issuer: action.payload && action.payload.issuer
+    })
+      .map(receipt => newOrderActions.paymentPreviewLoaded(receipt.html))
+      .catch(() => Rx.Observable.of(newOrderActions.paymentPreviewLoaded(''))));
+
+export const makeReprintPreviewEpic = buildReceipt => action$ =>
+  action$.ofType(newOrderActions.REPRINT_PREVIEW_REQUESTED)
+    .switchMap(action => buildReceipt.build({
+      orderId: action.payload && action.payload.orderId
+    })
+      .map(receipt => newOrderActions.reprintPreviewLoaded(receipt.html))
+      .catch(() => Rx.Observable.of(newOrderActions.reprintPreviewLoaded(''))));
 
 export const makeLowStockWarningEpic = domainEventBus => () =>
   domainEventBus.ofType(ProductWithLowStock)
@@ -108,6 +127,60 @@ export const makeSaleTilesEpic = productsQuery => action$ =>
     .switchMap(action => productsQuery.listForSale(action.payload || {})
       .map(tiles => newOrderActions.saleTilesLoaded(tiles))
       .catch(() => Rx.Observable.of(newOrderActions.saleTilesFailed())))
+
+/**
+ * @param {{get: Function} | null | undefined} useCase
+ * @returns {Rx.Observable<{autoPrint: boolean}>}
+ */
+function sellPreferences(useCase) {
+  if (!useCase || typeof useCase.get !== 'function') {
+    return Rx.Observable.of({autoPrint: false});
+  }
+  return useCase.get().map(preferences => ({
+    autoPrint: !!(preferences && preferences.autoPrint)
+  })).defaultIfEmpty({autoPrint: false});
+}
+
+/**
+ * @param {{savedOrder: {id: string, payment?: {method?: string, changeCents?: number}}, preferences: {autoPrint: boolean}, resetForm: Function, store?: {dispatch: Function}}} params
+ * @returns {object[]}
+ */
+function savedActions({savedOrder, preferences, resetForm, store}) {
+  const paid = savedOrder && savedOrder.payment;
+  const autoPrint = !!(preferences && preferences.autoPrint && paid);
+  const notice = toast.success('Order saved!', savedMessage(savedOrder), {
+    uid: `order-saved-${savedOrder.id}`,
+    autoDismiss: paid && !autoPrint ? 0 : undefined,
+    action: paid && !autoPrint ? {
+      label: 'Imprimir ticket',
+      callback: () => {
+        if (store && store.dispatch) {
+          store.dispatch(newOrderActions.printOrderButtonClicked(savedOrder));
+        }
+      }
+    } : undefined
+  });
+  const actions = [notice, resetForm('new_order'), newOrderActions.newOrderSaved(savedOrder)];
+  if (autoPrint) {
+    actions.push(newOrderActions.printOrderButtonClicked(savedOrder));
+  }
+  return actions;
+}
+
+/**
+ * @param {{payment?: {method?: string, changeCents?: number}} | null | undefined} order
+ * @returns {string}
+ */
+function savedMessage(order) {
+  const payment = order && order.payment;
+  if (!payment) {
+    return 'Order is saved in database';
+  }
+  if (payment.method === 'card') {
+    return 'Pagado con tarjeta';
+  }
+  return 'Cambio ' + formatMoney(Money.ofCents(payment.changeCents || 0));
+}
 
 /**
  * The cart stores Money and Quantity. CreateOrder still receives price, quantity, and kind.

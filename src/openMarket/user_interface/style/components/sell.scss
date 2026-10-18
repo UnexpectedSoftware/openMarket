@@ -178,3 +178,52 @@
 .sell-help li {
   margin-bottom: var(--om-space-2);
 }
+
+.payment-dialog {
+  max-width: calc(var(--om-space-9) * 12);
+}
+
+.payment-methods {
+  display: flex;
+  gap: var(--om-space-2);
+  margin-bottom: var(--om-space-4);
+}
+
+.payment-methods .om-button {
+  flex: 1;
+}
+
+.payment-total,
+.payment-change {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--om-space-3);
+  margin: 0 0 var(--om-space-3);
+}
+
+.payment-change {
+  color: var(--om-color-success);
+}
+
+.payment-change.is-short,
+.payment-short {
+  color: var(--om-color-danger);
+}
+
+.payment-notes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--om-space-2);
+  margin: var(--om-space-3) 0;
+}
+
+.om-receipt-preview {
+  max-height: calc(var(--om-space-9) * 6);
+  margin-top: var(--om-space-3);
+  overflow: auto;
+}
+
+.payment-preview-wait {
+  color: var(--om-color-text-muted);
+}

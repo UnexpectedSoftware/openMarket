@@ -1,6 +1,7 @@
 import PrinterConnection from "../printer/PrinterConnection";
 import OrderPrinterService from "../printer/OrderPrinterService";
 import EscPosReceiptRenderer from "../printer/EscPosReceiptRenderer";
+import HtmlReceiptRenderer from "../receipt/HtmlReceiptRenderer";
 import ReceiptSlots from "../receipt/ReceiptSlots";
 import BuildReceipt from "../../application/service/receipt/BuildReceipt";
 import PrintReceipt from "../../application/service/receipt/PrintReceipt";
@@ -73,6 +74,9 @@ import {electronSecretBridge} from "../plugins/electronSecretBridge";
 import SqliteShopProfileRepository from "../shop/SqliteShopProfileRepository";
 import GetShopProfile from "../../application/service/shop/GetShopProfile";
 import UpdateShopProfile from "../../application/service/shop/UpdateShopProfile";
+import SqliteSellPreferencesRepository from "../shop/SqliteSellPreferencesRepository";
+import GetSellPreferences from "../../application/service/shop/GetSellPreferences";
+import UpdateSellPreferences from "../../application/service/shop/UpdateSellPreferences";
 import SqliteAppearancePreferencesRepository from "../appearance/SqliteAppearancePreferencesRepository";
 import GetAppearancePreferences from "../../application/service/appearance/GetAppearancePreferences";
 import ChangeTheme from "../../application/service/appearance/ChangeTheme";
@@ -122,6 +126,10 @@ class Container {
     return new EscPosReceiptRenderer();
   }
 
+  _htmlReceiptRenderer() {
+    return new HtmlReceiptRenderer();
+  }
+
   _orderPrinterService(){
     return new OrderPrinterService({
       printerConnection: this.getInstance({key: 'printerConnection'}),
@@ -133,7 +141,8 @@ class Container {
     return new BuildReceipt({
       invoiceRepository: this.getInstance({key: 'invoiceRepository'}),
       receiptSlots: this.getInstance({key: 'receiptSlots'}),
-      recordError: record
+      recordError: record,
+      htmlReceiptRenderer: this.getInstance({key: 'htmlReceiptRenderer'})
     });
   }
 
@@ -438,6 +447,24 @@ class Container {
   _updateShopProfile() {
     return new UpdateShopProfile({
       shopProfileRepository: this.getInstance({key: 'shopProfileRepository'})
+    });
+  }
+
+  _sellPreferencesRepository() {
+    return new SqliteSellPreferencesRepository({
+      connection: this.getInstance({key: 'sqliteConnection'})
+    });
+  }
+
+  _getSellPreferences() {
+    return new GetSellPreferences({
+      sellPreferencesRepository: this.getInstance({key: 'sellPreferencesRepository'})
+    });
+  }
+
+  _updateSellPreferences() {
+    return new UpdateSellPreferences({
+      sellPreferencesRepository: this.getInstance({key: 'sellPreferencesRepository'})
     });
   }
 

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const {DatabaseSync} = require('node:sqlite');
 const {test, expect} = require('@playwright/test');
 const {
   root,
@@ -14,6 +15,7 @@ const {
   scanBarcode,
   setQuantity,
   expectOrderTotal,
+  confirmPayment,
   dismissTicket
 } = require('./launch');
 
@@ -110,6 +112,7 @@ test('sells scanned, weighed, and free lines and blocks an invalid quantity', as
     await expect(rows.nth(1)).toContainText(euros(0.41));
 
     await window.getByRole('button', {name: 'Cobrar'}).click();
+    await confirmPayment(window);
     await expect(window.getByText('Order saved!')).toBeVisible();
     await dismissTicket(window);
     await expect(window.getByText('El ticket está vacío')).toBeVisible();
@@ -165,6 +168,101 @@ test('screenshots the sell screen and the weighted dialog in every theme', async
       await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
       await window.screenshot({path: path.join(after, `sell-weighted-${theme}.png`)});
     }
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
+function latestPayment(userData) {
+  const database = new DatabaseSync(path.join(userData, 'openmarket.sqlite'), {
+    readOnly: true,
+    timeout: 5000
+  });
+  try {
+    return database.prepare(
+      'SELECT payment_method, tendered_cents, change_cents FROM "order" ORDER BY created_at DESC LIMIT 1'
+    ).get();
+  } finally {
+    database.close();
+  }
+}
+
+test('pays cash with change, shows the ticket preview, and pays by card', async () => {
+  test.setTimeout(120000);
+  const {app, window, userData} = await launchApp();
+  const after = path.join(root, 'docs/design/after');
+  fs.mkdirSync(after, {recursive: true});
+  try {
+    await createCategory(window, 'Shop');
+    await createProduct(window, {
+      name: 'Ham',
+      barcode: '8400000000318',
+      price: 18.5,
+      basePrice: 10,
+      stock: 8,
+      stockMin: 1,
+      category: 'Shop',
+      weighted: true
+    });
+    await createProduct(window, {
+      name: 'Milk',
+      barcode: '8400000000325',
+      price: 2,
+      basePrice: 1,
+      stock: 10,
+      stockMin: 1,
+      category: 'Shop'
+    });
+    await openSell(window);
+    await scanBarcode(window, '8400000000318');
+    const weight = window.getByRole('dialog');
+    await weight.locator('input[name="quantity"]').fill('0,750');
+    await weight.getByRole('button', {name: 'Añadir'}).click();
+    await window.getByRole('button', {name: 'Venta libre'}).click();
+    const free = window.getByRole('dialog');
+    await free.locator('#free-amount').fill('3,50');
+    await free.locator('#free-vat').selectOption('S1:10');
+    await free.getByRole('button', {name: 'Guardar'}).click();
+    await expectOrderTotal(window, 17.38);
+
+    await window.getByRole('button', {name: 'Cobrar'}).click();
+    const sheet = window.getByRole('dialog');
+    await expect(sheet.getByRole('heading', {name: 'Cobrar'})).toBeVisible();
+    await expect(sheet.locator('.om-receipt')).toContainText('Ham');
+    await expect(sheet.locator('.om-receipt')).toContainText('Venta libre');
+    await sheet.getByRole('button', {name: euros(20)}).click();
+    await expect(sheet.getByText(euros(2.62))).toBeVisible();
+    await expect(window.locator('.notification')).toHaveCount(0);
+
+    for (const theme of THEMES) {
+      await window.evaluate(name => {
+        document.documentElement.dataset.theme = name;
+      }, theme);
+      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
+      await window.screenshot({path: path.join(after, `payment-${theme}.png`)});
+      await window.screenshot({path: path.join(root, 'test-results', `payment-${theme}.png`)});
+    }
+
+    await sheet.getByRole('button', {name: 'Confirmar'}).click();
+    await expect(window.getByText('Order saved!')).toBeVisible();
+    await expect(window.getByText(euros(2.62))).toBeVisible();
+    await expect.poll(() => latestPayment(userData)).toEqual({
+      payment_method: 'cash',
+      tendered_cents: 2000,
+      change_cents: 262
+    });
+    await dismissTicket(window);
+
+    await scanBarcode(window, '8400000000325');
+    await window.getByRole('button', {name: 'Cobrar'}).click();
+    await confirmPayment(window, {method: 'card'});
+    await expect(window.getByText('Pagado con tarjeta')).toBeVisible();
+    await expect.poll(() => latestPayment(userData)).toEqual({
+      payment_method: 'card',
+      tendered_cents: 200,
+      change_cents: 0
+    });
+    await dismissTicket(window);
   } finally {
     await closeApp(app, userData);
   }

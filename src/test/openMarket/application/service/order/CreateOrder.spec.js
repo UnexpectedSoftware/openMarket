@@ -372,6 +372,57 @@ describe('CreateOrder domain events', () => {
       () => done()
     );
   });
+
+  it('stores cash change and does not put the payment on the invoice', (done) => {
+    createOrder().createOrder({
+      lines,
+      payment: {method: 'cash', tenderedCents: 200}
+    }).subscribe(
+      order => {
+        expect(order.payment.method).to.equal('cash');
+        expect(order.payment.tenderedCents).to.equal(200);
+        expect(order.payment.changeCents).to.equal(200 - order.total.cents);
+        expect(order.payment.changeCents).to.be.above(0);
+        expect(invoices[0].schemaVersion).to.equal(1);
+        expect(invoices[0]).to.not.have.property('payment');
+        expect(invoices[0]).to.not.have.property('tenderedCents');
+      },
+      error => done(error),
+      () => done()
+    );
+  });
+
+  it('stores a card payment for the exact total', (done) => {
+    createOrder().createOrder({
+      lines,
+      payment: {method: 'card'}
+    }).subscribe(
+      order => {
+        expect(order.payment.method).to.equal('card');
+        expect(order.payment.tenderedCents).to.equal(order.total.cents);
+        expect(order.payment.changeCents).to.equal(0);
+        expect(invoices[0]).to.not.have.property('payment');
+      },
+      error => done(error),
+      () => done()
+    );
+  });
+
+  it('rejects cash that does not cover the total', (done) => {
+    createOrder().createOrder({
+      lines,
+      payment: {method: 'cash', tenderedCents: 1}
+    }).subscribe(
+      () => done(new Error('should fail')),
+      error => {
+        expect(error.code).to.equal(ErrorCode.PAYMENT_INVALID);
+        expect(events).to.have.lengthOf(0);
+        expect(invoices).to.have.lengthOf(0);
+        expect(storedInvoices).to.have.lengthOf(0);
+        done();
+      }
+    );
+  });
 });
 
 describe('RecordProductSales', () => {

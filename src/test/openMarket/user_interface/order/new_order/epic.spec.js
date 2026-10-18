@@ -11,7 +11,8 @@ import ProductEnabledAgain from '../../../../../openMarket/domain/event/ProductE
 import {
   NEW_ORDER_ERRORS_FOUND,
   NEW_ORDER_PRODUCT_FETCH,
-  NEW_ORDER_PRODUCT_FETCHED, NEW_ORDER_PRODUCT_NOT_FOUND, NEW_ORDER_SAVE, NEW_ORDER_SAVED
+  NEW_ORDER_PRODUCT_FETCHED, NEW_ORDER_PRODUCT_NOT_FOUND, NEW_ORDER_SAVE, NEW_ORDER_SAVED,
+  PAYMENT_FAILED
 } from "../../../../../openMarket/user_interface/order/new_order/action";
 import * as Rx from "rxjs";
 import {SHOW_WEIGHTED_DIALOG} from "../../../../../openMarket/user_interface/order/weighted_dialog/action";
@@ -344,7 +345,7 @@ describe('Order Epics', () => {
         .toArray()
         .subscribe(
           actionsArray => {
-            expect(actionsArray).to.have.length(2);
+            expect(actionsArray).to.have.length(3);
             expect(actionsArray[0]).to.deep.equal({type: 'RESET_FORM_REDUX_WHATEVER'});
             expect(actionsArray[1]).to.include({
               type: 'RNS_SHOW_NOTIFICATION',
@@ -355,6 +356,7 @@ describe('Order Epics', () => {
               level: 'error'
             });
             expect(actionsArray[1].uid).to.match(/^order-not-saved-/);
+            expect(actionsArray[2]).to.deep.equal({type: PAYMENT_FAILED});
           },
           (error) => done(new Error(error)),
           () => done()
