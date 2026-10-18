@@ -283,37 +283,35 @@ describe('Order Epics', () => {
         type: 'RESET_FORM_REDUX_WHATEVER'
       });
 
-      const notificationMock = anything => ({
-        type: 'RNS_SHOW_NOTIFICATION'
-      });
-
-      const newOrderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCaseMock)(resetFormMock)(notificationMock)(notificationMock);
+      const newOrderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCaseMock)(resetFormMock);
 
       const actions$ = newOrderSaveEpic(givenActions$);
-
-
-      const expectedActions = [
-        {
-          type: 'RNS_SHOW_NOTIFICATION'
-        },
-        {
-          type: 'RESET_FORM_REDUX_WHATEVER'
-        },
-        {
-          type: NEW_ORDER_SAVED,
-          payload: {
-            id: '42',
-            createdAt: '',
-            lines: givenLines,
-            total: 9.99
-          }
-        }
-      ];
 
       actions$
         .toArray()
         .subscribe(
-          actionsArray => expect(actionsArray).to.deep.equal(expectedActions),
+          actionsArray => {
+            expect(actionsArray).to.have.length(3);
+            expect(actionsArray[0]).to.include({
+              type: 'RNS_SHOW_NOTIFICATION',
+              title: 'Order saved!',
+              message: 'Order is saved in database',
+              position: 'bc',
+              autoDismiss: 2.5,
+              uid: 'order-saved-42',
+              level: 'success'
+            });
+            expect(actionsArray[1]).to.deep.equal({type: 'RESET_FORM_REDUX_WHATEVER'});
+            expect(actionsArray[2]).to.deep.equal({
+              type: NEW_ORDER_SAVED,
+              payload: {
+                id: '42',
+                createdAt: '',
+                lines: givenLines,
+                total: 9.99
+              }
+            });
+          },
           (error) => done(new Error(error)),
           () => done()
         );
@@ -334,32 +332,30 @@ describe('Order Epics', () => {
         createOrder: ({lines}) => Rx.Observable.throw(new Error('Empty lines!'))
       };
 
-      const notificationMock = anything => ({
-        type: 'RNS_SHOW_NOTIFICATION'
-      });
-
       const resetFormMock = anything => ({
         type: 'RESET_FORM_REDUX_WHATEVER'
       });
 
-      const newOrderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCaseMock)(resetFormMock)(notificationMock)(notificationMock);
+      const newOrderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCaseMock)(resetFormMock);
 
       const actions$ = newOrderSaveEpic(givenActions$);
-
-
-      const expectedActions = [
-        {
-          type: 'RESET_FORM_REDUX_WHATEVER'
-        },
-        {
-          type: 'RNS_SHOW_NOTIFICATION'
-        }
-      ];
 
       actions$
         .toArray()
         .subscribe(
-          actionsArray => expect(actionsArray).to.deep.equal(expectedActions),
+          actionsArray => {
+            expect(actionsArray).to.have.length(2);
+            expect(actionsArray[0]).to.deep.equal({type: 'RESET_FORM_REDUX_WHATEVER'});
+            expect(actionsArray[1]).to.include({
+              type: 'RNS_SHOW_NOTIFICATION',
+              title: 'Order was not saved',
+              message: 'Empty lines!',
+              position: 'bc',
+              autoDismiss: 0,
+              level: 'error'
+            });
+            expect(actionsArray[1].uid).to.match(/^order-not-saved-/);
+          },
           (error) => done(new Error(error)),
           () => done()
         );
@@ -371,12 +367,7 @@ describe('Order Epics', () => {
   describe('Low stock warning', () => {
     it('shows one warning for each ProductWithLowStock event', (done) => {
       const bus = deliveringDomainEventBus();
-      const warningNotification = options => ({
-        type: 'RNS_SHOW_NOTIFICATION',
-        title: options.title,
-        message: options.message
-      });
-      const actions$ = makeLowStockWarningEpic(bus)(warningNotification)();
+      const actions$ = makeLowStockWarningEpic(bus)();
 
       actions$
         .take(2)
@@ -386,12 +377,20 @@ describe('Order Epics', () => {
             {
               type: 'RNS_SHOW_NOTIFICATION',
               title: 'Stock is low',
-              message: 'Coca-Cola has 4 left (minimum 10).'
+              message: 'Coca-Cola has 4 left (minimum 10).',
+              position: 'bc',
+              autoDismiss: 2.5,
+              uid: 'low-stock-0001-4',
+              level: 'warning'
             },
             {
               type: 'RNS_SHOW_NOTIFICATION',
               title: 'Stock is low',
-              message: 'Water has 0 left (minimum 5).'
+              message: 'Water has 0 left (minimum 5).',
+              position: 'bc',
+              autoDismiss: 2.5,
+              uid: 'low-stock-0002-0',
+              level: 'warning'
             }
           ]),
           error => done(new Error(error)),
@@ -417,14 +416,7 @@ describe('Order Epics', () => {
   describe('Product enabled again', () => {
     it('warns that the product is enabled and stock increased by 1', (done) => {
       const bus = deliveringDomainEventBus();
-      const warningNotification = options => ({
-        type: 'RNS_SHOW_NOTIFICATION',
-        title: options.title,
-        message: options.message,
-        position: options.position,
-        autoDismiss: options.autoDismiss
-      });
-      const actions$ = makeProductEnabledAgainEpic(bus)(warningNotification)();
+      const actions$ = makeProductEnabledAgainEpic(bus)();
 
       actions$
         .take(1)
@@ -433,8 +425,10 @@ describe('Order Epics', () => {
             type: 'RNS_SHOW_NOTIFICATION',
             title: 'Product enabled',
             message: 'Coca-Cola Zero 42 has been enabled again and the stock was increased by +1.',
-            position: 'tr',
-            autoDismiss: 8
+            position: 'bc',
+            autoDismiss: 2.5,
+            uid: 'product-enabled-0005',
+            level: 'warning'
           }),
           error => done(new Error(error)),
           () => done()

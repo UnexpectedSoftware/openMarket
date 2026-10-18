@@ -10,17 +10,13 @@ import {
   PRINT_ORDER_FINISHED
 } from '../../../../../openMarket/user_interface/order/new_order/action';
 
-function errorNotification(payload) {
-  return {type: 'ERROR', payload};
-}
-
 describe('Order print epics', () => {
   it('finishes when the ticket is accepted', (done) => {
     const epic = makePrinterDialogEpic({
       build: () => Rx.Observable.of({blocks: []})
     })({
       print: () => Rx.Observable.of(true)
-    })(errorNotification);
+    });
     epic(Rx.Observable.of({
       type: HIDE_PRINTER_DIALOG,
       payload: {print: true, order: {id: '1'}}
@@ -35,18 +31,21 @@ describe('Order print epics', () => {
       build: () => Rx.Observable.of({blocks: []})
     })({
       print: () => Rx.Observable.throw(new Error('Printer is busy'))
-    })(errorNotification);
+    });
     epic(Rx.Observable.of({
       type: PRINT_ORDER_BUTTON_CLICKED,
       payload: {id: '1'}
     })).toArray().subscribe((actions) => {
       expect(actions).to.have.length(1);
-      expect(actions[0].payload).to.include({
+      expect(actions[0]).to.include({
+        type: 'RNS_SHOW_NOTIFICATION',
         title: 'Print failed',
         message: 'Printer is busy',
-        position: 'tr',
-        autoDismiss: 4
+        position: 'bc',
+        autoDismiss: 0,
+        level: 'error'
       });
+      expect(actions[0].uid).to.match(/^print-failed-/);
       done();
     }, done);
   });

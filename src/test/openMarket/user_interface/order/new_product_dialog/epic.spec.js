@@ -65,35 +65,29 @@ describe('New Product Dialog Epics', () => {
         createOrUpdate: ({}) => Rx.Observable.of(null)
       };
 
-      const notificationMock = {
-        success: anything => ({
-          type: 'RNS_SHOW_NOTIFICATION'
-        }),
-        error: anything => ({
-          type: 'RNS_SHOW_NOTIFICATION'
-        })
-      };
-
       const productDefaults = container.environment.config.productDefaults;
 
-      const actions$ = makeNewProductSavedDialogEpic(createProductUseCaseMock)({messaging:notificationMock})(productDefaults)(givenActions$);
+      const actions$ = makeNewProductSavedDialogEpic(createProductUseCaseMock)(productDefaults)(givenActions$);
 
-      const expectedActions =[
-        {
-          type: NEW_ORDER_PRODUCT_FETCH,
-          barcode: givenBarcode
-        },
-        {
-          type: HIDE_NEW_PRODUCT_DIALOG
-        },
-        {
-          type: 'RNS_SHOW_NOTIFICATION'
-        }
-      ];
       actions$
         .toArray()
         .subscribe(
-          actionsArray => expect(actionsArray).to.deep.equal(expectedActions),
+          actionsArray => {
+            expect(actionsArray).to.have.length(3);
+            expect(actionsArray[0]).to.deep.equal({
+              type: NEW_ORDER_PRODUCT_FETCH,
+              barcode: givenBarcode
+            });
+            expect(actionsArray[1]).to.deep.equal({type: HIDE_NEW_PRODUCT_DIALOG});
+            expect(actionsArray[2]).to.include({
+              type: 'RNS_SHOW_NOTIFICATION',
+              title: 'Product saved!',
+              message: 'Product saved in database',
+              position: 'bc',
+              autoDismiss: 2.5,
+              level: 'success'
+            });
+          },
           (error) => done(new Error(error)),
           () => done()
         );

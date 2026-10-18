@@ -1,0 +1,25 @@
+.om-gallery {
+  display: flex;
+  flex-direction: column;
+  gap: var(--om-space-6);
+  padding-bottom: var(--om-space-7);
+}
+
+.om-gallery-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--om-space-3);
+}
+
+.om-gallery-section h2 {
+  margin: 0;
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-lg);
+}
+
+.om-gallery-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--om-space-3);
+}

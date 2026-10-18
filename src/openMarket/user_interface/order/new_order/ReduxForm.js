@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { Field, reduxForm } from 'redux-form';
 import ReactTable from 'react-table';
 import * as Rx from "rxjs";
+import Button from "../../components/Button";
 import {formatMoney} from "../../i18n/money";
 import {vatLines} from "./model";
 
@@ -52,12 +53,21 @@ class ReduxForm extends Component {
 
   renderDeleteRow (data) {
     const { onDeleteProduct, readonly } = this.props;
-    if(!readonly) {
-      return (<a onClick={(e) => {
-        onDeleteProduct(data.row.barcode);
-        this.setFocusOnBarcode();
-      }}>Delete</a>);
+    if (!readonly) {
+      return (
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            onDeleteProduct(data.row.barcode);
+            this.setFocusOnBarcode();
+          }}
+        >
+          Delete
+        </Button>
+      );
     }
+    return null;
   }
 
   renderEditable (props) {
@@ -126,19 +136,14 @@ class ReduxForm extends Component {
             <li key={row.label}>{row.label} {formatMoney(row.base)} {formatMoney(row.quota)}</li>
           )}
         </ul>
-        <h3>{formatMoney(order.total)}
-        {!readonly &&
-          <a className="button" onClick={this.saveOrder}>
-            <i className="fa fa-floppy-o" />
-            Save
-          </a>
-        }
-        {readonly &&
-        <a className="button" onClick={printOrder}>
-          <i className="fa fa-print" />
-          Print!
-        </a>
-        }
+        <h3 className="order-total">
+          <span>{formatMoney(order.total)}</span>
+          {!readonly &&
+            <Button type="button" icon="floppy-o" onClick={this.saveOrder}>Save</Button>
+          }
+          {readonly &&
+            <Button type="button" variant="secondary" icon="print" onClick={printOrder}>Print!</Button>
+          }
         </h3>
       </form>
     );

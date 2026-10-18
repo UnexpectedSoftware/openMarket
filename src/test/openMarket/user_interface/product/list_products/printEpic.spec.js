@@ -13,8 +13,6 @@ function harness(execute) {
         return execute(filters);
       }
     },
-    successNotification: payload => ({type: 'SUCCESS', payload}),
-    errorNotification: payload => ({type: 'ERROR', payload}),
     catalogPrintProgressed: percent => ({type: 'CATALOG_PRINT_PROGRESSED', percent}),
     catalogPrintFinished: () => ({type: 'CATALOG_PRINT_FINISHED'})
   });
@@ -59,18 +57,19 @@ describe('Print catalog epic', () => {
       categoryName: 'Dairy'
     });
     expect(seen.printedAt).to.be.a('string');
-    expect(emitted[0].payload).to.include({
+    expect(emitted[0]).to.include({
       title: 'Printing products',
       message: 'The product list will be printed in the background',
-      position: 'tr',
-      autoDismiss: 4
+      position: 'bc',
+      autoDismiss: 2.5,
+      level: 'success'
     });
     push.next({progress: true, completed: 1, total: 2, percent: 50});
     expect(emitted[1]).to.deep.equal({type: 'CATALOG_PRINT_PROGRESSED', percent: 50});
     push.next({printed: 2});
     push.complete();
     expect(emitted[2]).to.deep.equal({type: 'CATALOG_PRINT_FINISHED'});
-    expect(emitted[3].payload).to.include({
+    expect(emitted[3]).to.include({
       title: 'Products printed',
       message: 'Printed 2 products.'
     });
@@ -84,7 +83,7 @@ describe('Print catalog epic', () => {
     print();
     print();
     expect(executions()).to.equal(1);
-    expect(emitted[1].payload.title).to.equal('Already printing products');
+    expect(emitted[1].title).to.equal('Already printing products');
     push.next({progress: true, percent: 10});
     expect(emitted[2]).to.deep.equal({type: 'CATALOG_PRINT_PROGRESSED', percent: 10});
     push.next({printed: 1});
@@ -96,11 +95,11 @@ describe('Print catalog epic', () => {
     const empty = harness(() => Rx.Observable.of({printed: 0}));
     empty.print();
     expect(empty.emitted.map(action => action.type)).to.deep.equal([
-      'SUCCESS',
+      'RNS_SHOW_NOTIFICATION',
       'CATALOG_PRINT_FINISHED',
-      'SUCCESS'
+      'RNS_SHOW_NOTIFICATION'
     ]);
-    expect(empty.emitted[2].payload.title).to.equal('Nothing to print');
+    expect(empty.emitted[2].title).to.equal('Nothing to print');
     expect(empty.emitted.some(action => action.type === 'CATALOG_PRINT_PROGRESSED')).to.equal(false);
 
     const failure = new Error('Printer is busy');
@@ -109,9 +108,13 @@ describe('Print catalog epic', () => {
     const failed = harness(() => Rx.Observable.throw(failure));
     failed.print();
     expect(failed.emitted[1]).to.deep.equal({type: 'CATALOG_PRINT_FINISHED'});
-    expect(failed.emitted[2].payload).to.include({
+    expect(failed.emitted[2]).to.include({
+      type: 'RNS_SHOW_NOTIFICATION',
       title: 'Could not print products',
-      message: 'Printed 20 of 140. Printer is busy'
+      message: 'Printed 20 of 140. Printer is busy',
+      position: 'bc',
+      autoDismiss: 0,
+      level: 'error'
     });
   });
 });

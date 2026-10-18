@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import Button from '../components/Button';
 import ReduxForm from './ReduxForm';
 import ThemePicker from './ThemePicker';
 
@@ -88,7 +89,7 @@ export default class Container extends Component {
           <h3>Comercio</h3>
           <ReduxForm values={this.state} onChange={this._change} error={settings.error} />
           {settings.saved ? <p className="settings-saved" role="status">Shop saved</p> : null}
-          <button type="submit" className="button">Save</button>
+          <Button type="submit">Save</Button>
         </form>
       </section>
     );

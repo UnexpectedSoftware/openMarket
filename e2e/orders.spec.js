@@ -26,7 +26,7 @@ async function openNewOrder(window) {
 }
 
 async function saveOrder(window) {
-  await window.locator('h3 a.button', {hasText: 'Save'}).click();
+  await window.locator('h3').getByRole('button', {name: 'Save'}).click();
 }
 
 async function expectSubtotal(window, name, amount) {
@@ -153,10 +153,10 @@ test('sells a weighed product for 6,48 €', async () => {
     });
     await openNewOrder(window);
     await scanBarcode(window, '8400000000035');
-    const dialog = window.locator('.dialog-Modal');
-    await expect(dialog.getByRole('heading', {name: 'Weight!'})).toBeVisible();
+    const dialog = window.getByRole('dialog');
+    await expect(dialog.getByRole('heading', {name: 'Peso (kg)'})).toBeVisible();
     await dialog.locator('input[name="quantity"]').fill('0.35');
-    await dialog.locator('a.button', {hasText: 'Save'}).click();
+    await dialog.getByRole('button', {name: 'Save'}).click();
     await expect(orderRow(window, 'Ham').locator('input')).toHaveValue('0.35');
     await expectSubtotal(window, 'Ham', 6.48);
     await expectOrderTotal(window, 6.48);
@@ -207,12 +207,40 @@ test('lists an order and opens its detail', async () => {
     await row.getByText('View', {exact: true}).click();
     await expect(window.getByRole('heading', {name: "Let's edit an order!"})).toBeVisible();
     await expect(window.locator('input[name="barcode"]')).toHaveCount(0);
-    await expect(window.locator('a.button', {hasText: 'Save'})).toHaveCount(0);
+    await expect(window.getByRole('button', {name: 'Save'})).toHaveCount(0);
     const quantity = orderRow(window, 'Milk').locator('input');
     await expect(quantity).toHaveValue('1');
     await expect(quantity).toHaveAttribute('readonly', '');
     await expectSubtotal(window, 'Milk', 2);
-    await expect(window.locator('a.button', {hasText: 'Print!'})).toBeVisible();
+    await expect(window.getByRole('button', {name: 'Print!'})).toBeVisible();
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
+test('closes the ticket dialog from the close control without printing', async () => {
+  const {app, window, userData} = await launchApp();
+  const pageErrors = [];
+  window.on('pageerror', error => pageErrors.push(error.message));
+  try {
+    await createCategory(window, 'Dairy');
+    await createProduct(window, {
+      name: 'Milk',
+      barcode: '8400000000097',
+      price: 2,
+      basePrice: 1,
+      stock: 5,
+      stockMin: 1,
+      category: 'Dairy'
+    });
+    await openNewOrder(window);
+    await scanBarcode(window, '8400000000097');
+    await saveOrder(window);
+    const dialog = window.getByRole('dialog');
+    await expect(dialog.getByRole('heading', {name: 'Do you want a ticket?!'})).toBeVisible();
+    await dialog.getByRole('button', {name: 'Close'}).click();
+    await expect(window.getByText('Do you want a ticket?!')).toHaveCount(0);
+    expect(pageErrors).toEqual([]);
   } finally {
     await closeApp(app, userData);
   }

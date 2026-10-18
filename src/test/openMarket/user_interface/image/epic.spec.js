@@ -13,8 +13,6 @@ function harness({pathname, execute}) {
         return execute();
       }
     },
-    successNotification: payload => ({type: 'SUCCESS', payload}),
-    errorNotification: payload => ({type: 'ERROR', payload}),
     listen(onFetch) {
       handler = onFetch;
       return () => {};
@@ -55,21 +53,22 @@ describe('Fetch images epic', () => {
     });
     fetch();
     expect(emitted).to.have.length(1);
-    expect(emitted[0].payload).to.include({
+    expect(emitted[0]).to.include({
       title: 'Fetching images',
       message: 'Product and category photos will be added in the background',
-      position: 'tr',
-      autoDismiss: 4
+      position: 'bc',
+      autoDismiss: 2.5,
+      level: 'success'
     });
     push.next({progress: true, completed: 1, total: 2, percent: 50});
     expect(emitted[1]).to.deep.equal({type: 'IMAGE_FETCH_PROGRESSED', percent: 50});
     push.next({productsUpdated: 2, categoriesUpdated: 1});
     push.complete();
     expect(emitted[2]).to.deep.equal({type: 'IMAGE_FETCH_FINISHED'});
-    expect(emitted[3].payload.title).to.equal('Images ready');
-    expect(emitted[3].payload.message).to.include('2 product photos');
-    expect(emitted[3].payload.message).to.include('1 category photo');
-    expect(emitted[3].payload.message).to.include('CC BY-SA');
+    expect(emitted[3].title).to.equal('Images ready');
+    expect(emitted[3].message).to.include('2 product photos');
+    expect(emitted[3].message).to.include('1 category photo');
+    expect(emitted[3].message).to.include('CC BY-SA');
     expect(emitted[4]).to.deep.equal({type: 'CATEGORIES_PAGE_LOADED'});
   });
 
@@ -84,11 +83,11 @@ describe('Fetch images epic', () => {
     fetch();
     fetch();
     expect(executions()).to.equal(1);
-    expect(emitted[1].payload.title).to.equal('Already fetching images');
+    expect(emitted[1].title).to.equal('Already fetching images');
     push.next({productsUpdated: 0, categoriesUpdated: 0});
     push.complete();
     expect(emitted[2]).to.deep.equal({type: 'IMAGE_FETCH_FINISHED'});
-    expect(emitted[3].payload.message).to.include('No new photos found');
+    expect(emitted[3].message).to.include('No new photos found');
     expect(emitted).to.have.length(4);
   });
 
@@ -123,16 +122,15 @@ describe('Fetch images epic', () => {
       execute: () => Rx.Observable.throw(new Error('offline'))
     });
     failed.fetch();
-    expect(failed.emitted[0].payload.title).to.equal('Fetching images');
+    expect(failed.emitted[0].title).to.equal('Fetching images');
     expect(failed.emitted[1]).to.deep.equal({type: 'IMAGE_FETCH_FINISHED'});
-    expect(failed.emitted[2]).to.deep.equal({
-      type: 'ERROR',
-      payload: {
-        title: 'Could not fetch images',
-        message: 'offline',
-        position: 'tr',
-        autoDismiss: 4
-      }
+    expect(failed.emitted[2]).to.include({
+      type: 'RNS_SHOW_NOTIFICATION',
+      title: 'Could not fetch images',
+      message: 'offline',
+      position: 'bc',
+      autoDismiss: 0,
+      level: 'error'
     });
   });
 });

@@ -54,4 +54,16 @@ describe('UI colours', () => {
       'Hard-coded colours belong in docs/design/themes. See docs/design/DESIGN.md.\n' + failures.join('\n')
     ).to.deep.equal([]);
   });
+
+  it('keeps colour out of component inline styles', () => {
+    const directory = path.join(root, 'components');
+    const failures = [];
+    fs.readdirSync(directory).filter(name => name.endsWith('.js')).forEach(name => {
+      const text = fs.readFileSync(path.join(directory, name), 'utf8');
+      if (/style=\{\{[^}]*\bcolor\b/i.test(text)) {
+        failures.push(name);
+      }
+    });
+    expect(failures).to.deep.equal([]);
+  });
 });

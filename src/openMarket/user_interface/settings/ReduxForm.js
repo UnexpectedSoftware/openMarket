@@ -1,4 +1,5 @@
 import React, {Component} from 'react';
+import TextField from '../components/TextField';
 
 const FIELDS = [
   {name: 'nif', label: 'NIF'},
@@ -18,19 +19,18 @@ export default class ReduxForm extends Component {
     return (
       <div>
         {FIELDS.map(field => (
-          <label className="settings-field" key={field.name} htmlFor={`shop-${field.name}`}>
-            {field.label}
-            <input
-              id={`shop-${field.name}`}
-              name={field.name}
-              type="text"
-              value={values[field.name] || ''}
-              onChange={event => onChange(field.name, event.target.value)}
-            />
-          </label>
+          <TextField
+            key={field.name}
+            id={'shop-' + field.name}
+            name={field.name}
+            label={field.label}
+            value={values[field.name] || ''}
+            onChange={event => onChange(field.name, event.target.value)}
+          />
         ))}
         <label className="settings-field settings-check">
           <input
+            id="shop-invoicing"
             name="invoicingEnabled"
             type="checkbox"
             checked={values.invoicingEnabled === true}

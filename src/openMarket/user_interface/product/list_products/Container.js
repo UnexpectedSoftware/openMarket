@@ -1,5 +1,8 @@
 import React, {Component} from 'react';
 import {Link} from 'react-router';
+import Button from '../../components/Button';
+import EmptyState from '../../components/EmptyState';
+import Spinner from '../../components/Spinner';
 import placeholder from '../../resources/category-placeholder.svg';
 import {formatMoney} from '../../i18n/money';
 import {catalogLimit, defaultCatalogSort, NAME_ASC, NAME_DESC, STOCK_ASC, STOCK_DESC} from './model';
@@ -116,6 +119,57 @@ class Container extends Component {
   pickCategory = (categoryId) => {
     this.changeFilters({categoryId});
   };
+
+  filtersActive() {
+    const products = this.props.products || {};
+    return !!(
+      String(products.query || '').trim() ||
+      products.lowStock ||
+      products.status ||
+      products.categoryId
+    );
+  }
+
+  clearFilters = () => {
+    if (this.lowStockFrom(this.props.location) && this.props.router) {
+      this.props.router.push('/list_products');
+      return;
+    }
+    this.openCatalog(false);
+  };
+
+  catalogStatus(cards) {
+    const products = this.props.products;
+    if (products.loading && cards.length === 0) {
+      return <Spinner label="Loading products" />;
+    }
+    if (products.loading) {
+      return <p className="catalog-note">Loading…</p>;
+    }
+    if (cards.length === 0) {
+      if (this.filtersActive()) {
+        return (
+          <EmptyState
+            icon="search"
+            title="No products match these filters"
+            action={<Button type="button" variant="secondary" onClick={this.clearFilters}>Quitar filtros</Button>}
+          />
+        );
+      }
+      return (
+        <EmptyState
+          icon="barcode"
+          title="Aún no hay productos"
+          message="Crea el primer producto para venderlo."
+          action={<Link to="/create_product" className="om-button om-button--primary">Crear producto</Link>}
+        />
+      );
+    }
+    if (!products.hasMore) {
+      return <p className="catalog-note">End of catalog</p>;
+    }
+    return null;
+  }
 
   pickSort = (event) => {
     this.changeFilters({sort: event.target.value});
@@ -275,13 +329,7 @@ class Container extends Component {
             <div className="product-cards">
               {cards.map(product => this.renderCard(product))}
             </div>
-            {products.loading && <p className="catalog-note">Loading…</p>}
-            {!products.loading && cards.length === 0 &&
-              <p className="catalog-note">No products match these filters</p>
-            }
-            {!products.loading && !products.hasMore && cards.length > 0 &&
-              <p className="catalog-note">End of catalog</p>
-            }
+            {this.catalogStatus(cards)}
             <div className="catalog-sentinel" ref={this.setSentinel} />
           </div>
         </div>

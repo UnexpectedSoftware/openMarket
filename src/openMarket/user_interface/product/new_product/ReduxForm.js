@@ -1,32 +1,42 @@
-import React, { Component } from 'react';
-import { Field, reduxForm } from 'redux-form';
+import React, {Component} from 'react';
+import {Field, reduxForm} from 'redux-form';
 import {required, maxLength15, number, greaterThan0, greaterOrEqualsThan0, vatRateCode} from '../../validations/formValidations';
 import VatRate from '../../../domain/tax/VatRate';
+import Button from '../../components/Button';
 import ImageField from '../../components/ImageField';
+import NumberField from '../../components/NumberField';
+import Select from '../../components/Select';
+import TextField from '../../components/TextField';
+import reduxFormField from '../../components/reduxFormField';
 import placeholder from '../../resources/category-placeholder.svg';
 
+const textField = reduxFormField(TextField);
+const numberField = reduxFormField(NumberField);
+const selectField = reduxFormField(Select);
+
+const STATUS_LABEL = {
+  ENABLED: 'Activo',
+  DISABLED: 'Desactivado'
+};
+
+function renderWeighted(field) {
+  return (
+    <div className="om-field om-field--check">
+      <input
+        id="weighted"
+        name={field.input.name}
+        type="checkbox"
+        checked={!!field.input.value}
+        onChange={field.input.onChange}
+        onBlur={field.input.onBlur}
+        onFocus={field.input.onFocus}
+      />
+      <label htmlFor="weighted">Weighted</label>
+    </div>
+  );
+}
+
 class ReduxForm extends Component {
-
-  renderInput = field => (
-    <div>
-      <label htmlFor={field.placeholder}>{field.placeholder}</label>
-      <input {...field.input} type={field.type} readOnly={field.readOnly}/>
-      {field.meta.touched &&
-      field.meta.error &&
-      <span className="error">{field.meta.error}</span>}
-    </div>
-  );
-
-  renderTextarea = field => (
-    <div>
-      <label htmlFor={field.placeholder}>{field.placeholder}</label>
-      <textarea {...field.input} />
-      {field.meta.touched &&
-      field.meta.error &&
-      <span className="error">{field.meta.error}</span>}
-    </div>
-  );
-
 
   attachImage = (values) => {
     const chosen = this.imageField ? this.imageField.readChosenPath() : {imagePath: null};
@@ -41,24 +51,35 @@ class ReduxForm extends Component {
   };
 
   categoryImage() {
-    const { categoriesList, categoryId } = this.props;
+    const {categoriesList, categoryId} = this.props;
     const selected = (categoriesList || []).filter(category => String(category.id) === String(categoryId || ''))[0];
     return (selected && selected.imageSrc) || placeholder;
   }
 
   render() {
-    const { handleSubmit, edition, statusesList, submitting, categoriesList, initialValues, imageLookup, onFindImage } = this.props;
+    const {handleSubmit, edition, statusesList, submitting, categoriesList, initialValues, imageLookup, onFindImage} = this.props;
     const lookingUp = Boolean(imageLookup && imageLookup.busy);
+    const statusOptions = (statusesList || []).map(status => ({
+      value: status.key,
+      label: STATUS_LABEL[status.key] || status.value
+    }));
+    const vatOptions = VatRate.options().map(option => ({
+      value: option.code,
+      label: option.label
+    }));
+    const categoryOptions = [{value: '', label: 'Select a category...'}].concat(
+      (categoriesList || []).map(category => ({value: category.id, label: category.name}))
+    );
     return (
-      <form className="product-form" onSubmit={handleSubmit(this.attachImage)} onKeyPress={event => {if (event.which === 13 /* Enter */) { event.preventDefault();}}}>
+      <form className="product-form" onSubmit={handleSubmit(this.attachImage)} onKeyPress={event => { if (event.which === 13) { event.preventDefault(); } }}>
         <div className="product-form-grid">
           <section className="product-block">
             <h3>General information</h3>
             <div className="product-fields">
-              <Field name="name" component={this.renderInput} type="text" placeholder="Name" validate={required}/>
-              <Field name="barcode" readOnly={edition} component={this.renderInput} type="text" placeholder="Barcode" validate={[required, maxLength15]}/>
+              <Field name="name" component={textField} label="Name" validate={required} />
+              <Field name="barcode" readOnly={edition} component={textField} label="Barcode" validate={[required, maxLength15]} />
             </div>
-            <Field name="description" component={this.renderTextarea} placeholder="Description"/>
+            <Field name="description" component={textField} label="Description" multiline />
             <div className="product-image-row">
               <div className="product-image-field">
                 <ImageField
@@ -70,24 +91,26 @@ class ReduxForm extends Component {
                 />
               </div>
               {!edition &&
-                <button type="button" className="product-image-lookup" disabled={lookingUp} onClick={onFindImage}>
-                  <i className={lookingUp ? 'fa fa-spinner fa-spin' : 'fa fa-search'} />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="product-image-lookup"
+                  busy={lookingUp}
+                  icon="search"
+                  onClick={onFindImage}
+                >
                   {lookingUp ? 'Looking…' : 'Find image'}
-                </button>
+                </Button>
               }
             </div>
             <div className="product-fields">
-              <Field name="weighted" component={this.renderInput} type="checkbox" placeholder="Weighted"/>
-              <div>
-                <label htmlFor="status">Status</label>
-                <div className="SelectContainer">
-                  <Field name="status" component="select">
-                    {statusesList.map(status =>
-                      <option value={status.key} key={status.key}>{status.value}</option>
-                    )}
-                  </Field>
-                </div>
-              </div>
+              <Field name="weighted" component={renderWeighted} />
+              <Field
+                name="status"
+                component={selectField}
+                label="Status"
+                options={statusOptions}
+              />
             </div>
           </section>
 
@@ -95,39 +118,32 @@ class ReduxForm extends Component {
             <section className="product-block">
               <h3>Pricing & Stock</h3>
               <div className="product-fields">
-                <Field name="price" component={this.renderInput} type="text" placeholder="Price" validate={[required, greaterThan0, number]}/>
-                <Field name="basePrice" component={this.renderInput} type="text" placeholder="Base Price" validate={[required, greaterThan0, number]}/>
+                <Field name="price" component={numberField} label="Price" unit="€" validate={[required, greaterThan0, number]} />
+                <Field name="basePrice" component={numberField} label="Base Price" unit="€" validate={[required, greaterThan0, number]} />
               </div>
-              <div>
-                <label htmlFor="vatRate">IVA</label>
-                <div className="SelectContainer">
-                  <Field name="vatRate" component="select" validate={[required, vatRateCode]}>
-                    {VatRate.options().map(option =>
-                      <option value={option.code} key={option.code}>{option.label}</option>
-                    )}
-                  </Field>
-                </div>
-              </div>
+              <Field
+                name="vatRate"
+                component={selectField}
+                label="IVA"
+                options={vatOptions}
+                validate={[required, vatRateCode]}
+              />
               <div className="product-fields">
-                <Field name="stock" component={this.renderInput} type="text" placeholder="Stock" validate={[required, greaterOrEqualsThan0, number]}/>
-                <Field name="stockMin" component={this.renderInput} type="text" placeholder="Stock Minimum" validate={[required, greaterThan0, number]}/>
+                <Field name="stock" component={numberField} label="Stock" validate={[required, greaterOrEqualsThan0, number]} />
+                <Field name="stockMin" component={numberField} label="Stock Minimum" validate={[required, greaterThan0, number]} />
               </div>
             </section>
 
             <section className="product-block">
               <h3>Category</h3>
               <div className="product-category-row">
-                <div>
-                  <label htmlFor="categoryId">Category</label>
-                  <div className="SelectContainer">
-                    <Field name="categoryId" component="select" validate={[required]}>
-                      <option value="">Select a category...</option>
-                      {categoriesList.map(category =>
-                        <option value={category.id} key={category.id}>{category.name}</option>
-                      )}
-                    </Field>
-                  </div>
-                </div>
+                <Field
+                  name="categoryId"
+                  component={selectField}
+                  label="Category"
+                  options={categoryOptions}
+                  validate={[required]}
+                />
                 <img src={this.categoryImage()} alt="" />
               </div>
             </section>
@@ -135,10 +151,7 @@ class ReduxForm extends Component {
         </div>
 
         <div className="product-form-actions">
-          <button type="submit" disabled={submitting}>
-            <i className="fa fa-floppy-o" />
-            Save
-          </button>
+          <Button type="submit" icon="floppy-o" disabled={submitting}>Save</Button>
         </div>
       </form>
     );
@@ -147,5 +160,5 @@ class ReduxForm extends Component {
 
 export default reduxForm({
   form: 'new_product',
-  enableReinitialize : true
+  enableReinitialize: true
 })(ReduxForm);

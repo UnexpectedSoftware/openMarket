@@ -19,7 +19,16 @@
 @import "./style/components/products.scss";
 @import "./style/components/plugins.scss";
 @import "./style/components/settings-page.scss";
-@import "./style/components/modal.scss";
+@import "./style/components/om-button.scss";
+@import "./style/components/om-field.scss";
+@import "./style/components/om-card.scss";
+@import "./style/components/om-table.scss";
+@import "./style/components/om-dialog.scss";
+@import "./style/components/om-badge.scss";
+@import "./style/components/om-empty.scss";
+@import "./style/components/om-spinner.scss";
+@import "./style/components/om-page.scss";
+@import "./style/components/om-gallery.scss";
 
 body {
   position: relative;
@@ -100,27 +109,6 @@ h3 {
     font-family: var(--om-font-sans);
     font-size: var(--om-font-size-sm);
     font-weight: var(--om-font-weight-medium);
-  }
-
-  .fetch-progress-spinner {
-    width: var(--om-space-3);
-    height: var(--om-space-3);
-    border: 2px solid var(--om-color-primary-contrast);
-    border-top-color: transparent;
-    border-radius: var(--om-radius-md);
-    animation: fetch-spin 0.8s linear infinite;
-  }
-}
-
-@keyframes fetch-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .header .fetch-progress-spinner {
-    animation: none;
   }
 }
 

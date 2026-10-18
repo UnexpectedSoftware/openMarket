@@ -3,19 +3,8 @@ import {connect} from 'react-redux';
 import Dialog from '../dialog/ReduxConnector';
 import NavRail, {handleNavShortcut} from './NavRail';
 import Notifications from 'react-notification-system-redux';
-
-const notificationStyle = {
-  Title: {
-    warning: {
-      color: 'var(--om-color-warning)'
-    }
-  },
-  NotificationItem: {
-    warning: {
-      borderTop: '2px solid var(--om-color-warning)'
-    }
-  }
-};
+import Spinner from '../components/Spinner';
+import {notificationStyle} from '../components/toast';
 
 class App extends Component {
   constructor(props) {
@@ -63,13 +52,13 @@ class App extends Component {
           <span className="header-aside">
             {imageFetch ? (
               <span className="fetch-progress">
-                <span className="fetch-progress-spinner" />
+                <Spinner size="sm" label="Fetching images" />
                 Fetching images {imageFetch.percent}%
               </span>
             ) : null}
             {catalogPrint ? (
               <span className="fetch-progress">
-                <span className="fetch-progress-spinner" />
+                <Spinner size="sm" label="Printing products" />
                 Printing products {catalogPrint.percent}%
               </span>
             ) : null}

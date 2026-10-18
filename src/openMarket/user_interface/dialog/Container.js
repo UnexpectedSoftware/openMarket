@@ -1,38 +1,30 @@
-import React, { Component } from 'react';
-import { Link } from 'react-router';
+import React, {Component} from 'react';
+import Button from '../components/Button';
+import Dialog from '../components/Dialog';
 
 class Container extends Component {
 
-  constructor(props,context) {
+  constructor(props, context) {
     super(props, context);
     this.closeDialog = this.closeDialog.bind(this);
   }
 
-  closeDialog(e){
-    const { dialogHide} = this.props;
-    dialogHide();
+  closeDialog() {
+    this.props.dialogHide();
   }
 
-
   render() {
-    const { dialog } = this.props;
-    if(!dialog.visible) return null;
+    const {dialog} = this.props;
     return (
-      <div className="dialog-Modal">
-        <div className="dialog-ModalControlX">
-          <div className="dialog-ModalControlY">
-            <div className="dialog-ModalContainer dialog-ModalAlert">
-              <div className="dialog-Modal-header">
-                <h2>Warning!<a className="close" onClick={this.closeDialog}><i className="fa fa-times"></i></a></h2>
-              </div>
-              <div className="dialog-Modal-main">
-                <p>{ dialog.message }</p>
-                <input type="button" value="CLOSE" onClick={this.closeDialog}/>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <Dialog
+        open={!!(dialog && dialog.visible)}
+        role="alertdialog"
+        title="Warning!"
+        onClose={this.closeDialog}
+        actions={<Button type="button" onClick={this.closeDialog}>CLOSE</Button>}
+      >
+        <p>{dialog && dialog.message}</p>
+      </Dialog>
     );
   }
 }
