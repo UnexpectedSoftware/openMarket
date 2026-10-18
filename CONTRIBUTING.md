@@ -4,7 +4,7 @@
 
 OpenMarket stays plain JavaScript. There are no `.ts` files. Types live in JSDoc, and `tsc --noEmit` (`npm run typecheck`) checks them. `npm run typecheck` must be green.
 
-1. **Destructured parameters.** Document the whole object. Use an inline shape for one to three fields:
+1. **Destructured parameters.** Document the whole object as one type. WebStorm copies that type onto each binding. Nested `@param {Type} params.name` tags typecheck, and the binding hover stays `any`.
 
    ```js
    /**
@@ -13,13 +13,11 @@ OpenMarket stays plain JavaScript. There are no `.ts` files. Types live in JSDoc
    update({id, name}) {}
    ```
 
-   For optional fields or defaults, use nested names. The name before the dot can be anything, but it must stay consistent:
+   Optional fields and defaults stay in that same type:
 
    ```js
    /**
-    * @param {object} [params]
-    * @param {string} [params.barcode]
-    * @param {Error} [params.cause]
+    * @param {{barcode?: string, cause?: Error}} [params]
     */
    constructor({barcode, cause} = {}) {}
    ```
@@ -59,4 +57,4 @@ Every new port or adapter gets a `describeContract(...)` line in `src/test/openM
 
 **VS Code.** Nothing to install. The built-in JavaScript service reads the root `tsconfig.json` (`allowJs` and `checkJs`), so errors and hovers show up in `.js` files. If you had the Flow extension, uninstall or disable it for this workspace. Remove any `"javascript.validate.enable": false` from your user settings. After pulling, run *TypeScript: Restart TS Server*. Optionally run *TypeScript: Select TypeScript Version → Use Workspace Version* so the editor matches `npm run typecheck`.
 
-**WebStorm.** Settings → Languages & Frameworks → JavaScript: set the language version to *ECMAScript 6+* (not *Flow*). Settings → Languages & Frameworks → TypeScript: enable the TypeScript language service and point it at the project's `node_modules/typescript`. Leave **Enable service-powered type engine** off. On TypeScript 7.0 that option drops member completion. Restart the service from the Language Services widget on the status bar. Ctrl+click a name bound with `@typedef {import('…').default}` to open the class. Search for `@implements {PortName}` to find an adapter. Nothing `extends` the port.
+**WebStorm.** Settings → Languages & Frameworks → JavaScript: set the language version to *ECMAScript 6+* (not *Flow*). Settings → Languages & Frameworks → TypeScript: enable the TypeScript language service and point it at the project's `node_modules/typescript`. Ctrl+click a name bound with `@typedef {import('…').default}` to open the typedef; the `import()` path opens the module. A destructured parameter is typed only from an object `@param`, as in rule 1. Search for `@implements {PortName}` to find an adapter. Nothing `extends` the port. With TypeScript 7.0, **Enable service-powered type engine** can drop member completion.

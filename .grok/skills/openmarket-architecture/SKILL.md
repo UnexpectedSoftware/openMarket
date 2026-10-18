@@ -433,8 +433,7 @@ import AppError, {defined} from '../error/AppError.js';
  */
 export default class InvalidSupplierNifError extends AppError {
   /**
-   * @param {object} [params]
-   * @param {string} [params.nif]
+   * @param {{nif?: string}} [params]
    */
   constructor({nif} = {}) {
     super({
@@ -473,7 +472,7 @@ The loader is `src/openMarket/infrastructure/plugins/`. A plugin is not source i
 - [ ] Durable events are saved, and live events are recorded, inside the caller's transaction. `raise()` after commit drains the bus queue, and `discard()` runs when the transaction fails. The bus and `SqliteTransaction` do not reference each other
 - [ ] Typed `AppError` with an `ErrorCode`, and no `new Error('…')` for shop failures
 - [ ] Container factory added. Facade key added if the UI needs it.
-- [ ] JSDoc: destructured params, `@typedef {import()}`, `@implements` on adapters, no `.ts` files and no `/** @import */`
+- [ ] JSDoc: destructured params as `@param {{prop: Type}}`, `@typedef {import()}`, `@implements` on adapters, no `.ts` files and no `/** @import */`
 - [ ] Tests: unit (ports faked), contract line for new adapters, itest for SQL
 
 ## Finish (every recipe)

@@ -30,6 +30,7 @@ import InvalidOrderQuantityError from "../../../domain/order/InvalidOrderQuantit
 /** @typedef {import("../../../domain/Clock").default} Clock */
 /** @typedef {import("../../../domain/service/DomainEventBus").default} DomainEventBus */
 /** @typedef {import("../../../domain/service/Transaction").default} Transaction */
+/** @typedef {import("../../../domain/shop/ShopProfileRepository").default} ShopProfileRepository */
 
 /**
  * @class CreateOrder
@@ -37,18 +38,19 @@ import InvalidOrderQuantityError from "../../../domain/order/InvalidOrderQuantit
 export default class CreateOrder {
 
   /**
-   * @param {object} deps
-   * @param {OrderRepository} deps.orderRepository
-   * @param {ProductRepository} deps.productRepository
-   * @param {InvoiceRepository} deps.invoiceRepository
-   * @param {InvoiceSequence} deps.invoiceSequence
-   * @param {OrderFactory} deps.orderFactory
-   * @param {Identity} deps.identity
-   * @param {Clock} deps.clock
-   * @param {DomainEventBus} deps.domainEventBus
-   * @param {Transaction} deps.transaction
-   * @param {{dispatch: () => void}} deps.domainEventDispatcher
-   * @param {import('../../../domain/shop/ShopProfileRepository').default} [deps.shopProfileRepository]
+   * @param {{
+   *   orderRepository: OrderRepository,
+   *   productRepository: ProductRepository,
+   *   invoiceRepository: InvoiceRepository,
+   *   invoiceSequence: InvoiceSequence,
+   *   orderFactory: OrderFactory,
+   *   identity: Identity,
+   *   clock: Clock,
+   *   domainEventBus: DomainEventBus,
+   *   transaction: Transaction,
+   *   domainEventDispatcher: {dispatch: () => void},
+   *   shopProfileRepository?: ShopProfileRepository
+   * }} deps
    */
   constructor({
     orderRepository,
