@@ -16,14 +16,14 @@ How the redesign lands, one phase per PR series. Each phase keeps the existing e
 - Contrast test over every theme JSON (part of OM-17 #80).
 - Mockups/previews: `themes/preview-*.webp`.
 
-## Phase 3 — Shared components
+## Phase 3 — Shared components ✅ done (#137)
 - Plan: [plans/phase-3-components.md](plans/phase-3-components.md)
 - `components/`: Button, Card/Tile, Table, Dialog/Sheet, Toast config (max 3, OM-18 #81), EmptyState, Field (label + error), Stepper.
 - Replace action anchors with buttons and tie labels (OM-10 #73), 44 px targets (OM-16 #79).
 - Mockups: `mockups/A-sell.webp`, `mockups/A-payment.webp`, `mockups/A-products.webp`.
 
 ## Phase 4+ — One screen per plan
-1. **Sale screen** ("Mostrador") — OM-12 #75, payment sheet #107 (OM-13 #76, OM-01 #64), Venta libre #108, weighted dialog + invalid line #109 (OM-21 #84, OM-23 #86), low stock badge OM-24 #87, plugin slots #105. Later presets #110. Mockups: `A-sell`, `A-payment`, `A-sell-plugin-slots`, `B-sell-scanner`, `C-sell-touch`. Before: `before/15-…`, `16-…`, `17-…`, `20-…`.
+1. **Sale screen** ("Mostrador") — OM-12 #75, payment sheet #107 (OM-13 #76, OM-01 #64), Venta libre #108, weighted dialog + invalid line #109 (OM-21 #84, OM-23 #86), low stock badge OM-24 #87, plugin slots #105. Later presets #110. Mockups: `A-sell`, `A-payment`, `A-sell-plugin-slots`, `B-sell-scanner`, `C-sell-touch`. Before: `before/15-…`, `16-…`, `17-…`, `20-…`. Plan: [plans/phase-4-sell-screen.md](plans/phase-4-sell-screen.md) (split 4a layout/scanner/Venta libre/weighted, 4b payment/receipt preview/slot).
 2. **Orders** — master-detail #111 (OM-07 #70, OM-19 #82, OM-20 #83). Mockup: `A-orders`. Before: `before/22-…`, `24-…`.
 3. **Products** — redesign #98 (OM-22 #85, OM-08 #71). Mockup: `A-products`. Before: `before/10-…`, `13-…`.
 4. **Categories** — card grid on tokens and shared components. Before: `before/05-categories.webp`.
