@@ -65,6 +65,6 @@ Every screen and list handles these explicitly:
 1. **Never hard-code colours, spacing, font sizes, radii or shadows in components** (SCSS or inline JS styles). Always use `var(--om-…)`. JS that needs a colour (charts, notification styles) reads it with `getComputedStyle(document.documentElement).getPropertyValue('--om-…')`.
 2. **New tokens** go into every theme file (CSS and JSON) in the same change, with a role-based name.
 3. **Reuse before you build:** use the catalogue above and `user_interface/components/`.
-4. **Follow the hexagonal layering.** `user_interface/` only talks to the application facade (`OpenMarket.get('<ctx>_<action>_use_case')` from `application/index.js`), plus read-only domain constants/events and `infrastructure/logging/`. No SQLite, fs or container imports in UI code. See root `AGENTS.md`.
+4. **Follow the hexagonal layering.** The UI uses application use cases for writes and queries for reads (through `OpenMarket.get('<key>')` from `application/index.js`). It may use domain value objects and functions directly (`Money`, `VatRate`, `VatBreakdown`), plus `infrastructure/logging/`. No SQLite, fs or container imports in UI code. See root `AGENTS.md`.
 5. **Copy and money:** user-facing strings go through the i18n layer when it exists; money through `formatMoney`.
 6. **Screenshots in PRs:** every UI PR attaches before/after screenshots at 1366×768 of the screens it touches.

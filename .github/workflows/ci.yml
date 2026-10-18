@@ -2,12 +2,45 @@ name: CI
 
 on:
   push:
-    paths-ignore:
-      - 'docs/**'
   pull_request:
 
 jobs:
+  # Decides whether anything outside docs changed. Docs-only changes skip the heavy jobs.
+  # Docs = docs/**, **/*.md, .grok/**, LICENSE. Everything else (including .github/**) counts as code.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      code: ${{ steps.diff.outputs.code }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: diff
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT" = "pull_request" ]; then
+            BASE=$(git merge-base "$PR_BASE" HEAD)
+          else
+            BASE="$PUSH_BEFORE"
+          fi
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            echo "No usable base ($BASE); running everything"
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CHANGED=$(git diff --name-only "$BASE" HEAD)
+          echo "Changed files:"; echo "$CHANGED"
+          CODE=$(echo "$CHANGED" | grep -v -E '^(docs/|\.grok/)|\.md$|^LICENSE$' | grep -c . || true)
+          if [ "$CODE" -gt 0 ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
+          echo "Non-docs files changed: $CODE"
+
   test-and-build:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -46,8 +79,8 @@ jobs:
           node .github/scripts/version-decision.js "$BASE" "$HEAD"
 
   package:
-    needs: test-and-build
-    if: success() && (github.event_name == 'pull_request' || github.ref == 'refs/heads/master')
+    needs: [changes, test-and-build]
+    if: success() && needs.changes.outputs.code == 'true' && (github.event_name == 'pull_request' || github.ref == 'refs/heads/master')
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -156,6 +189,20 @@ jobs:
           path: |
             release/*.dmg
             release/*.zip
+
+  # Single stable check for rulesets: passes when every job succeeded or was skipped.
+  ci-ok:
+    if: always()
+    needs: [changes, test-and-build, version-decision, package]
+    runs-on: ubuntu-latest
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "Results: $RESULTS"
+          for r in $RESULTS; do
+            case "$r" in success|skipped) ;; *) echo "A required job ended as $r"; exit 1;; esac
+          done
 
   publish:
     needs: package

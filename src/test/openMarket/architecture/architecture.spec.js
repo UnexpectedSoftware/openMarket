@@ -25,7 +25,7 @@ const ALLOWED = {
   infrastructure: ['domain/', 'application/', 'infrastructure/'],
   user_interface: [
     'application/',
-    'domain/',                            // events, ProductStatus, ErrorCode (read-only use)
+    'domain/',                            // value objects (Money, VatRate, VatBreakdown), events, constants
     'infrastructure/logging/'
   ]
 };
