@@ -9,7 +9,8 @@ const DISPLAY_DAY = "strftime('%d/%m/%Y', created_at)";
 const FIND_BY_ID_SQL = 'SELECT o.id, ' + DISPLAY_CREATED_AT + ' as created_at, o.total, o.total_cents, ' +
   'l.barcode as line_barcode, l.name as line_name, l.price as line_price, l.quantity as line_quantity, ' +
   'l.price_cents as line_price_cents, l.quantity_milli as line_quantity_milli, l.amount_cents as line_amount_cents, ' +
-  'l.vat_percent as line_vat_percent, l.vat_kind as line_vat_kind, l.vat_cause as line_vat_cause ' +
+  'l.vat_percent as line_vat_percent, l.vat_kind as line_vat_kind, l.vat_cause as line_vat_cause, ' +
+  'l.kind as line_kind ' +
   'FROM "order" o INNER JOIN line l ON l.order_id = o.id WHERE o.id = ?';
 
 const FIND_ALL_BY_DATES_SQL = 'SELECT id, ' + DISPLAY_CREATED_AT + ' as createdAt, total, total_cents FROM "order" ' +
@@ -25,8 +26,8 @@ const TOTAL_AMOUNT_BY_DAYS_SQL = 'SELECT total, total_cents, ' + DISPLAY_DAY + '
 const INSERT_ORDER_SQL = 'INSERT INTO "order" (id, created_at, total, total_cents) VALUES (?, ?, ?, ?)';
 
 const INSERT_LINE_SQL = 'INSERT INTO line ' +
-  '(order_id, barcode, name, price, quantity, price_cents, quantity_milli, amount_cents, vat_percent, vat_kind, vat_cause) ' +
-  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  '(order_id, barcode, name, price, quantity, price_cents, quantity_milli, amount_cents, vat_percent, vat_kind, vat_cause, kind) ' +
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
 /** @implements {OrderRepository} */
 export default class SqliteOrderRepository {
@@ -113,7 +114,8 @@ export default class SqliteOrderRepository {
           centsOf(line.amount),
           line.vatRate.percent,
           line.vatRate.kind,
-          line.vatRate.cause
+          line.vatRate.cause,
+          line.kind === 'FREE' ? 'FREE' : 'PRODUCT'
         );
       });
       return Rx.Observable.of(order);

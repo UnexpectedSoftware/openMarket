@@ -26,7 +26,7 @@ const THEMES = [
 ];
 
 const SCREENS = [
-  {link: 'Vender', heading: "Let's create a new order!", shot: 'vender'},
+  {link: 'Vender', heading: "Vender", shot: 'vender'},
   {link: 'Pedidos', heading: 'List Order!', shot: 'pedidos'},
   {link: 'Productos', heading: 'List Products', shot: 'productos'},
   {link: 'Categorías', heading: 'Categories', shot: 'categorias'},
@@ -52,7 +52,7 @@ test('a saved theme stays after leaving Settings', async () => {
     await expect(session.window.getByText('Tema guardado').first()).toBeVisible();
 
     await session.window.getByRole('link', {name: 'Vender', exact: true}).click();
-    await expect(session.window.getByRole('heading', {name: "Let's create a new order!"})).toBeVisible();
+    await expect(session.window.getByRole('heading', {name: "Vender"})).toBeVisible();
     await expect.poll(() => session.window.evaluate(() => document.documentElement.dataset.theme))
       .toBe('mostrador-noche');
 
@@ -83,7 +83,7 @@ test('the shop Save confirmation keeps the theme after leaving Settings', async 
     await expect(session.window.getByText('Tema guardado').first()).toBeVisible();
 
     await session.window.getByRole('link', {name: 'Vender', exact: true}).click();
-    await expect(session.window.getByRole('heading', {name: "Let's create a new order!"})).toBeVisible();
+    await expect(session.window.getByRole('heading', {name: "Vender"})).toBeVisible();
     await expect.poll(() => session.window.evaluate(() => document.documentElement.dataset.theme))
       .toBe('mostrador-noche');
     expect(storedTheme(userData)).toBe('mostrador-noche');

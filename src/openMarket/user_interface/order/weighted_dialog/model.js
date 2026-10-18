@@ -7,7 +7,11 @@ export const state = () => {
 export const showDialog = product => {
   return {
     visible: true,
-    product: product
+    product: product,
+    replace: !!(product && product.replaceQuantity),
+    initialValues: product && product.initialQuantity != null
+      ? {quantity: product.initialQuantity}
+      : undefined
   };
 }
 

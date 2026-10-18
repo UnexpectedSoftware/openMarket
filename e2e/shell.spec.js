@@ -3,7 +3,7 @@ const {test, expect} = require('@playwright/test');
 const {assertDist, launchApp, closeApp} = require('./launch');
 
 const SCREENS = [
-  {link: 'Vender', heading: "Let's create a new order!", shot: 'vender'},
+  {link: 'Vender', heading: "Vender", shot: 'vender'},
   {link: 'Pedidos', heading: 'List Order!', shot: 'pedidos'},
   {link: 'Productos', heading: 'List Products', shot: 'productos'},
   {link: 'Categorías', heading: 'Categories', shot: 'categorias'},
@@ -51,7 +51,7 @@ test('navigates from the rail with a click or a shortcut', async () => {
     expect(outline).not.toBe('none');
 
     await window.keyboard.press('F2');
-    await expect(window.getByRole('heading', {name: "Let's create a new order!"})).toBeVisible();
+    await expect(window.getByRole('heading', {name: "Vender"})).toBeVisible();
     await expect(window.getByRole('link', {name: 'Vender', exact: true})).toHaveAttribute('aria-current', 'page');
   } finally {
     await closeApp(app, userData);

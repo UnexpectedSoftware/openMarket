@@ -26,7 +26,7 @@ class Container extends Component {
     return (
       <Dialog
         open={visible}
-        title="Do you want a ticket?!"
+        title="¿Imprimir ticket?"
         onClose={this.handleKO}
         actions={visible ? (
           <span className="om-gallery-row">

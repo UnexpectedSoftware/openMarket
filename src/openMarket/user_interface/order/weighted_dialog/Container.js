@@ -1,5 +1,7 @@
 import React, {Component} from 'react';
 import Dialog from '../../components/Dialog';
+import Money from '../../../domain/money/Money';
+import {formatMoney} from '../../i18n/money';
 import WeightedDialogForm from './ReduxForm';
 
 class Container extends Component {
@@ -14,7 +16,11 @@ class Container extends Component {
 
   handleSubmit(values) {
     const {hideWeightedDialog, weightedDialog} = this.props;
-    hideWeightedDialog({product: weightedDialog.product, quantity: values.quantity});
+    hideWeightedDialog({
+      product: weightedDialog.product,
+      quantity: values.quantity,
+      replace: weightedDialog.replace
+    });
   }
 
   cancel() {
@@ -28,6 +34,8 @@ class Container extends Component {
   render() {
     const {weightedDialog} = this.props;
     const visible = !!(weightedDialog && weightedDialog.visible);
+    const product = weightedDialog && weightedDialog.product;
+    const price = product ? Money.from(product.price == null ? 0 : product.price) : null;
     return (
       <Dialog
         open={visible}
@@ -36,10 +44,16 @@ class Container extends Component {
         initialFocusRef={this.quantityFocus}
       >
         {visible ? (
-          <WeightedDialogForm
-            quantityRef={this.setQuantityNode}
-            onSubmit={this.handleSubmit}
-          />
+          <div>
+            <p className="sell-weigh-name">{product ? product.name : ''}</p>
+            <p className="sell-weigh-price">{price ? formatMoney(price) + ' / kg' : ''}</p>
+            <WeightedDialogForm
+              quantityRef={this.setQuantityNode}
+              onSubmit={this.handleSubmit}
+              price={price}
+              initialValues={weightedDialog.initialValues}
+            />
+          </div>
         ) : null}
       </Dialog>
     );

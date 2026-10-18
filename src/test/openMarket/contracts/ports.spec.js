@@ -6,6 +6,7 @@ import Transaction from '../../../openMarket/domain/service/Transaction';
 import OrderRepository from '../../../openMarket/domain/order/OrderRepository';
 import OrderFactory from '../../../openMarket/domain/order/OrderFactory';
 import ProductRepository from '../../../openMarket/domain/product/ProductRepository';
+import ProductsQuery from '../../../openMarket/domain/product/ProductsQuery';
 import ProductFactory from '../../../openMarket/domain/product/ProductFactory';
 import ProductFilterFactory from '../../../openMarket/domain/product/ProductFilterFactory';
 import ProductSaleStatisticsRepository from '../../../openMarket/domain/product/ProductSaleStatisticsRepository';
@@ -29,6 +30,7 @@ import SqliteTransaction from '../../../openMarket/infrastructure/service/Sqlite
 import SqliteOrderRepository from '../../../openMarket/infrastructure/order/SqliteOrderRepository';
 import OrderFactoryImpl from '../../../openMarket/infrastructure/order/OrderFactoryImpl';
 import SqliteProductRepository from '../../../openMarket/infrastructure/product/SqliteProductRepository';
+import SqliteProductsQuery from '../../../openMarket/infrastructure/product/SqliteProductsQuery';
 import ProductFactoryImpl from '../../../openMarket/infrastructure/product/ProductFactoryImpl';
 import ProductFilterFactoryImpl from '../../../openMarket/infrastructure/product/ProductFilterFactoryImpl';
 import SqliteProductSaleStatisticsRepository from '../../../openMarket/infrastructure/product/SqliteProductSaleStatisticsRepository';
@@ -55,6 +57,7 @@ describe('ports and adapters', () => {
   describeContract(InvoiceSequence, SqliteInvoiceSequence);
   describeContract(OrderFactory, OrderFactoryImpl);
   describeContract(ProductRepository, SqliteProductRepository);
+  describeContract(ProductsQuery, SqliteProductsQuery);
   describeContract(ProductFactory, ProductFactoryImpl);
   describeContract(ProductFilterFactory, ProductFilterFactoryImpl);
   describeContract(ProductSaleStatisticsRepository, SqliteProductSaleStatisticsRepository);

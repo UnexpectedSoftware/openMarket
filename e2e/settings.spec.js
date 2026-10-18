@@ -31,7 +31,7 @@ test('saves the shop and shows its NIF on a new order', async () => {
     await expect(second.window.getByRole('textbox', {name: 'NIF'})).toHaveValue('B12345674');
     await expect(second.window.getByRole('textbox', {name: 'Razón social'})).toHaveValue('Ultramarinos Pérez SL');
     await chooseMenu(second.window, 'Orders', 'new Order!');
-    await expect(second.window.locator('.shop-issuer')).toContainText('NIF B12345674');
+    await expect(second.window.locator('.om-page-header-subtitle')).toContainText('NIF B12345674');
   } finally {
     await closeApp(second.app, userData);
   }

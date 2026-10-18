@@ -116,7 +116,7 @@ async function openProductList(window) {
 }
 
 function orderRow(window, name) {
-  return window.locator('.rt-tbody .rt-tr').filter({hasText: name});
+  return window.locator('.sell-line').filter({hasText: name});
 }
 
 async function scanBarcode(window, barcode) {
@@ -136,14 +136,14 @@ async function setQuantity(window, name, quantity) {
 }
 
 async function expectOrderTotal(window, amount) {
-  await expect(window.locator('h3')).toContainText(euros(amount));
+  await expect(window.locator('.order-total')).toContainText(euros(amount));
 }
 
 async function dismissTicket(window) {
-  await expect(window.getByRole('heading', {name: 'Do you want a ticket?!'})).toBeVisible();
+  await expect(window.getByRole('heading', {name: '¿Imprimir ticket?'})).toBeVisible();
   await expect(window.getByRole('button', {name: 'YES!'})).toBeVisible();
   await window.getByRole('button', {name: 'NO'}).click();
-  await expect(window.getByText('Do you want a ticket?!')).toHaveCount(0);
+  await expect(window.getByText('¿Imprimir ticket?')).toHaveCount(0);
 }
 
 module.exports = {

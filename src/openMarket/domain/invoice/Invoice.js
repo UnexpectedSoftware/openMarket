@@ -7,6 +7,7 @@ import Quantity from '../money/Quantity';
 import VatRate from '../tax/VatRate';
 import VatBreakdown from '../tax/VatBreakdown';
 import InvoiceType from './InvoiceType';
+import {lineKind} from '../order/lineValidity';
 /** @import Order from '../order/Order' */
 
 /**
@@ -21,6 +22,7 @@ import InvoiceType from './InvoiceType';
 /**
  * One line stored on an invoice. `amount` is the line total in cents, copied from the order.
  * @typedef {object} InvoiceLine
+ * @property {'PRODUCT' | 'FREE'} [kind]
  * @property {string} barcode
  * @property {string} name
  * @property {Money} price
@@ -184,6 +186,7 @@ export default class Invoice {
   /** @returns {InvoiceLine[]} */
   get lines() {
     return this._lines.map(line => ({
+      kind: lineKind(line.kind),
       barcode: line.barcode,
       name: line.name,
       price: line.price,
@@ -250,7 +253,7 @@ export default class Invoice {
 
 /**
  * Copies the order lines. Amounts stay the ones the order already rounded.
- * @param {Array<{barcode: string, name: string, price: Money, quantity: Quantity, amount: Money, vatRate?: VatRate | object}>} lines
+ * @param {Array<{kind?: 'PRODUCT' | 'FREE', barcode: string, name: string, price: Money, quantity: Quantity, amount: Money, vatRate?: VatRate | object}>} lines
  * @returns {InvoiceLine[]}
  */
 function issuedLines(lines) {
@@ -258,6 +261,7 @@ function issuedLines(lines) {
     return [];
   }
   return lines.map(line => ({
+    kind: lineKind(line.kind),
     barcode: line.barcode == null ? '' : String(line.barcode),
     name: line.name == null ? '' : String(line.name),
     price: Money.from(line.price),
@@ -283,6 +287,7 @@ function storedLines(lines, id) {
     }
     try {
       return {
+        kind: lineKind(line.kind),
         barcode: line.barcode == null ? '' : String(line.barcode),
         name: line.name == null ? '' : String(line.name),
         price: Money.from(line.price == null ? 0 : line.price),

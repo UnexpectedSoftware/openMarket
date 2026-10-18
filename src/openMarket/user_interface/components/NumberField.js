@@ -122,9 +122,27 @@ export default class NumberField extends Component {
   }
 
   onBlur(event) {
-    const parsed = parseDecimal(this.state.draft);
-    if (this.state.draft !== '' && parsed == null) {
+    const typed = event && event.target && event.target.value != null
+      ? String(event.target.value)
+      : this.state.draft;
+    const raw = this.state.draft !== '' ? this.state.draft : typed;
+    const parsed = parseDecimal(raw);
+    if (raw !== '' && parsed == null) {
       this.setState({draft: format(this.props.value)});
+      if (this.props.onBlur) {
+        this.props.onBlur(event);
+      }
+      return;
+    }
+    if (parsed != null) {
+      const rounded = roundTo(parsed, this.props.decimals);
+      if (this.props.onChange && rounded !== this.props.value) {
+        this.props.onChange(rounded);
+      }
+      if (this.props.onBlur) {
+        this.props.onBlur(rounded);
+      }
+      return;
     }
     if (this.props.onBlur) {
       this.props.onBlur(event);

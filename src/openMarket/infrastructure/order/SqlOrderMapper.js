@@ -1,5 +1,6 @@
 import * as Rx from "rxjs";
 import Order from "../../domain/order/Order";
+import {lineKind} from "../../domain/order/lineValidity";
 import {moneyFromColumns, quantityFromColumns} from "../service/storedMoney";
 
 /**
@@ -38,6 +39,7 @@ export default class SqlOrderMapper {
         amount: row.line_amount_cents == null
           ? undefined
           : moneyFromColumns(row.line_amount_cents, null),
+        kind: lineKind(row.line_kind),
         vatRate: {
           percent: row.line_vat_percent,
           kind: row.line_vat_kind,

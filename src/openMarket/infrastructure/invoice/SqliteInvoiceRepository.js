@@ -12,7 +12,7 @@ import {centsOf, eurosOf, milliOf, unitsOf} from '../service/storedMoney';
 const INVOICE_COLUMNS = 'i.id, i.series, i.number, i.invoice_number, i.issued_at, i.issue_date, i.type, i.issuer_json, i.corrects_invoice_id, i.order_id, ' +
   'i.status, i.cancelled_at, i.total, i.total_cents';
 const LINE_COLUMNS = 'l.barcode, l.name, l.price, l.quantity, l.amount, ' +
-  'l.price_cents, l.quantity_milli, l.amount_cents, l.vat_percent, l.vat_kind, l.vat_cause';
+  'l.price_cents, l.quantity_milli, l.amount_cents, l.vat_percent, l.vat_kind, l.vat_cause, l.kind';
 
 const FIND_BY_ID_SQL = 'SELECT ' + INVOICE_COLUMNS + ', ' + LINE_COLUMNS +
   ' FROM invoice i INNER JOIN invoice_line l ON l.invoice_id = i.id' +
@@ -31,8 +31,8 @@ const FIND_BY_ORDER_SQL = 'SELECT ' + INVOICE_COLUMNS + ', ' + LINE_COLUMNS +
   ' WHERE i.order_id = ? ORDER BY l.position ASC';
 
 const INSERT_LINE_SQL = 'INSERT INTO invoice_line ' +
-  '(invoice_id, position, barcode, name, price, quantity, amount, price_cents, quantity_milli, amount_cents, vat_percent, vat_kind, vat_cause) ' +
-  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+  '(invoice_id, position, barcode, name, price, quantity, amount, price_cents, quantity_milli, amount_cents, vat_percent, vat_kind, vat_cause, kind) ' +
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
 const INSERT_VAT_SQL = 'INSERT INTO invoice_vat ' +
   '(invoice_id, position, kind, percent, cause, base_cents, quota_cents, gross_cents) ' +
@@ -161,7 +161,8 @@ export default class SqliteInvoiceRepository {
         centsOf(line.amount),
         line.vatRate.percent,
         line.vatRate.kind,
-        line.vatRate.cause
+        line.vatRate.cause,
+        line.kind === 'FREE' ? 'FREE' : 'PRODUCT'
       );
     });
     const insertVat = this._database.prepare(INSERT_VAT_SQL);
