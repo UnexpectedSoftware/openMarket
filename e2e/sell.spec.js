@@ -31,6 +31,31 @@ async function openSell(window) {
   await window.setViewportSize({width: 1366, height: 768});
 }
 
+test('shows the product grid when Vender opens', async () => {
+  test.setTimeout(120000);
+  const {app, window, userData} = await launchApp();
+  try {
+    await createCategory(window, 'Shop');
+    await createProduct(window, {
+      name: 'Lentejas',
+      barcode: '8400000000417',
+      price: 2,
+      basePrice: 1,
+      stock: 20,
+      stockMin: 2,
+      category: 'Shop'
+    });
+    await openSell(window);
+    const tile = window.locator('.sell-tile-name', {hasText: /^Lentejas$/});
+    await expect(tile).toBeVisible();
+    await expect(window.getByText('No hay productos')).toHaveCount(0);
+    await expect(window.locator('input[name="barcode"]')).toHaveValue('');
+    await expect(tile).toBeVisible();
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
 test('sells scanned, weighed, and free lines and blocks an invalid quantity', async () => {
   test.setTimeout(120000);
   const {app, window, userData} = await launchApp();

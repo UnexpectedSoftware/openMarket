@@ -3,8 +3,10 @@ import newOrderReducer from '../../../../../openMarket/user_interface/order/new_
 import {
   NEW_ORDER_PRODUCT_DELETED,
   NEW_ORDER_PRODUCT_FETCHED,
-  NEW_ORDER_PRODUCT_QUANTITY_CHANGE
+  NEW_ORDER_PRODUCT_QUANTITY_CHANGE,
+  SALE_TILES_LOADED
 } from '../../../../../openMarket/user_interface/order/new_order/action';
+import {LOCATION_CHANGE} from 'react-router-redux';
 import OrderFactoryImpl from '../../../../../openMarket/infrastructure/order/OrderFactoryImpl';
 import RandomUUIDIdentity from '../../../../../openMarket/domain/RandomUUIDIdentity';
 import {LIST_ORDER_DETAIL_LOADED} from '../../../../../openMarket/user_interface/order/list_orders/action';
@@ -113,6 +115,36 @@ describe('reducers', () => {
       expect(view(state).lines[0].milli).to.equal(0);
       expect(view(state).lines[0].amountCents).to.equal(0);
       expect(view(state).totalCents).to.equal(0);
+    });
+
+    it('keeps loaded sale tiles when a POP location change resets the cart', () => {
+      const givenOrder = orderFactory.createWith({
+        lines: [{barcode: '0002', name: 'Ninja2', price: 0.6, quantity: 1}]
+      });
+      const viewing = newOrderReducer(undefined, {type: LIST_ORDER_DETAIL_LOADED, payload: givenOrder});
+      const tiles = [
+        {barcode: '1001', name: 'Milk'},
+        {barcode: '1002', name: 'Bread'}
+      ];
+      const loaded = newOrderReducer(viewing, {type: SALE_TILES_LOADED, payload: tiles});
+      expect(loaded.tilesStatus).to.equal('ready');
+      expect(loaded.readonly).to.equal(true);
+      expect(view(loaded).lines).to.have.length(1);
+
+      const state = newOrderReducer(loaded, {
+        type: LOCATION_CHANGE,
+        payload: {action: 'POP', pathname: '/create_order'}
+      });
+
+      expect(state.tiles).to.deep.equal(tiles);
+      expect(state.tilesStatus).to.equal('ready');
+      expect(state.readonly).to.equal(false);
+      expect(view(state)).to.deep.equal({
+        readonly: false,
+        totalCents: 0,
+        createdAt: null,
+        lines: []
+      });
     });
 
     it('should handle NEW_ORDER_PRODUCT_DELETED with an order with some products on it', () => {
