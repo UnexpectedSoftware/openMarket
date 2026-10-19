@@ -115,8 +115,15 @@ export default function reducer(current = initialState(), action) {
       return initialState();
 
     case LOCATION_CHANGE:
+      // hashHistory emits POP right after the nav-rail PUSH, once the grid has loaded.
       if (action.payload.action === 'POP') {
-        return initialState();
+        return {
+          ...initialState(),
+          lowStockBarcodes: current.lowStockBarcodes || [],
+          lastOrder: current.lastOrder || null,
+          tiles: current.tiles || [],
+          tilesStatus: current.tilesStatus || 'idle'
+        };
       }
       return current;
 
