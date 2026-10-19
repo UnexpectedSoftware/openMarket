@@ -11,7 +11,7 @@ metadata:
 
 Root `AGENTS.md` has the rules. This skill has the **how**.
 
-Dependency rule: outer layers (UI, infrastructure, application) may depend on the domain, and the UI may use domain value objects directly. Only the reverse is forbidden (domain must not import application, infrastructure or UI; application must not import infrastructure adapters or UI). Pick one recipe, follow its file checklist in order, then run **Finish** (at the end).
+Dependency rule: outer layers (UI, infrastructure, application) may depend on the domain, and the UI may use domain value objects directly. Only the reverse is forbidden (domain must not import application, infrastructure or UI; application must not import infrastructure adapters or UI). UI screens follow the unidirectional Redux flow in `src/openMarket/user_interface/AGENTS.md` (template `order/new_order`); epics call use cases and queries through `OpenMarket.get('<key>')`. Pick one recipe, follow its file checklist in order, then run **Finish** (at the end).
 The examples use a made-up `Supplier` context and an `AdjustStock` use case. Rename them to fit your task. Match the surrounding code style (2-space indent, RxJS 5 `Rx.Observable`, named-object constructor params).
 
 ---
