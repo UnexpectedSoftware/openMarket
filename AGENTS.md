@@ -3,6 +3,7 @@
 Electron 44 point-of-sale app. React 15 + Redux 3 + redux-observable, RxJS 5, SQLite (`node:sqlite`), plain JavaScript (no TypeScript files).
 Architecture: DDD with a hexagonal layout. **Read this file before writing code.** For step-by-step recipes, use the `openmarket-architecture` skill.
 UI work: read `docs/design/DESIGN.md` and use the `openmarket-design` skill (see `src/openMarket/user_interface/AGENTS.md`).
+UI state flow (always on): every screen is unidirectional Redux. The component dispatches actions, the reducer updates the store through the screen's `model.js`, `ReduxConnector.js` maps state to props, and epics do side effects (use case or query, then dispatch another action). No `setState` for domain or screen data. Template: `user_interface/order/new_order`; full rule in `src/openMarket/user_interface/AGENTS.md`.
 
 ## Layers (`src/openMarket/`)
 
