@@ -90,3 +90,12 @@ Tests go in `src/test/openMarket/<layer>/<ctx>/<Name>.spec.js` (mocha + chai, po
 ## Pull requests
 
 The body must contain `Version: none|patch|minor|major`, and `package.json` must match (CI checks this). Keep the description short and factual.
+
+## Quality tools
+
+Vendored under `tools/quality/` (crapper, dryer, mutator; see its README). Needs Python 3.11+. Output goes to `.metrics/` and `coverage/`, which are not committed.
+
+- **CRAP:** before finishing a change run `npm run crap -- --changed`. No function you touched may score over **30**. If one does, split it or add tests until it drops.
+- **Duplication:** run `npm run dry -- --changed` and remove real duplication it reports in your change (same shape in two places → extract it).
+- **Mutation:** when you change a `domain/` file, run `npm run coverage` then `npm run mutate -- <file>`, and kill every surviving mutant by adding or tightening a test.
+- **Never weaken, delete or skip a test** to lower a score or kill a mutant. CI runs CRAP and duplication as a report-only `quality` job; mutation testing is local only.
