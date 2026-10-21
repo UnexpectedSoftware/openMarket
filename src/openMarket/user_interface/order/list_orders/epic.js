@@ -5,7 +5,7 @@ import {record} from '../../../infrastructure/logging/ErrorLog';
 import {LIST_ORDER_DETAIL, listOrderDetailLoaded} from './action';
 import {makeOrdersListEpic} from './epicFactory';
 
-const ordersListEpic = makeOrdersListEpic(OpenMarket.get('orders_list_query'));
+const ordersListEpic = makeOrdersListEpic(OpenMarket.get('orders_list_all_use_case'));
 
 const listOrderDetailEpic = action$ =>
   action$.ofType(LIST_ORDER_DETAIL)

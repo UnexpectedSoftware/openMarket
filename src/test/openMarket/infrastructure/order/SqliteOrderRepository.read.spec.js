@@ -1,13 +1,14 @@
 import {expect} from 'chai';
 import Order from '../../../../openMarket/domain/order/Order';
-import ErrorCode from '../../../../openMarket/domain/error/ErrorCode';
-import SqliteOrdersQuery from '../../../../openMarket/infrastructure/order/SqliteOrdersQuery';
+import OrderView from '../../../../openMarket/domain/order/OrderView';
+import OrderRangeSummary from '../../../../openMarket/domain/order/OrderRangeSummary';
+import SqliteOrderRepository from '../../../../openMarket/infrastructure/order/SqliteOrderRepository';
 
-describe('SqliteOrdersQuery', () => {
+describe('SqliteOrderRepository read model', () => {
   const from = '2026-10-21 00:00:00';
   const to = '2026-10-21 23:59:59';
 
-  function database({rows, total, summary, fail}) {
+  function database({rows, total, summary, fail, count}) {
     const calls = [];
     return {
       calls,
@@ -22,14 +23,22 @@ describe('SqliteOrdersQuery', () => {
           },
           get(...params) {
             calls.push({sql, params});
-            return {total};
+            return count === null ? null : {total};
           }
         };
       }
     };
   }
 
-  it('maps plain rows, prefers cents, and pages with a separate count', done => {
+  function orders(db) {
+    return new SqliteOrderRepository({
+      connection: {database: db},
+      objectMapper: {},
+      queryService: {}
+    });
+  }
+
+  it('maps stored rows, prefers cents, and pages with a separate count', done => {
     const db = database({
       total: 4,
       rows: [
@@ -73,21 +82,18 @@ describe('SqliteOrdersQuery', () => {
       ],
       summary: []
     });
-    const query = new SqliteOrdersQuery({connection: {database: db}});
-    query.list({from, to, limit: 500, offset: -4}).subscribe(
+    orders(db).findByRange({from, to, limit: 500, offset: -4}).subscribe(
       page => {
         expect(page.total).to.equal(4);
         expect(page.items.map(item => item.orderId)).to.deep.equal(['new', 'void', 'bare', 'legacy']);
-        expect(page.items[0]).to.deep.equal({
-          orderId: 'new',
-          invoiceNumber: '2026/000002',
-          createdAt: '2026-10-21T10:00:01',
-          itemCount: 2,
-          paymentMethod: 'card',
-          totalCents: 350,
-          cancelled: false
-        });
+        expect(page.items[0]).to.be.instanceof(OrderView);
         expect(page.items[0]).to.not.be.instanceof(Order);
+        expect(page.items[0].invoiceNumber).to.equal('2026/000002');
+        expect(page.items[0].createdAt).to.equal('2026-10-21T10:00:01');
+        expect(page.items[0].itemCount).to.equal(2);
+        expect(page.items[0].paymentMethod).to.equal('card');
+        expect(page.items[0].totalCents).to.equal(350);
+        expect(page.items[0].cancelled).to.equal(false);
         expect(page.items[1].cancelled).to.equal(true);
         expect(page.items[1].paymentMethod).to.equal('cash');
         expect(page.items[1].invoiceNumber).to.equal('—');
@@ -103,16 +109,18 @@ describe('SqliteOrdersQuery', () => {
     );
   });
 
-  it('rounds the average ticket from the cent total and is zero when empty', done => {
+  it('builds the range summary from the cent total', done => {
     const db = database({
       total: 0,
       rows: [],
       summary: [{total_cents: 100, total: 1}, {total_cents: 101, total: 1}]
     });
-    const query = new SqliteOrdersQuery({connection: {database: db}});
-    query.daySummary({from, to}).subscribe(
+    orders(db).summary({from, to}).subscribe(
       summary => {
-        expect(summary).to.deep.equal({totalCents: 201, ticketCount: 2, averageCents: 101});
+        expect(summary).to.be.instanceof(OrderRangeSummary);
+        expect(summary.totalCents).to.equal(201);
+        expect(summary.ticketCount).to.equal(2);
+        expect(summary.averageCents).to.equal(101);
       },
       error => done(error),
       () => done()
@@ -121,10 +129,11 @@ describe('SqliteOrdersQuery', () => {
 
   it('returns a zero summary for an empty range', done => {
     const db = database({total: 0, rows: [], summary: []});
-    const query = new SqliteOrdersQuery({connection: {database: db}});
-    query.daySummary({from, to}).subscribe(
+    orders(db).summary({from, to}).subscribe(
       summary => {
-        expect(summary).to.deep.equal({totalCents: 0, ticketCount: 0, averageCents: 0});
+        expect(summary.totalCents).to.equal(0);
+        expect(summary.ticketCount).to.equal(0);
+        expect(summary.averageCents).to.equal(0);
       },
       error => done(error),
       () => done()
@@ -133,10 +142,10 @@ describe('SqliteOrdersQuery', () => {
 
   it('uses the default page when the limit is missing', done => {
     const db = database({total: 0, rows: [], summary: []});
-    const query = new SqliteOrdersQuery({connection: {database: db}});
-    query.list({from, to}).subscribe(
+    orders(db).findByRange({from, to}).subscribe(
       page => {
-        expect(page).to.deep.equal({items: [], total: 0});
+        expect(page.items).to.deep.equal([]);
+        expect(page.total).to.equal(0);
         const listed = db.calls.find(call => call.sql.indexOf('LIMIT') !== -1);
         expect(listed.params[2]).to.equal(20);
         expect(listed.params[3]).to.equal(0);
@@ -146,40 +155,26 @@ describe('SqliteOrdersQuery', () => {
     );
   });
 
-  it('fails the list when the driver throws', done => {
-    const query = new SqliteOrdersQuery({connection: {database: database({fail: true, rows: [], summary: [], total: 0})}});
-    query.list({from, to}).subscribe(
+  it('lets a driver failure reach the caller', done => {
+    const db = database({fail: true, rows: [], summary: [], total: 0});
+    orders(db).findByRange({from, to}).subscribe(
       () => done(new Error('should fail')),
       error => {
-        expect(error.code).to.equal(ErrorCode.UNEXPECTED);
-        expect(error.message).to.contain('Could not list orders');
-        done();
-      }
-    );
-  });
-
-  it('fails the summary when the driver throws', done => {
-    const query = new SqliteOrdersQuery({connection: {database: database({fail: true, rows: [], summary: [], total: 0})}});
-    query.daySummary({from, to}).subscribe(
-      () => done(new Error('should fail')),
-      error => {
-        expect(error.message).to.contain('Could not summarize orders');
-        done();
+        expect(error.message).to.equal('db down');
+        orders(db).summary({from, to}).subscribe(
+          () => done(new Error('should fail')),
+          summaryError => {
+            expect(summaryError.message).to.equal('db down');
+            done();
+          }
+        );
       }
     );
   });
 
   it('treats a missing count row as zero', done => {
-    const db = {
-      prepare(sql) {
-        return {
-          all: () => [],
-          get: () => null
-        };
-      }
-    };
-    const query = new SqliteOrdersQuery({connection: {database: db}});
-    query.list({from, to, limit: 1, offset: 3}).subscribe(
+    const db = database({total: 0, rows: [], summary: [], count: null});
+    orders(db).findByRange({from, to, limit: 1, offset: 3}).subscribe(
       page => expect(page.total).to.equal(0),
       error => done(error),
       () => done()

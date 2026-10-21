@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import * as Rx from 'rxjs';
+import OrderRangeSummary from '../../../../../openMarket/domain/order/OrderRangeSummary';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/toArray';
 import {
@@ -26,11 +27,11 @@ function range(key, append) {
 
 describe('makeOrdersListEpic', () => {
   it('loads the page and the summary for the latest range', done => {
-    const query = {
-      list: () => Rx.Observable.of({items: [{orderId: 'a'}], total: 1}),
-      daySummary: () => Rx.Observable.of(summary)
+    const orders = {
+      findByRange: () => Rx.Observable.of({items: [{orderId: 'a'}], total: 1}),
+      summary: () => Rx.Observable.of(summary)
     };
-    makeOrdersListEpic(query)(Rx.Observable.of(range('today', false)))
+    makeOrdersListEpic(orders)(Rx.Observable.of(range('today', false)))
       .toArray()
       .subscribe(
         actions => {
@@ -44,12 +45,30 @@ describe('makeOrdersListEpic', () => {
       );
   });
 
-  it('marks an appended page', done => {
-    const query = {
-      list: () => Rx.Observable.of({items: [{orderId: 'b'}], total: 40}),
-      daySummary: () => Rx.Observable.of(summary)
+  it('copies summary fields from the read model', done => {
+    const orders = {
+      findByRange: () => Rx.Observable.of({items: [], total: 0}),
+      summary: () => Rx.Observable.of(new OrderRangeSummary({totalCents: 201, ticketCount: 2}))
     };
-    makeOrdersListEpic(query)(Rx.Observable.of(range('today', true)))
+    makeOrdersListEpic(orders)(Rx.Observable.of(range('today', false)))
+      .toArray()
+      .subscribe(
+        actions => {
+          expect(actions[1].totalCents).to.equal(201);
+          expect(actions[1].ticketCount).to.equal(2);
+          expect(actions[1].averageCents).to.equal(101);
+        },
+        error => done(error),
+        () => done()
+      );
+  });
+
+  it('marks an appended page', done => {
+    const orders = {
+      findByRange: () => Rx.Observable.of({items: [{orderId: 'b'}], total: 40}),
+      summary: () => Rx.Observable.of(summary)
+    };
+    makeOrdersListEpic(orders)(Rx.Observable.of(range('today', true)))
       .toArray()
       .subscribe(
         actions => {
@@ -64,16 +83,16 @@ describe('makeOrdersListEpic', () => {
   it('drops a slower range when a newer one arrives', () => {
     const first = new Rx.Subject();
     let calls = 0;
-    const query = {
-      list: () => {
+    const orders = {
+      findByRange: () => {
         calls += 1;
         return calls === 1 ? first : Rx.Observable.of({items: [{orderId: 'second'}], total: 1});
       },
-      daySummary: () => Rx.Observable.of(summary)
+      summary: () => Rx.Observable.of(summary)
     };
     const actions = new Rx.Subject();
     const seen = [];
-    const subscription = makeOrdersListEpic(query)(actions).subscribe(action => seen.push(action));
+    const subscription = makeOrdersListEpic(orders)(actions).subscribe(action => seen.push(action));
     actions.next(range('today', false));
     actions.next(range('yesterday', false));
     expect(seen.map(action => action.type)).to.deep.equal([ORDERS_LOADED, ORDERS_SUMMARY_LOADED]);
@@ -87,11 +106,11 @@ describe('makeOrdersListEpic', () => {
   it('reports a failure and does not load the page', done => {
     const failure = new Error('db down');
     failure.userMessage = 'No se han podido cargar los pedidos';
-    const query = {
-      list: () => Rx.Observable.throw(failure),
-      daySummary: () => Rx.Observable.of(summary)
+    const orders = {
+      findByRange: () => Rx.Observable.throw(failure),
+      summary: () => Rx.Observable.of(summary)
     };
-    makeOrdersListEpic(query)(Rx.Observable.of(range('today', false)))
+    makeOrdersListEpic(orders)(Rx.Observable.of(range('today', false)))
       .toArray()
       .subscribe(
         actions => {

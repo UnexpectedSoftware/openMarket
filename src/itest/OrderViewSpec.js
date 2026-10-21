@@ -6,14 +6,15 @@ import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/map';
 import {expect} from 'chai';
 import SqliteConnection from '../openMarket/infrastructure/service/SqliteConnection';
-import SqliteOrdersQuery from '../openMarket/infrastructure/order/SqliteOrdersQuery';
 import SqliteOrderRepository from '../openMarket/infrastructure/order/SqliteOrderRepository';
 import SqliteOrderQueryService from '../openMarket/infrastructure/order/SqliteOrderQueryService';
 import Order from '../openMarket/domain/order/Order';
+import OrderView from '../openMarket/domain/order/OrderView';
+import OrderRangeSummary from '../openMarket/domain/order/OrderRangeSummary';
 
 const DAY = '2026-10-21';
 
-describe('OrdersQuery', () => {
+describe('OrderRepository read model', () => {
   let file;
   let connection;
 
@@ -41,8 +42,8 @@ describe('OrdersQuery', () => {
   });
 
   it('lists the newest order first with invoice, count, and cancelled flag', done => {
-    const query = new SqliteOrdersQuery({connection});
-    query.list({from: `${DAY} 00:00:00`, to: `${DAY} 23:59:59`, limit: 20, offset: 0}).subscribe(
+    const orders = repository(connection);
+    orders.findByRange({from: `${DAY} 00:00:00`, to: `${DAY} 23:59:59`, limit: 20, offset: 0}).subscribe(
       page => {
         expect(page.total).to.equal(7);
         expect(page.items.map(item => item.orderId)).to.deep.equal([
@@ -55,7 +56,9 @@ describe('OrdersQuery', () => {
         expect(newer.totalCents).to.equal(350);
         expect(newer.createdAt).to.equal(`${DAY}T10:00:01`);
         expect(newer.cancelled).to.equal(false);
+        expect(newer).to.be.instanceof(OrderView);
         expect(newer).to.not.be.instanceof(Order);
+        expect(Object.isFrozen(newer)).to.equal(true);
         expect(page.items[4].cancelled).to.equal(true);
         expect(page.items[4].invoiceNumber).to.equal('2026/000003');
         expect(page.items[5].invoiceNumber).to.equal('—');
@@ -67,10 +70,13 @@ describe('OrdersQuery', () => {
   });
 
   it('summarises the day in cents and excludes the other day', done => {
-    const query = new SqliteOrdersQuery({connection});
-    query.daySummary({from: `${DAY} 00:00:00`, to: `${DAY} 23:59:59`}).subscribe(
+    const orders = repository(connection);
+    orders.summary({from: `${DAY} 00:00:00`, to: `${DAY} 23:59:59`}).subscribe(
       summary => {
-        expect(summary).to.deep.equal({totalCents: 855, ticketCount: 7, averageCents: 122});
+        expect(summary).to.be.instanceof(OrderRangeSummary);
+        expect(summary.totalCents).to.equal(855);
+        expect(summary.ticketCount).to.equal(7);
+        expect(summary.averageCents).to.equal(122);
       },
       error => done(error),
       () => done()
@@ -78,14 +84,18 @@ describe('OrdersQuery', () => {
   });
 
   it('rounds a half-cent average up and returns zero outside the sales', done => {
-    const query = new SqliteOrdersQuery({connection});
-    query.daySummary({from: '2026-10-19 00:00:00', to: '2026-10-19 23:59:59'})
-      .flatMap(half => query.daySummary({from: '2026-10-18 00:00:00', to: '2026-10-18 23:59:59'})
+    const orders = repository(connection);
+    orders.summary({from: '2026-10-19 00:00:00', to: '2026-10-19 23:59:59'})
+      .flatMap(half => orders.summary({from: '2026-10-18 00:00:00', to: '2026-10-18 23:59:59'})
         .map(empty => ({half, empty})))
       .subscribe(
         ({half, empty}) => {
-          expect(half).to.deep.equal({totalCents: 201, ticketCount: 2, averageCents: 101});
-          expect(empty).to.deep.equal({totalCents: 0, ticketCount: 0, averageCents: 0});
+          expect(half.totalCents).to.equal(201);
+          expect(half.ticketCount).to.equal(2);
+          expect(half.averageCents).to.equal(101);
+          expect(empty.totalCents).to.equal(0);
+          expect(empty.ticketCount).to.equal(0);
+          expect(empty.averageCents).to.equal(0);
         },
         error => done(error),
         () => done()
@@ -93,8 +103,8 @@ describe('OrdersQuery', () => {
   });
 
   it('keeps the range total when the page is past the first rows', done => {
-    const query = new SqliteOrdersQuery({connection});
-    query.list({from: `${DAY} 00:00:00`, to: `${DAY} 23:59:59`, limit: 1, offset: 6}).subscribe(
+    const orders = repository(connection);
+    orders.findByRange({from: `${DAY} 00:00:00`, to: `${DAY} 23:59:59`, limit: 1, offset: 6}).subscribe(
       page => {
         expect(page.total).to.equal(7);
         expect(page.items.map(item => item.orderId)).to.deep.equal(['legacy']);
@@ -105,11 +115,7 @@ describe('OrdersQuery', () => {
   });
 
   it('returns repository orders newest first and keeps daily totals ascending', done => {
-    const orders = new SqliteOrderRepository({
-      connection,
-      objectMapper: {},
-      queryService: new SqliteOrderQueryService()
-    });
+    const orders = repository(connection);
     const start = moment(`${DAY} 00:00:00`, 'YYYY-MM-DD HH:mm:ss');
     const end = moment('2026-10-22 23:59:59', 'YYYY-MM-DD HH:mm:ss');
     orders.findAllByDates({limit: 20, offset: 0, startDate: start, endDate: end})
@@ -130,8 +136,16 @@ describe('OrdersQuery', () => {
 
 /**
  * @param {SqliteConnection} connection
- * @param {{id: string, at: string, cents?: number, euros?: number, method: string | null, invoice?: string, number?: number, lines: number, status?: string}} order
+ * @returns {SqliteOrderRepository}
  */
+function repository(connection) {
+  return new SqliteOrderRepository({
+    connection,
+    objectMapper: {},
+    queryService: new SqliteOrderQueryService()
+  });
+}
+
 /**
  * @param {{cents?: number, euros?: number}} order
  * @returns {{cents: number | null, euros: number}}

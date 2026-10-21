@@ -4,7 +4,6 @@ import Identity from '../../../openMarket/domain/Identity';
 import Clock from '../../../openMarket/domain/Clock';
 import Transaction from '../../../openMarket/domain/service/Transaction';
 import OrderRepository from '../../../openMarket/domain/order/OrderRepository';
-import OrdersQuery from '../../../openMarket/domain/order/OrdersQuery';
 import OrderFactory from '../../../openMarket/domain/order/OrderFactory';
 import ProductRepository from '../../../openMarket/domain/product/ProductRepository';
 import ProductsQuery from '../../../openMarket/domain/product/ProductsQuery';
@@ -30,7 +29,6 @@ import SequentialIdentity from '../../../openMarket/infrastructure/service/Seque
 import SystemClock from '../../../openMarket/infrastructure/service/SystemClock';
 import SqliteTransaction from '../../../openMarket/infrastructure/service/SqliteTransaction';
 import SqliteOrderRepository from '../../../openMarket/infrastructure/order/SqliteOrderRepository';
-import SqliteOrdersQuery from '../../../openMarket/infrastructure/order/SqliteOrdersQuery';
 import OrderFactoryImpl from '../../../openMarket/infrastructure/order/OrderFactoryImpl';
 import SqliteProductRepository from '../../../openMarket/infrastructure/product/SqliteProductRepository';
 import SqliteProductsQuery from '../../../openMarket/infrastructure/product/SqliteProductsQuery';
@@ -57,7 +55,6 @@ describe('ports and adapters', () => {
   describeContract(Clock, SystemClock);
   describeContract(Transaction, SqliteTransaction);
   describeContract(OrderRepository, SqliteOrderRepository);
-  describeContract(OrdersQuery, SqliteOrdersQuery);
   describeContract(InvoiceRepository, SqliteInvoiceRepository);
   describeContract(InvoiceSequence, SqliteInvoiceSequence);
   describeContract(OrderFactory, OrderFactoryImpl);

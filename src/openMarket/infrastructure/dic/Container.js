@@ -46,7 +46,6 @@ import SqliteProductQueryService from "../product/SqliteProductQueryService";
 import SqliteProductSaleStatisticsRepository from "../product/SqliteProductSaleStatisticsRepository";
 import SqliteProductSaleQueryService from "../product/SqliteProductSaleQueryService";
 import SqliteOrderRepository from "../order/SqliteOrderRepository";
-import SqliteOrdersQuery from "../order/SqliteOrdersQuery";
 import SqliteOrderQueryService from "../order/SqliteOrderQueryService";
 import SqlInvoiceMapper from "../invoice/SqlInvoiceMapper";
 import SqliteInvoiceRepository from "../invoice/SqliteInvoiceRepository";
@@ -369,12 +368,6 @@ class Container {
       connection: this.getInstance({key: 'sqliteConnection'}),
       objectMapper: this.getInstance({key: 'orderMapper'}),
       queryService: this.getInstance({key: 'sqliteOrderQueryService'})
-    });
-  }
-
-  _ordersQuery() {
-    return new SqliteOrdersQuery({
-      connection: this.getInstance({key: 'sqliteConnection'})
     });
   }
 

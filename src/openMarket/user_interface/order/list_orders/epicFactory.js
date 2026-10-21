@@ -12,23 +12,21 @@ import {
   ordersLoaded,
   ordersSummaryLoaded
 } from './action';
-/** @typedef {import('../../../domain/order/OrdersQuery').default} OrdersQuery */
-
 /**
  * Latest range wins. A slower earlier query cannot overwrite the list.
- * @param {OrdersQuery} ordersQuery
+ * @param {{findByRange: Function, summary: Function}} orders
  */
-export function makeOrdersListEpic(ordersQuery) {
+export function makeOrdersListEpic(orders) {
   return action$ => action$
     .filter(action => action.type === ORDERS_RANGE_SELECTED)
     .switchMap(action => Rx.Observable.zip(
-      ordersQuery.list({
+      orders.findByRange({
         from: action.from,
         to: action.to,
         limit: action.limit,
         offset: action.offset
       }),
-      ordersQuery.daySummary({from: action.from, to: action.to}),
+      orders.summary({from: action.from, to: action.to}),
       (page, summary) => ({page, summary})
     )
       .mergeMap(({page, summary}) => Rx.Observable.of(
