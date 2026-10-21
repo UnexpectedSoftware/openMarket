@@ -47,3 +47,9 @@ main.js.map
 
 .idea
 scratch
+
+# Quality tools (tools/quality): generated reports and local virtualenvs
+.metrics/
+coverage/
+target/
+tools/quality/*/.venv/

@@ -62,6 +62,31 @@ jobs:
       - name: UI
         run: xvfb-run -a npm run test:ui
 
+  # Quality report (CRAP + duplication) from tools/quality. Report-only: findings never fail CI.
+  # Mutation testing is too slow for CI; run `npm run mutate -- <file>` locally.
+  quality:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+        env:
+          PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      - name: CRAP report (complexity x lack of coverage)
+        continue-on-error: true
+        run: npm run crap
+      - name: Duplication report
+        continue-on-error: true
+        run: npm run dry
+
   version-decision:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -193,7 +218,7 @@ jobs:
   # Single stable check for rulesets: passes when every job succeeded or was skipped.
   ci-ok:
     if: always()
-    needs: [changes, test-and-build, version-decision, package]
+    needs: [changes, test-and-build, quality, version-decision, package]
     runs-on: ubuntu-latest
     steps:
       - env:

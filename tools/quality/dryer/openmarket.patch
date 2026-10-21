@@ -1,0 +1,28 @@
+diff --git a/src/dryer/discover.py b/src/dryer/discover.py
+index 6feeaa7..bf73d34 100644
+--- a/src/dryer/discover.py
++++ b/src/dryer/discover.py
+@@ -19,6 +19,10 @@ EXTENSIONS = {
+     ".tsx": "typescript",
+     ".mts": "typescript",
+     ".cts": "typescript",
++    ".js": "typescript",
++    ".jsx": "typescript",
++    ".mjs": "typescript",
++    ".cjs": "typescript",
+     ".rs": "rust",
+     ".py": "python",
+ }
+diff --git a/src/dryer/extract.py b/src/dryer/extract.py
+index 51f3160..0c38a2b 100644
+--- a/src/dryer/extract.py
++++ b/src/dryer/extract.py
+@@ -29,6 +29,8 @@ _DEFINITION_PARENTS = {
+ 
+ 
+ def _grammar(path: str) -> str:
++    if path.endswith((".js", ".jsx", ".mjs", ".cjs")):
++        return "javascript"
+     if path.endswith(".tsx"):
+         return "tsx"
+     return "typescript"
