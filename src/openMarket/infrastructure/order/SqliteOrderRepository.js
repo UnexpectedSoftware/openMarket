@@ -15,7 +15,7 @@ const FIND_BY_ID_SQL = 'SELECT o.id, ' + DISPLAY_CREATED_AT + ' as created_at, o
   'FROM "order" o INNER JOIN line l ON l.order_id = o.id WHERE o.id = ?';
 
 const FIND_ALL_BY_DATES_SQL = 'SELECT id, ' + DISPLAY_CREATED_AT + ' as createdAt, total, total_cents FROM "order" ' +
-  'WHERE created_at BETWEEN ? AND ? ORDER BY created_at ASC LIMIT ? OFFSET ?';
+  'WHERE created_at BETWEEN ? AND ? ORDER BY created_at DESC LIMIT ? OFFSET ?';
 
 const COUNT_BY_DATES_SQL = 'SELECT count(*) AS total FROM "order" WHERE created_at BETWEEN ? AND ?';
 

@@ -13,6 +13,7 @@ import Spinner from './Spinner';
  * @property {string} [title]
  * @property {Function} [onClick]
  * @property {boolean} [expanded] Sets aria-expanded when the button toggles a panel.
+ * @property {boolean} [pressed] Sets aria-pressed when the button toggles a choice.
  * @property {*} [children]
  */
 
@@ -40,6 +41,7 @@ export default function Button(props) {
       aria-busy={props.busy ? 'true' : undefined}
       title={props.title}
       aria-expanded={props.expanded == null ? undefined : String(!!props.expanded)}
+      aria-pressed={props.pressed == null ? undefined : String(!!props.pressed)}
       onClick={props.onClick}
     >
       {props.busy ? <Spinner size="sm" label="Working" /> : null}

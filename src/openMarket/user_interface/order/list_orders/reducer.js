@@ -1,40 +1,55 @@
-import {LIST_ORDER_FETCHED, LIST_ORDER_FILTERS_START_DATE_CHANGED, LIST_ORDER_FILTERS_END_DATE_CHANGED} from './action';
-import {state, calculateTotal} from './model';
+import {
+  LIST_ORDER_DETAIL,
+  ORDERS_CUSTOM_CLOSED,
+  ORDERS_CUSTOM_DRAFT_CHANGED,
+  ORDERS_CUSTOM_OPENED,
+  ORDERS_CUSTOM_REJECTED,
+  ORDERS_FAILED,
+  ORDERS_LOADED,
+  ORDERS_RANGE_SELECTED,
+  ORDERS_ROW_SELECTED,
+  ORDERS_SELECTION_MOVED,
+  ORDERS_SUMMARY_LOADED
+} from './action';
+import {
+  customClosed,
+  customDraft,
+  customOpened,
+  customRejected,
+  moveSelection,
+  ordersFailed,
+  ordersLoaded,
+  rowSelected,
+  selectRange,
+  state,
+  summaryLoaded
+} from './model';
 
-const initialState = state();
-
-export default function reducer(state = initialState, action) {
-
+export default function reducer(current = state(), action) {
   switch (action.type) {
-    case LIST_ORDER_FETCHED:
-      return {
-        ...state,
-        orders: action.payload.orders,
-        total_pages: Math.ceil(action.payload.total/state.filters.limit),
-        current_page: action.payload.page,
-        total: action.payload.amount
-      };
-
-    case LIST_ORDER_FILTERS_START_DATE_CHANGED:
-      return {
-        ...state,
-        filters: {
-          ...state.filters,
-          startDate: action.payload
-        }
-      }
-
-    case LIST_ORDER_FILTERS_END_DATE_CHANGED:
-      return {
-        ...state,
-        filters: {
-          ...state.filters,
-          endDate: action.payload
-        }
-      }
-
+    case ORDERS_RANGE_SELECTED:
+      return selectRange(current, action);
+    case ORDERS_LOADED:
+      return ordersLoaded(current, action);
+    case ORDERS_FAILED:
+      return ordersFailed(current, action);
+    case ORDERS_SUMMARY_LOADED:
+      return summaryLoaded(current, action);
+    case ORDERS_SELECTION_MOVED:
+      return moveSelection(current, action.delta);
+    case ORDERS_ROW_SELECTED:
+      return rowSelected(current, action.orderId);
+    case ORDERS_CUSTOM_OPENED:
+      return customOpened(current);
+    case ORDERS_CUSTOM_CLOSED:
+      return customClosed(current);
+    case ORDERS_CUSTOM_DRAFT_CHANGED:
+      return customDraft(current, action);
+    case ORDERS_CUSTOM_REJECTED:
+      return customRejected(current, action);
+    case LIST_ORDER_DETAIL:
+      return current;
     default:
-      return state;
+      return current;
   }
-
 }
