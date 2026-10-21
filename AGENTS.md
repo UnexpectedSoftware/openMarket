@@ -19,16 +19,17 @@ The dependency rule: dependencies point inwards. Outer layers (UI, infrastructur
 ## Reads and writes
 
 - **Write side:** repositories load and save aggregates. Aggregate invariants exist for writes. Use cases load the aggregate, call its methods, and save it.
-- **Read side:** the same repository's find methods return a **read model** of that aggregate: an immutable object with the stored data and its types (for example `domain/order/OrderView.js`). It does not run the write aggregate's invariant checks, because a row already in the database was valid when it was saved. There is no separate `*Query` port and no projection. A use case passes the find through to the screen.
+- **Read side:** the same repository's find methods return a **read model** of that aggregate: an immutable object with the stored data and its types (for example `domain/order/OrderView.js`, one list row). It does not run the write aggregate's invariant checks, because a row already in the database was valid when it was saved. The criteria are a frozen value (`domain/order/OrdersQuery.js`), passed in: `orderRepository.find(new OrdersQuery({from, to, limit, offset}))`. That class is not a port. There is no separate query port and no projection. A use case passes the find through to the screen. A later detail screen reads an `OrderDetail`, not an `OrderView`.
 - A different read model, such as sale statistics, keeps its own port (`ProductSaleStatisticsRepository`).
-- `ProductsQuery` is the earlier separate-query shape for the sell grid. Leave it until that screen is revisited. Don't add another `*Query` port.
+- `ProductsQuery` is the earlier separate-query **port** for the sell grid. Leave it until that screen is revisited. Don't add another query port. A new `*Query` name is a criteria value, like `OrdersQuery`.
 
 ```js
-// domain/order/OrderView.js — frozen fields, no sale checks. Not an Order.
-// OrderRepository#findByRange({from, to, limit, offset})
+// domain/order/OrdersQuery.js — frozen criteria. Not a port, no range checks.
+// domain/order/OrderView.js — one list row. Frozen fields, no sale checks. Not an Order.
+// OrderRepository#find(new OrdersQuery({from, to, limit, offset}))
 //   → Observable<{items: OrderView[], total: number}>
 // OrderRepository#summary({from, to}) → Observable<OrderRangeSummary>
-// ListAllOrders forwards both. The orders epic calls that use case.
+// ListAllOrders forwards both. The orders epic builds the OrdersQuery.
 ```
 
 The UI uses application use cases for writes and for reads, and may use domain value objects.
@@ -40,7 +41,8 @@ Plugins are not a layer. `infrastructure/plugins/` is the loader. Plugin impleme
 | Thing | Name / place |
 |---|---|
 | Persistence port | `domain/<ctx>/<Name>Repository.js`, an `@interface` class whose methods throw `'<Port>#<method> must be implemented'` |
-| Read model | `domain/<ctx>/<Aggregate>View.js`, immutable, no write invariants. Returned by that aggregate's repository find methods |
+| Read model | `domain/<ctx>/<Aggregate>View.js` for a list row (`OrderDetail` for a detail). Immutable, no write invariants. Returned by that aggregate's repository find |
+| Query criteria | `domain/<ctx>/<Name>Query.js`, a frozen value passed to `repository.find(new NameQuery(...))`. Not a port |
 | Persistence adapter | `infrastructure/<ctx>/Sqlite<Name>Repository.js` |
 | SQL helper for one repository | `infrastructure/<ctx>/Sqlite<Name>QueryService.js`. Injected only into that repository, never into use cases |
 | Row ↔ aggregate | `infrastructure/<ctx>/Sql<Name>Mapper.js` |

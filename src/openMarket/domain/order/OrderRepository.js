@@ -1,6 +1,7 @@
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 /** @typedef {import('./Order').default} Order */
 /** @typedef {import('./OrderView').default} OrderView */
+/** @typedef {import('./OrdersQuery').default} OrdersQuery */
 /** @typedef {import('./OrderRangeSummary').default} OrderRangeSummary */
 
 /**
@@ -43,12 +44,13 @@ export default class OrderRepository {
   }
 
   /**
-   * Orders in the range, newest first, as read models. `total` counts the whole range.
-   * @param {{from: string, to: string, limit?: number, offset?: number}} query
+   * Orders matching the criteria, newest first, as list-row views.
+   * `total` counts the whole range, not the page.
+   * @param {OrdersQuery} query
    * @returns {Observable<{items: OrderView[], total: number}>}
    */
-  findByRange({from, to, limit, offset}) {
-    throw new Error('OrderRepository#findByRange must be implemented');
+  find(query) {
+    throw new Error('OrderRepository#find must be implemented');
   }
 
   /**

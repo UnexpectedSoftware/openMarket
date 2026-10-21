@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import Order from '../../../../openMarket/domain/order/Order';
 import OrderView from '../../../../openMarket/domain/order/OrderView';
+import OrdersQuery from '../../../../openMarket/domain/order/OrdersQuery';
 import OrderRangeSummary from '../../../../openMarket/domain/order/OrderRangeSummary';
 import SqliteOrderRepository from '../../../../openMarket/infrastructure/order/SqliteOrderRepository';
 
@@ -82,7 +83,7 @@ describe('SqliteOrderRepository read model', () => {
       ],
       summary: []
     });
-    orders(db).findByRange({from, to, limit: 500, offset: -4}).subscribe(
+    orders(db).find(new OrdersQuery({from, to, limit: 500, offset: -4})).subscribe(
       page => {
         expect(page.total).to.equal(4);
         expect(page.items.map(item => item.orderId)).to.deep.equal(['new', 'void', 'bare', 'legacy']);
@@ -142,7 +143,7 @@ describe('SqliteOrderRepository read model', () => {
 
   it('uses the default page when the limit is missing', done => {
     const db = database({total: 0, rows: [], summary: []});
-    orders(db).findByRange({from, to}).subscribe(
+    orders(db).find(new OrdersQuery({from, to})).subscribe(
       page => {
         expect(page.items).to.deep.equal([]);
         expect(page.total).to.equal(0);
@@ -157,7 +158,7 @@ describe('SqliteOrderRepository read model', () => {
 
   it('lets a driver failure reach the caller', done => {
     const db = database({fail: true, rows: [], summary: [], total: 0});
-    orders(db).findByRange({from, to}).subscribe(
+    orders(db).find(new OrdersQuery({from, to})).subscribe(
       () => done(new Error('should fail')),
       error => {
         expect(error.message).to.equal('db down');
@@ -174,7 +175,7 @@ describe('SqliteOrderRepository read model', () => {
 
   it('treats a missing count row as zero', done => {
     const db = database({total: 0, rows: [], summary: [], count: null});
-    orders(db).findByRange({from, to, limit: 1, offset: 3}).subscribe(
+    orders(db).find(new OrdersQuery({from, to, limit: 1, offset: 3})).subscribe(
       page => expect(page.total).to.equal(0),
       error => done(error),
       () => done()

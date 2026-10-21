@@ -10,6 +10,7 @@ import SqliteOrderRepository from '../openMarket/infrastructure/order/SqliteOrde
 import SqliteOrderQueryService from '../openMarket/infrastructure/order/SqliteOrderQueryService';
 import Order from '../openMarket/domain/order/Order';
 import OrderView from '../openMarket/domain/order/OrderView';
+import OrdersQuery from '../openMarket/domain/order/OrdersQuery';
 import OrderRangeSummary from '../openMarket/domain/order/OrderRangeSummary';
 
 const DAY = '2026-10-21';
@@ -43,7 +44,7 @@ describe('OrderRepository read model', () => {
 
   it('lists the newest order first with invoice, count, and cancelled flag', done => {
     const orders = repository(connection);
-    orders.findByRange({from: `${DAY} 00:00:00`, to: `${DAY} 23:59:59`, limit: 20, offset: 0}).subscribe(
+    orders.find(new OrdersQuery({from: `${DAY} 00:00:00`, to: `${DAY} 23:59:59`, limit: 20, offset: 0})).subscribe(
       page => {
         expect(page.total).to.equal(7);
         expect(page.items.map(item => item.orderId)).to.deep.equal([
@@ -104,7 +105,7 @@ describe('OrderRepository read model', () => {
 
   it('keeps the range total when the page is past the first rows', done => {
     const orders = repository(connection);
-    orders.findByRange({from: `${DAY} 00:00:00`, to: `${DAY} 23:59:59`, limit: 1, offset: 6}).subscribe(
+    orders.find(new OrdersQuery({from: `${DAY} 00:00:00`, to: `${DAY} 23:59:59`, limit: 1, offset: 6})).subscribe(
       page => {
         expect(page.total).to.equal(7);
         expect(page.items.map(item => item.orderId)).to.deep.equal(['legacy']);

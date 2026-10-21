@@ -5,6 +5,7 @@ import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/switchMap';
+import OrdersQuery from '../../../domain/order/OrdersQuery';
 import {record, userText} from '../../../infrastructure/logging/ErrorLog';
 import {
   ORDERS_RANGE_SELECTED,
@@ -14,18 +15,18 @@ import {
 } from './action';
 /**
  * Latest range wins. A slower earlier query cannot overwrite the list.
- * @param {{findByRange: Function, summary: Function}} orders
+ * @param {{find: Function, summary: Function}} orders
  */
 export function makeOrdersListEpic(orders) {
   return action$ => action$
     .filter(action => action.type === ORDERS_RANGE_SELECTED)
     .switchMap(action => Rx.Observable.zip(
-      orders.findByRange({
+      orders.find(new OrdersQuery({
         from: action.from,
         to: action.to,
         limit: action.limit,
         offset: action.offset
-      }),
+      })),
       orders.summary({from: action.from, to: action.to}),
       (page, summary) => ({page, summary})
     )

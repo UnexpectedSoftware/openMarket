@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import Order from '../../../../openMarket/domain/order/Order';
 import OrderView from '../../../../openMarket/domain/order/OrderView';
+import OrdersQuery from '../../../../openMarket/domain/order/OrdersQuery';
 import OrderRangeSummary from '../../../../openMarket/domain/order/OrderRangeSummary';
 import OrderRepository from '../../../../openMarket/domain/order/OrderRepository';
 
@@ -51,8 +52,8 @@ describe('OrderRangeSummary', () => {
 describe('OrderRepository read methods', () => {
   const port = new OrderRepository();
 
-  it('requires an adapter for findByRange', () => {
-    expect(() => port.findByRange({from: 'a', to: 'b'})).to.throw('OrderRepository#findByRange must be implemented');
+  it('requires an adapter for find', () => {
+    expect(() => port.find(new OrdersQuery({from: 'a', to: 'b'}))).to.throw('OrderRepository#find must be implemented');
   });
 
   it('requires an adapter for summary', () => {

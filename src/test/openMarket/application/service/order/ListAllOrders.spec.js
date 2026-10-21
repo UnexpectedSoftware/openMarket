@@ -4,6 +4,7 @@ import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/map';
 import ListAllOrders from '../../../../../openMarket/application/service/order/ListAllOrders';
 import OrderView from '../../../../../openMarket/domain/order/OrderView';
+import OrdersQuery from '../../../../../openMarket/domain/order/OrdersQuery';
 import OrderRangeSummary from '../../../../../openMarket/domain/order/OrderRangeSummary';
 
 describe('ListAllOrders range', () => {
@@ -17,10 +18,11 @@ describe('ListAllOrders range', () => {
       totalCents: 200,
       cancelled: false
     });
+    const query = new OrdersQuery({from: 'a', to: 'b', limit: 20, offset: 0});
     const summary = new OrderRangeSummary({totalCents: 200, ticketCount: 1});
     const repository = {
-      findByRange: query => {
-        expect(query).to.deep.equal({from: 'a', to: 'b', limit: 20, offset: 0});
+      find: received => {
+        expect(received).to.equal(query);
         return Rx.Observable.of({items: [view], total: 1});
       },
       summary: query => {
@@ -29,7 +31,7 @@ describe('ListAllOrders range', () => {
       }
     };
     const useCase = new ListAllOrders({repository});
-    useCase.findByRange({from: 'a', to: 'b', limit: 20, offset: 0})
+    useCase.find(query)
       .mergeMap(page => useCase.summary({from: 'a', to: 'b'}).map(found => ({page, found})))
       .subscribe(
         ({page, found}) => {

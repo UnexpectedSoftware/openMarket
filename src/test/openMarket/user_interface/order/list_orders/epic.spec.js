@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import * as Rx from 'rxjs';
 import OrderRangeSummary from '../../../../../openMarket/domain/order/OrderRangeSummary';
+import OrdersQuery from '../../../../../openMarket/domain/order/OrdersQuery';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/toArray';
 import {
@@ -27,14 +28,23 @@ function range(key, append) {
 
 describe('makeOrdersListEpic', () => {
   it('loads the page and the summary for the latest range', done => {
+    let criteria;
     const orders = {
-      findByRange: () => Rx.Observable.of({items: [{orderId: 'a'}], total: 1}),
+      find: query => {
+        criteria = query;
+        return Rx.Observable.of({items: [{orderId: 'a'}], total: 1});
+      },
       summary: () => Rx.Observable.of(summary)
     };
     makeOrdersListEpic(orders)(Rx.Observable.of(range('today', false)))
       .toArray()
       .subscribe(
         actions => {
+          expect(criteria).to.be.instanceof(OrdersQuery);
+          expect(criteria.from).to.equal('2026-10-21 00:00:00');
+          expect(criteria.to).to.equal('2026-10-21 23:59:59');
+          expect(criteria.limit).to.equal(20);
+          expect(criteria.offset).to.equal(0);
           expect(actions.map(action => action.type)).to.deep.equal([ORDERS_LOADED, ORDERS_SUMMARY_LOADED]);
           expect(actions[0].items).to.deep.equal([{orderId: 'a'}]);
           expect(actions[0].append).to.equal(false);
@@ -47,7 +57,7 @@ describe('makeOrdersListEpic', () => {
 
   it('copies summary fields from the read model', done => {
     const orders = {
-      findByRange: () => Rx.Observable.of({items: [], total: 0}),
+      find: () => Rx.Observable.of({items: [], total: 0}),
       summary: () => Rx.Observable.of(new OrderRangeSummary({totalCents: 201, ticketCount: 2}))
     };
     makeOrdersListEpic(orders)(Rx.Observable.of(range('today', false)))
@@ -65,7 +75,7 @@ describe('makeOrdersListEpic', () => {
 
   it('marks an appended page', done => {
     const orders = {
-      findByRange: () => Rx.Observable.of({items: [{orderId: 'b'}], total: 40}),
+      find: () => Rx.Observable.of({items: [{orderId: 'b'}], total: 40}),
       summary: () => Rx.Observable.of(summary)
     };
     makeOrdersListEpic(orders)(Rx.Observable.of(range('today', true)))
@@ -84,7 +94,7 @@ describe('makeOrdersListEpic', () => {
     const first = new Rx.Subject();
     let calls = 0;
     const orders = {
-      findByRange: () => {
+      find: () => {
         calls += 1;
         return calls === 1 ? first : Rx.Observable.of({items: [{orderId: 'second'}], total: 1});
       },
@@ -107,7 +117,7 @@ describe('makeOrdersListEpic', () => {
     const failure = new Error('db down');
     failure.userMessage = 'No se han podido cargar los pedidos';
     const orders = {
-      findByRange: () => Rx.Observable.throw(failure),
+      find: () => Rx.Observable.throw(failure),
       summary: () => Rx.Observable.of(summary)
     };
     makeOrdersListEpic(orders)(Rx.Observable.of(range('today', false)))

@@ -1,6 +1,7 @@
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 /** @typedef {import('../../../domain/order/Order').default} Order */
 /** @typedef {import('../../../domain/order/OrderView').default} OrderView */
+/** @typedef {import('../../../domain/order/OrdersQuery').default} OrdersQuery */
 /** @typedef {import('../../../domain/order/OrderRangeSummary').default} OrderRangeSummary */
 /** @typedef {import('../../../domain/order/OrderRepository').default} OrderRepository */
 /** @typedef {import('../../../domain/order/OrderRepository').OrderListItem} OrderListItem */
@@ -31,11 +32,11 @@ export default class ListAllOrders {
   }
 
   /**
-   * @param {{from: string, to: string, limit?: number, offset?: number}} query
+   * @param {OrdersQuery} query
    * @returns {Observable<{items: OrderView[], total: number}>}
    */
-  findByRange({from, to, limit, offset}) {
-    return this._orderRepository.findByRange({from, to, limit, offset});
+  find(query) {
+    return this._orderRepository.find(query);
   }
 
   /**

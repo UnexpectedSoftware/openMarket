@@ -85,9 +85,9 @@ export default class SqliteOrderRepository {
     });
   }
 
-  findByRange({from, to, limit, offset}) {
+  find(query) {
     return Rx.Observable.defer(() => Rx.Observable.of(
-      readOrderPage(this._database, {from, to, limit, offset})
+      readOrderPage(this._database, query)
     ));
   }
 
@@ -265,7 +265,7 @@ function invoiceNumber(row) {
     record(new UnexpectedFailure({
       message: 'Order ' + (row.order_id == null ? '' : String(row.order_id)) + ' has no invoice',
       userMessage: 'Pedido sin factura',
-      context: {orderId: row.order_id == null ? undefined : String(row.order_id), operation: 'findByRange'}
+      context: {orderId: row.order_id == null ? undefined : String(row.order_id), operation: 'find'}
     }));
     return MISSING_INVOICE;
   }
