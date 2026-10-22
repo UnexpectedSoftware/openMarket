@@ -8,8 +8,6 @@ const {
   launchApp,
   closeApp,
   euros,
-  createCategory,
-  createProduct,
   chooseMenu,
   orderRow,
   scanBarcode,
@@ -32,19 +30,21 @@ async function openSell(window) {
 }
 
 test('shows the product grid when Vender opens', async () => {
-  test.setTimeout(120000);
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Shop'],
+      products: [{
+        name: 'Lentejas',
+        barcode: '8400000000417',
+        price: 2,
+        basePrice: 1,
+        stock: 20,
+        stockMin: 2,
+        category: 'Shop'
+      }]
+    }
+  });
   try {
-    await createCategory(window, 'Shop');
-    await createProduct(window, {
-      name: 'Lentejas',
-      barcode: '8400000000417',
-      price: 2,
-      basePrice: 1,
-      stock: 20,
-      stockMin: 2,
-      category: 'Shop'
-    });
     await openSell(window);
     const tile = window.locator('.sell-tile-name', {hasText: /^Lentejas$/});
     await expect(tile).toBeVisible();
@@ -57,40 +57,43 @@ test('shows the product grid when Vender opens', async () => {
 });
 
 test('sells scanned, weighed, and free lines and blocks an invalid quantity', async () => {
-  test.setTimeout(120000);
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Shop'],
+      products: [
+        {
+          name: 'Arroz',
+          barcode: '8400000000110',
+          price: 2,
+          basePrice: 1,
+          stock: 20,
+          stockMin: 2,
+          category: 'Shop'
+        },
+        {
+          name: 'Leche',
+          barcode: '8400000000127',
+          price: 1,
+          basePrice: 1,
+          stock: 20,
+          stockMin: 2,
+          category: 'Shop',
+          vat: 'S1:10'
+        },
+        {
+          name: 'Ham',
+          barcode: '8400000000134',
+          price: 18.5,
+          basePrice: 10,
+          stock: 8,
+          stockMin: 1,
+          category: 'Shop',
+          weighted: true
+        }
+      ]
+    }
+  });
   try {
-    await createCategory(window, 'Shop');
-    await createProduct(window, {
-      name: 'Arroz',
-      barcode: '8400000000110',
-      price: 2,
-      basePrice: 1,
-      stock: 20,
-      stockMin: 2,
-      category: 'Shop'
-    });
-    await createProduct(window, {
-      name: 'Leche',
-      barcode: '8400000000127',
-      price: 1,
-      basePrice: 1,
-      stock: 20,
-      stockMin: 2,
-      category: 'Shop',
-      vat: 'S1:10'
-    });
-    await createProduct(window, {
-      name: 'Ham',
-      barcode: '8400000000134',
-      price: 18.5,
-      basePrice: 10,
-      stock: 8,
-      stockMin: 1,
-      category: 'Shop',
-      weighted: true
-    });
-
     await openSell(window);
     await scanBarcode(window, '8400000000110');
     await expect(orderRow(window, 'Arroz').locator('input')).toHaveValue('1');
@@ -147,31 +150,35 @@ test('sells scanned, weighed, and free lines and blocks an invalid quantity', as
 });
 
 test('screenshots the sell screen and the weighted dialog in every theme', async () => {
-  test.setTimeout(120000);
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Shop'],
+      products: [
+        {
+          name: 'Arroz',
+          barcode: '8400000000219',
+          price: 2,
+          basePrice: 1,
+          stock: 10,
+          stockMin: 1,
+          category: 'Shop'
+        },
+        {
+          name: 'Ham',
+          barcode: '8400000000226',
+          price: 18.5,
+          basePrice: 10,
+          stock: 5,
+          stockMin: 1,
+          category: 'Shop',
+          weighted: true
+        }
+      ]
+    }
+  });
   const after = path.join(root, 'docs/design/after');
   fs.mkdirSync(after, {recursive: true});
   try {
-    await createCategory(window, 'Shop');
-    await createProduct(window, {
-      name: 'Arroz',
-      barcode: '8400000000219',
-      price: 2,
-      basePrice: 1,
-      stock: 10,
-      stockMin: 1,
-      category: 'Shop'
-    });
-    await createProduct(window, {
-      name: 'Ham',
-      barcode: '8400000000226',
-      price: 18.5,
-      basePrice: 10,
-      stock: 5,
-      stockMin: 1,
-      category: 'Shop',
-      weighted: true
-    });
     await openSell(window);
     await scanBarcode(window, '8400000000219');
     await expect(orderRow(window, 'Arroz')).toBeVisible();
@@ -213,31 +220,35 @@ function latestPayment(userData) {
 }
 
 test('pays cash with change, shows the ticket preview, and pays by card', async () => {
-  test.setTimeout(120000);
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Shop'],
+      products: [
+        {
+          name: 'Ham',
+          barcode: '8400000000318',
+          price: 18.5,
+          basePrice: 10,
+          stock: 8,
+          stockMin: 1,
+          category: 'Shop',
+          weighted: true
+        },
+        {
+          name: 'Milk',
+          barcode: '8400000000325',
+          price: 2,
+          basePrice: 1,
+          stock: 10,
+          stockMin: 1,
+          category: 'Shop'
+        }
+      ]
+    }
+  });
   const after = path.join(root, 'docs/design/after');
   fs.mkdirSync(after, {recursive: true});
   try {
-    await createCategory(window, 'Shop');
-    await createProduct(window, {
-      name: 'Ham',
-      barcode: '8400000000318',
-      price: 18.5,
-      basePrice: 10,
-      stock: 8,
-      stockMin: 1,
-      category: 'Shop',
-      weighted: true
-    });
-    await createProduct(window, {
-      name: 'Milk',
-      barcode: '8400000000325',
-      price: 2,
-      basePrice: 1,
-      stock: 10,
-      stockMin: 1,
-      category: 'Shop'
-    });
     await openSell(window);
     await scanBarcode(window, '8400000000318');
     const weight = window.getByRole('dialog');

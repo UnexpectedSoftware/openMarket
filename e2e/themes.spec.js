@@ -3,7 +3,7 @@ const fs = require('fs');
 const os = require('os');
 const {DatabaseSync} = require('node:sqlite');
 const {test, expect} = require('@playwright/test');
-const {assertDist, launchApp, closeApp} = require('./launch');
+const {assertDist, launchApp, closeApp, seedTheme} = require('./launch');
 
 function storedTheme(userData) {
   const database = new DatabaseSync(path.join(userData, 'openmarket.sqlite'), {
@@ -39,7 +39,6 @@ test.beforeAll(() => {
 });
 
 test('a saved theme stays after leaving Settings', async () => {
-  test.setTimeout(120000);
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
   const session = await launchApp({userData});
   try {
@@ -67,7 +66,6 @@ test('a saved theme stays after leaving Settings', async () => {
 });
 
 test('the shop Save confirmation keeps the theme after leaving Settings', async () => {
-  test.setTimeout(120000);
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
   const session = await launchApp({userData});
   try {
@@ -105,25 +103,13 @@ test('the shop Save confirmation keeps the theme after leaving Settings', async 
 });
 
 test('each theme persists and is applied before the first paint', async () => {
-  test.setTimeout(240000);
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
   let mercadoBackground = '';
   let nocheBackground = '';
 
   try {
     for (const theme of THEMES) {
-      const session = await launchApp({userData});
-      try {
-        await session.window.setViewportSize({width: 1366, height: 768});
-        await session.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
-        await expect(session.window.getByRole('heading', {name: 'Apariencia'})).toBeVisible();
-        await session.window.getByRole('radio', {name: theme.name, exact: true}).click();
-        await session.window.getByRole('button', {name: 'Guardar', exact: true}).click();
-        await expect(session.window.getByText('Tema guardado').first()).toBeVisible();
-      } finally {
-        await closeApp(session.app, userData, {keep: true});
-      }
-
+      await seedTheme(userData, theme.id);
       const restarted = await launchApp({userData});
       try {
         // firstWindow() can still be about:blank. The app document's

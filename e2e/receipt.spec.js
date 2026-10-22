@@ -7,13 +7,25 @@ const {
   launchApp,
   closeApp,
   chooseMenu,
-  createCategory,
-  createProduct,
+  seedShop,
   scanBarcode,
   confirmPayment
 } = require('./launch');
 
 const FAKE_PRINTER = {OPENMARKET_FAKE_PRINTER: '1'};
+
+const MILK = {
+  categories: ['Dairy'],
+  products: [{
+    name: 'Milk',
+    barcode: '8400000000011',
+    price: 2,
+    basePrice: 1,
+    stock: 10,
+    stockMin: 2,
+    category: 'Dairy'
+  }]
+};
 
 function installFiscal(userData) {
   const folder = path.join(userData, 'plugins', 'fiscal');
@@ -49,6 +61,7 @@ test.beforeAll(() => {
 test('prints a plugin QR before the shop header', async () => {
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
   installFiscal(userData);
+  await seedShop(userData, MILK);
   const first = await launchApp({userData, env: FAKE_PRINTER});
   try {
     await first.window.getByRole('link', {name: 'Plugins'}).click();
@@ -60,16 +73,6 @@ test('prints a plugin QR before the shop header', async () => {
 
   const second = await launchApp({userData, env: FAKE_PRINTER});
   try {
-    await createCategory(second.window, 'Dairy');
-    await createProduct(second.window, {
-      name: 'Milk',
-      barcode: '8400000000011',
-      price: 2,
-      basePrice: 1,
-      stock: 10,
-      stockMin: 2,
-      category: 'Dairy'
-    });
     await openNewOrder(second.window);
     await scanBarcode(second.window, '8400000000011');
     await second.window.locator('button', {hasText: 'Cobrar'}).click();
@@ -91,21 +94,10 @@ test('prints a plugin QR before the shop header', async () => {
 });
 
 test('changing the theme does not change the receipt blocks', async () => {
-  test.setTimeout(120000);
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
+  await seedShop(userData, MILK);
   const session = await launchApp({userData, env: FAKE_PRINTER});
   try {
-    await createCategory(session.window, 'Dairy');
-    await createProduct(session.window, {
-      name: 'Milk',
-      barcode: '8400000000011',
-      price: 2,
-      basePrice: 1,
-      stock: 10,
-      stockMin: 2,
-      category: 'Dairy'
-    });
-
     async function sell() {
       await openNewOrder(session.window);
       await scanBarcode(session.window, '8400000000011');
