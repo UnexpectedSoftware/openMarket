@@ -27,7 +27,7 @@ const THEMES = [
 
 const SCREENS = [
   {link: 'Vender', heading: "Vender", shot: 'vender'},
-  {link: 'Pedidos', heading: 'List Order!', shot: 'pedidos'},
+  {link: 'Pedidos', heading: 'Pedidos', shot: 'pedidos'},
   {link: 'Productos', heading: 'List Products', shot: 'productos'},
   {link: 'Categorías', heading: 'Categories', shot: 'categorias'},
   {link: 'Informes', heading: 'Most sold', shot: 'informes'},

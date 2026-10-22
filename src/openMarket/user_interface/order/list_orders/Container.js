@@ -1,131 +1,178 @@
-import React, {Component} from "react";
-import ReactTable from "react-table";
-import Button from "../../components/Button";
-import DatePicker from 'react-datepicker';
-import moment from "moment";
-import { defaultLimit } from './model';
-import {formatMoney} from '../../i18n/money';
+import React, {Component} from 'react';
+import {PageHeader} from '../../components/PageHeader';
+import {PAGE_SIZE} from './model';
+import {customRange, customRangeMessage, rangeFor} from './ranges';
+import {orderListKey} from './keys';
+import OrderList from './OrderList';
+import OrderSummary from './OrderSummary';
+import {OrdersRanges, RangeDialog} from './OrdersRanges';
 
 class Container extends Component {
 
-  constructor(props,context) {
-    super(props, context);
-    this.handlePageChanged = this.handlePageChanged.bind(this);
-    this.handleStartDateChanged = this.handleStartDateChanged.bind(this);
-    this.handleEndDateChanged = this.handleEndDateChanged.bind(this);
-    this.handleFilterByDates  = this.handleFilterByDates.bind(this);
-    this.renderDetailOrder  = this.renderDetailOrder.bind(this);
-    this.moneySymbol = "€";
-    this.columns = [
-      {
-        Header: 'Id',
-        accessor: 'id',
-      },
-      {
-        Header: 'Created At',
-        accessor: 'createdAt',
-        Cell: (data) => moment(data.value,"DD/MM/YYYY HH:mm:ss").format("DD/MM/YYYY HH:mm:ss")
-      },
-      {
-        Header: 'Total',
-        accessor: 'total',
-        Cell: (data) => formatMoney(data.value)
-      },
-      {
-        Header: 'Actions',
-        accessor: 'actions',
-        Cell: this.renderDetailOrder
-      }
-    ];
+  constructor(props) {
+    super(props);
+    this.fromRef = {current: null};
+    this.onKeyDown = this.onKeyDown.bind(this);
+    this.selectChip = this.selectChip.bind(this);
+    this.openCustom = this.openCustom.bind(this);
+    this.closeCustom = this.closeCustom.bind(this);
+    this.onCustomFrom = this.onCustomFrom.bind(this);
+    this.onCustomTo = this.onCustomTo.bind(this);
+    this.applyCustom = this.applyCustom.bind(this);
+    this.openOrder = this.openOrder.bind(this);
+    this.loadMore = this.loadMore.bind(this);
+    this.retry = this.retry.bind(this);
+    this.setFromNode = this.setFromNode.bind(this);
   }
 
-  renderDetailOrder (data) {
-    const { listOrderDetail } = this.props;
-    return (
-      <Button type="button" variant="ghost" onClick={() => listOrderDetail(data.row.id)}>View</Button>
-    );
-  }
-
-
-  handlePageChanged (pageIndex) {
-    const { listOrderFetchWithFilters, orders } = this.props;
-    listOrderFetchWithFilters({
-      limit: orders.filters.limit,
-      offset: (pageIndex * orders.filters.limit),
-      startDate: orders.filters.startDate,
-      endDate: orders.filters.endDate,
-      page: pageIndex
-    });
-
-  }
-
-  handleStartDateChanged(data){
-    const { listOrderFiltersStartDateChanged } = this.props;
-    data.startOf('day');
-    listOrderFiltersStartDateChanged(data);
-  }
-
-  handleEndDateChanged(data){
-    const { listOrderFiltersEndDateChanged } = this.props;
-    data.endOf('day');
-    listOrderFiltersEndDateChanged(data);
-  }
-
-  handleFilterByDates(event){
-    const { listOrderFetchWithFilters, orders } = this.props;
-    listOrderFetchWithFilters({
-      limit: orders.filters.limit,
-      offset: orders.filters.offset,
-      startDate: orders.filters.startDate,
-      endDate: orders.filters.endDate,
-      page: 0
+  componentWillMount() {
+    const range = rangeFor('today');
+    this.props.ordersRangeSelected({
+      key: 'today',
+      from: range.from,
+      to: range.to,
+      offset: 0,
+      limit: PAGE_SIZE,
+      append: false
     });
   }
 
-  componentWillMount(){
-    this.handleFilterByDates(null);
+  componentDidMount() {
+    document.addEventListener('keydown', this.onKeyDown);
   }
 
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.onKeyDown);
+  }
+
+  setFromNode(node) {
+    this.fromRef.current = node;
+  }
+
+  selectChip(key) {
+    const range = rangeFor(key);
+    this.props.ordersRangeSelected({
+      key,
+      from: range.from,
+      to: range.to,
+      offset: 0,
+      limit: this.props.orders.limit,
+      append: false
+    });
+  }
+
+  openCustom() {
+    this.props.ordersCustomOpened();
+  }
+
+  closeCustom() {
+    this.props.ordersCustomClosed();
+  }
+
+  onCustomFrom(event) {
+    this.props.ordersCustomDraftChanged({field: 'from', value: event.target.value});
+  }
+
+  onCustomTo(event) {
+    this.props.ordersCustomDraftChanged({field: 'to', value: event.target.value});
+  }
+
+  applyCustom() {
+    const orders = this.props.orders;
+    const message = customRangeMessage(orders.customFrom, orders.customTo);
+    if (message) {
+      this.props.ordersCustomRejected(message);
+      return;
+    }
+    const range = customRange(orders.customFrom, orders.customTo);
+    this.props.ordersRangeSelected({
+      key: 'custom',
+      from: range.from,
+      to: range.to,
+      offset: 0,
+      limit: orders.limit,
+      append: false
+    });
+  }
+
+  openOrder(orderId) {
+    this.props.ordersRowSelected(orderId);
+    this.props.listOrderDetail(orderId);
+  }
+
+  loadMore() {
+    const orders = this.props.orders;
+    this.props.ordersRangeSelected({
+      key: orders.rangeKey,
+      from: orders.from,
+      to: orders.to,
+      offset: orders.items.length,
+      limit: orders.limit,
+      append: true
+    });
+  }
+
+  retry() {
+    const orders = this.props.orders;
+    this.props.ordersRangeSelected({
+      key: orders.rangeKey,
+      from: orders.from,
+      to: orders.to,
+      offset: 0,
+      limit: orders.limit,
+      append: false
+    });
+  }
+
+  onKeyDown(event) {
+    const orders = this.props.orders;
+    const command = orderListKey(event, orders);
+    if (!command) {
+      return;
+    }
+    event.preventDefault();
+    if (command.type === 'move') {
+      this.props.ordersSelectionMoved(command.delta);
+    }
+    if (command.type === 'open') {
+      this.props.listOrderDetail(command.orderId);
+    }
+  }
 
   render() {
-    const { orders } = this.props;
+    const orders = this.props.orders;
     return (
-      <div className="container-fluid">
-        <h2>List Order!</h2>
-        <div className="FilterCalendar">
-          <div className="FilterCalendar-item">
-            <label htmlFor="startDate">Start Date</label>
-            <DatePicker
-              selected={orders.filters.startDate}
-              onChange={this.handleStartDateChanged}
-              locale="es"
-            />
-          </div>
-          <div className="FilterCalendar-item">
-            <label htmlFor="endDate">End Date</label>
-            <DatePicker
-              selected={orders.filters.endDate}
-              onChange={this.handleEndDateChanged}
-              locale="es"
-            />
-          </div>
-          <button className="button-filter" onClick={this.handleFilterByDates}>
-            <i className="fa fa-filter" />
-            Filter
-          </button>
-        </div>
-        <ReactTable
-          data={orders.orders}
-          columns={this.columns}
-          manual
-          defaultPageSize={defaultLimit}
-          page={orders.current_page}
-          pages={orders.total_pages}
-          onPageChange={this.handlePageChanged}
-          showPageSizeOptions={false}
+      <div className="orders">
+        <PageHeader title="Pedidos" />
+        <OrdersRanges
+          rangeKey={orders.rangeKey}
+          onSelect={this.selectChip}
+          onCustom={this.openCustom}
         />
-
-        <h3>{formatMoney(orders.total)}</h3>
+        <OrderSummary summary={orders.summary} />
+        <OrderList
+          items={orders.items}
+          total={orders.total}
+          loading={orders.loading}
+          loadingMore={orders.loadingMore}
+          error={orders.error}
+          selectedOrderId={orders.selectedOrderId}
+          onOpen={this.openOrder}
+          onLoadMore={this.loadMore}
+          onRetry={this.retry}
+        />
+        <RangeDialog
+          open={orders.customOpen}
+          from={orders.customFrom}
+          to={orders.customTo}
+          error={orders.customError}
+          onFrom={this.onCustomFrom}
+          onTo={this.onCustomTo}
+          onClose={this.closeCustom}
+          onApply={this.applyCustom}
+          fromRef={this.fromRef}
+          onFromRef={this.setFromNode}
+        />
       </div>
     );
   }

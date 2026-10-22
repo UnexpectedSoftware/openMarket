@@ -20,8 +20,8 @@ Every screen keeps its data in the Redux store and changes it only through actio
 | `reducer.js` | `reducer(current = initialState(), action)`. Consumes actions and returns new state by calling `model.js` functions. Pure, so no I/O, no facade calls, no dispatch. Registered in `reducers/index.js`. |
 | `Container.js` | The React 15 component. It renders props and calls the action creators it gets as props (`this.props.newOrderProductFetch(code)`). It never calls `OpenMarket.get`, use cases or queries. |
 | `ReduxConnector.js` | `connect(mapStateToProps, mapDispatchToProps)(Container)`. `mapStateToProps` picks the screen's slice (`state.newOrder.*`); `mapDispatchToProps` uses `bindActionCreators` on `action.js` (and any other actions the screen needs). Routes and parents import this file, not `Container.js`. |
-| `epicFactory.js` | Side effects as testable factories (`makeNewOrderSaveEpic(useCase)…(action$, store)`). On a request action: call a use case or query, then map the result (or a typed error) to **another** action. redux-observable with RxJS 5. |
-| `epic.js` | Wiring: gets use cases and queries with `OpenMarket.get('<key>')`, builds the epics from `epicFactory.js` and exports them combined. Registered in `epics/index.js`. |
+| `epicFactory.js` | Side effects as testable factories (`makeNewOrderSaveEpic(useCase)…(action$, store)`). On a request action: call a use case, then map the result (or a typed error) to **another** action. redux-observable with RxJS 5. |
+| `epic.js` | Wiring: gets use cases with `OpenMarket.get('<key>')`, builds the epics from `epicFactory.js` and exports them combined. Registered in `epics/index.js`. |
 | Child components (`Cart.js`, `PaymentSheet.js`) | Presentational pieces rendered by `Container.js`. They receive data and callbacks as props. |
 | Helpers (`input.js`) | Pure UI helpers (keyboard shortcuts, scanner-burst detection). No state, no dispatch. |
 
@@ -33,7 +33,7 @@ Small screens may merge `epicFactory.js` into `epic.js`; the roles stay the same
       │ props                                ├──► reducer.js ──(model.js)──► new state
  ReduxConnector.js ◄── mapStateToProps ──────┘
                                              │
-                                             └──► epic ──► use case / query (OpenMarket.get)
+                                             └──► epic ──► use case (OpenMarket.get)
                                                     └──dispatch(result action)──► reducer.js
 ```
 

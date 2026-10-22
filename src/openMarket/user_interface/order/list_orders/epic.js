@@ -1,56 +1,28 @@
-import * as listOrderActions from "./action";
-import OpenMarket from "../../../application/index";
-import * as Rx from "rxjs";
+import * as Rx from 'rxjs';
 import {push} from 'react-router-redux';
-import {listOrderDetailLoaded} from "./action";
-import {record} from "../../../infrastructure/logging/ErrorLog";
+import OpenMarket from '../../../application/index';
+import {record} from '../../../infrastructure/logging/ErrorLog';
+import {LIST_ORDER_DETAIL, listOrderDetailLoaded} from './action';
+import {makeOrdersListEpic} from './epicFactory';
 
-const listOrderFetchWithFilters = action$ =>
-  action$.ofType(listOrderActions.LIST_ORDER_FETCH_WITH_FILTERS)
-    .flatMap(action => Rx.Observable.zip(
-      OpenMarket.get("orders_list_all_use_case")
-      .findAllByDates({
-          limit:action.filters.limit,
-          offset:action.filters.offset,
-          startDate: action.filters.startDate,
-          endDate: action.filters.endDate
-        }),
-      OpenMarket.get("orders_statistics_use_case")
-        .countByDates({
-          startDate: action.filters.startDate,
-          endDate: action.filters.endDate
-        }),
-      OpenMarket.get("orders_statistics_use_case")
-        .calculateTotalAmount({
-          startDate: action.filters.startDate,
-          endDate: action.filters.endDate
-        }),
-      (orders, total, amount) => ({ orders: orders, total:total, amount: amount, page:action.filters.page })
-    ))
-    .map(data => listOrderActions.listOrderFetched(data));
-
+const ordersListEpic = makeOrdersListEpic(OpenMarket.get('orders_list_all_use_case'));
 
 const listOrderDetailEpic = action$ =>
-  action$.ofType(listOrderActions.LIST_ORDER_DETAIL)
-    .flatMap(action => OpenMarket.get("orders_list_all_use_case").findById({id: action.payload}))
+  action$.ofType(LIST_ORDER_DETAIL)
+    .flatMap(action => OpenMarket.get('orders_list_all_use_case').findById({id: action.payload}))
     .flatMap(order =>
       Rx.Observable.of(
         listOrderDetailLoaded(order),
         push({
           pathname: '/create_order',
           search: `?id=${order.id}`,
-          state: { orderId: order.id }
+          state: {orderId: order.id}
         })
       )
     );
 
-
-
-
 export default action$ =>
   Rx.Observable.merge(
-    listOrderFetchWithFilters(action$),
+    ordersListEpic(action$),
     listOrderDetailEpic(action$)
-  ).do(() => null, error => record(error), () => null)
-
-
+  ).do(() => null, error => record(error), () => null);

@@ -7,11 +7,12 @@ const SHOP_TIME_ZONE = 'Europe/Madrid';
  * Order timestamps are stored from that clock, so filters must use the same day
  * even when the computer is set to UTC.
  * @param {Date} [instant]
+ * @param {string} [timeZone]
  * @returns {moment.Moment}
  */
-export function shopMoment(instant = new Date()) {
+export function shopMoment(instant = new Date(), timeZone = SHOP_TIME_ZONE) {
   const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: SHOP_TIME_ZONE,
+    timeZone,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',

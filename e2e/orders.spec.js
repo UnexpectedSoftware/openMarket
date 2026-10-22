@@ -1,5 +1,8 @@
+const fs = require('fs');
+const path = require('path');
 const {test, expect} = require('@playwright/test');
 const {
+  root,
   assertDist,
   launchApp,
   closeApp,
@@ -16,6 +19,8 @@ const {
   confirmPayment,
   dismissTicket
 } = require('./launch');
+
+const THEMES = ['mercado', 'mostrador-noche', 'ultramarinos', 'unexpected-neon'];
 
 test.beforeAll(() => {
   assertDist();
@@ -35,15 +40,14 @@ async function expectSubtotal(window, name, amount) {
   await expect(orderRow(window, name).locator('.sell-line-subtotal')).toHaveText(euros(amount));
 }
 
-async function openStartCalendar(window) {
-  await window.locator('.FilterCalendar-item').first().locator('input').click();
-  await expect(window.locator('.react-datepicker')).toBeVisible();
+async function openOrders(window) {
+  await window.setViewportSize({width: 1366, height: 768});
+  await chooseMenu(window, 'Orders', 'List Orders!');
+  await expect(window.getByRole('heading', {name: 'Pedidos'})).toBeVisible();
 }
 
-async function chooseCalendarDay(window, dayText) {
-  await window.locator('.react-datepicker__day:not(.react-datepicker__day--outside-month)', {
-    hasText: new RegExp(`^${dayText}$`)
-  }).click();
+function orderListRow(window, amount) {
+  return window.locator('.orders-row').filter({hasText: euros(amount)});
 }
 
 test('sells, edits quantity, and warns on low stock', async () => {
@@ -186,27 +190,20 @@ test('lists an order and opens its detail', async () => {
     await saveOrder(window);
     await dismissTicket(window);
 
-    await chooseMenu(window, 'Orders', 'List Orders!');
-    await expect(window.getByRole('heading', {name: 'List Order!'})).toBeVisible();
-    const row = window.locator('.rt-tbody .rt-tr').filter({hasText: euros(2)});
+    await openOrders(window);
+    const row = orderListRow(window, 2);
     await expect(row).toBeVisible();
-    await expect(window.locator('h3')).toHaveText(euros(2));
+    await expect(window.locator('.orders-summary-fact', {hasText: 'Tickets'}).locator('dd')).toHaveText('1');
+    await expect(window.getByRole('button', {name: 'Filter'})).toHaveCount(0);
 
-    await openStartCalendar(window);
-    await window.locator('.react-datepicker__navigation--next').click();
-    await chooseCalendarDay(window, '15');
-    await window.getByRole('button', {name: 'Filter'}).click();
-    await expect(window.locator('.rt-tbody').getByText('View', {exact: true})).toHaveCount(0);
-    await expect(window.locator('h3')).toHaveText(euros(0));
+    await window.getByRole('button', {name: 'Ayer', exact: true}).click();
+    await expect(window.getByText('No hay pedidos en este periodo')).toBeVisible();
+    await expect(window.locator('.orders-row')).toHaveCount(0);
 
-    await openStartCalendar(window);
-    await window.locator('.react-datepicker__navigation--previous').click();
-    await chooseCalendarDay(window, '1');
-    await window.getByRole('button', {name: 'Filter'}).click();
+    await window.getByRole('button', {name: 'Hoy', exact: true}).click();
     await expect(row).toBeVisible();
-    await expect(window.locator('h3')).toHaveText(euros(2));
 
-    await row.getByText('View', {exact: true}).click();
+    await row.click();
     await expect(window.getByRole('heading', {name: 'Pedido'})).toBeVisible();
     await expect(window.locator('input[name="barcode"]')).toHaveCount(0);
     await expect(window.getByRole('button', {name: 'Save'})).toHaveCount(0);
@@ -215,6 +212,60 @@ test('lists an order and opens its detail', async () => {
     await expect(quantity).toHaveAttribute('readonly', '');
     await expectSubtotal(window, 'Milk', 2);
     await expect(window.getByRole('button', {name: 'Imprimir'})).toBeVisible();
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
+test('lists the newest sale first and screenshots every theme', async () => {
+  test.setTimeout(120000);
+  const {app, window, userData} = await launchApp();
+  const after = path.join(root, 'docs/design/after');
+  fs.mkdirSync(after, {recursive: true});
+  try {
+    await createCategory(window, 'Dairy');
+    await createProduct(window, {
+      name: 'Milk',
+      barcode: '8400000000110',
+      price: 2,
+      basePrice: 1,
+      stock: 10,
+      stockMin: 1,
+      category: 'Dairy'
+    });
+    await createProduct(window, {
+      name: 'Bread',
+      barcode: '8400000000127',
+      price: 3,
+      basePrice: 1,
+      stock: 10,
+      stockMin: 1,
+      category: 'Dairy'
+    });
+    await openNewOrder(window);
+    await scanBarcode(window, '8400000000110');
+    await saveOrder(window);
+    await dismissTicket(window);
+    await window.waitForTimeout(1100);
+    await scanBarcode(window, '8400000000127');
+    await saveOrder(window);
+    await dismissTicket(window);
+
+    await openOrders(window);
+    const rows = window.locator('.orders-row');
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText(euros(3));
+    await expect(rows.nth(1)).toContainText(euros(2));
+    await expect(window.locator('.orders-summary-fact', {hasText: 'Tickets'}).locator('dd')).toHaveText('2');
+    await expect(window.locator('.orders-summary-fact', {hasText: 'Ventas'}).locator('dd')).toContainText(euros(5));
+
+    for (const theme of THEMES) {
+      await window.evaluate(name => {
+        document.documentElement.dataset.theme = name;
+      }, theme);
+      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
+      await window.screenshot({path: path.join(after, `orders-${theme}.png`)});
+    }
   } finally {
     await closeApp(app, userData);
   }

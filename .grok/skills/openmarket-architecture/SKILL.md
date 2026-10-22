@@ -11,7 +11,7 @@ metadata:
 
 Root `AGENTS.md` has the rules. This skill has the **how**.
 
-Dependency rule: outer layers (UI, infrastructure, application) may depend on the domain, and the UI may use domain value objects directly. Only the reverse is forbidden (domain must not import application, infrastructure or UI; application must not import infrastructure adapters or UI). UI screens follow the unidirectional Redux flow in `src/openMarket/user_interface/AGENTS.md` (template `order/new_order`); epics call use cases and queries through `OpenMarket.get('<key>')`. Pick one recipe, follow its file checklist in order, then run **Finish** (at the end).
+Dependency rule: outer layers (UI, infrastructure, application) may depend on the domain, and the UI may use domain value objects directly. Only the reverse is forbidden (domain must not import application, infrastructure or UI; application must not import infrastructure adapters or UI). UI screens follow the unidirectional Redux flow in `src/openMarket/user_interface/AGENTS.md` (template `order/new_order`); epics call use cases through `OpenMarket.get('<key>')`. Pick one recipe, follow its file checklist in order, then run **Finish** (at the end).
 The examples use a made-up `Supplier` context and an `AdjustStock` use case. Rename them to fit your task. Match the surrounding code style (2-space indent, RxJS 5 `Rx.Observable`, named-object constructor params).
 
 ---
@@ -392,18 +392,18 @@ pullEvents() { const events = this._events; this._events = []; return events; }
 
 ---
 
-## Recipe 4: add a query or report
+## Recipe 4: add a read or a report
 
 Decide which case you're in:
 
 | Need | Where |
 |---|---|
-| **Data for a redesigned screen (preferred for new reads)** | a query port `domain/<ctx>/<Name>Query.js` returning plain read models (e.g. `OrdersQuery.listSummaries()` → `OrderSummary {id, createdAt, totalCents, lineCount}`), adapter `infrastructure/<ctx>/Sqlite<Name>Query.js` on the same DB, exposed through a read use case/facade key. Never rehydrate aggregates for display; repositories serve write use cases. Apply when a screen is redesigned (orders in Phase 5 first), not as a big-bang refactor |
-| Existing screens not yet redesigned (list, filter, page) | a finder on the aggregate's repository port (`findCatalog`, `findAllByDates`), returning aggregates or small row DTOs |
+| **Data for a screen** | `repository.find(new OrdersQuery({from, to, limit, offset}))`. `OrdersQuery` is a frozen criteria value, not a port. The find returns a read model (`OrderView` for a list row, `OrderDetail` for a detail): frozen fields, no write invariants, not the write aggregate. `summary` returns `OrderRangeSummary`. The SQLite repository maps the rows. A use case forwards the find (`ListAllOrders`). Do not add a query port. |
+| Existing screens not yet redesigned (list, filter, page) | a finder already on the aggregate's repository (`findCatalog`, `findAllByDates`). `ProductsQuery` is the old separate-query shape for the sell grid; leave it until that screen is revisited |
 | Long SQL clause building or row folding for that finder | `infrastructure/<ctx>/Sqlite<Name>QueryService.js`, injected **only** into `Sqlite<Name>Repository` (constructor `queryService`). Not a port, never imported outside infrastructure |
-| A report or statistics read model (sums per day, most sold) | its **own** read port `domain/<ctx>/<Thing>Repository.js` + `Sqlite<Thing>Repository` (precedent: `ProductSaleStatisticsRepository`, kept current by the `RecordProductSales` handler), plus a use case that reads it |
+| A different read model (sums per day, most sold) | its **own** port `domain/<ctx>/<Thing>Repository.js` + `Sqlite<Thing>Repository` (precedent: `ProductSaleStatisticsRepository`, kept current by the `RecordProductSales` handler), plus a use case that reads it |
 
-Don't add new report methods to an aggregate repository. (`OrderRepository.calculateTotalAmount*` is old code. Don't copy it.)
+`OrderRepository.calculateTotalAmount*` is old code. A new period total is `summary`, which returns `OrderRangeSummary`. Don't copy the old total methods.
 
 ```js
 // infrastructure/supplier/SqliteSupplierQueryService.js

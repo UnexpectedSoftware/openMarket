@@ -1,5 +1,8 @@
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 /** @typedef {import('./Order').default} Order */
+/** @typedef {import('./OrderView').default} OrderView */
+/** @typedef {import('./OrdersQuery').default} OrdersQuery */
+/** @typedef {import('./OrderRangeSummary').default} OrderRangeSummary */
 
 /**
  * One row of the order list.
@@ -38,6 +41,25 @@ export default class OrderRepository {
    */
   findAllByDates({ limit, offset, startDate, endDate }) {
     throw new Error('OrderRepository#findAllByDates must be implemented');
+  }
+
+  /**
+   * Orders matching the criteria, newest first, as list-row views.
+   * `total` counts the whole range, not the page.
+   * @param {OrdersQuery} query
+   * @returns {Observable<{items: OrderView[], total: number}>}
+   */
+  find(query) {
+    throw new Error('OrderRepository#find must be implemented');
+  }
+
+  /**
+   * Sales, ticket count, and average ticket for the same range.
+   * @param {{from: string, to: string}} query
+   * @returns {Observable<OrderRangeSummary>}
+   */
+  summary({from, to}) {
+    throw new Error('OrderRepository#summary must be implemented');
   }
 
   /**

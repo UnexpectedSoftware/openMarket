@@ -1,0 +1,121 @@
+.orders {
+  padding: var(--om-space-4);
+  max-width: calc(var(--om-space-9) * 18);
+
+  h2 {
+    margin: 0;
+    border: 0;
+    padding: 0;
+  }
+}
+
+.orders-ranges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--om-space-2);
+  margin-bottom: var(--om-space-4);
+}
+
+.orders-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--om-space-4);
+  margin: 0;
+}
+
+.orders-summary-fact dt {
+  margin: 0;
+  color: var(--om-color-text-muted);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+  font-weight: var(--om-font-weight-medium);
+}
+
+.orders-summary-fact dd {
+  margin: var(--om-space-1) 0 0;
+  font-family: var(--om-font-numeric);
+  font-feature-settings: var(--om-font-feature-numeric);
+  font-size: var(--om-font-size-xl);
+  font-weight: var(--om-font-weight-bold);
+}
+
+.orders-rows {
+  margin: 0;
+  padding: 0;
+}
+
+.orders-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--om-space-3);
+  width: 100%;
+  min-height: var(--om-control-height);
+  margin: 0 0 var(--om-space-2);
+  padding: var(--om-space-2) var(--om-space-3);
+  float: none;
+  text-align: left;
+  color: var(--om-color-text);
+  background: transparent;
+  border: 1px solid var(--om-color-border);
+  border-radius: var(--om-radius-md);
+  cursor: pointer;
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-md);
+}
+
+.orders-row.is-selected {
+  background: var(--om-color-primary-soft);
+  border-color: var(--om-color-primary);
+}
+
+.orders-row-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--om-space-1);
+  min-width: 0;
+}
+
+.orders-row-invoice {
+  display: flex;
+  align-items: center;
+  gap: var(--om-space-2);
+  font-weight: var(--om-font-weight-bold);
+}
+
+.orders-row-meta {
+  color: var(--om-color-text-muted);
+  font-size: var(--om-font-size-sm);
+}
+
+.orders-row-total {
+  font-family: var(--om-font-numeric);
+  font-feature-settings: var(--om-font-feature-numeric);
+  font-size: var(--om-font-size-lg);
+  font-weight: var(--om-font-weight-bold);
+}
+
+.orders-more {
+  margin-top: var(--om-space-3);
+}
+
+.orders-error-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--om-space-3);
+  margin-bottom: var(--om-space-3);
+}
+
+.orders-error {
+  margin: 0;
+  color: var(--om-color-danger);
+  font-family: var(--om-font-sans);
+}
+
+.orders-range-fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--om-space-3);
+}
