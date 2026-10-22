@@ -1,10 +1,12 @@
 import React, {Component} from 'react';
 import {PageHeader} from '../../components/PageHeader';
+import EmptyState from '../../components/EmptyState';
 import {PAGE_SIZE} from './model';
 import {customRange, customRangeMessage, rangeFor} from './ranges';
 import {orderListKey} from './keys';
 import OrderList from './OrderList';
 import OrderSummary from './OrderSummary';
+import {ReprintDialog} from './OrderDetail';
 import {OrdersRanges, RangeDialog} from './OrdersRanges';
 
 class Container extends Component {
@@ -20,6 +22,9 @@ class Container extends Component {
     this.onCustomTo = this.onCustomTo.bind(this);
     this.applyCustom = this.applyCustom.bind(this);
     this.openOrder = this.openOrder.bind(this);
+    this.back = this.back.bind(this);
+    this.closeReprint = this.closeReprint.bind(this);
+    this.confirmReprint = this.confirmReprint.bind(this);
     this.loadMore = this.loadMore.bind(this);
     this.retry = this.retry.bind(this);
     this.setFromNode = this.setFromNode.bind(this);
@@ -97,7 +102,26 @@ class Container extends Component {
 
   openOrder(orderId) {
     this.props.ordersRowSelected(orderId);
-    this.props.listOrderDetail(orderId);
+    if (this.props.router) {
+      this.props.router.push('/list_orders/' + orderId);
+    }
+  }
+
+  back() {
+    if (this.props.router) {
+      this.props.router.goBack();
+    }
+  }
+
+  closeReprint() {
+    this.props.orderReprintClosed();
+  }
+
+  confirmReprint() {
+    const orderId = this.props.orders.reprintOrderId;
+    if (orderId) {
+      this.props.orderReprintConfirmed(orderId);
+    }
   }
 
   loadMore() {
@@ -126,40 +150,69 @@ class Container extends Component {
 
   onKeyDown(event) {
     const orders = this.props.orders;
-    const command = orderListKey(event, orders);
+    const command = orderListKey(event, {
+      customOpen: orders.customOpen,
+      reprintOpen: orders.reprintOpen,
+      detailOpen: !!(this.props.params && this.props.params.id),
+      selectedOrderId: orders.selectedOrderId
+    });
     if (!command) {
       return;
     }
     event.preventDefault();
     if (command.type === 'move') {
       this.props.ordersSelectionMoved(command.delta);
+      return;
     }
     if (command.type === 'open') {
-      this.props.listOrderDetail(command.orderId);
+      this.openOrder(command.orderId);
+      return;
+    }
+    if (command.type === 'back') {
+      this.back();
+      return;
+    }
+    if (command.type === 'reprint') {
+      this.props.orderReprintRequested(command.orderId);
     }
   }
 
   render() {
     const orders = this.props.orders;
     return (
-      <div className="orders">
-        <PageHeader title="Pedidos" />
-        <OrdersRanges
-          rangeKey={orders.rangeKey}
-          onSelect={this.selectChip}
-          onCustom={this.openCustom}
-        />
-        <OrderSummary summary={orders.summary} />
-        <OrderList
-          items={orders.items}
-          total={orders.total}
-          loading={orders.loading}
-          loadingMore={orders.loadingMore}
-          error={orders.error}
-          selectedOrderId={orders.selectedOrderId}
-          onOpen={this.openOrder}
-          onLoadMore={this.loadMore}
-          onRetry={this.retry}
+      <div className="orders-screen">
+        <div className="orders-master">
+          <PageHeader title="Pedidos" />
+          <OrdersRanges
+            rangeKey={orders.rangeKey}
+            onSelect={this.selectChip}
+            onCustom={this.openCustom}
+          />
+          <OrderSummary summary={orders.summary} />
+          <OrderList
+            items={orders.items}
+            total={orders.total}
+            loading={orders.loading}
+            loadingMore={orders.loadingMore}
+            error={orders.error}
+            selectedOrderId={orders.selectedOrderId}
+            onOpen={this.openOrder}
+            onLoadMore={this.loadMore}
+            onRetry={this.retry}
+          />
+        </div>
+        <div className="orders-detail">
+          {this.props.children || (
+            <EmptyState icon="file-text-o" title="Selecciona un pedido" />
+          )}
+        </div>
+        <ReprintDialog
+          open={orders.reprintOpen}
+          html={orders.reprintHtml}
+          error={orders.reprintError}
+          busy={orders.reprintBusy}
+          onClose={this.closeReprint}
+          onPrint={this.confirmReprint}
         />
         <RangeDialog
           open={orders.customOpen}

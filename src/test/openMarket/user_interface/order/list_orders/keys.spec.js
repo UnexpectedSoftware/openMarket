@@ -26,4 +26,18 @@ describe('orderListKey', () => {
     expect(orderListKey({key: 'Escape'}, screen)).to.equal(null);
     expect(orderListKey({key: 'ArrowDown', target: null}, screen)).to.deep.equal({type: 'move', delta: 1});
   });
+
+  it('reprints with F9, goes back with Escape, and leaves F2 to F4 alone', () => {
+    const open = {...screen, detailOpen: true};
+    expect(orderListKey({key: 'F9'}, open)).to.deep.equal({type: 'reprint', orderId: 'a'});
+    expect(orderListKey({key: 'Escape'}, open)).to.deep.equal({type: 'back'});
+    expect(orderListKey({key: 'F9'}, screen)).to.deep.equal({type: 'reprint', orderId: 'a'});
+    expect(orderListKey({key: 'F9'}, {...screen, selectedOrderId: null})).to.equal(null);
+    expect(orderListKey({key: 'F2'}, open)).to.equal(null);
+    expect(orderListKey({key: 'F3'}, open)).to.equal(null);
+    expect(orderListKey({key: 'F4'}, open)).to.equal(null);
+    expect(orderListKey({key: 'F9'}, {...open, reprintOpen: true})).to.equal(null);
+    expect(orderListKey({key: 'Escape'}, {...open, customOpen: true})).to.equal(null);
+    expect(orderListKey({key: 'F9', target: {tagName: 'INPUT'}}, open)).to.equal(null);
+  });
 });

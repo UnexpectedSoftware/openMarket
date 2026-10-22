@@ -14,9 +14,7 @@ import {
   PAYMENT_PREVIEW_LOADED,
   REPRINT_PREVIEW_LOADED
 } from './action';
-import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, loadOrder} from './model';
-import {LIST_ORDER_DETAIL_LOADED} from '../list_orders/action';
-import {LOCATION_CHANGE} from 'react-router-redux';
+import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct} from './model';
 
 /**
  * Keeps the grid, the low-stock set, and the last ticket across a cart edit.
@@ -108,24 +106,8 @@ export default function reducer(current = initialState(), action) {
         tilesStatus: current.tilesStatus || 'idle'
       };
 
-    case LIST_ORDER_DETAIL_LOADED:
-      return keep(current, loadOrder({order: action.payload}));
-
     case NEW_ORDER_CLOSED:
       return initialState();
-
-    case LOCATION_CHANGE:
-      // hashHistory emits POP right after the nav-rail PUSH, once the grid has loaded.
-      if (action.payload.action === 'POP') {
-        return {
-          ...initialState(),
-          lowStockBarcodes: current.lowStockBarcodes || [],
-          lastOrder: current.lastOrder || null,
-          tiles: current.tiles || [],
-          tilesStatus: current.tilesStatus || 'idle'
-        };
-      }
-      return current;
 
     default:
       return current;

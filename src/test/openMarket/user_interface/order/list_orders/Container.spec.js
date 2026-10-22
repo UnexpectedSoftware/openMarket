@@ -4,10 +4,15 @@ import {mount} from '../../components/mount';
 import Container from '../../../../../openMarket/user_interface/order/list_orders/Container';
 import {state} from '../../../../../openMarket/user_interface/order/list_orders/model';
 
-function harness(orders, calls) {
+function harness(orders, calls, extra) {
   return mount(
     <Container
       orders={orders}
+      params={extra && extra.params}
+      router={{
+        push: path => calls.push(['push', path]),
+        goBack: () => calls.push(['back'])
+      }}
       ordersRangeSelected={payload => calls.push(['range', payload])}
       ordersCustomOpened={() => calls.push(['open'])}
       ordersCustomClosed={() => calls.push(['close'])}
@@ -15,7 +20,9 @@ function harness(orders, calls) {
       ordersCustomRejected={message => calls.push(['rejected', message])}
       ordersSelectionMoved={delta => calls.push(['move', delta])}
       ordersRowSelected={orderId => calls.push(['row', orderId])}
-      listOrderDetail={orderId => calls.push(['detail', orderId])}
+      orderReprintRequested={orderId => calls.push(['reprint', orderId])}
+      orderReprintClosed={() => calls.push(['reprint-close'])}
+      orderReprintConfirmed={orderId => calls.push(['print', orderId])}
     />
   );
 }
@@ -50,7 +57,7 @@ describe('orders list container', () => {
 
     view.node.querySelector('.orders-row').click();
     expect(calls[calls.length - 2]).to.deep.equal(['row', 'a']);
-    expect(calls[calls.length - 1]).to.deep.equal(['detail', 'a']);
+    expect(calls[calls.length - 1]).to.deep.equal(['push', '/list_orders/a']);
 
     view.node.querySelector('.orders-more button').click();
     expect(calls[calls.length - 1][1].append).to.equal(true);
@@ -59,7 +66,11 @@ describe('orders list container', () => {
     document.dispatchEvent(new view.node.ownerDocument.defaultView.KeyboardEvent('keydown', {key: 'ArrowDown'}));
     expect(calls[calls.length - 1]).to.deep.equal(['move', 1]);
     document.dispatchEvent(new view.node.ownerDocument.defaultView.KeyboardEvent('keydown', {key: 'Enter'}));
-    expect(calls[calls.length - 1]).to.deep.equal(['detail', 'a']);
+    expect(calls[calls.length - 1]).to.deep.equal(['push', '/list_orders/a']);
+    document.dispatchEvent(new view.node.ownerDocument.defaultView.KeyboardEvent('keydown', {key: 'F9'}));
+    expect(calls[calls.length - 1]).to.deep.equal(['reprint', 'a']);
+    document.dispatchEvent(new view.node.ownerDocument.defaultView.KeyboardEvent('keydown', {key: 'F2'}));
+    expect(calls[calls.length - 1]).to.deep.equal(['reprint', 'a']);
     const beforeEscape = calls.length;
     document.dispatchEvent(new view.node.ownerDocument.defaultView.KeyboardEvent('keydown', {key: 'Escape'}));
     expect(calls).to.have.lengthOf(beforeEscape);
@@ -126,6 +137,14 @@ describe('orders list container', () => {
     retry.click();
     expect(calls[calls.length - 1][1].key).to.equal('today');
     expect(calls[calls.length - 1][1].append).to.equal(false);
+    view.unmount();
+  });
+
+  it('goes back from an open detail with Escape', () => {
+    const calls = [];
+    const view = harness({...state(), loading: false, selectedOrderId: 'a'}, calls, {params: {id: 'a'}});
+    document.dispatchEvent(new view.node.ownerDocument.defaultView.KeyboardEvent('keydown', {key: 'Escape'}));
+    expect(calls[calls.length - 1]).to.deep.equal(['back']);
     view.unmount();
   });
 });

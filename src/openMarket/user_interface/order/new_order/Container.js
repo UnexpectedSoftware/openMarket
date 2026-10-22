@@ -66,7 +66,6 @@ class Container extends Component {
     this.onFreeDescription = this.onFreeDescription.bind(this);
     this.onFreeAmount = this.onFreeAmount.bind(this);
     this.onFreeVat = this.onFreeVat.bind(this);
-    this.printOrder = this.printOrder.bind(this);
   }
 
   componentWillMount() {
@@ -78,7 +77,7 @@ class Container extends Component {
   componentDidMount() {
     document.addEventListener('keydown', this.onWindowKey, true);
     window.addEventListener('focus', this.onWindowFocus);
-    if (!this.props.readonly && this.props.saleTilesRequested) {
+    if (this.props.saleTilesRequested) {
       this.props.saleTilesRequested({text: '', limit: TILE_LIMIT});
     }
     this.focusSearch();
@@ -87,7 +86,7 @@ class Container extends Component {
   componentDidUpdate(previous) {
     const before = previous.order && previous.order.lines ? previous.order.lines.length : 0;
     const after = this.props.order && this.props.order.lines ? this.props.order.lines.length : 0;
-    if (before > 0 && after === 0 && !this.props.readonly && this.props.saleTilesRequested) {
+    if (before > 0 && after === 0 && this.props.saleTilesRequested) {
       this.props.saleTilesRequested({text: this.state.search || '', limit: TILE_LIMIT});
     }
     if (before > 0 && after === 0 && this.state.paymentOpen) {
@@ -121,9 +120,6 @@ class Container extends Component {
   }
 
   focusSearch() {
-    if (this.props.readonly) {
-      return;
-    }
     if (document.querySelector('[role="dialog"]')) {
       return;
     }
@@ -160,7 +156,7 @@ class Container extends Component {
 
   canCharge() {
     const lines = this.props.order && this.props.order.lines ? this.props.order.lines : [];
-    return !this.props.readonly && lines.length > 0 && lines.every(lineIsValid);
+    return lines.length > 0 && lines.every(lineIsValid);
   }
 
   charge() {
@@ -225,13 +221,6 @@ class Container extends Component {
   printLast() {
     const order = this.props.lastOrder;
     this.setState({reprintOpen: false}, this.focusSearch);
-    if (order && this.props.printOrderButtonClicked) {
-      this.props.printOrderButtonClicked(order);
-    }
-  }
-
-  printOrder() {
-    const order = this.props.readonly ? this.props.order : this.props.lastOrder;
     if (order && this.props.printOrderButtonClicked) {
       this.props.printOrderButtonClicked(order);
     }
@@ -347,9 +336,6 @@ class Container extends Component {
   }
 
   onWindowKey(event) {
-    if (this.props.readonly) {
-      return;
-    }
     if (document.querySelector('[role="dialog"]')) {
       if (event.key === 'Escape') {
         setTimeout(this.focusSearch, 0);
@@ -450,46 +436,39 @@ class Container extends Component {
   }
 
   render() {
-    const {order, readonly, issuer, tiles, tilesStatus, lowStockBarcodes} = this.props;
+    const {order, issuer, tiles, tilesStatus, lowStockBarcodes} = this.props;
     const issuerName = issuer && (issuer.tradeName || issuer.legalName);
     const subtitle = issuer && issuer.nif ? issuerName + ' · NIF ' + issuer.nif : undefined;
     const amount = parseDecimal(this.state.freeAmount);
     const freeValid = String(this.state.freeDescription || '').trim() !== '' && amount != null && amount > 0;
     return (
-      <div className={readonly ? 'sell sell-readonly' : 'sell'}>
-        {readonly ? null : (
-          <div className="sell-catalog">
-            <PageHeader title="Vender" subtitle={subtitle} />
-            <div className="sell-search">
-              <TextField
-                id="sell-search"
-                name="barcode"
-                label="Buscar o escanear"
-                value={this.state.search}
-                onChange={this.onSearch}
-                inputRef={this.setSearchNode}
-                autoFocus
-              />
-            </div>
-            {this.renderGrid(tiles, tilesStatus)}
+      <div className="sell">
+        <div className="sell-catalog">
+          <PageHeader title="Vender" subtitle={subtitle} />
+          <div className="sell-search">
+            <TextField
+              id="sell-search"
+              name="barcode"
+              label="Buscar o escanear"
+              value={this.state.search}
+              onChange={this.onSearch}
+              inputRef={this.setSearchNode}
+              autoFocus
+            />
           </div>
-        )}
-        <div className={readonly ? 'sell-catalog' : undefined}>
-          {readonly ? <PageHeader title="Pedido" subtitle={subtitle} /> : null}
-          <Cart
-            order={order}
-            readonly={readonly}
-            selected={this.state.selected}
-            lowStockBarcodes={lowStockBarcodes}
-            onSelect={index => this.setState({selected: index})}
-            onQuantityChange={this.props.newOrderProductQuantityChange}
-            onChanged={this.focusSearch}
-            onDelete={this.props.newOrderProductDeleted}
-            onEditWeighted={line => this.editWeighted(line)}
-            onCharge={this.charge}
-            onPrint={this.printOrder}
-          />
+          {this.renderGrid(tiles, tilesStatus)}
         </div>
+        <Cart
+          order={order}
+          selected={this.state.selected}
+          lowStockBarcodes={lowStockBarcodes}
+          onSelect={index => this.setState({selected: index})}
+          onQuantityChange={this.props.newOrderProductQuantityChange}
+          onChanged={this.focusSearch}
+          onDelete={this.props.newOrderProductDeleted}
+          onEditWeighted={line => this.editWeighted(line)}
+          onCharge={this.charge}
+        />
         <Dialog
           open={this.state.freeOpen}
           title="Venta libre"

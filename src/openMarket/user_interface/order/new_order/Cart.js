@@ -29,17 +29,16 @@ export default class Cart extends Component {
   render() {
     const props = this.props;
     const lines = (props.order && props.order.lines) || [];
-    const readonly = !!props.readonly;
     const lowSet = props.lowStockBarcodes || [];
     const invalid = lines.some(line => !lineIsValid(line));
-    const canCharge = !readonly && lines.length > 0 && !invalid;
+    const canCharge = lines.length > 0 && !invalid;
     const rows = vatRows(lines);
     return (
       <section className="sell-cart" aria-label="Ticket">
         <div className="sell-lines">
           {lines.length === 0 ? (
             <EmptyState icon="shopping-basket" title="El ticket está vacío" />
-          ) : lines.map((line, index) => this.renderLine(line, index, readonly, lowSet))}
+          ) : lines.map((line, index) => this.renderLine(line, index, lowSet))}
         </div>
         <footer className="sell-footer">
           <PluginSlot name="sell.cart.footer" />
@@ -54,22 +53,16 @@ export default class Cart extends Component {
           </ul>
           <div className="order-total">
             <span className="sell-total">{formatMoney(props.order && props.order.total ? props.order.total : Money.ofCents(0))}</span>
-            {readonly ? (
-              <Button type="button" variant="secondary" size="lg" icon="print" onClick={props.onPrint}>
-                Imprimir
-              </Button>
-            ) : (
-              <Button type="button" size="lg" icon="check" disabled={!canCharge} onClick={this.onCharge}>
-                Cobrar (F12)
-              </Button>
-            )}
+            <Button type="button" size="lg" icon="check" disabled={!canCharge} onClick={this.onCharge}>
+              Cobrar (F12)
+            </Button>
           </div>
         </footer>
       </section>
     );
   }
 
-  renderLine(line, index, readonly, lowSet) {
+  renderLine(line, index, lowSet) {
     const valid = lineIsValid(line);
     const selected = this.props.selected === index;
     const low = line.lowStock || lowSet.indexOf(line.barcode) !== -1;
@@ -96,7 +89,7 @@ export default class Cart extends Component {
         </div>
         <span className="sell-money sell-line-price">{formatMoney(line.unitPrice)}</span>
         <div className="sell-qty">
-          {!readonly && !weighted && !free ? (
+          {!weighted && !free ? (
             <IconButton icon="minus" label="Menos" onClick={() => this.step(line, -1)} />
           ) : null}
           <NumberField
@@ -106,26 +99,24 @@ export default class Cart extends Component {
             decimals={weighted ? 3 : 0}
             unit={weighted ? 'kg' : undefined}
             value={quantityText(line)}
-            readOnly={readonly || weighted || free}
-            onFocus={weighted && !readonly ? () => this.props.onEditWeighted && this.props.onEditWeighted(line) : undefined}
-            onChange={readonly || weighted || free ? undefined : value => this.props.onQuantityChange({
+            readOnly={weighted || free}
+            onFocus={weighted ? () => this.props.onEditWeighted && this.props.onEditWeighted(line) : undefined}
+            onChange={weighted || free ? undefined : value => this.props.onQuantityChange({
               barcode: line.barcode,
               quantityChanged: value
             })}
           />
-          {!readonly && !weighted && !free ? (
+          {!weighted && !free ? (
             <IconButton icon="plus" label="Más" onClick={() => this.step(line, 1)} />
           ) : null}
         </div>
         <span className="sell-money sell-line-subtotal">{formatMoney(lineAmount(line))}</span>
-        {!readonly ? (
-          <IconButton
-            icon="trash"
-            label="Quitar"
-            variant="danger"
-            onClick={() => this.props.onDelete && this.props.onDelete(line.barcode, index)}
-          />
-        ) : null}
+        <IconButton
+          icon="trash"
+          label="Quitar"
+          variant="danger"
+          onClick={() => this.props.onDelete && this.props.onDelete(line.barcode, index)}
+        />
       </div>
     );
   }

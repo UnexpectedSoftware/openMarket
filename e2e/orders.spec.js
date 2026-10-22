@@ -171,8 +171,11 @@ test('sells a weighed product for 6,48 €', async () => {
   }
 });
 
-test('lists an order and opens its detail', async () => {
+test('lists an order, opens its detail, and returns to an empty sale', async () => {
+  test.setTimeout(120000);
   const {app, window, userData} = await launchApp();
+  const after = path.join(root, 'docs/design/after');
+  fs.mkdirSync(after, {recursive: true});
   try {
     await createCategory(window, 'Dairy');
     await createProduct(window, {
@@ -203,15 +206,34 @@ test('lists an order and opens its detail', async () => {
     await window.getByRole('button', {name: 'Hoy', exact: true}).click();
     await expect(row).toBeVisible();
 
+    const invoice = (await row.locator('.orders-row-invoice').innerText()).trim();
     await row.click();
-    await expect(window.getByRole('heading', {name: 'Pedido'})).toBeVisible();
+    const heading = window.getByRole('heading', {level: 2});
+    await expect(heading).toContainText(invoice);
+    await expect(heading).toContainText(/\d{2}\/\d{2}\/\d{4}/);
+    await expect(window.getByText('Factura simplificada')).toBeVisible();
+    await expect(window.getByRole('heading', {name: 'Pedido', exact: true})).toHaveCount(0);
     await expect(window.locator('input[name="barcode"]')).toHaveCount(0);
-    await expect(window.getByRole('button', {name: 'Save'})).toHaveCount(0);
-    const quantity = orderRow(window, 'Milk').locator('input');
-    await expect(quantity).toHaveValue('1');
-    await expect(quantity).toHaveAttribute('readonly', '');
-    await expectSubtotal(window, 'Milk', 2);
-    await expect(window.getByRole('button', {name: 'Imprimir'})).toBeVisible();
+    const reprint = window.getByRole('button', {name: 'Reimprimir'});
+    await expect(reprint).toBeVisible();
+    const box = await reprint.boundingBox();
+    expect(box).toBeTruthy();
+    expect(box.y + box.height).toBeLessThanOrEqual(768);
+    await expect(row).toBeVisible();
+
+    for (const theme of THEMES) {
+      await window.evaluate(name => {
+        document.documentElement.dataset.theme = name;
+      }, theme);
+      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
+      await window.screenshot({path: path.join(after, `order-detail-${theme}.png`)});
+    }
+
+    await window.keyboard.press('F2');
+    await expect(window.getByRole('heading', {name: 'Vender'})).toBeVisible();
+    await expect(window.getByText('El ticket está vacío')).toBeVisible();
+    await expect(window.locator('.sell-tile', {hasText: 'Milk'})).toBeVisible();
+    await expect(window.locator('.sell-search input')).toBeVisible();
   } finally {
     await closeApp(app, userData);
   }

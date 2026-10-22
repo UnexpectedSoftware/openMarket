@@ -1,12 +1,114 @@
-.orders {
+.orders-screen {
+  display: flex;
+  align-items: stretch;
+  gap: var(--om-space-4);
+  box-sizing: border-box;
+  height: calc(100vh - var(--om-header-height));
   padding: var(--om-space-4);
-  max-width: calc(var(--om-space-9) * 18);
+}
 
-  h2 {
-    margin: 0;
-    border: 0;
-    padding: 0;
-  }
+.orders-master {
+  flex: 0 0 calc(var(--om-space-9) * 8);
+  min-width: 0;
+  overflow: auto;
+}
+
+.orders-detail {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.orders-detail-pane {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  background: var(--om-color-surface);
+  border: var(--om-button-border-width) solid var(--om-color-border);
+  border-radius: var(--om-radius-md);
+}
+
+.orders-detail-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--om-space-4);
+}
+
+.orders-detail-kicker {
+  margin: 0 0 var(--om-space-1);
+  color: var(--om-color-text-muted);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+  font-weight: var(--om-font-weight-medium);
+  letter-spacing: var(--om-letter-spacing-label);
+}
+
+.orders-detail-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--om-space-2);
+  margin: 0 0 var(--om-space-2);
+  border: 0;
+  padding: 0;
+  font-family: var(--om-font-sans);
+}
+
+.orders-detail-number {
+  font-size: var(--om-font-size-xl);
+  font-weight: var(--om-font-weight-bold);
+}
+
+.orders-detail-when {
+  color: var(--om-color-text-muted);
+  font-size: var(--om-font-size-sm);
+  font-weight: var(--om-font-weight-regular);
+}
+
+.orders-detail-payment {
+  margin: 0 0 var(--om-space-4);
+  color: var(--om-color-text);
+  font-family: var(--om-font-sans);
+}
+
+.orders-detail-vat {
+  list-style: none;
+  margin: var(--om-space-3) 0 0;
+  padding: 0;
+}
+
+.orders-detail-vat li {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--om-space-3);
+}
+
+.orders-money,
+.orders-detail-total {
+  font-family: var(--om-font-numeric);
+  font-feature-settings: var(--om-font-feature-numeric);
+}
+
+.orders-detail-total {
+  margin: var(--om-space-3) 0 0;
+  font-size: var(--om-font-size-total);
+  font-weight: var(--om-font-weight-bold);
+  text-align: right;
+}
+
+.orders-detail-aside {
+  margin-top: var(--om-space-3);
+}
+
+.orders-detail-actions {
+  flex: 0 0 auto;
+  padding: var(--om-space-3);
+  border-top: var(--om-button-border-width) solid var(--om-color-border);
+  background: var(--om-color-surface);
 }
 
 .orders-ranges {

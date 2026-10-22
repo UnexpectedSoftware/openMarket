@@ -1,6 +1,7 @@
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 /** @typedef {import('./Order').default} Order */
 /** @typedef {import('./OrderView').default} OrderView */
+/** @typedef {import('./OrderDetail').default} OrderDetail */
 /** @typedef {import('./OrdersQuery').default} OrdersQuery */
 /** @typedef {import('./OrderRangeSummary').default} OrderRangeSummary */
 
@@ -44,10 +45,12 @@ export default class OrderRepository {
   }
 
   /**
-   * Orders matching the criteria, newest first, as list-row views.
-   * `total` counts the whole range, not the page.
-   * @param {OrdersQuery} query
-   * @returns {Observable<{items: OrderView[], total: number}>}
+   * A page of list rows when `query` is an {@link OrdersQuery}.
+   * One detail when `query` is `{id}`, or null when that id is unknown.
+   * `total` on a page counts the whole range, not the page.
+   * Neither result is an Order. `{id}` is not a new query port.
+   * @param {OrdersQuery | {id?: string}} query
+   * @returns {Observable<{items: OrderView[], total: number} | OrderDetail | null>}
    */
   find(query) {
     throw new Error('OrderRepository#find must be implemented');

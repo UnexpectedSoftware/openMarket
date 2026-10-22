@@ -51,4 +51,81 @@ describe('Cart', () => {
     );
     expect(charge.disabled).to.equal(true);
   });
+
+  it('edits a counted line, a weighed line, and a free line', () => {
+    const calls = [];
+    const order = {
+      lines: [
+        {
+          kind: 'PRODUCT',
+          barcode: 'milk',
+          name: 'Milk',
+          unitPrice: Money.from(2),
+          quantity: Quantity.from(1),
+          vatRate: VatRate.standard(),
+          weighted: false,
+          lowStock: true
+        },
+        {
+          kind: 'PRODUCT',
+          barcode: 'ham',
+          name: 'Ham',
+          unitPrice: Money.from(18.5),
+          quantity: Quantity.from(0.35),
+          vatRate: VatRate.standard(),
+          weighted: true
+        },
+        {
+          kind: 'FREE',
+          barcode: '',
+          name: 'Bolsa',
+          unitPrice: Money.from(0.5),
+          quantity: Quantity.from(1),
+          vatRate: VatRate.standard(),
+          weighted: false
+        }
+      ],
+      total: Money.ofCents(698)
+    };
+    ReactDOM.render(
+      <Cart
+        order={order}
+        selected={0}
+        lowStockBarcodes={['milk']}
+        onSelect={index => calls.push(['select', index])}
+        onQuantityChange={payload => calls.push(['qty', payload])}
+        onChanged={() => calls.push('changed')}
+        onDelete={(barcode, index) => calls.push(['delete', barcode, index])}
+        onEditWeighted={line => calls.push(['weight', line.barcode])}
+        onCharge={() => calls.push('charge')}
+      />,
+      host
+    );
+    expect(host.textContent).to.contain('Stock bajo');
+    expect(host.textContent).to.contain('Ham');
+    expect(host.textContent).to.contain('Bolsa');
+    const charge = buttonNamed(host, 'Cobrar');
+    expect(charge.disabled).to.equal(false);
+    charge.click();
+    host.querySelector('.sell-line').click();
+    buttonNamed(host, 'Más').click();
+    buttonNamed(host, 'Menos').click();
+    buttonNamed(host, 'Quitar').click();
+    const ham = host.querySelectorAll('.sell-line')[1];
+    ham.querySelector('input').focus();
+    const names = calls.map(call => Array.isArray(call) ? call[0] : call);
+    expect(names).to.include.members(['charge', 'select', 'qty', 'changed', 'delete', 'weight']);
+  });
 });
+
+/**
+ * @param {HTMLElement} node
+ * @param {string} name
+ * @returns {HTMLButtonElement}
+ */
+function buttonNamed(node, name) {
+  return Array.prototype.find.call(
+    node.querySelectorAll('button'),
+    button => button.textContent.indexOf(name) !== -1 || button.getAttribute('aria-label') === name
+  );
+}
