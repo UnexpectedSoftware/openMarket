@@ -28,7 +28,6 @@ class OpenMarket {
     this.deps.set('categories_delete_use_case', container.getInstance({key:'deleteCategory'}));
     this.deps.set('products_list_all_use_case', container.getInstance({key:'listAllProductsUseCase'}));
     this.deps.set('products_find_use_case', container.getInstance({key:'findProductsUseCase'}));
-    this.deps.set('products_list_for_sale_query', container.getInstance({key:'productsQuery'}));
     this.deps.set('products_create_or_update_use_case', container.getInstance({key:'createProduct'}));
     this.deps.set('products_add_stock_use_case', container.getInstance({key:'addStockProduct'}));
     this.deps.set('products_disable_use_case', container.getInstance({key:'disableProduct'}));

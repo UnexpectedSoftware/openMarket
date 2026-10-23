@@ -10,10 +10,14 @@ import Money from "../../../domain/money/Money";
 import {record, userText} from "../../../infrastructure/logging/ErrorLog";
 import {formatMoney} from "../../i18n/money";
 import {toast} from "../../components/toast";
+import "rxjs/add/operator/filter";
+import "rxjs/add/operator/map";
 import "rxjs/add/operator/switchMap";
+import "rxjs/add/operator/catch";
 import "rxjs/add/operator/defaultIfEmpty";
 import "rxjs/add/observable/of";
 import "rxjs/add/observable/from";
+import ProductsQuery from "../../../domain/product/ProductsQuery";
 
 export const makeNewOrderProductFetchEpic = findProductUseCase => enableProductUseCase => resetForm => action$ =>
   action$
@@ -122,11 +126,50 @@ export const makeProductNotFoundEpic = action$ =>
       {uid: `product-not-found-${Date.now()}`}
     ))
 
-export const makeSaleTilesEpic = productsQuery => action$ =>
-  action$.ofType(newOrderActions.SALE_TILES_REQUESTED)
-    .switchMap(action => productsQuery.listForSale(action.payload || {})
-      .map(tiles => newOrderActions.saleTilesLoaded(tiles))
+export const makeSaleTilesEpic = listProducts => action$ =>
+  action$.filter(action => action.type === newOrderActions.SALE_TILES_REQUESTED)
+    .switchMap(action => listProducts.list(saleQuery(action.payload))
+      .map(page => newOrderActions.saleTilesLoaded(tilesOf(page)))
       .catch(() => Rx.Observable.of(newOrderActions.saleTilesFailed())))
+
+/**
+ * @param {{text?: string, categoryId?: string, limit?: number} | null | undefined} payload
+ * @returns {ProductsQuery}
+ */
+function saleQuery(payload) {
+  const request = payload || {};
+  return new ProductsQuery({
+    text: request.text,
+    categoryId: request.categoryId,
+    limit: request.limit,
+    forSale: true
+  });
+}
+
+/**
+ * @param {{items?: object[]}} page
+ * @returns {object[]}
+ */
+function tilesOf(page) {
+  return page.items.map(tileOf);
+}
+
+/**
+ * Fields the sell grid reads off a ProductView.
+ * @param {object} view
+ * @returns {{barcode: string, name: string, priceCents: number, vat: object | null, weighted: boolean, lowStock: boolean, imageUrl: string | null}}
+ */
+function tileOf(view) {
+  return {
+    barcode: view.barcode,
+    name: view.name,
+    priceCents: view.priceCents,
+    vat: view.vat,
+    weighted: view.weighted,
+    lowStock: view.lowStock,
+    imageUrl: view.imageUrl
+  };
+}
 
 /**
  * @param {{get: Function} | null | undefined} useCase

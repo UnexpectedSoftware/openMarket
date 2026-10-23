@@ -4,6 +4,8 @@
 /** @typedef {import('../../../domain/product/ProductRepository').default} ProductRepository */
 /** @typedef {import('../../../domain/product/ProductRepository').CatalogCursor} CatalogCursor */
 /** @typedef {import('../../../domain/product/ProductRepository').CatalogQuery} CatalogQuery */
+/** @typedef {import('../../../domain/product/ProductsQuery').default} ProductsQuery */
+/** @typedef {import('../../../domain/product/ProductView').default} ProductView */
 
 /**
  * @class ListAllProducts
@@ -79,6 +81,15 @@ export default class ListAllProducts {
       after,
       limit
     });
+  }
+
+  /**
+   * Forwards ProductRepository.find. The rows are ProductView read models.
+   * @param {ProductsQuery} query
+   * @returns {Observable<{items: ProductView[], total: number}>}
+   */
+  list(query) {
+    return this._productRepository.find(query);
   }
 
   /**

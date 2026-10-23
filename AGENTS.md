@@ -19,9 +19,9 @@ The dependency rule: dependencies point inwards. Outer layers (UI, infrastructur
 ## Reads and writes
 
 - **Write side:** repositories load and save aggregates. Aggregate invariants exist for writes. Use cases load the aggregate, call its methods, and save it.
-- **Read side:** the same repository's find methods return a **read model** of that aggregate: an immutable object with the stored data and its types (for example `domain/order/OrderView.js`, one list row). It does not run the write aggregate's invariant checks, because a row already in the database was valid when it was saved. The criteria are a frozen value (`domain/order/OrdersQuery.js`), passed in: `orderRepository.find(new OrdersQuery({from, to, limit, offset}))`. That class is not a port. There is no separate query port and no projection. A use case passes the find through to the screen. A later detail screen reads an `OrderDetail`, not an `OrderView`.
+- **Read side:** the same repository's find methods return a **read model** of that aggregate: an immutable object with the stored data and its types (for example `domain/order/OrderView.js` or `domain/product/ProductView.js`, one list row). It does not run the write aggregate's invariant checks, because a row already in the database was valid when it was saved. The criteria are a frozen value (`domain/order/OrdersQuery.js`, `domain/product/ProductsQuery.js`), passed in: `orderRepository.find(new OrdersQuery({from, to, limit, offset}))`, `productRepository.find(new ProductsQuery({text, categoryId, status, weighted, lowStock, sort, limit, offset, forSale}))`. That class is not a port. There is no separate query port and no projection. A use case passes the find through to the screen. A later detail screen reads an `OrderDetail`, not an `OrderView`.
 - A different read model, such as sale statistics, keeps its own port (`ProductSaleStatisticsRepository`).
-- `ProductsQuery` is the earlier separate-query **port** for the sell grid. Leave it until that screen is revisited. Don't add another query port. A new `*Query` name is a criteria value, like `OrdersQuery`.
+- Don't add a query port. A new `*Query` name is a criteria value, like `OrdersQuery` and `ProductsQuery`.
 
 ```js
 // domain/order/OrdersQuery.js — frozen criteria. Not a port, no range checks.
@@ -30,6 +30,11 @@ The dependency rule: dependencies point inwards. Outer layers (UI, infrastructur
 //   → Observable<{items: OrderView[], total: number}>
 // OrderRepository#summary({from, to}) → Observable<OrderRangeSummary>
 // ListAllOrders forwards both. The orders epic builds the OrdersQuery.
+// domain/product/ProductsQuery.js — frozen criteria. Not a port.
+// domain/product/ProductView.js — one list row. Frozen fields, no sale checks. Not a Product.
+// ProductRepository#find(new ProductsQuery({...}))
+//   → Observable<{items: ProductView[], total: number}>
+// ListAllProducts.list forwards find. The sell epic builds the ProductsQuery.
 ```
 
 The UI uses application use cases for writes and for reads, and may use domain value objects.

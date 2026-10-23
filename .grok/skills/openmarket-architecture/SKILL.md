@@ -398,8 +398,8 @@ Decide which case you're in:
 
 | Need | Where |
 |---|---|
-| **Data for a screen** | `repository.find(new OrdersQuery({from, to, limit, offset}))`. `OrdersQuery` is a frozen criteria value, not a port. The find returns a read model (`OrderView` for a list row, `OrderDetail` for a detail): frozen fields, no write invariants, not the write aggregate. `summary` returns `OrderRangeSummary`. The SQLite repository maps the rows. A use case forwards the find (`ListAllOrders`). Do not add a query port. |
-| Existing screens not yet redesigned (list, filter, page) | a finder already on the aggregate's repository (`findCatalog`, `findAllByDates`). `ProductsQuery` is the old separate-query shape for the sell grid; leave it until that screen is revisited |
+| **Data for a screen** | `repository.find(new OrdersQuery({from, to, limit, offset}))` or `repository.find(new ProductsQuery({...}))`. `OrdersQuery` and `ProductsQuery` are frozen criteria values, not ports. The find returns a read model (`OrderView` / `ProductView` for a list row, `OrderDetail` for a detail): frozen fields, no write invariants, not the write aggregate. `summary` returns `OrderRangeSummary`. The SQLite repository maps the rows. A use case forwards the find (`ListAllOrders`, `ListAllProducts.list`). Do not add a query port. |
+| Existing screens not yet redesigned (list, filter, page) | a finder already on the aggregate's repository (`findCatalog`, `findAllByDates`) |
 | Long SQL clause building or row folding for that finder | `infrastructure/<ctx>/Sqlite<Name>QueryService.js`, injected **only** into `Sqlite<Name>Repository` (constructor `queryService`). Not a port, never imported outside infrastructure |
 | A different read model (sums per day, most sold) | its **own** port `domain/<ctx>/<Thing>Repository.js` + `Sqlite<Thing>Repository` (precedent: `ProductSaleStatisticsRepository`, kept current by the `RecordProductSales` handler), plus a use case that reads it |
 

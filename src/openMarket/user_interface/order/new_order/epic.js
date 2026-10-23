@@ -24,7 +24,7 @@ const orderCreateUseCase = OpenMarket.get("orders_create_use_case");
 const domainEventBus = OpenMarket.get("domain_event_bus");
 const buildReceipt = OpenMarket.get('receipts_build_use_case');
 const printReceipt = OpenMarket.get('receipts_print_use_case');
-const productsQuery = OpenMarket.get('products_list_for_sale_query');
+const listProducts = OpenMarket.get('products_list_all_use_case');
 const getSellPreferences = OpenMarket.get('sell_get_preferences_use_case');
 
 const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(enableProductUseCase)(reset);
@@ -45,7 +45,7 @@ export default (action$, store) =>
     makeReprintPreviewEpic(buildReceipt)(action$),
     weightedDialogEpic(action$),
     makeProductNotFoundEpic(action$),
-    makeSaleTilesEpic(productsQuery)(action$),
+    makeSaleTilesEpic(listProducts)(action$),
     lowStockWarningEpic(),
     productEnabledAgainEpic()
   ).do(() => null, (error) => record(error));

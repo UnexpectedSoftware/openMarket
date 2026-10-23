@@ -1,6 +1,8 @@
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 /** @typedef {import('./Product').default} Product */
 /** @typedef {import('./ProductFilter').default} ProductFilter */
+/** @typedef {import('./ProductView').default} ProductView */
+/** @typedef {import('./ProductsQuery').default} ProductsQuery */
 
 /**
  * @typedef {object} CatalogQuery
@@ -80,6 +82,16 @@ export default class ProductRepository {
    */
   findByBarcode({ barcode }) {
     throw new Error('ProductRepository#findByBarcode must be implemented');
+  }
+
+  /**
+   * A page of list rows. `total` counts the whole filter, not the page.
+   * The rows are ProductView read models, not Product aggregates.
+   * @param {ProductsQuery} query
+   * @returns {Observable<{items: ProductView[], total: number}>}
+   */
+  find(query) {
+    throw new Error('ProductRepository#find must be implemented');
   }
 
   /**
