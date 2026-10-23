@@ -7,7 +7,7 @@ import ProductPage from './product/new_product/ReduxConnector';
 import ProductListing from './product/list_products/ReduxConnector';
 import CategoriesPage from './category/ReduxConnector';
 import OrderPage from './order/new_order/ReduxConnector';
-import OrderListing from './order/list_orders/ReduxConnector';
+import OrderListing, {OrderDetailRouteConnected} from './order/list_orders/ReduxConnector';
 import PluginsPage from './plugin/ReduxConnector';
 import SettingsPage from './settings/ReduxConnector';
 import GalleryPage from './gallery/GalleryPage';
@@ -27,7 +27,9 @@ function childRoutes() {
     <Redirect key="low-stock" from="/list_products_low_stock" to="/list_products?lowStock=1" />,
     <Route key="categories" path="/categories" component={CategoriesPage} />,
     <Route key="create-order" path="/create_order" component={OrderPage} />,
-    <Route key="list-orders" path="/list_orders" component={OrderListing} />,
+    <Route key="list-orders" path="/list_orders" component={OrderListing}>
+      <Route key="order-detail" path=":id" component={OrderDetailRouteConnected} />
+    </Route>,
     <Route key="plugins" path="/plugins" component={PluginsPage} />,
     <Route key="settings" path="/settings" component={SettingsPage} />
   ];

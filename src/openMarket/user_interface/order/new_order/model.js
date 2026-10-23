@@ -7,14 +7,13 @@ import {validateLine} from '../../../domain/order/lineValidity';
 /**
  * Cart draft. Lines hold the same value objects Order uses.
  * The total is cents. Formatting happens at render.
- * @returns {{order: {lines: object[], total: Money}, readonly: boolean, lowStockBarcodes: string[], lastOrder: object | null, tiles: object[], tilesStatus: string}}
+ * @returns {{order: {lines: object[], total: Money}, lowStockBarcodes: string[], lastOrder: object | null, tiles: object[], tilesStatus: string}}
  */
 export const state = () => ({
   order: {
     lines: [],
     total: Money.ofCents(0)
   },
-  readonly: false,
   lowStockBarcodes: [],
   lastOrder: null,
   tiles: [],
@@ -112,7 +111,7 @@ export const addProduct = ({lines, product, quantity, lowStockBarcodes, replace}
       || (lowStockBarcodes || []).indexOf(barcode) !== -1
       || !!(existing && existing.lowStock)
   });
-  return pack(kept, false);
+  return pack(kept);
 };
 
 /**
@@ -131,7 +130,7 @@ export const addFreeLine = ({lines, description, amount, vatRate}) => {
     weighted: false,
     lowStock: false
   });
-  return pack(source, false);
+  return pack(source);
 };
 
 /**
@@ -151,7 +150,7 @@ export const updateQuantity = ({lines, barcode, quantity}) => {
     }
     return {...line, quantity: parsed};
   });
-  return pack(next, false);
+  return pack(next);
 };
 
 /**
@@ -162,24 +161,7 @@ export const removeProduct = ({lines, barcode, index}) => {
   const next = typeof index === 'number'
     ? source.filter((line, position) => position !== index)
     : source.filter(line => line.kind === 'FREE' || line.barcode !== barcode);
-  return pack(next, false);
-};
-
-/**
- * @param {{order: {id?: string, createdAt?: string, lines: object[]}}} command
- */
-export const loadOrder = ({order}) => {
-  const lines = ((order && order.lines) || []).map(line => asLine({
-    kind: line.kind,
-    barcode: line.barcode,
-    name: line.name,
-    unitPrice: line.price != null ? line.price : line.unitPrice,
-    quantity: line.quantity,
-    vatRate: line.vatRate || line.vat,
-    weighted: line.weighted,
-    lowStock: line.lowStock
-  }));
-  return pack(lines, true, {createdAt: order && order.createdAt, id: order && order.id});
+  return pack(next);
 };
 
 /**
@@ -206,23 +188,13 @@ export function asLine(line) {
 
 /**
  * @param {object[]} lines
- * @param {boolean} readonly
- * @param {{createdAt?: string, id?: string}} [extra]
  */
-function pack(lines, readonly, extra) {
-  const order = {
-    lines,
-    total: cartTotal(lines)
-  };
-  if (extra && extra.createdAt) {
-    order.createdAt = extra.createdAt;
-  }
-  if (extra && extra.id) {
-    order.id = extra.id;
-  }
+function pack(lines) {
   return {
-    order,
-    readonly: !!readonly
+    order: {
+      lines,
+      total: cartTotal(lines)
+    }
   };
 }
 

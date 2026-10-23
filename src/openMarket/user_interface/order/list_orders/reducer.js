@@ -1,5 +1,13 @@
 import {
-  LIST_ORDER_DETAIL,
+  ORDER_DETAIL_FAILED,
+  ORDER_DETAIL_LOADED,
+  ORDER_DETAIL_REQUESTED,
+  ORDER_REPRINT_CLOSED,
+  ORDER_REPRINT_CONFIRMED,
+  ORDER_REPRINT_FAILED,
+  ORDER_REPRINT_FINISHED,
+  ORDER_REPRINT_PREVIEW_LOADED,
+  ORDER_REPRINT_REQUESTED,
   ORDERS_CUSTOM_CLOSED,
   ORDERS_CUSTOM_DRAFT_CHANGED,
   ORDERS_CUSTOM_OPENED,
@@ -16,9 +24,18 @@ import {
   customDraft,
   customOpened,
   customRejected,
+  detailFailed,
+  detailLoaded,
+  detailRequested,
   moveSelection,
   ordersFailed,
   ordersLoaded,
+  reprintClosed,
+  reprintConfirmed,
+  reprintFailed,
+  reprintFinished,
+  reprintPreviewLoaded,
+  reprintRequested,
   rowSelected,
   selectRange,
   state,
@@ -39,6 +56,24 @@ export default function reducer(current = state(), action) {
       return moveSelection(current, action.delta);
     case ORDERS_ROW_SELECTED:
       return rowSelected(current, action.orderId);
+    case ORDER_DETAIL_REQUESTED:
+      return detailRequested(current, action);
+    case ORDER_DETAIL_LOADED:
+      return detailLoaded(current, action);
+    case ORDER_DETAIL_FAILED:
+      return detailFailed(current, action);
+    case ORDER_REPRINT_REQUESTED:
+      return reprintRequested(current, action);
+    case ORDER_REPRINT_PREVIEW_LOADED:
+      return reprintPreviewLoaded(current, action);
+    case ORDER_REPRINT_CLOSED:
+      return reprintClosed(current);
+    case ORDER_REPRINT_CONFIRMED:
+      return reprintConfirmed(current);
+    case ORDER_REPRINT_FINISHED:
+      return reprintFinished(current, action);
+    case ORDER_REPRINT_FAILED:
+      return reprintFailed(current, action);
     case ORDERS_CUSTOM_OPENED:
       return customOpened(current);
     case ORDERS_CUSTOM_CLOSED:
@@ -47,8 +82,6 @@ export default function reducer(current = state(), action) {
       return customDraft(current, action);
     case ORDERS_CUSTOM_REJECTED:
       return customRejected(current, action);
-    case LIST_ORDER_DETAIL:
-      return current;
     default:
       return current;
   }

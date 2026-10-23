@@ -19,6 +19,15 @@ export function state() {
     loadingMore: false,
     error: '',
     selectedOrderId: null,
+    detailId: null,
+    detail: null,
+    detailStatus: 'idle',
+    detailError: '',
+    reprintOpen: false,
+    reprintOrderId: null,
+    reprintHtml: '',
+    reprintBusy: false,
+    reprintError: '',
     customOpen: false,
     customFrom: today.from.slice(0, 10),
     customTo: today.to.slice(0, 10),
@@ -182,4 +191,118 @@ export function customRejected(current, action) {
  */
 export function rowSelected(current, orderId) {
   return {...current, selectedOrderId: orderId};
+}
+
+/**
+ * @param {object} current
+ * @param {{id: string}} action
+ */
+export function detailRequested(current, action) {
+  return {
+    ...current,
+    detailId: action.id,
+    detail: null,
+    detailStatus: 'loading',
+    detailError: '',
+    selectedOrderId: action.id
+  };
+}
+
+/**
+ * @param {object} current
+ * @param {{id: string, detail: object | null}} action
+ */
+export function detailLoaded(current, action) {
+  if (action.id !== current.detailId) {
+    return current;
+  }
+  if (!action.detail) {
+    return {...current, detail: null, detailStatus: 'missing', detailError: ''};
+  }
+  return {...current, detail: action.detail, detailStatus: 'ready', detailError: ''};
+}
+
+/**
+ * @param {object} current
+ * @param {{id: string, message?: string}} action
+ */
+export function detailFailed(current, action) {
+  if (action.id !== current.detailId) {
+    return current;
+  }
+  return {
+    ...current,
+    detail: null,
+    detailStatus: 'error',
+    detailError: action.message || 'No se ha podido abrir el pedido'
+  };
+}
+
+/**
+ * @param {object} current
+ * @param {{orderId: string}} action
+ */
+export function reprintRequested(current, action) {
+  return {
+    ...current,
+    reprintOpen: true,
+    reprintOrderId: action.orderId,
+    reprintHtml: '',
+    reprintBusy: false,
+    reprintError: ''
+  };
+}
+
+/**
+ * @param {object} current
+ * @param {{orderId: string, html?: string}} action
+ */
+export function reprintPreviewLoaded(current, action) {
+  if (action.orderId !== current.reprintOrderId) {
+    return current;
+  }
+  return {...current, reprintHtml: action.html || '', reprintError: ''};
+}
+
+/** @param {object} current */
+export function reprintClosed(current) {
+  return {
+    ...current,
+    reprintOpen: false,
+    reprintOrderId: null,
+    reprintHtml: '',
+    reprintBusy: false,
+    reprintError: ''
+  };
+}
+
+/** @param {object} current */
+export function reprintConfirmed(current) {
+  return {...current, reprintBusy: true, reprintError: ''};
+}
+
+/**
+ * @param {object} current
+ * @param {{orderId: string}} action
+ */
+export function reprintFinished(current, action) {
+  if (action.orderId !== current.reprintOrderId) {
+    return current;
+  }
+  return reprintClosed(current);
+}
+
+/**
+ * @param {object} current
+ * @param {{orderId: string, message?: string}} action
+ */
+export function reprintFailed(current, action) {
+  if (action.orderId !== current.reprintOrderId) {
+    return current;
+  }
+  return {
+    ...current,
+    reprintBusy: false,
+    reprintError: action.message || 'No se ha podido imprimir el ticket'
+  };
 }

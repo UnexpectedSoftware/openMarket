@@ -14,6 +14,12 @@ import 'rxjs/add/operator/switchMap';
 import {rootReducer} from '../../../../../openMarket/user_interface/reducers';
 import {makeSaleTilesEpic} from '../../../../../openMarket/user_interface/order/new_order/epicFactory';
 import OrderPage from '../../../../../openMarket/user_interface/order/new_order/ReduxConnector';
+import {
+  NEW_ORDER_PRODUCT_FETCHED,
+  NEW_ORDER_SAVED,
+  REPRINT_PREVIEW_LOADED
+} from '../../../../../openMarket/user_interface/order/new_order/action';
+import {SHOP_PROFILE_LOADED} from '../../../../../openMarket/user_interface/settings/action';
 
 const TILE = {
   barcode: '8400000000110',
@@ -25,9 +31,10 @@ const TILE = {
   imageUrl: null
 };
 
+let history;
+
 describe('sell screen first open', () => {
   let host;
-  let history;
 
   beforeEach(() => {
     installDom();
@@ -89,7 +96,74 @@ describe('sell screen first open', () => {
     expect(tileNames(host)).to.include('Arroz');
     expect(host.textContent).to.not.contain('No hay productos');
   });
+
+  it('keeps the product grid when a sale is cleared and answers the sell keys', () => {
+    const store = mountSell(host);
+    store.dispatch({
+      type: SHOP_PROFILE_LOADED,
+      profile: {
+        issuer: {tradeName: 'Ultramarinos', legalName: 'Ultramarinos SL', nif: 'B12345678'}
+      }
+    });
+    expect(host.textContent).to.contain('NIF B12345678');
+    store.dispatch({
+      type: SHOP_PROFILE_LOADED,
+      profile: {issuer: {legalName: 'Solo legal'}}
+    });
+    expect(host.textContent).to.contain('Vender');
+    store.dispatch({
+      type: NEW_ORDER_PRODUCT_FETCHED,
+      payload: {product: {barcode: '0001', name: 'Ninja', price: 1}, quantity: 1}
+    });
+    expect(host.textContent).to.contain('Ninja');
+    ['F9', '+', '-', 'Delete', 'ArrowUp', 'ArrowDown', 'Escape', '?', 'a', 'F8'].forEach(press);
+    press('Escape');
+    press('F12');
+    press('Escape');
+    store.dispatch({type: NEW_ORDER_SAVED, payload: {id: 'sale-1'}});
+    press('F9');
+    store.dispatch({type: REPRINT_PREVIEW_LOADED, payload: '<p>ticket</p>'});
+    expect(host.querySelector('.om-receipt-preview')).to.not.equal(null);
+    expect(host.textContent).to.contain('El ticket está vacío');
+    expect(tileNames(host)).to.include('Arroz');
+  });
 });
+
+/**
+ * @param {string} key
+ */
+function press(key) {
+  document.dispatchEvent(new window.KeyboardEvent('keydown', {key, bubbles: true}));
+}
+
+/**
+ * @param {HTMLElement} host
+ * @returns {{dispatch: Function, getState: Function}}
+ */
+function mountSell(host) {
+  const productsQuery = {listForSale: () => Rx.Observable.of([TILE])};
+  const memoryHistory = createMemoryHistory();
+  const store = createStore(
+    rootReducer,
+    applyMiddleware(
+      routerMiddleware(memoryHistory),
+      createEpicMiddleware(makeSaleTilesEpic(productsQuery))
+    )
+  );
+  history = syncHistoryWithStore(memoryHistory, store);
+  ReactDOM.render(
+    <Provider store={store}>
+      <Router history={history}>
+        <Route path="/">
+          <Route path="create_order" component={OrderPage} />
+        </Route>
+      </Router>
+    </Provider>,
+    host
+  );
+  history.push('/create_order');
+  return store;
+}
 
 /**
  * @param {HTMLElement} node

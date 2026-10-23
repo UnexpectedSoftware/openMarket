@@ -43,4 +43,21 @@ describe('ListAllOrders range', () => {
         () => done()
       );
   });
+
+  it('forwards a detail find without a query port', done => {
+    const detail = {orderId: 'a', invoiceNumber: '2026/000001'};
+    const repository = {
+      find: query => {
+        expect(query).to.deep.equal({id: 'a'});
+        return Rx.Observable.of(detail);
+      }
+    };
+    new ListAllOrders({repository}).find({id: 'a'}).subscribe(
+      found => {
+        expect(found).to.equal(detail);
+        done();
+      },
+      error => done(error)
+    );
+  });
 });

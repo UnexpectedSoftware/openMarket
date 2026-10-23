@@ -8,8 +8,15 @@ export const ORDERS_CUSTOM_OPENED = 'ORDERS_CUSTOM_OPENED';
 export const ORDERS_CUSTOM_CLOSED = 'ORDERS_CUSTOM_CLOSED';
 export const ORDERS_CUSTOM_DRAFT_CHANGED = 'ORDERS_CUSTOM_DRAFT_CHANGED';
 export const ORDERS_CUSTOM_REJECTED = 'ORDERS_CUSTOM_REJECTED';
-export const LIST_ORDER_DETAIL = 'LIST_ORDER_DETAIL';
-export const LIST_ORDER_DETAIL_LOADED = 'LIST_ORDER_DETAIL_LOADED';
+export const ORDER_DETAIL_REQUESTED = 'ORDER_DETAIL_REQUESTED';
+export const ORDER_DETAIL_LOADED = 'ORDER_DETAIL_LOADED';
+export const ORDER_DETAIL_FAILED = 'ORDER_DETAIL_FAILED';
+export const ORDER_REPRINT_REQUESTED = 'ORDER_REPRINT_REQUESTED';
+export const ORDER_REPRINT_PREVIEW_LOADED = 'ORDER_REPRINT_PREVIEW_LOADED';
+export const ORDER_REPRINT_CLOSED = 'ORDER_REPRINT_CLOSED';
+export const ORDER_REPRINT_CONFIRMED = 'ORDER_REPRINT_CONFIRMED';
+export const ORDER_REPRINT_FINISHED = 'ORDER_REPRINT_FINISHED';
+export const ORDER_REPRINT_FAILED = 'ORDER_REPRINT_FAILED';
 
 /** @param {{key: string, from: string, to: string, offset: number, limit: number, append: boolean}} payload */
 export const ordersRangeSelected = payload => ({type: ORDERS_RANGE_SELECTED, ...payload});
@@ -39,6 +46,28 @@ export const ordersCustomDraftChanged = payload => ({type: ORDERS_CUSTOM_DRAFT_C
 /** @param {string} message */
 export const ordersCustomRejected = message => ({type: ORDERS_CUSTOM_REJECTED, message});
 
-export const listOrderDetail = payload => ({type: LIST_ORDER_DETAIL, payload});
+/** @param {string} id */
+export const orderDetailRequested = id => ({type: ORDER_DETAIL_REQUESTED, id});
 
-export const listOrderDetailLoaded = payload => ({type: LIST_ORDER_DETAIL_LOADED, payload});
+/** @param {{id: string, detail: object | null}} payload */
+export const orderDetailLoaded = payload => ({type: ORDER_DETAIL_LOADED, ...payload});
+
+/** @param {{id: string, message: string}} payload */
+export const orderDetailFailed = payload => ({type: ORDER_DETAIL_FAILED, ...payload});
+
+/** @param {string} orderId */
+export const orderReprintRequested = orderId => ({type: ORDER_REPRINT_REQUESTED, orderId});
+
+/** @param {{orderId: string, html: string}} payload */
+export const orderReprintPreviewLoaded = payload => ({type: ORDER_REPRINT_PREVIEW_LOADED, ...payload});
+
+export const orderReprintClosed = () => ({type: ORDER_REPRINT_CLOSED});
+
+/** @param {string} orderId */
+export const orderReprintConfirmed = orderId => ({type: ORDER_REPRINT_CONFIRMED, orderId});
+
+/** @param {{orderId: string}} payload */
+export const orderReprintFinished = payload => ({type: ORDER_REPRINT_FINISHED, ...payload});
+
+/** @param {{orderId: string, message: string}} payload */
+export const orderReprintFailed = payload => ({type: ORDER_REPRINT_FAILED, ...payload});

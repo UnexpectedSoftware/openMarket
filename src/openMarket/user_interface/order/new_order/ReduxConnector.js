@@ -8,7 +8,6 @@ import {showWeightedDialog} from '../weighted_dialog/action';
 function mapStateToProps(state) {
   return {
     order: state.newOrder.order,
-    readonly: state.newOrder.readonly,
     issuer: state.settings.issuer,
     tiles: state.newOrder.tiles,
     tilesStatus: state.newOrder.tilesStatus,

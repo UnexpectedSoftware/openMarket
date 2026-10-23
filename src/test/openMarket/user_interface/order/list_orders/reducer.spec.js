@@ -3,7 +3,15 @@ import listOrdersReducer from '../../../../../openMarket/user_interface/order/li
 import {PAGE_SIZE} from '../../../../../openMarket/user_interface/order/list_orders/model';
 import {rangeFor} from '../../../../../openMarket/user_interface/order/list_orders/ranges';
 import {
-  LIST_ORDER_DETAIL,
+  ORDER_DETAIL_FAILED,
+  ORDER_DETAIL_LOADED,
+  ORDER_DETAIL_REQUESTED,
+  ORDER_REPRINT_CLOSED,
+  ORDER_REPRINT_CONFIRMED,
+  ORDER_REPRINT_FAILED,
+  ORDER_REPRINT_FINISHED,
+  ORDER_REPRINT_PREVIEW_LOADED,
+  ORDER_REPRINT_REQUESTED,
   ORDERS_CUSTOM_CLOSED,
   ORDERS_CUSTOM_DRAFT_CHANGED,
   ORDERS_CUSTOM_OPENED,
@@ -178,7 +186,75 @@ describe('listOrders reducer', () => {
     expect(closed.customError).to.equal('');
     const selected = listOrdersReducer(closed, {type: ORDERS_ROW_SELECTED, orderId: 'a'});
     expect(selected.selectedOrderId).to.equal('a');
-    expect(listOrdersReducer(selected, {type: LIST_ORDER_DETAIL, payload: 'a'})).to.equal(selected);
+  });
+
+  it('loads a detail, ignores a stale id, and marks an unknown order missing', () => {
+    const loading = listOrdersReducer(undefined, {type: ORDER_DETAIL_REQUESTED, id: 'a'});
+    expect(loading.detailStatus).to.equal('loading');
+    expect(loading.detail).to.equal(null);
+    expect(loading.selectedOrderId).to.equal('a');
+    expect(loading.detailId).to.equal('a');
+
+    const stale = listOrdersReducer(loading, {
+      type: ORDER_DETAIL_LOADED,
+      id: 'b',
+      detail: {orderId: 'b'}
+    });
+    expect(stale).to.equal(loading);
+
+    const ready = listOrdersReducer(loading, {
+      type: ORDER_DETAIL_LOADED,
+      id: 'a',
+      detail: {orderId: 'a', totalCents: 200}
+    });
+    expect(ready.detailStatus).to.equal('ready');
+    expect(ready.detail.totalCents).to.equal(200);
+
+    const missing = listOrdersReducer(loading, {type: ORDER_DETAIL_LOADED, id: 'a', detail: null});
+    expect(missing.detailStatus).to.equal('missing');
+    expect(missing.detail).to.equal(null);
+
+    const failed = listOrdersReducer(loading, {type: ORDER_DETAIL_FAILED, id: 'a', message: 'db'});
+    expect(failed.detailStatus).to.equal('error');
+    expect(failed.detailError).to.equal('db');
+    expect(listOrdersReducer(loading, {type: ORDER_DETAIL_FAILED, id: 'a'}).detailError)
+      .to.equal('No se ha podido abrir el pedido');
+    expect(listOrdersReducer(loading, {type: ORDER_DETAIL_FAILED, id: 'z', message: 'no'})).to.equal(loading);
+  });
+
+  it('opens a reprint preview and closes it when the print finishes', () => {
+    const open = listOrdersReducer(undefined, {type: ORDER_REPRINT_REQUESTED, orderId: 'a'});
+    expect(open.reprintOpen).to.equal(true);
+    expect(open.reprintOrderId).to.equal('a');
+    expect(open.reprintHtml).to.equal('');
+
+    const preview = listOrdersReducer(open, {
+      type: ORDER_REPRINT_PREVIEW_LOADED,
+      orderId: 'a',
+      html: '<p>ticket</p>'
+    });
+    expect(preview.reprintHtml).to.equal('<p>ticket</p>');
+    expect(listOrdersReducer(open, {type: ORDER_REPRINT_PREVIEW_LOADED, orderId: 'b', html: 'x'})).to.equal(open);
+    expect(listOrdersReducer(open, {type: ORDER_REPRINT_PREVIEW_LOADED, orderId: 'a'}).reprintHtml).to.equal('');
+
+    const busy = listOrdersReducer(preview, {type: ORDER_REPRINT_CONFIRMED, orderId: 'a'});
+    expect(busy.reprintBusy).to.equal(true);
+    const done = listOrdersReducer(busy, {type: ORDER_REPRINT_FINISHED, orderId: 'a'});
+    expect(done.reprintOpen).to.equal(false);
+    expect(done.reprintOrderId).to.equal(null);
+    expect(listOrdersReducer(busy, {type: ORDER_REPRINT_FINISHED, orderId: 'b'})).to.equal(busy);
+
+    const failed = listOrdersReducer(busy, {type: ORDER_REPRINT_FAILED, orderId: 'a', message: 'paper'});
+    expect(failed.reprintOpen).to.equal(true);
+    expect(failed.reprintBusy).to.equal(false);
+    expect(failed.reprintError).to.equal('paper');
+    expect(listOrdersReducer(busy, {type: ORDER_REPRINT_FAILED, orderId: 'a'}).reprintError)
+      .to.equal('No se ha podido imprimir el ticket');
+    expect(listOrdersReducer(busy, {type: ORDER_REPRINT_FAILED, orderId: 'z', message: 'no'})).to.equal(busy);
+
+    const closed = listOrdersReducer(preview, {type: ORDER_REPRINT_CLOSED});
+    expect(closed.reprintOpen).to.equal(false);
+    expect(closed.reprintHtml).to.equal('');
   });
 
   it('fills a missing offset from zero', () => {

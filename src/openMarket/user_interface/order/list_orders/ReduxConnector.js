@@ -1,6 +1,7 @@
 import { bindActionCreators } from 'redux';
 import { connect } from 'react-redux';
 import ListOrderContainer from './Container';
+import {OrderDetailRoute} from './OrderDetail';
 import * as ListOrderActions from './action';
 
 function mapStateToProps(state) {
@@ -14,3 +15,5 @@ function mapDispatchToProps(dispatch) {
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(ListOrderContainer);
+
+export const OrderDetailRouteConnected = connect(mapStateToProps, mapDispatchToProps)(OrderDetailRoute);
