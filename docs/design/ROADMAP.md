@@ -26,7 +26,7 @@ How the redesign lands, one phase per PR series. Each phase keeps the existing e
 1. **Sale screen** ("Mostrador") — OM-12 #75, payment sheet #107 (OM-13 #76, OM-01 #64), Venta libre #108, weighted dialog + invalid line #109 (OM-21 #84, OM-23 #86), low stock badge OM-24 #87, plugin slots #105. Later presets #110. Mockups: `A-sell`, `A-payment`, `A-sell-plugin-slots`, `B-sell-scanner`, `C-sell-touch`. Before: `before/15-…`, `16-…`, `17-…`, `20-…`. Plan: [plans/phase-4-sell-screen.md](plans/phase-4-sell-screen.md) (split 4a layout/scanner/Venta libre/weighted, 4b payment/receipt preview/slot).
 2. **Orders** — master-detail #111 (OM-07 #70, OM-19 #82, OM-20 #83). Mockup: `A-orders`. Before: `before/22-…`, `24-…`. Plan: [plans/phase-5-orders.md](plans/phase-5-orders.md) (split 5a list/quick ranges/summary, 5b detail route/reprint).
 3. **Products** — redesign #98 (OM-22 #85, OM-08 #71). Mockup: `A-products`. Before: `before/10-…`, `13-…`. Plan: [plans/phase-6-products.md](plans/phase-6-products.md) (split 6a read model + sell grid, 6b table/margin/empty states, 6c edit drawer).
-4. **Categories** — card grid on tokens and shared components. Before: `before/05-categories.webp`.
+4. **Categories** — card grid on tokens and shared components. Before: `before/05-categories.webp`. Plan: [plans/phase-7-categories.md](plans/phase-7-categories.md) (split 7a read model, 7b card grid and dialog, 7c delete confirmation, 7d product links).
 5. **Settings** — OM-26 #89 (shop, printer, ticket, theme, language).
 
 ## Final — Accessibility pass
