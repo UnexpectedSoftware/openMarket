@@ -5,9 +5,7 @@ const {
   closeApp,
   euros,
   chooseMenu,
-  createCategory,
   fillProduct,
-  createProduct,
   productCard,
   openProductList,
   scanBarcode
@@ -18,9 +16,10 @@ test.beforeAll(() => {
 });
 
 test('creates a product', async () => {
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {categories: ['Dairy']}
+  });
   try {
-    await createCategory(window, 'Dairy');
     await chooseMenu(window, 'Products', 'new Product!');
     await expect(window.getByRole('heading', {name: "Let's create a new product!"})).toBeVisible();
     await window.getByRole('button', {name: 'Save'}).click();
@@ -54,18 +53,21 @@ test('creates a product', async () => {
 });
 
 test('edits a product from the catalog', async () => {
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Dairy'],
+      products: [{
+        name: 'Milk',
+        barcode: '8400000000011',
+        price: 2,
+        basePrice: 1,
+        stock: 10,
+        stockMin: 2,
+        category: 'Dairy'
+      }]
+    }
+  });
   try {
-    await createCategory(window, 'Dairy');
-    await createProduct(window, {
-      name: 'Milk',
-      barcode: '8400000000011',
-      price: 2,
-      basePrice: 1,
-      stock: 10,
-      stockMin: 2,
-      category: 'Dairy'
-    });
     await openProductList(window);
     await productCard(window, 'Milk').getByRole('button', {name: 'View'}).click();
 
@@ -99,28 +101,32 @@ test('edits a product from the catalog', async () => {
 });
 
 test('filters the catalog and disables a product', async () => {
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Dairy', 'Bakery'],
+      products: [
+        {
+          name: 'Milk',
+          barcode: '8400000000011',
+          price: 2,
+          basePrice: 1,
+          stock: 10,
+          stockMin: 2,
+          category: 'Dairy'
+        },
+        {
+          name: 'Bread',
+          barcode: '8400000000028',
+          price: 1,
+          basePrice: 1,
+          stock: 1,
+          stockMin: 3,
+          category: 'Bakery'
+        }
+      ]
+    }
+  });
   try {
-    await createCategory(window, 'Dairy');
-    await createCategory(window, 'Bakery');
-    await createProduct(window, {
-      name: 'Milk',
-      barcode: '8400000000011',
-      price: 2,
-      basePrice: 1,
-      stock: 10,
-      stockMin: 2,
-      category: 'Dairy'
-    });
-    await createProduct(window, {
-      name: 'Bread',
-      barcode: '8400000000028',
-      price: 1,
-      basePrice: 1,
-      stock: 1,
-      stockMin: 3,
-      category: 'Bakery'
-    });
     await openProductList(window);
     await expect(window.getByRole('button', {name: 'Print product list'})).toBeVisible();
     await expect(window.locator('.product-card')).toHaveCount(2);

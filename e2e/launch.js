@@ -3,6 +3,7 @@ const {createRequire} = require('module');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const {seedShop, seedTheme} = require('./seed');
 
 const electronPath = createRequire(__filename)('electron');
 const root = path.join(__dirname, '..');
@@ -20,13 +21,18 @@ function assertDist() {
   fs.mkdirSync(path.join(root, 'test-results'), {recursive: true});
 }
 
-async function launchApp({userData: existing, env} = {}) {
-  const userData = existing || fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
-  if (!existing) {
-    fs.writeFileSync(path.join(userData, 'pixel.png'), PNG);
-    fs.writeFileSync(path.join(userData, 'note.txt'), 'hello');
+function prepareUserData(existing) {
+  if (existing) {
+    return {userData: existing, created: false};
   }
-  const app = await electron.launch({
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
+  fs.writeFileSync(path.join(userData, 'pixel.png'), PNG);
+  fs.writeFileSync(path.join(userData, 'note.txt'), 'hello');
+  return {userData, created: true};
+}
+
+function launchElectron(userData, env) {
+  return electron.launch({
     env: Object.assign({}, process.env, env || {}),
     executablePath: electronPath,
     args: [
@@ -36,8 +42,31 @@ async function launchApp({userData: existing, env} = {}) {
       path.join(root, 'dist/main.js')
     ]
   });
-  const window = await app.firstWindow();
-  return {app, window, userData};
+}
+
+async function discardFailedLaunch(app, prepared) {
+  if (app) {
+    await app.close();
+  }
+  if (prepared.created) {
+    fs.rmSync(prepared.userData, {recursive: true, force: true});
+  }
+}
+
+async function launchApp({userData: existing, env, shop} = {}) {
+  const prepared = prepareUserData(existing);
+  let app;
+  try {
+    if (shop) {
+      await seedShop(prepared.userData, shop);
+    }
+    app = await launchElectron(prepared.userData, env);
+    const window = await app.firstWindow();
+    return {app, window, userData: prepared.userData};
+  } catch (error) {
+    await discardFailedLaunch(app, prepared);
+    throw error;
+  }
 }
 
 async function closeApp(app, userData, {keep = false} = {}) {
@@ -67,15 +96,6 @@ async function chooseMenu(window, _menu, linkName) {
   await window.getByRole('link', {name: label, exact: true}).click();
 }
 
-async function createCategory(window, name) {
-  await window.getByRole('link', {name: 'Categorías', exact: true}).click();
-  const draft = window.locator('.category-card.is-draft');
-  await expect(draft).toBeVisible();
-  await draft.getByRole('textbox', {name: 'Category name'}).fill(name);
-  await draft.getByRole('button', {name: 'Save'}).click();
-  await expect(window.getByText('Category saved!').first()).toBeVisible();
-}
-
 async function fillProduct(window, product) {
   await window.locator('input[name="name"]').fill(product.name);
   await window.locator('input[name="barcode"]').fill(product.barcode);
@@ -92,16 +112,6 @@ async function fillProduct(window, product) {
   const category = window.locator('select[name="categoryId"]');
   await expect(category.locator('option', {hasText: product.category})).toHaveCount(1);
   await category.selectOption({label: product.category});
-}
-
-async function createProduct(window, product) {
-  await chooseMenu(window, 'Products', 'new Product!');
-  await expect(window.getByRole('heading', {name: "Let's create a new product!"})).toBeVisible();
-  await fillProduct(window, product);
-  await window.getByRole('button', {name: 'Save'}).click();
-  await expect(window.getByText('Product saved!').first()).toBeVisible();
-  await expect(window.getByText('Product saved in database').first()).toBeVisible();
-  await expect(window.locator('input[name="name"]')).toHaveValue('');
 }
 
 function productCard(window, name) {
@@ -165,11 +175,11 @@ module.exports = {
   assertDist,
   launchApp,
   closeApp,
+  seedShop,
+  seedTheme,
   euros,
   chooseMenu,
-  createCategory,
   fillProduct,
-  createProduct,
   productCard,
   openProductList,
   orderRow,
