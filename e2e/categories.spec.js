@@ -7,8 +7,6 @@ const {
   closeApp,
   euros,
   chooseMenu,
-  createCategory,
-  createProduct,
   orderRow,
   scanBarcode,
   confirmPayment,
@@ -89,16 +87,18 @@ test('creates a category from the blank card', async () => {
 });
 
 test('edits a category on the card', async () => {
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: [
+        {name: 'Inline Plain'},
+        {name: 'Inline Photo', image: true}
+      ]
+    }
+  });
   const image = path.join(userData, 'pixel.png');
   try {
     await window.getByRole('link', {name: 'Categorías', exact: true}).click();
     const draft = window.locator('.category-card.is-draft');
-    await draft.getByRole('textbox', {name: 'Category name'}).fill('Inline Plain');
-    await draft.getByRole('button', {name: 'Save'}).click();
-    await draft.locator('input[type="file"]').setInputFiles(image);
-    await draft.getByRole('textbox', {name: 'Category name'}).fill('Inline Photo');
-    await draft.getByRole('button', {name: 'Save'}).click();
     const photo = await cardNamed(window, 'Inline Photo');
     await expect(photo.locator('img')).toHaveAttribute('src', /^data:image\/png/);
 
@@ -166,11 +166,22 @@ test('edits a category on the card', async () => {
 });
 
 test('shows totals and deletes an empty category', async () => {
-  test.setTimeout(120000);
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Empty Shelf', 'Stocked'],
+      products: [{
+        name: 'Milk',
+        barcode: '8400000000011',
+        price: 2,
+        basePrice: 1.5,
+        stock: 4,
+        stockMin: 1,
+        category: 'Stocked'
+      }]
+    }
+  });
   try {
-    await createCategory(window, 'Empty Shelf');
-    await createCategory(window, 'Stocked');
+    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
     const empty = await cardNamed(window, 'Empty Shelf');
     await expect(fact(empty, 'Products')).toHaveText('0');
     await expect(fact(empty, 'Value')).toHaveText(euros(0));
@@ -187,16 +198,6 @@ test('shows totals and deletes an empty category', async () => {
     expect(deleteBox.y).toBeGreaterThanOrEqual(photo.y + photo.height - 1);
     expect(deleteBox.y).toBeGreaterThanOrEqual(nameBox.y + nameBox.height - 1);
 
-    await createProduct(window, {
-      name: 'Milk',
-      barcode: '8400000000011',
-      price: 2,
-      basePrice: 1.5,
-      stock: 4,
-      stockMin: 1,
-      category: 'Stocked'
-    });
-    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
     const stocked = await cardNamed(window, 'Stocked');
     await expect(fact(stocked, 'Products')).toHaveText('1');
     await expect(fact(stocked, 'Value')).toHaveText(euros(1.5));

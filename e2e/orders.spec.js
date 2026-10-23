@@ -8,8 +8,6 @@ const {
   closeApp,
   chooseMenu,
   euros,
-  createCategory,
-  createProduct,
   productCard,
   openProductList,
   orderRow,
@@ -51,28 +49,32 @@ function orderListRow(window, amount) {
 }
 
 test('sells, edits quantity, and warns on low stock', async () => {
-  test.setTimeout(120000);
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Dairy'],
+      products: [
+        {
+          name: 'Milk',
+          barcode: '8400000000011',
+          price: 2,
+          basePrice: 1,
+          stock: 5,
+          stockMin: 4,
+          category: 'Dairy'
+        },
+        {
+          name: 'Bread',
+          barcode: '8400000000028',
+          price: 1,
+          basePrice: 1,
+          stock: 20,
+          stockMin: 2,
+          category: 'Dairy'
+        }
+      ]
+    }
+  });
   try {
-    await createCategory(window, 'Dairy');
-    await createProduct(window, {
-      name: 'Milk',
-      barcode: '8400000000011',
-      price: 2,
-      basePrice: 1,
-      stock: 5,
-      stockMin: 4,
-      category: 'Dairy'
-    });
-    await createProduct(window, {
-      name: 'Bread',
-      barcode: '8400000000028',
-      price: 1,
-      basePrice: 1,
-      stock: 20,
-      stockMin: 2,
-      category: 'Dairy'
-    });
     await openNewOrder(window);
     await scanBarcode(window, '8400000000011');
     await expect(orderRow(window, 'Milk').locator('input')).toHaveValue('1');
@@ -120,19 +122,22 @@ test('sells, edits quantity, and warns on low stock', async () => {
 });
 
 test('shows the VAT breakdown for the sold rate', async () => {
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Dairy'],
+      products: [{
+        name: 'Milk',
+        barcode: '8400000000042',
+        price: 1.1,
+        basePrice: 1,
+        stock: 5,
+        stockMin: 1,
+        category: 'Dairy',
+        vat: 'S1:10'
+      }]
+    }
+  });
   try {
-    await createCategory(window, 'Dairy');
-    await createProduct(window, {
-      name: 'Milk',
-      barcode: '8400000000042',
-      price: 1.1,
-      basePrice: 1,
-      stock: 5,
-      stockMin: 1,
-      category: 'Dairy',
-      vat: 'S1:10'
-    });
     await openNewOrder(window);
     await scanBarcode(window, '8400000000042');
     await expect(window.locator('.order-vat')).toContainText('10 %');
@@ -144,19 +149,22 @@ test('shows the VAT breakdown for the sold rate', async () => {
 });
 
 test('sells a weighed product for 6,48 €', async () => {
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Deli'],
+      products: [{
+        name: 'Ham',
+        barcode: '8400000000035',
+        price: 18.5,
+        basePrice: 10,
+        stock: 5,
+        stockMin: 1,
+        category: 'Deli',
+        weighted: true
+      }]
+    }
+  });
   try {
-    await createCategory(window, 'Deli');
-    await createProduct(window, {
-      name: 'Ham',
-      barcode: '8400000000035',
-      price: 18.5,
-      basePrice: 10,
-      stock: 5,
-      stockMin: 1,
-      category: 'Deli',
-      weighted: true
-    });
     await openNewOrder(window);
     await scanBarcode(window, '8400000000035');
     const dialog = window.getByRole('dialog');
@@ -172,27 +180,26 @@ test('sells a weighed product for 6,48 €', async () => {
 });
 
 test('lists an order, opens its detail, and returns to an empty sale', async () => {
-  test.setTimeout(120000);
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Dairy'],
+      products: [{
+        name: 'Milk',
+        barcode: '8400000000011',
+        price: 2,
+        basePrice: 1,
+        stock: 10,
+        stockMin: 2,
+        category: 'Dairy'
+      }],
+      orders: [{
+        lines: [{name: 'Milk', barcode: '8400000000011', price: 2, quantity: 1}]
+      }]
+    }
+  });
   const after = path.join(root, 'docs/design/after');
   fs.mkdirSync(after, {recursive: true});
   try {
-    await createCategory(window, 'Dairy');
-    await createProduct(window, {
-      name: 'Milk',
-      barcode: '8400000000011',
-      price: 2,
-      basePrice: 1,
-      stock: 10,
-      stockMin: 2,
-      category: 'Dairy'
-    });
-    await openNewOrder(window);
-    await scanBarcode(window, '8400000000011');
-    await expect(orderRow(window, 'Milk').locator('input')).toHaveValue('1');
-    await saveOrder(window);
-    await dismissTicket(window);
-
     await openOrders(window);
     const row = orderListRow(window, 2);
     await expect(row).toBeVisible();
@@ -240,39 +247,44 @@ test('lists an order, opens its detail, and returns to an empty sale', async () 
 });
 
 test('lists the newest sale first and screenshots every theme', async () => {
-  test.setTimeout(120000);
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Dairy'],
+      products: [
+        {
+          name: 'Milk',
+          barcode: '8400000000110',
+          price: 2,
+          basePrice: 1,
+          stock: 10,
+          stockMin: 1,
+          category: 'Dairy'
+        },
+        {
+          name: 'Bread',
+          barcode: '8400000000127',
+          price: 3,
+          basePrice: 1,
+          stock: 10,
+          stockMin: 1,
+          category: 'Dairy'
+        }
+      ],
+      orders: [
+        {
+          secondsAgo: 2,
+          lines: [{name: 'Milk', barcode: '8400000000110', price: 2, quantity: 1}]
+        },
+        {
+          secondsAgo: 0,
+          lines: [{name: 'Bread', barcode: '8400000000127', price: 3, quantity: 1}]
+        }
+      ]
+    }
+  });
   const after = path.join(root, 'docs/design/after');
   fs.mkdirSync(after, {recursive: true});
   try {
-    await createCategory(window, 'Dairy');
-    await createProduct(window, {
-      name: 'Milk',
-      barcode: '8400000000110',
-      price: 2,
-      basePrice: 1,
-      stock: 10,
-      stockMin: 1,
-      category: 'Dairy'
-    });
-    await createProduct(window, {
-      name: 'Bread',
-      barcode: '8400000000127',
-      price: 3,
-      basePrice: 1,
-      stock: 10,
-      stockMin: 1,
-      category: 'Dairy'
-    });
-    await openNewOrder(window);
-    await scanBarcode(window, '8400000000110');
-    await saveOrder(window);
-    await dismissTicket(window);
-    await window.waitForTimeout(1100);
-    await scanBarcode(window, '8400000000127');
-    await saveOrder(window);
-    await dismissTicket(window);
-
     await openOrders(window);
     const rows = window.locator('.orders-row');
     await expect(rows).toHaveCount(2);
@@ -294,20 +306,23 @@ test('lists the newest sale first and screenshots every theme', async () => {
 });
 
 test('offers the ticket from the saved toast and dismisses it without printing', async () => {
-  const {app, window, userData} = await launchApp();
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Dairy'],
+      products: [{
+        name: 'Milk',
+        barcode: '8400000000097',
+        price: 2,
+        basePrice: 1,
+        stock: 5,
+        stockMin: 1,
+        category: 'Dairy'
+      }]
+    }
+  });
   const pageErrors = [];
   window.on('pageerror', error => pageErrors.push(error.message));
   try {
-    await createCategory(window, 'Dairy');
-    await createProduct(window, {
-      name: 'Milk',
-      barcode: '8400000000097',
-      price: 2,
-      basePrice: 1,
-      stock: 5,
-      stockMin: 1,
-      category: 'Dairy'
-    });
     await openNewOrder(window);
     await scanBarcode(window, '8400000000097');
     await saveOrder(window);
