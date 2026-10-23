@@ -2,7 +2,8 @@ import Money from '../../../domain/money/Money';
 import Quantity from '../../../domain/money/Quantity';
 import {formatMoney} from '../../i18n/money';
 
-const kilograms = new Intl.NumberFormat('es-ES', {
+const wholeKg = new Intl.NumberFormat('es-ES', {maximumFractionDigits: 0});
+const partialKg = new Intl.NumberFormat('es-ES', {
   minimumFractionDigits: 3,
   maximumFractionDigits: 3
 });
@@ -97,11 +98,12 @@ function hasNotes(payment) {
  */
 export function formatKg(milli) {
   const quantity = Number.isInteger(milli) ? Quantity.ofMilli(milli) : Quantity.ofMilli(0);
-  return kilograms.format(quantity.units);
+  const format = quantity.milli % 1000 === 0 ? wholeKg : partialKg;
+  return format.format(quantity.units);
 }
 
 /**
- * Weighted lines read `0,350 kg × 18,50 €/kg`.
+ * A partial kilo keeps three decimals (`0,350 kg × 18,50 €/kg`). A whole kilo does not (`1 kg × 6,99 €/kg`).
  * @param {{quantityMilli: number, unitPriceCents: number}} line
  * @returns {string}
  */

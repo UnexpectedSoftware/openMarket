@@ -66,10 +66,13 @@ describe('order list format', () => {
     expect(orderWhen(null)).to.equal('');
     expect(orderWhen('nope')).to.equal('');
     expect(formatKg(350)).to.equal('0,350');
-    expect(formatKg(1000)).to.equal('1,000');
-    expect(formatKg(null)).to.equal('0,000');
+    expect(formatKg(1000)).to.equal('1');
+    expect(formatKg(1500)).to.equal('1,500');
+    expect(formatKg(null)).to.equal('0');
     expect(weightedPrice({quantityMilli: 350, unitPriceCents: 1850}))
       .to.equal('0,350 kg × ' + formatMoney(Money.ofCents(1850)) + '/kg');
+    expect(weightedPrice({quantityMilli: 1000, unitPriceCents: 699}))
+      .to.equal('1 kg × ' + formatMoney(Money.ofCents(699)) + '/kg');
     expect(vatLabel({kind: 'S1', percent: 21, cause: null})).to.equal('21 %');
     expect(vatLabel({kind: 'E', percent: 0, cause: 'E1'})).to.equal('Exento E1');
     expect(vatLabel({kind: 'E', percent: 0, cause: null})).to.equal('Exento ');
