@@ -18,6 +18,7 @@ import {
   CATEGORIES_PAGE_LOADED,
   CATEGORIES_QUERY_CHANGED,
   CATEGORIES_SAVE,
+  categoriesDeleteFailed,
   categoriesDeleted,
   categoriesFailed,
   categoriesLoaded,
@@ -25,7 +26,7 @@ import {
   categoriesSaveFailed,
   categoriesSaved
 } from './action';
-import {LOAD_ERROR, NOT_FOUND, SAVE_ERROR, trimmedName} from './model';
+import {DELETE_ERROR, LOAD_ERROR, NOT_EMPTY, NOT_FOUND, SAVE_ERROR, trimmedName} from './model';
 
 const SEARCH_DEBOUNCE_MS = 300;
 
@@ -246,10 +247,7 @@ function failedSave(error) {
  * @returns {string}
  */
 function saveMessage(error) {
-  if (error && error.code === ErrorCode.CATEGORY_NOT_FOUND) {
-    return NOT_FOUND;
-  }
-  return userText(error, SAVE_ERROR);
+  return codedMessage(error, {[ErrorCode.CATEGORY_NOT_FOUND]: NOT_FOUND}, SAVE_ERROR);
 }
 
 function deletedToast() {
@@ -261,8 +259,30 @@ function deletedToast() {
  */
 function deleteFailed(error) {
   record(error);
-  return Rx.Observable.of(toast.error(
-    'No se ha podido eliminar la categoría',
-    userText(error, 'No se ha podido eliminar la categoría')
-  ));
+  return Rx.Observable.of(categoriesDeleteFailed(deleteMessage(error)));
+}
+
+/**
+ * @param {*} error
+ * @returns {string}
+ */
+function deleteMessage(error) {
+  return codedMessage(error, {
+    [ErrorCode.CATEGORY_NOT_EMPTY]: NOT_EMPTY,
+    [ErrorCode.CATEGORY_NOT_FOUND]: NOT_FOUND
+  }, DELETE_ERROR);
+}
+
+/**
+ * @param {*} error
+ * @param {Object<string, string>} codes
+ * @param {string} fallback
+ * @returns {string}
+ */
+function codedMessage(error, codes, fallback) {
+  const code = error && error.code;
+  if (code && codes[code]) {
+    return codes[code];
+  }
+  return userText(error, fallback);
 }

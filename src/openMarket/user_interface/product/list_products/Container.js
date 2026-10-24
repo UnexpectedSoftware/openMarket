@@ -7,11 +7,19 @@ import IconButton from '../../components/IconButton';
 import {PageHeader} from '../../components/PageHeader';
 import placeholder from '../../resources/category-placeholder.svg';
 import {wantsSearch} from './keys';
-import {defaultCatalogSort, filtersActive, PAGE_SIZE} from './model';
-import {lowStockQuery, routeChanged, routePlan} from './route';
+import {
+  catalogRequest,
+  catalogRoute,
+  categoryParam,
+  filtersActive,
+  locationWithoutCategory,
+  lowStockParam,
+  syncedCategory
+} from './model';
 import ProductDrawer from './ProductDrawer';
 import ProductFilters from './ProductFilters';
 import ProductTable from './ProductTable';
+import {routeChanged, routePlan} from './route';
 
 class Container extends Component {
 
@@ -23,22 +31,14 @@ class Container extends Component {
     this.setImageField = this.setImageField.bind(this);
   }
 
-  openCatalog(lowStock) {
-    this.props.productsPageOpened({
-      query: '',
-      lowStock,
-      status: null,
-      categoryId: null,
-      weighted: null,
-      sort: defaultCatalogSort,
-      limit: PAGE_SIZE
-    });
+  openCatalog(location, products) {
+    this.props.productsPageOpened(catalogRequest(location, products || this.props.products));
   }
 
   syncRoute(props, previous) {
     const plan = routePlan(props, previous);
     if (plan.loadCatalog) {
-      this.openCatalog(plan.lowStock);
+      this.openCatalog(props.location, props.products);
     }
     if (plan.openCreate) {
       this.nameRef.current = null;
@@ -60,6 +60,17 @@ class Container extends Component {
     if (routeChanged(this.props, nextProps)) {
       this.syncRoute(nextProps, this.props);
     }
+    if (lowStockParam(nextProps.location) === lowStockParam(this.props.location)) {
+      this.applySyncedCategory(nextProps);
+    }
+  }
+
+  applySyncedCategory(nextProps) {
+    const categoryId = syncedCategory(this.props, nextProps);
+    if (categoryId === undefined) {
+      return;
+    }
+    this.changeFiltersOn(nextProps.products, {categoryId});
   }
 
   componentWillUnmount() {
@@ -86,7 +97,10 @@ class Container extends Component {
   };
 
   changeFilters(next) {
-    const products = this.props.products;
+    this.changeFiltersOn(this.props.products, next);
+  }
+
+  changeFiltersOn(products, next) {
     this.props.productsFiltersChanged({
       lowStock: products.lowStock,
       status: products.status,
@@ -98,8 +112,20 @@ class Container extends Component {
   }
 
   onCategory = (event) => {
-    this.changeFilters({categoryId: event.target.value || null});
+    const categoryId = event.target.value || null;
+    this.changeFilters({categoryId});
+    this.pushCatalog(catalogRoute({
+      lowStock: lowStockParam(this.props.location),
+      categoryId
+    }));
   };
+
+  pushCatalog(query) {
+    if (!this.props.router) {
+      return;
+    }
+    this.props.router.push({pathname: '/list_products', query});
+  }
 
   onStatus = (status) => {
     this.changeFilters({status});
@@ -168,12 +194,22 @@ class Container extends Component {
   };
 
   clearFilters = () => {
-    if (lowStockQuery(this.props.location) && this.props.router) {
+    if (categoryParam(this.props.location)) {
+      this.dropCategory();
+      return;
+    }
+    if (lowStockParam(this.props.location) && this.props.router) {
       this.props.router.push('/list_products');
       return;
     }
-    this.openCatalog(false);
+    this.openCatalog({query: {}});
   };
+
+  dropCategory() {
+    const location = locationWithoutCategory(this.props.location);
+    this.openCatalog(location);
+    this.pushCatalog(location.query);
+  }
 
   withImages(items) {
     return (items || []).map(item => ({

@@ -1,7 +1,9 @@
 export const NAME_REQUIRED = 'Obligatorio';
 export const LOAD_ERROR = 'No se han podido cargar las categorías';
 export const SAVE_ERROR = 'No se ha podido guardar la categoría';
+export const DELETE_ERROR = 'No se ha podido eliminar la categoría';
 export const NOT_FOUND = 'No se encuentra la categoría';
+export const NOT_EMPTY = 'La categoría todavía tiene productos';
 
 export function state() {
   return {
@@ -10,7 +12,8 @@ export function state() {
     total: 0,
     loading: true,
     error: '',
-    dialog: null
+    dialog: null,
+    confirmDelete: null
   };
 }
 
@@ -76,7 +79,7 @@ export function dialogOpened(current, action) {
   if (request.mode === 'edit') {
     return editDialog(current, request.id);
   }
-  return {...current, dialog: blankDialog()};
+  return {...current, dialog: blankDialog(), confirmDelete: null};
 }
 
 /**
@@ -90,6 +93,7 @@ function editDialog(current, id) {
   }
   return {
     ...current,
+    confirmDelete: null,
     dialog: {
       mode: 'edit',
       id: item.id,
@@ -203,4 +207,49 @@ export function saveFailed(current, message) {
       error: message || SAVE_ERROR
     }
   };
+}
+
+/**
+ * Opening the confirm closes the editor. The row stays until the delete succeeds.
+ * @param {object} current
+ * @param {string} id
+ */
+export function deleteConfirmOpened(current, id) {
+  const item = (current.items || []).filter(row => row.id === id)[0];
+  if (!item) {
+    return current;
+  }
+  return {
+    ...current,
+    dialog: null,
+    confirmDelete: {id: item.id, name: item.name, error: null}
+  };
+}
+
+/** @param {object} current */
+export function deleteConfirmClosed(current) {
+  return {...current, confirmDelete: null};
+}
+
+/**
+ * The refused delete stays on the dialog and leaves the card.
+ * @param {object} current
+ * @param {string} [message]
+ */
+export function deleteFailed(current, message) {
+  if (!current.confirmDelete) {
+    return current;
+  }
+  return {
+    ...current,
+    confirmDelete: {
+      ...current.confirmDelete,
+      error: message || DELETE_ERROR
+    }
+  };
+}
+
+/** @param {object} current */
+export function deleted(current) {
+  return {...current, confirmDelete: null};
 }

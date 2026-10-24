@@ -1,4 +1,8 @@
 import {
+  CATEGORIES_DELETE_CONFIRM_CLOSED,
+  CATEGORIES_DELETE_CONFIRM_OPENED,
+  CATEGORIES_DELETE_FAILED,
+  CATEGORIES_DELETED,
   CATEGORIES_DIALOG_CLOSED,
   CATEGORIES_DIALOG_OPENED,
   CATEGORIES_DRAFT_CHANGED,
@@ -13,6 +17,10 @@ import {
 import {
   categoriesFailed,
   categoriesLoaded,
+  deleteConfirmClosed,
+  deleteConfirmOpened,
+  deleteFailed,
+  deleted,
   dialogClosed,
   dialogOpened,
   draftChanged,
@@ -46,6 +54,14 @@ export default function reducer(current = state(), action) {
       return saved(current);
     case CATEGORIES_SAVE_FAILED:
       return saveFailed(current, action.message);
+    case CATEGORIES_DELETE_CONFIRM_OPENED:
+      return deleteConfirmOpened(current, action.id);
+    case CATEGORIES_DELETE_CONFIRM_CLOSED:
+      return deleteConfirmClosed(current);
+    case CATEGORIES_DELETE_FAILED:
+      return deleteFailed(current, action.message);
+    case CATEGORIES_DELETED:
+      return deleted(current);
     default:
       return current;
   }

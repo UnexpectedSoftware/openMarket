@@ -1,4 +1,5 @@
 import React from 'react';
+import {Link} from 'react-router';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Money from '../../domain/money/Money';
@@ -28,6 +29,9 @@ export default function CategoryCard(props) {
         </dl>
         <div className="category-card-actions">
           <Button variant="ghost" onClick={() => props.onEdit(category)}>Editar</Button>
+          <Link to={'/list_products?category=' + category.id} className="om-button om-button--ghost">
+            Ver productos
+          </Link>
           {category.productCount === 0 ? (
             <Button variant="danger" label="Eliminar categoría" onClick={() => props.onDelete(category)}>
               Eliminar

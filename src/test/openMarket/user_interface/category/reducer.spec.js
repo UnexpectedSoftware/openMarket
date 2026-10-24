@@ -1,5 +1,9 @@
 import {expect} from 'chai';
 import {
+  CATEGORIES_DELETE_CONFIRM_CLOSED,
+  CATEGORIES_DELETE_CONFIRM_OPENED,
+  CATEGORIES_DELETE_FAILED,
+  CATEGORIES_DELETED,
   CATEGORIES_DIALOG_CLOSED,
   CATEGORIES_DIALOG_OPENED,
   CATEGORIES_DRAFT_CHANGED,
@@ -14,6 +18,10 @@ import {
 import {
   categoriesFailed,
   categoriesLoaded,
+  deleteConfirmClosed,
+  deleteConfirmOpened,
+  deleteFailed,
+  deleted,
   dialogClosed,
   dialogOpened,
   draftChanged,
@@ -67,6 +75,21 @@ describe('categories reducer', () => {
 
     const closed = reducer(editing, {type: CATEGORIES_DIALOG_CLOSED});
     expect(closed).to.deep.equal(dialogClosed(editing));
+
+    const confirming = reducer(loaded, {type: CATEGORIES_DELETE_CONFIRM_OPENED, id: 'a'});
+    expect(confirming).to.deep.equal(deleteConfirmOpened(loaded, 'a'));
+
+    const refused = reducer(confirming, {
+      type: CATEGORIES_DELETE_FAILED,
+      message: 'La categoría todavía tiene productos'
+    });
+    expect(refused).to.deep.equal(deleteFailed(confirming, 'La categoría todavía tiene productos'));
+
+    const cancelled = reducer(confirming, {type: CATEGORIES_DELETE_CONFIRM_CLOSED});
+    expect(cancelled).to.deep.equal(deleteConfirmClosed(confirming));
+
+    const gone = reducer(confirming, {type: CATEGORIES_DELETED});
+    expect(gone).to.deep.equal(deleted(confirming));
 
     expect(reducer(closed, {type: 'OTHER'})).to.equal(closed);
   });
