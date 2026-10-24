@@ -7,6 +7,7 @@ import UnexpectedFailure from "../../domain/error/UnexpectedFailure";
 import observableError from "../logging/observableError";
 import {rethrow} from "../logging/ErrorLog";
 import {centsOf, eurosOf, moneyFromColumns} from "../service/storedMoney";
+import ProductDetail from "../../domain/product/ProductDetail";
 import ProductView from "../../domain/product/ProductView";
 
 const PRODUCT_SELECT = 'SELECT p.barcode, p.name, p.description, p.stock_min, p.price, p.price_cents, p.stock, p.base_price, p.base_price_cents, ' +
@@ -177,6 +178,20 @@ export default class SqliteProductRepository {
     });
   }
 
+  findDetail(query) {
+    return Rx.Observable.defer(() => {
+      const barcode = query && query.barcode;
+      if (barcode == null || barcode === '') {
+        return Rx.Observable.empty();
+      }
+      const row = this._database.prepare(FIND_BY_BARCODE_SQL).get(String(barcode));
+      if (!row) {
+        return Rx.Observable.empty();
+      }
+      return Rx.Observable.of(toProductDetail(row, this._images));
+    });
+  }
+
   find(query) {
     return Rx.Observable.defer(() => {
       const page = this._queryService.productPage({
@@ -321,6 +336,7 @@ export default class SqliteProductRepository {
  * @property {number | null} [weighted]
  * @property {string | null} [status]
  * @property {string | null} [image_name]
+ * @property {string | null} [description]
  */
 
 /**
@@ -330,7 +346,28 @@ export default class SqliteProductRepository {
  * @returns {ProductView}
  */
 function toProductView(row, images) {
-  return new ProductView({
+  return new ProductView(viewProps(row, images));
+}
+
+/**
+ * @param {ProductPageRow} row
+ * @param {{readDataUrl: (name: string) => (string | null)} | null | undefined} images
+ * @returns {ProductDetail}
+ */
+function toProductDetail(row, images) {
+  return new ProductDetail({
+    ...viewProps(row, images),
+    description: row.description == null ? '' : String(row.description),
+    imageName: emptyToNull(row.image_name)
+  });
+}
+
+/**
+ * @param {ProductPageRow} row
+ * @param {{readDataUrl: (name: string) => (string | null)} | null | undefined} images
+ */
+function viewProps(row, images) {
+  return {
     barcode: textOf(row.barcode),
     name: textOf(row.name),
     categoryId: emptyToNull(row.category_id),
@@ -343,7 +380,7 @@ function toProductView(row, images) {
     weighted: Number(row.weighted) === 1,
     status: emptyToNull(row.status),
     imageUrl: imageUrl(images, row.image_name)
-  });
+  };
 }
 
 /**

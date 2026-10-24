@@ -3,14 +3,13 @@ import Badge from '../../components/Badge';
 import Button from '../../components/Button';
 import DataTable from '../../components/DataTable';
 import Money from '../../../domain/money/Money';
-import ProductStatus from '../../../domain/product/ProductStatus';
 import {formatMoney} from '../../i18n/money';
 import {formatMargin, formatStock} from './format';
 import {showingLabel} from './model';
 import {statusLabel, statusTone} from './statusLabel';
 
 /**
- * @param {{items?: object[], total?: number, offset?: number, limit?: number, loading?: boolean, error?: string, empty?: *, onEdit: Function, onDisable: Function, onPage: Function, onRetry: Function}} props
+ * @param {{items?: object[], total?: number, offset?: number, limit?: number, loading?: boolean, error?: string, empty?: *, onEdit: Function, onPage: Function, onRetry: Function}} props
  */
 export default function ProductTable(props) {
   const items = props.items || [];
@@ -27,6 +26,7 @@ export default function ProductTable(props) {
         rowKey="barcode"
         loading={loading}
         empty={props.empty}
+        onRowClick={props.onEdit}
       />
       {props.total > 0 ? <ProductPager {...props} /> : null}
     </div>
@@ -68,7 +68,7 @@ function ProductPager(props) {
 }
 
 /**
- * @param {{onEdit: Function, onDisable: Function}} props
+ * @param {{onEdit: Function}} props
  */
 function columns(props) {
   return [
@@ -139,15 +139,15 @@ function statusCell(row) {
 
 /**
  * @param {object} row
- * @param {{onEdit: Function, onDisable: Function}} props
+ * @param {{onEdit: Function}} props
  */
 function actionsCell(row, props) {
   return (
     <div className="products-actions">
-      <Button variant="ghost" onClick={() => props.onEdit(row)}>Editar</Button>
-      {row.status === ProductStatus.DISABLED ? null : (
-        <Button variant="ghost" onClick={() => props.onDisable(row.barcode)}>Desactivar</Button>
-      )}
+      <Button variant="ghost" onClick={event => {
+        event.stopPropagation();
+        props.onEdit(row);
+      }}>Editar</Button>
     </div>
   );
 }

@@ -89,8 +89,8 @@ test('creates categories from the dialog', async () => {
     await window.evaluate(() => {
       location.hash = '#/create_product';
     });
-    await expect(window.locator('select option', {hasText: 'Inline Plain'})).toHaveCount(1);
-    await expect(window.locator('select option', {hasText: 'Inline Photo'})).toHaveCount(1);
+    await expect(window.locator('select[name="categoryId"] option', {hasText: 'Inline Plain'})).toHaveCount(1);
+    await expect(window.locator('select[name="categoryId"] option', {hasText: 'Inline Photo'})).toHaveCount(1);
   } finally {
     await closeApp(app, userData);
   }
@@ -217,8 +217,10 @@ test('shows totals and deletes an empty category', async () => {
     await expect(fact(sold, 'Stock')).toHaveText('3');
     await expect(fact(sold, 'Más vendido')).toHaveText('Milk');
     await fact(sold, 'Más vendido').getByRole('link', {name: 'Milk'}).click();
-    await expect(window.getByRole('heading', {name: "Let's edit a product!"})).toBeVisible();
+    await expect(window.getByRole('heading', {name: 'Editar producto'})).toBeVisible();
     await expect(window.locator('input[name="name"]')).toHaveValue('Milk');
+    await window.keyboard.press('Escape');
+    await expect(window.getByRole('heading', {name: 'Editar producto'})).toHaveCount(0);
     await openCategories(window);
 
     const emptyAgain = cardNamed(window, 'Empty Shelf');
@@ -233,8 +235,8 @@ test('shows totals and deletes an empty category', async () => {
     await window.evaluate(() => {
       location.hash = '#/create_product';
     });
-    await expect(window.locator('select option', {hasText: 'Empty Shelf'})).toHaveCount(0);
-    await expect(window.locator('select option', {hasText: 'Stocked'})).toHaveCount(1);
+    await expect(window.locator('select[name="categoryId"] option', {hasText: 'Empty Shelf'})).toHaveCount(0);
+    await expect(window.locator('select[name="categoryId"] option', {hasText: 'Stocked'})).toHaveCount(1);
   } finally {
     await closeApp(app, userData);
   }

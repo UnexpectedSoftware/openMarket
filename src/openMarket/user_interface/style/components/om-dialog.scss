@@ -56,3 +56,18 @@
   padding: var(--om-space-4);
   border-top: 1px solid var(--om-color-border);
 }
+
+.om-dialog-overlay--drawer {
+  align-items: stretch;
+  justify-content: flex-end;
+  padding: var(--om-space-0);
+}
+
+.om-dialog--drawer {
+  width: calc(var(--om-space-9) * 12);
+  max-width: 100%;
+  height: 100%;
+  max-height: 100%;
+  border-radius: var(--om-radius-lg) var(--om-space-0) var(--om-space-0) var(--om-radius-lg);
+  box-shadow: var(--om-shadow-lg);
+}

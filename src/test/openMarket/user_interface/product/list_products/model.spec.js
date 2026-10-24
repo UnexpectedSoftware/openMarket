@@ -1,14 +1,33 @@
 import {expect} from 'chai';
 import {
+  archiveDismissed,
+  archivePrompted,
+  archiveStarted,
   categoriesLoaded,
+  detailLoaded,
+  draftChanged,
+  draftErrors,
+  draftFromDetail,
+  drawerClosed,
+  drawerFailed,
+  drawerOpened,
+  emptyDraft,
   filtersActive,
   filtersChanged,
+  imageFound,
+  imageMissed,
+  imageRequested,
   pageChanged,
   pageOpened,
+  productArchived,
   productDisabled,
+  productSaved,
   productsFailed,
   productsLoaded,
   queryChanged,
+  saveCommand,
+  saveFailed,
+  saveRequested,
   showingLabel,
   state
 } from '../../../../../openMarket/user_interface/product/list_products/model';
@@ -95,5 +114,311 @@ describe('products list model', () => {
     }, '1');
     expect(disabled.items.map(item => item.status)).to.deep.equal(['DISABLED', 'ENABLED']);
     expect(categoriesLoaded(state(), [{id: 'a', name: 'Fruta'}]).categories).to.have.length(1);
+  });
+
+  it('keeps a drawer the navigation just opened', () => {
+    const editing = drawerOpened(state(), {mode: 'edit', barcode: '0002'});
+    const reopened = pageOpened(editing, {query: ''});
+    expect(reopened.drawerOpen).to.equal(true);
+    expect(reopened.mode).to.equal('edit');
+    expect(reopened.editingBarcode).to.equal('0002');
+    expect(reopened.loadingDraft).to.equal(true);
+    expect(reopened.loading).to.equal(true);
+  });
+
+  it('locks the barcode on edit and follows the margin', () => {
+    const editing = {
+      ...drawerOpened(state(), {mode: 'edit', barcode: '0002'}),
+      loadingDraft: false,
+      draft: draftFromDetail({
+        barcode: '0002',
+        name: 'Ham',
+        priceCents: 185,
+        basePriceCents: 115,
+        status: 'ENABLED',
+        vat: {kind: 'S1', percent: 21, cause: null}
+      })
+    };
+    expect(editing.draft.marginPercent).to.equal(38);
+    expect(editing.draft.price).to.equal(1.85);
+    const locked = draftChanged(editing, {field: 'barcode', value: '9999'});
+    expect(locked).to.equal(editing);
+    const priced = draftChanged(editing, {field: 'price', value: 1.2});
+    const cost = draftChanged(priced, {field: 'basePrice', value: 0.7});
+    expect(cost.draft.barcode).to.equal('0002');
+    expect(cost.draft.marginPercent).to.equal(42);
+    expect(cost.draft.marginPercent).to.not.equal(null);
+    const free = draftChanged(cost, {field: 'price', value: 0});
+    expect(free.draft.marginPercent).to.equal(null);
+  });
+
+  it('does not save when the draft fails validation', () => {
+    const creating = drawerOpened(state(), {mode: 'create'});
+    expect(creating.draft.vatRate).to.equal('S1:21');
+    expect(creating.draft.active).to.equal(true);
+    const rejected = saveRequested(creating);
+    expect(rejected.saving).to.equal(false);
+    expect(rejected.errors.name).to.equal('Obligatorio');
+    expect(rejected.errors.barcode).to.equal('Obligatorio');
+    expect(rejected.errors.price).to.equal('Obligatorio');
+    expect(rejected.errors.stock).to.equal('Obligatorio');
+    expect(rejected.errors.stockMin).to.equal('Obligatorio');
+    expect(rejected.errors.categoryId).to.equal('Obligatorio');
+    const filled = {
+      ...creating,
+      draft: {
+        ...emptyDraft(),
+        barcode: '1234567890123456',
+        name: 'Milk',
+        price: -1,
+        basePrice: 0,
+        stock: -2,
+        stockMin: 0,
+        categoryId: 'dairy',
+        vatRate: 'nope'
+      }
+    };
+    const invalid = saveRequested(filled);
+    expect(invalid.saving).to.equal(false);
+    expect(invalid.errors.barcode).to.equal('15 caracteres como máximo');
+    expect(invalid.errors.price).to.equal('Debe ser mayor que 0');
+    expect(invalid.errors.basePrice).to.equal('Debe ser mayor que 0');
+    expect(invalid.errors.stock).to.equal('Debe ser 0 o mayor');
+    expect(invalid.errors.stockMin).to.equal('Debe ser mayor que 0');
+    expect(invalid.errors.vatRate).to.equal('Elige un IVA');
+    const ready = saveRequested({
+      ...creating,
+      draft: {
+        ...emptyDraft(),
+        barcode: '1001',
+        name: 'Milk',
+        price: 2,
+        basePrice: 1,
+        stock: 0,
+        stockMin: 1,
+        categoryId: 'dairy',
+        active: false
+      }
+    });
+    expect(ready.saving).to.equal(true);
+    expect(ready.errors).to.deep.equal({});
+    expect(saveCommand(ready.draft, null).status).to.equal('DISABLED');
+    expect(saveCommand(ready.draft, '/tmp/milk.jpg').imagePath).to.equal('/tmp/milk.jpg');
+    expect(saveCommand(ready.draft, null).imagePath).to.equal(undefined);
+  });
+
+  it('archives by disabling the row and closing the drawer', () => {
+    const open = drawerOpened({
+      ...state(),
+      items: [{barcode: '1001', status: 'ENABLED'}]
+    }, {mode: 'edit', barcode: '1001'});
+    const archived = productArchived(open, '1001');
+    expect(archived.drawerOpen).to.equal(false);
+    expect(archived.confirmArchive).to.equal(false);
+    expect(archived.items[0].status).to.equal('DISABLED');
+    expect(archivePrompted(open).confirmArchive).to.equal(true);
+    const creating = drawerOpened(state(), {mode: 'create'});
+    const idle = state();
+    expect(archivePrompted(creating)).to.equal(creating);
+    expect(archivePrompted(idle)).to.equal(idle);
+    const prompted = archivePrompted(open);
+    expect(archiveDismissed(prompted).confirmArchive).to.equal(false);
+    expect(archiveStarted(prompted).saving).to.equal(true);
+    expect(archiveStarted(prompted).confirmArchive).to.equal(false);
+  });
+
+  it('fills an edit draft from the detail and ignores a stale load', () => {
+    const blank = draftFromDetail(null);
+    expect(blank.barcode).to.equal('');
+    expect(blank.name).to.equal('');
+    expect(blank.description).to.equal('');
+    expect(blank.vatRate).to.equal('S1:21');
+    expect(blank.active).to.equal(true);
+    expect(blank.price).to.equal('');
+    const disabled = draftFromDetail({
+      barcode: null,
+      name: null,
+      description: null,
+      priceCents: 1e21,
+      basePriceCents: 50,
+      vat: 4,
+      stock: null,
+      stockMin: null,
+      weighted: 1,
+      status: 'DISABLED',
+      imageUrl: ''
+    });
+    expect(disabled.active).to.equal(false);
+    expect(disabled.vatRate).to.equal('S1:21');
+    expect(disabled.marginPercent).to.equal(null);
+    expect(disabled.stock).to.equal('');
+    expect(disabled.imageUrl).to.equal(null);
+    const kept = draftFromDetail({
+      barcode: 1001,
+      name: 'Milk',
+      description: 'Cold',
+      categoryId: 'dairy',
+      priceCents: 200,
+      basePriceCents: 100,
+      vat: {kind: 'S1', percent: 10, cause: null},
+      stock: 0,
+      stockMin: 1,
+      status: 'ENABLED',
+      imageUrl: 'data:milk'
+    });
+    expect(kept.barcode).to.equal('1001');
+    expect(kept.vatRate).to.equal('S1:10');
+    expect(kept.imageUrl).to.equal('data:milk');
+    expect(kept.price).to.equal(2);
+
+    const editing = drawerOpened(state(), {mode: 'edit', barcode: '1001'});
+    const creating = drawerOpened(state(), {mode: 'create'});
+    const idle = state();
+    expect(detailLoaded(idle, {barcode: '1001', draft: kept})).to.equal(idle);
+    expect(detailLoaded(creating, {barcode: '1001', draft: kept})).to.equal(creating);
+    expect(detailLoaded(editing, {barcode: '9999', draft: kept})).to.equal(editing);
+    expect(detailLoaded(editing, null)).to.equal(editing);
+    const loaded = detailLoaded(editing, {barcode: '1001'});
+    expect(loaded.loadingDraft).to.equal(false);
+    expect(loaded.draft.barcode).to.equal('');
+    expect(detailLoaded(editing, {barcode: '1001', draft: kept}).draft.name).to.equal('Milk');
+  });
+
+  it('keeps a failed open and a failed save on the matching drawer', () => {
+    const idle = state();
+    const editing = drawerOpened(state(), {mode: 'edit', barcode: '1001'});
+    expect(drawerFailed(idle, {barcode: '1001', message: 'no'})).to.equal(idle);
+    expect(drawerFailed(editing, {barcode: 'other', message: 'no'})).to.equal(editing);
+    expect(drawerFailed(editing, null)).to.equal(editing);
+    const failed = drawerFailed(editing, {barcode: '1001'});
+    expect(failed.loadingDraft).to.equal(false);
+    expect(failed.formError).to.equal('No se ha podido abrir el producto');
+    expect(drawerFailed(editing, {barcode: '1001', message: 'cerrado'}).formError).to.equal('cerrado');
+    const closed = drawerClosed(editing);
+    expect(closed.drawerOpen).to.equal(false);
+    expect(closed.editingBarcode).to.equal(null);
+
+    const saving = {...editing, errors: {name: 'Obligatorio'}, saving: true};
+    expect(saveFailed(saving, null).saving).to.equal(false);
+    expect(saveFailed(saving, null).errors.name).to.equal('Obligatorio');
+    expect(saveFailed(saving, {errors: {price: 'Debe ser mayor que 0'}}).errors.price).to.equal('Debe ser mayor que 0');
+    expect(saveFailed({...editing, errors: null}, {message: 'roto'}).formError).to.equal('roto');
+    expect(saveFailed({...editing, errors: null}, {message: 'roto'}).errors).to.deep.equal({});
+    const saved = productSaved(editing);
+    expect(saved.drawerOpen).to.equal(false);
+    expect(saved.loading).to.equal(true);
+  });
+
+  it('looks up an image only while creating and ignores a closed drawer', () => {
+    const idle = state();
+    const creating = drawerOpened(state(), {mode: 'create'});
+    const editing = drawerOpened(state(), {mode: 'edit', barcode: '1'});
+    expect(imageRequested(editing)).to.equal(editing);
+    expect(imageRequested(idle)).to.equal(idle);
+    expect(imageRequested(creating).imageLookupBusy).to.equal(true);
+    expect(imageFound(editing, {imagePath: '/tmp/a', imageUrl: 'data:a'})).to.equal(editing);
+    expect(imageFound(idle, {imagePath: '/tmp/a'})).to.equal(idle);
+    const found = imageFound({...creating, draft: null}, null);
+    expect(found.imageLookupBusy).to.equal(false);
+    expect(found.draft.imagePath).to.equal(null);
+    expect(found.draft.imageUrl).to.equal(null);
+    const pictured = imageFound(creating, {imagePath: '/tmp/a.jpg', imageUrl: 'data:a'});
+    expect(pictured.draft.imagePath).to.equal('/tmp/a.jpg');
+    expect(pictured.draft.imageUrl).to.equal('data:a');
+    expect(imageMissed(idle, 'no')).to.equal(idle);
+    expect(imageMissed(creating).formError).to.equal('No se ha encontrado una imagen para este código');
+    expect(imageMissed(creating, 'red').formError).to.equal('red');
+  });
+
+  it('rejects a draft field that is not on the form and a price that is not money', () => {
+    const creating = {
+      ...drawerOpened(state(), {mode: 'create'}),
+      errors: {name: 'Obligatorio'},
+      formError: 'antes'
+    };
+    const idle = state();
+    expect(draftChanged(idle, {field: 'name', value: 'Milk'})).to.equal(idle);
+    expect(draftChanged(creating, null)).to.equal(creating);
+    expect(draftChanged(creating, {field: 'marginPercent', value: 10})).to.equal(creating);
+    const named = draftChanged(creating, {field: 'name', value: 'Milk'});
+    expect(named.draft.name).to.equal('Milk');
+    expect(named.errors.name).to.equal(undefined);
+    expect(named.formError).to.equal('');
+    const huge = draftChanged(named, {field: 'price', value: 1e21});
+    expect(huge.draft.marginPercent).to.equal(null);
+    const infinite = draftChanged(named, {field: 'price', value: Infinity});
+    expect(infinite.draft.marginPercent).to.equal(null);
+    const text = draftChanged(named, {field: 'basePrice', value: '1,20'});
+    expect(text.draft.marginPercent).to.equal(null);
+    const weighed = draftChanged(named, {field: 'weighted', value: true});
+    expect(weighed.draft.weighted).to.equal(true);
+    expect(draftErrors({
+      name: '  ',
+      barcode: '  ',
+      price: '1,5',
+      basePrice: 'no',
+      stock: true,
+      stockMin: '  ',
+      categoryId: null,
+      vatRate: ''
+    }, 'create').price).to.equal(undefined);
+    expect(draftErrors({
+      name: 'Milk',
+      barcode: '1001',
+      price: 'abc',
+      basePrice: NaN,
+      stock: '1,5',
+      stockMin: '2',
+      categoryId: 'dairy',
+      vatRate: 'S1:10'
+    }, 'edit').barcode).to.equal(undefined);
+    expect(draftErrors({
+      name: 'Milk',
+      barcode: '1001',
+      price: 'abc',
+      basePrice: NaN,
+      stock: '1,5',
+      stockMin: '2',
+      categoryId: 'dairy',
+      vatRate: 'S1:10'
+    }, 'edit').price).to.equal('Debe ser un número');
+    expect(draftErrors({
+      name: 'Milk',
+      barcode: '1001',
+      price: '1,5',
+      basePrice: 1,
+      stock: '1,5',
+      stockMin: '2',
+      categoryId: 'dairy',
+      vatRate: 'S1:10'
+    }, 'create').stock).to.equal(undefined);
+    expect(saveCommand(null, '').barcode).to.equal('');
+    expect(saveCommand({...emptyDraft(), description: null, active: true}, undefined).description).to.equal('');
+    expect(saveCommand({...emptyDraft(), name: ' Milk ', barcode: ' 1001 '}, undefined).name).to.equal('Milk');
+  });
+
+  it('uses the catalog defaults when a page action arrives empty', () => {
+    expect(showingLabel(null)).to.equal('Mostrando 0–0 de 0');
+    expect(filtersActive(null)).to.equal(false);
+    expect(filtersActive({weighted: false})).to.equal(false);
+    const opened = pageOpened(state(), null);
+    expect(opened.query).to.equal('');
+    expect(opened.weighted).to.equal(null);
+    expect(queryChanged(state(), null).query).to.equal('');
+    const cleared = filtersChanged(state(), null);
+    expect(cleared.sort).to.equal('name_asc');
+    expect(cleared.weighted).to.equal(null);
+    expect(filtersChanged(state(), {weighted: false}).weighted).to.equal(false);
+    expect(pageChanged(state(), null).offset).to.equal(0);
+    expect(pageChanged(state(), {offset: -4}).offset).to.equal(0);
+    expect(productsFailed(state(), null).error).to.equal('No se han podido cargar los productos');
+    expect(productsLoaded(state(), {items: null, total: 'no'}).items).to.deep.equal([]);
+    expect(categoriesLoaded(state(), null).categories).to.deep.equal([]);
+    expect(productDisabled({}, '1').items).to.deep.equal([]);
+    expect(drawerOpened(state(), null).mode).to.equal('create');
+    expect(drawerOpened(state(), {mode: 'edit'}).editingBarcode).to.equal('');
+    const mismatched = productsLoaded({...state(), weighted: true}, {weighted: false, items: [{barcode: '1'}], total: 1});
+    expect(mismatched.weighted).to.equal(true);
+    expect(productsLoaded({...state(), weighted: false}, {weighted: null, items: [], total: 0}).items).to.deep.equal([]);
   });
 });

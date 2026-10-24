@@ -3,7 +3,6 @@ import {
   PRODUCT_FETCHED_STATUSES, PRODUCT_IMAGE_FOUND, PRODUCT_IMAGE_LOOKUP_FINISHED, PRODUCT_PAGE_LOADED,
   PRODUCT_SALES_LOADED, PRODUCT_SALES_WINDOW_SELECTED
 } from './action';
-import {LIST_PRODUCTS_DETAIL_LOADED} from "../list_products/action";
 import ProductStatus from "../../../domain/product/ProductStatus";
 import VatRate from "../../../domain/tax/VatRate";
 import {DEFAULT_SALES_WINDOW} from "../../../application/service/product/salesWindows";
@@ -101,16 +100,6 @@ export default function reducer(state = initialState, action) {
       return {
         ...resetForm(state),
         formKey: 0
-      };
-
-    case LIST_PRODUCTS_DETAIL_LOADED:
-      return {
-        ...state,
-        initialValues: action.payload,
-        edition: true,
-        imageLookup: idleImageLookup(),
-        lookupGeneration: (state.lookupGeneration || 0) + 1,
-        sales: emptySales()
       };
 
     case PRODUCT_SALES_WINDOW_SELECTED:

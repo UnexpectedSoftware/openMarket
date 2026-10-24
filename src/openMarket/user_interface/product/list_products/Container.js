@@ -1,19 +1,26 @@
 import React, {Component} from 'react';
 import {Link} from 'react-router';
 import Button from '../../components/Button';
+import Dialog from '../../components/Dialog';
 import EmptyState from '../../components/EmptyState';
 import IconButton from '../../components/IconButton';
 import {PageHeader} from '../../components/PageHeader';
 import placeholder from '../../resources/category-placeholder.svg';
+import {wantsSearch} from './keys';
 import {defaultCatalogSort, filtersActive, PAGE_SIZE} from './model';
+import {lowStockQuery, routeChanged, routePlan} from './route';
+import ProductDrawer from './ProductDrawer';
 import ProductFilters from './ProductFilters';
 import ProductTable from './ProductTable';
 
 class Container extends Component {
 
-  lowStockFrom(location) {
-    const params = location && location.query;
-    return !!(params && String(params.lowStock) === '1');
+  constructor(props) {
+    super(props);
+    this.nameRef = {current: null};
+    this.imageField = null;
+    this.onKeyDown = this.onKeyDown.bind(this);
+    this.setImageField = this.setImageField.bind(this);
   }
 
   openCatalog(lowStock) {
@@ -28,15 +35,50 @@ class Container extends Component {
     });
   }
 
+  syncRoute(props, previous) {
+    const plan = routePlan(props, previous);
+    if (plan.loadCatalog) {
+      this.openCatalog(plan.lowStock);
+    }
+    if (plan.openCreate) {
+      this.nameRef.current = null;
+      this.props.productsDrawerOpened({mode: 'create'});
+    } else if (plan.closeCreate) {
+      this.props.productsDrawerClosed();
+    }
+  }
+
   componentWillMount() {
-    this.openCatalog(this.lowStockFrom(this.props.location));
+    this.syncRoute(this.props, null);
+  }
+
+  componentDidMount() {
+    document.addEventListener('keydown', this.onKeyDown);
   }
 
   componentWillReceiveProps(nextProps) {
-    const nextLowStock = this.lowStockFrom(nextProps.location);
-    if (nextLowStock !== this.lowStockFrom(this.props.location)) {
-      this.openCatalog(nextLowStock);
+    if (routeChanged(this.props, nextProps)) {
+      this.syncRoute(nextProps, this.props);
     }
+  }
+
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.onKeyDown);
+  }
+
+  onKeyDown(event) {
+    if (!wantsSearch(event, this.props.products.drawerOpen)) {
+      return;
+    }
+    event.preventDefault();
+    const search = document.getElementById('products-search');
+    if (search && search.focus) {
+      search.focus();
+    }
+  }
+
+  setImageField(node) {
+    this.imageField = node;
   }
 
   onQuery = (event) => {
@@ -84,15 +126,49 @@ class Container extends Component {
   };
 
   onEdit = (row) => {
-    this.props.listProductsDetail({barcode: row.barcode, imageUrl: row.imageUrl});
+    this.nameRef.current = null;
+    this.props.productsDrawerOpened({mode: 'edit', barcode: row.barcode});
   };
 
-  onDisable = (barcode) => {
-    this.props.listProductsDisable({barcode});
+  onField = (field, value) => {
+    this.props.productsDraftChanged({field, value});
+  };
+
+  onSave = () => {
+    const chosen = this.imageField ? this.imageField.readChosenPath() : {imagePath: null};
+    if (chosen.error) {
+      this.props.productsSaveFailed({message: chosen.error});
+      return;
+    }
+    this.props.productsSave({imagePath: chosen.imagePath || null});
+  };
+
+  onClose = () => {
+    if (this.props.products.confirmArchive) {
+      return;
+    }
+    this.props.productsDrawerClosed();
+  };
+
+  onArchive = () => {
+    this.props.productsArchivePrompted();
+  };
+
+  onArchiveDismiss = () => {
+    this.props.productsArchiveDismissed();
+  };
+
+  onArchiveConfirm = () => {
+    const draft = this.props.products.draft || {};
+    this.props.productsArchive({barcode: draft.barcode});
+  };
+
+  onFindImage = () => {
+    this.props.productsImageRequested();
   };
 
   clearFilters = () => {
-    if (this.lowStockFrom(this.props.location) && this.props.router) {
+    if (lowStockQuery(this.props.location) && this.props.router) {
       this.props.router.push('/list_products');
       return;
     }
@@ -107,6 +183,7 @@ class Container extends Component {
   }
 
   emptyCatalog() {
+    const buttonClass = this.actionClass();
     if (filtersActive(this.props.products)) {
       return (
         <EmptyState
@@ -121,9 +198,16 @@ class Container extends Component {
         icon="barcode"
         title="Aún no hay productos"
         message="Crea el primer producto para venderlo."
-        action={<Link to="/create_product" className="om-button om-button--primary">Crear producto</Link>}
+        action={<Link to="/create_product" className={buttonClass}>Crear producto</Link>}
       />
     );
+  }
+
+  actionClass() {
+    if (this.props.products.drawerOpen) {
+      return 'om-button om-button--secondary';
+    }
+    return 'om-button om-button--primary';
   }
 
   render() {
@@ -134,7 +218,7 @@ class Container extends Component {
           title="Productos"
           actions={
             <span className="products-heading-actions">
-              <Link to="/create_product" className="om-button om-button--primary">Nuevo producto</Link>
+              <Link to="/create_product" className={this.actionClass()}>Nuevo producto</Link>
               <IconButton icon="print" label="Print product list" onClick={() => this.props.listProductsPrint()} />
             </span>
           }
@@ -163,10 +247,41 @@ class Container extends Component {
           error={products.error}
           empty={this.emptyCatalog()}
           onEdit={this.onEdit}
-          onDisable={this.onDisable}
           onPage={this.onPage}
           onRetry={this.onRetry}
         />
+        <ProductDrawer
+          open={products.drawerOpen}
+          mode={products.mode}
+          draft={products.draft}
+          errors={products.errors}
+          formError={products.formError}
+          saving={products.saving}
+          loadingDraft={products.loadingDraft}
+          imageLookupBusy={products.imageLookupBusy}
+          categories={products.categories}
+          nameRef={this.nameRef}
+          imageRef={this.setImageField}
+          onField={this.onField}
+          onClose={this.onClose}
+          onSave={this.onSave}
+          onArchive={this.onArchive}
+          onFindImage={this.onFindImage}
+        />
+        <Dialog
+          open={products.confirmArchive}
+          title="Desactivar producto"
+          onClose={this.onArchiveDismiss}
+          role="alertdialog"
+          actions={
+            <span className="products-drawer-actions">
+              <Button variant="secondary" onClick={this.onArchiveDismiss}>Cancelar</Button>
+              <Button variant="danger" onClick={this.onArchiveConfirm}>Desactivar</Button>
+            </span>
+          }
+        >
+          <p>Pasa a Inactivo y deja de salir en la venta. Los tickets antiguos lo conservan.</p>
+        </Dialog>
       </div>
     );
   }

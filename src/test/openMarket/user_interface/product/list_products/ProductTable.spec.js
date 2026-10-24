@@ -15,7 +15,6 @@ function table(extra) {
       loading={false}
       error=""
       onEdit={noop}
-      onDisable={noop}
       onPage={noop}
       onRetry={noop}
       {...extra}
@@ -48,6 +47,7 @@ describe('ProductTable', () => {
     expect(text).to.include('12,4 kg');
     expect(text).to.include('bajo');
     expect(text).to.include('Mostrando 1–1 de 1');
+    expect(text).to.not.include('Desactivar');
     view.unmount();
   });
 

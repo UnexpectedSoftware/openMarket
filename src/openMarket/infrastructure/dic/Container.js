@@ -39,7 +39,7 @@ import SqliteConnection from "../service/SqliteConnection";
 import {record} from "../logging/ErrorLog";
 import SqliteCategoryRepository from "../category/SqliteCategoryRepository";
 import SqliteCategoryQueryService from "../category/SqliteCategoryQueryService";
-import ImageStore, {imagesDirectory} from "../service/ImageStore";
+import ImageStore, {dataUrlForFile, imagesDirectory} from "../service/ImageStore";
 import SqliteProductRepository from "../product/SqliteProductRepository";
 import SqliteProductQueryService from "../product/SqliteProductQueryService";
 import SqliteProductSaleStatisticsRepository from "../product/SqliteProductSaleStatisticsRepository";
@@ -538,7 +538,8 @@ class Container {
    */
   _findProductImage() {
     return new FindProductImage({
-      productImageSource: this.getInstance({key: 'productImageSource'})
+      productImageSource: this.getInstance({key: 'productImageSource'}),
+      readDataUrl: dataUrlForFile
     });
   }
 

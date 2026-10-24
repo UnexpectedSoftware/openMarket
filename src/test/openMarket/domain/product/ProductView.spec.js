@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import Product from '../../../../openMarket/domain/product/Product';
 import ProductView from '../../../../openMarket/domain/product/ProductView';
+import ProductDetailQuery from '../../../../openMarket/domain/product/ProductDetailQuery';
 import ProductRepository from '../../../../openMarket/domain/product/ProductRepository';
 import ProductsQuery from '../../../../openMarket/domain/product/ProductsQuery';
 
@@ -80,6 +81,7 @@ describe('ProductRepository.find', () => {
   it('requires an adapter', () => {
     const port = new ProductRepository();
     expect(() => port.find(new ProductsQuery({}))).to.throw('ProductRepository#find must be implemented');
+    expect(() => port.findDetail(new ProductDetailQuery({barcode: '1'}))).to.throw('ProductRepository#findDetail must be implemented');
   });
 });
 

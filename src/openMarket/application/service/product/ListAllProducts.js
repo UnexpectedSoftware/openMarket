@@ -5,7 +5,9 @@
 /** @typedef {import('../../../domain/product/ProductRepository').CatalogCursor} CatalogCursor */
 /** @typedef {import('../../../domain/product/ProductRepository').CatalogQuery} CatalogQuery */
 /** @typedef {import('../../../domain/product/ProductsQuery').default} ProductsQuery */
+/** @typedef {import('../../../domain/product/ProductDetailQuery').default} ProductDetailQuery */
 /** @typedef {import('../../../domain/product/ProductView').default} ProductView */
+/** @typedef {import('../../../domain/product/ProductDetail').default} ProductDetail */
 
 /**
  * @class ListAllProducts
@@ -90,6 +92,15 @@ export default class ListAllProducts {
    */
   list(query) {
     return this._productRepository.find(query);
+  }
+
+  /**
+   * Forwards ProductRepository.findDetail. Completes empty when the barcode is unknown.
+   * @param {ProductDetailQuery} query
+   * @returns {Observable<ProductDetail>}
+   */
+  detail(query) {
+    return this._productRepository.findDetail(query);
   }
 
   /**

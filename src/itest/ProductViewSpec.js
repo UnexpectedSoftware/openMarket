@@ -3,6 +3,8 @@ import os from 'os';
 import path from 'path';
 import {expect} from 'chai';
 import Product from '../openMarket/domain/product/Product';
+import ProductDetail from '../openMarket/domain/product/ProductDetail';
+import ProductDetailQuery from '../openMarket/domain/product/ProductDetailQuery';
 import ProductView from '../openMarket/domain/product/ProductView';
 import ProductsQuery from '../openMarket/domain/product/ProductsQuery';
 import SqliteConnection from '../openMarket/infrastructure/service/SqliteConnection';
@@ -167,6 +169,58 @@ describe('ProductRepository find', () => {
   });
 });
 
+describe('ProductRepository findDetail', () => {
+  let file;
+  let connection;
+
+  beforeEach(() => {
+    file = path.join(os.tmpdir(), `om-product-detail-${Date.now()}-${Math.random()}.sqlite`);
+    connection = new SqliteConnection({filename: file});
+    connection.database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('deli', 'Deli');
+    insert(connection, {
+      barcode: '0002', name: 'Ham', priceCents: 1850, basePriceCents: 1150,
+      stock: 5, stockMin: 1, status: 'ENABLED', weighted: 1, categoryId: 'deli',
+      vatPercent: 10, vatKind: 'S1', description: 'Sliced', imageName: 'ham.png'
+    });
+  });
+
+  afterEach(() => {
+    connection.database.close();
+    fs.rmSync(file, {force: true});
+    fs.rmSync(`${file}-wal`, {force: true});
+    fs.rmSync(`${file}-shm`, {force: true});
+  });
+
+  it('returns vat, cents, the category name, weight, and the description', () => {
+    const images = {readDataUrl: name => (name ? `data:${name}` : null)};
+    const detail = readDetail(repository(connection, images), new ProductDetailQuery({barcode: '0002'}));
+    expect(detail).to.be.instanceof(ProductDetail);
+    expect(detail).to.not.be.instanceof(Product);
+    expect(Object.isFrozen(detail)).to.equal(true);
+    expect(detail.priceCents).to.equal(1850);
+    expect(detail.basePriceCents).to.equal(1150);
+    expect(detail.marginPercent).to.equal(38);
+    expect(detail.vat).to.deep.equal({kind: 'S1', percent: 10, cause: null});
+    expect(detail.categoryName).to.equal('Deli');
+    expect(detail.categoryId).to.equal('deli');
+    expect(detail.weighted).to.equal(true);
+    expect(detail.description).to.equal('Sliced');
+    expect(detail.imageName).to.equal('ham.png');
+    expect(detail.imageUrl).to.equal('data:ham.png');
+    expect(detail.lowStock).to.equal(false);
+  });
+
+  it('completes empty for an unknown barcode and when no image store is wired', () => {
+    const missing = readDetail(repository(connection, null), new ProductDetailQuery({barcode: 'missing'}));
+    expect(missing).to.equal(null);
+    const blank = readDetail(repository(connection, null), new ProductDetailQuery());
+    expect(blank).to.equal(null);
+    const stored = readDetail(repository(connection, null), new ProductDetailQuery({barcode: '0002'}));
+    expect(stored.imageUrl).to.equal(null);
+    expect(stored).to.not.be.instanceof(Product);
+  });
+});
+
 /**
  * @param {SqliteConnection} connection
  * @param {object} row
@@ -185,6 +239,8 @@ function insert(connection, row) {
   optional(columns, values, 'vat_percent', row.vatPercent);
   optional(columns, values, 'vat_kind', row.vatKind);
   optional(columns, values, 'vat_cause', row.vatCause);
+  optional(columns, values, 'description', row.description);
+  optional(columns, values, 'image_name', row.imageName);
   connection.database.prepare(
     `INSERT INTO product (${columns.join(', ')}) VALUES (${columns.map(() => '?').join(', ')})`
   ).run(...values);
@@ -242,6 +298,27 @@ function read(products, query) {
  * @param {object} criteria
  * @returns {string[]}
  */
+/**
+ * @param {SqliteProductRepository} products
+ * @param {ProductDetailQuery} query
+ * @returns {ProductDetail | null}
+ */
+function readDetail(products, query) {
+  let detail = null;
+  let failure = null;
+  let saw = false;
+  products.findDetail(query).subscribe(value => {
+    saw = true;
+    detail = value;
+  }, error => {
+    failure = error;
+  });
+  if (failure) {
+    throw failure;
+  }
+  return saw ? detail : null;
+}
+
 function names(products, criteria) {
   return read(products, new ProductsQuery(criteria)).items.map(item => item.name);
 }
