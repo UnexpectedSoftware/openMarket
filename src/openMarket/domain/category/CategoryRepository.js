@@ -1,6 +1,8 @@
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 /** @typedef {import('./Category').default} Category */
 /** @typedef {import('./CategorySummary').default} CategorySummary */
+/** @typedef {import('./CategoryView').default} CategoryView */
+/** @typedef {import('./CategoriesQuery').default} CategoriesQuery */
 
 /**
  * Port for the category collection.
@@ -22,6 +24,17 @@ export default class CategoryRepository {
    */
   findAllWithStats() {
     throw new Error('CategoryRepository#findAllWithStats must be implemented');
+  }
+
+  /**
+   * One page of category cards. `total` counts the whole filter, not the page.
+   * The rows are {@link CategoryView} read models, not Category aggregates.
+   * {@link CategoriesQuery} is criteria, not a port.
+   * @param {CategoriesQuery} query
+   * @returns {Observable<{items: CategoryView[], total: number}>}
+   */
+  find(query) {
+    throw new Error('CategoryRepository#find must be implemented');
   }
 
   /**
