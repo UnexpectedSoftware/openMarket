@@ -25,7 +25,7 @@ const TILE = {
   barcode: '8400000000110',
   name: 'Arroz',
   priceCents: 200,
-  vatRate: {kind: 'S1', percent: 21, cause: null},
+  vat: {kind: 'S1', percent: 21, cause: null},
   weighted: false,
   lowStock: false,
   imageUrl: null
@@ -56,10 +56,10 @@ describe('sell screen first open', () => {
 
   it('keeps the product tile when a POP follows the route push', () => {
     let loads = 0;
-    const productsQuery = {
-      listForSale: () => {
+    const listProducts = {
+      list: () => {
         loads += 1;
-        return Rx.Observable.of([TILE]);
+        return Rx.Observable.of({items: [TILE], total: 1});
       }
     };
     const memoryHistory = createMemoryHistory();
@@ -67,7 +67,7 @@ describe('sell screen first open', () => {
       rootReducer,
       applyMiddleware(
         routerMiddleware(memoryHistory),
-        createEpicMiddleware(makeSaleTilesEpic(productsQuery))
+        createEpicMiddleware(makeSaleTilesEpic(listProducts))
       )
     );
     history = syncHistoryWithStore(memoryHistory, store);
@@ -141,13 +141,13 @@ function press(key) {
  * @returns {{dispatch: Function, getState: Function}}
  */
 function mountSell(host) {
-  const productsQuery = {listForSale: () => Rx.Observable.of([TILE])};
+  const listProducts = {list: () => Rx.Observable.of({items: [TILE], total: 1})};
   const memoryHistory = createMemoryHistory();
   const store = createStore(
     rootReducer,
     applyMiddleware(
       routerMiddleware(memoryHistory),
-      createEpicMiddleware(makeSaleTilesEpic(productsQuery))
+      createEpicMiddleware(makeSaleTilesEpic(listProducts))
     )
   );
   history = syncHistoryWithStore(memoryHistory, store);

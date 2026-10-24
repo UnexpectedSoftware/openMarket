@@ -1,31 +1,23 @@
-/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
-
 /**
- * One product tile on the sell screen. A read model, not a Product.
- * @typedef {object} SaleTile
- * @property {string} barcode
- * @property {string} name
- * @property {number} priceCents
- * @property {{kind: string, percent: number, cause: string | null}} vatRate
- * @property {boolean} weighted
- * @property {boolean} lowStock
- * @property {string | null} [imageUrl]
- */
-
-/**
- * Port: products the cashier can put on a ticket, as plain tiles.
- * @interface
+ * Criteria for one page of products. A value passed to `ProductRepository.find`.
+ * It describes what to read. It is not a port, and it does not check the range.
  */
 export default class ProductsQuery {
 
   /**
-   * Enabled products, optionally filtered by name or barcode and by category.
-   * Completes with an array. It does not load Product aggregates.
-   * @param {{text?: string, categoryId?: string, limit?: number}} [query]
-   * @returns {Observable<SaleTile[]>}
+   * @param {{text?: string | null, categoryId?: string | null, status?: string | null, weighted?: boolean | null, lowStock?: boolean, sort?: string | null, limit?: number, offset?: number, forSale?: boolean}} [props]
    */
-  listForSale({text, categoryId, limit} = {}) {
-    throw new Error('ProductsQuery#listForSale must be implemented');
+  constructor({text, categoryId, status, weighted, lowStock, sort, limit, offset, forSale} = {}) {
+    this.text = text || null;
+    this.categoryId = categoryId || null;
+    this.status = status || null;
+    this.weighted = weighted == null ? null : !!weighted;
+    this.lowStock = !!lowStock;
+    this.sort = sort || 'name_asc';
+    this.limit = limit;
+    this.offset = offset || 0;
+    this.forSale = !!forSale;
+    Object.freeze(this);
   }
 
 }

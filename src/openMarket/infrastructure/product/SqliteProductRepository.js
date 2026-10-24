@@ -6,7 +6,8 @@ import InvalidProductPageError from "../../domain/product/InvalidProductPageErro
 import UnexpectedFailure from "../../domain/error/UnexpectedFailure";
 import observableError from "../logging/observableError";
 import {rethrow} from "../logging/ErrorLog";
-import {centsOf, eurosOf} from "../service/storedMoney";
+import {centsOf, eurosOf, moneyFromColumns} from "../service/storedMoney";
+import ProductView from "../../domain/product/ProductView";
 
 const PRODUCT_SELECT = 'SELECT p.barcode, p.name, p.description, p.stock_min, p.price, p.price_cents, p.stock, p.base_price, p.base_price_cents, ' +
   'p.vat_percent, p.vat_kind, p.vat_cause, p.status, p.weighted, p.image_name, ' +
@@ -47,6 +48,16 @@ const COUNT_PRODUCTS_WITH_LOW_STOCK_SQL =
   'SELECT count(*) AS total FROM product WHERE stock <= stock_min AND status = ?';
 
 const COUNT_CATALOG_SQL = 'SELECT count(*) AS total FROM product p WHERE 1 = 1' + CATALOG_FILTER_SQL;
+
+const FIND_PRODUCT_PAGE_SQL = PRODUCT_SELECT + ' WHERE 1 = 1';
+
+const COUNT_MATCHING_PRODUCTS_SQL = 'SELECT count(*) AS total FROM product p WHERE 1 = 1';
+
+const PRODUCT_PAGE_FILTER_SQL = ' AND (? IS NULL OR p.status = ?)' +
+  ' AND (? IS NULL OR p.category_id = ?)' +
+  ' AND (? IS NULL OR p.weighted = ?)' +
+  ' AND (? = 0 OR p.stock <= p.stock_min)' +
+  ' AND (? IS NULL OR p.name LIKE ? ESCAPE \'\\\' OR p.barcode LIKE ? ESCAPE \'\\\')';
 
 const COUNT_WITHOUT_IMAGE_SQL = 'SELECT count(*) AS total FROM product ' +
   'WHERE (image_name IS NULL OR image_name = \'\') ' +
@@ -166,6 +177,24 @@ export default class SqliteProductRepository {
     });
   }
 
+  find(query) {
+    return Rx.Observable.defer(() => {
+      const page = this._queryService.productPage({
+        statement: FIND_PRODUCT_PAGE_SQL,
+        countStatement: COUNT_MATCHING_PRODUCTS_SQL,
+        orderBySql: ' ORDER BY ',
+        filterSql: PRODUCT_PAGE_FILTER_SQL,
+        query
+      });
+      const rows = this._database.prepare(page.sql).all(...page.params);
+      const count = this._database.prepare(page.countSql).get(...page.countParams);
+      return Rx.Observable.of({
+        items: rows.map(row => toProductView(row, this._images)),
+        total: Number(count.total)
+      });
+    });
+  }
+
   findByBarcode({barcode}) {
     return Rx.Observable.defer(() => {
       const row = this._database.prepare(FIND_BY_BARCODE_SQL).get(barcode);
@@ -272,4 +301,105 @@ export default class SqliteProductRepository {
       return Rx.Observable.of(Number(row.total));
     });
   }
+}
+
+/**
+ * @typedef {object} ProductPageRow
+ * @property {string | null} [barcode]
+ * @property {string | null} [name]
+ * @property {string | null} [category_id]
+ * @property {string | null} [category_name]
+ * @property {number | null} [price]
+ * @property {number | null} [price_cents]
+ * @property {number | null} [base_price]
+ * @property {number | null} [base_price_cents]
+ * @property {number | null} [vat_percent]
+ * @property {string | null} [vat_kind]
+ * @property {string | null} [vat_cause]
+ * @property {number | null} [stock]
+ * @property {number | null} [stock_min]
+ * @property {number | null} [weighted]
+ * @property {string | null} [status]
+ * @property {string | null} [image_name]
+ */
+
+/**
+ * A stored row as a read model. It does not build a Product.
+ * @param {ProductPageRow} row
+ * @param {{readDataUrl: (name: string) => (string | null)} | null | undefined} images
+ * @returns {ProductView}
+ */
+function toProductView(row, images) {
+  return new ProductView({
+    barcode: textOf(row.barcode),
+    name: textOf(row.name),
+    categoryId: emptyToNull(row.category_id),
+    categoryName: emptyToNull(row.category_name),
+    priceCents: moneyFromColumns(row.price_cents, row.price).cents,
+    basePriceCents: moneyFromColumns(row.base_price_cents, row.base_price).cents,
+    vat: vatData(row),
+    stock: finiteOrNull(row.stock),
+    stockMin: finiteOrNull(row.stock_min),
+    weighted: Number(row.weighted) === 1,
+    status: emptyToNull(row.status),
+    imageUrl: imageUrl(images, row.image_name)
+  });
+}
+
+/**
+ * @param {*} value
+ * @returns {string}
+ */
+function textOf(value) {
+  return value == null ? '' : String(value);
+}
+
+/**
+ * @param {*} value
+ * @returns {string | null}
+ */
+function emptyToNull(value) {
+  if (value == null || value === '') {
+    return null;
+  }
+  return String(value);
+}
+
+/**
+ * @param {*} value
+ * @returns {number | null}
+ */
+function finiteOrNull(value) {
+  if (value == null || value === '') {
+    return null;
+  }
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return null;
+  }
+  return number;
+}
+
+/**
+ * @param {ProductPageRow} row
+ * @returns {{kind: string, percent: number, cause: string | null}}
+ */
+function vatData(row) {
+  return {
+    kind: row.vat_kind == null || row.vat_kind === '' ? 'S1' : String(row.vat_kind),
+    percent: row.vat_percent == null ? 21 : Number(row.vat_percent),
+    cause: emptyToNull(row.vat_cause)
+  };
+}
+
+/**
+ * @param {{readDataUrl: (name: string) => (string | null)} | null | undefined} images
+ * @param {*} imageName
+ * @returns {string | null}
+ */
+function imageUrl(images, imageName) {
+  if (!images || !imageName) {
+    return null;
+  }
+  return images.readDataUrl(imageName);
 }

@@ -22,6 +22,19 @@ const AFTER_STOCK_DESC_SQL = ' AND (' + STOCK_MISSING + ' > ?' +
   ' OR (' + STOCK_MISSING + ' = ? AND ? = 1 AND p.barcode > ?))';
 
 /**
+ * @typedef {object} ProductPageCriteria
+ * @property {string | null} [text]
+ * @property {string | null} [categoryId]
+ * @property {string | null} [status]
+ * @property {boolean | null} [weighted]
+ * @property {boolean} [lowStock]
+ * @property {string | null} [sort]
+ * @property {number} [limit]
+ * @property {number} [offset]
+ * @property {boolean} [forSale]
+ */
+
+/**
  * Catalog clause selection and statement values for SqliteProductRepository.
  */
 export default class SqliteProductQueryService {
@@ -163,4 +176,118 @@ export default class SqliteProductQueryService {
     return '%' + text.replace(/[\\%_]/g, (char) => '\\' + char) + '%';
   }
 
+  /**
+   * Offset page for ProductRepository.find. forSale caps the page at 80
+   * (default 24). A management list uses the given limit, or no cap.
+   * @param {{statement: string, countStatement: string, orderBySql: string, filterSql: string, query?: ProductPageCriteria}} command
+   * @returns {{sql: string, params: Array<string | number | null>, countSql: string, countParams: Array<string | number | null>}}
+   */
+  productPage({statement, countStatement, orderBySql, filterSql, query}) {
+    const criteria = query || {};
+    const order = this._orderSql(this._sort(criteria.sort));
+    const page = pageClause(criteria);
+    const params = this._filterParams(criteria);
+    return {
+      sql: statement + filterSql + orderBySql + order + page.sql,
+      params: params.concat(page.params),
+      countSql: countStatement + filterSql,
+      countParams: params
+    };
+  }
+
+  /**
+   * @param {ProductPageCriteria} criteria
+   * @returns {Array<string | number | null>}
+   */
+  _filterParams(criteria) {
+    return filterParams({
+      status: criteria.forSale ? ProductStatus.ENABLED : this._status(criteria.status),
+      categoryId: criteria.categoryId,
+      weighted: criteria.weighted,
+      lowStock: criteria.lowStock,
+      pattern: likePattern(this, criteria.text)
+    });
+  }
+
+}
+
+/**
+ * @param {{status: string | null, categoryId?: string | null, weighted?: boolean | null, lowStock?: boolean, pattern: string | null}} values
+ * @returns {Array<string | number | null>}
+ */
+function filterParams({status, categoryId, weighted, lowStock, pattern}) {
+  const category = categoryParam(categoryId);
+  const weight = weightedParam(weighted);
+  const stock = lowStock ? 1 : 0;
+  return [status, status, category, category, weight, weight, stock, pattern, pattern, pattern];
+}
+
+/**
+ * @param {ProductPageCriteria} criteria
+ * @returns {{sql: string, params: number[]}}
+ */
+function pageClause(criteria) {
+  const offset = criteria.offset || 0;
+  if (criteria.forSale) {
+    return {sql: ' LIMIT ? OFFSET ?', params: [saleCap(criteria.limit), offset]};
+  }
+  return {sql: ' LIMIT ? OFFSET ?', params: [listCap(criteria.limit), offset]};
+}
+
+/**
+ * Sell grid: default 24, never more than 80.
+ * @param {number | undefined} limit
+ * @returns {number}
+ */
+function saleCap(limit) {
+  const value = Number(limit);
+  if (!Number.isInteger(value) || value <= 0) {
+    return 24;
+  }
+  return value > 80 ? 80 : value;
+}
+
+/**
+ * Management list: a positive limit, or no cap.
+ * @param {number | undefined} limit
+ * @returns {number}
+ */
+function listCap(limit) {
+  const value = Number(limit);
+  if (!Number.isInteger(value) || value <= 0) {
+    return -1;
+  }
+  return value;
+}
+
+/**
+ * @param {*} categoryId
+ * @returns {string | null}
+ */
+function categoryParam(categoryId) {
+  return categoryId ? String(categoryId) : null;
+}
+
+/**
+ * @param {boolean | null | undefined} weighted
+ * @returns {number | null}
+ */
+function weightedParam(weighted) {
+  if (weighted == null) {
+    return null;
+  }
+  return weighted ? 1 : 0;
+}
+
+/**
+ * @param {{_likeContains: (text: string) => string}} service
+ * @param {*} text
+ * @returns {string | null}
+ */
+function likePattern(service, text) {
+  const value = text == null ? '' : String(text).trim();
+  if (value === '') {
+    return null;
+  }
+  return service._likeContains(value);
 }
