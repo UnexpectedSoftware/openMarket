@@ -1,49 +1,11 @@
 import * as Rx from "rxjs";
 /** @typedef {import("../../domain/category/CategoryRepository").default} CategoryRepository */
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import("../../domain/category/CategoriesQuery").default} CategoriesQuery */
+/** @typedef {import("../../domain/category/CategoryView").default} CategoryView */
 import CategoryNotFoundError from "../../domain/category/CategoryNotFoundError";
 import CategoryNotEmptyError from "../../domain/category/CategoryNotEmptyError";
 import {raise, rethrow} from "../logging/ErrorLog";
-
-const SUMMARIES_SQL = `
-WITH product_totals AS (
-  SELECT category_id,
-         COUNT(*) AS product_count,
-         COALESCE(SUM(stock), 0) AS stock_total,
-         COALESCE(SUM(COALESCE(base_price_cents, CAST(ROUND(IFNULL(base_price, 0) * 100) AS INTEGER))), 0) / 100.0 AS base_price_total
-  FROM product
-  WHERE category_id IS NOT NULL
-  GROUP BY category_id
-),
-sales AS (
-  SELECT p.category_id AS category_id,
-         p.barcode AS barcode,
-         COALESCE(p.name, '') AS name,
-         SUM(s.quantity) AS quantity,
-         SUM(COALESCE(s.amount_cents, CAST(ROUND(s.amount * 100) AS INTEGER))) AS amount
-  FROM product_sale_day s
-  INNER JOIN product p ON p.barcode = s.barcode
-  WHERE p.category_id IS NOT NULL
-  GROUP BY p.category_id, p.barcode, COALESCE(p.name, '')
-),
-ranked AS (
-  SELECT category_id, barcode, name, quantity, amount,
-         ROW_NUMBER() OVER (
-           PARTITION BY category_id
-           ORDER BY quantity DESC, amount DESC, name ASC
-         ) AS rank
-  FROM sales
-)
-SELECT c.id, c.name, c.image_name,
-       COALESCE(t.product_count, 0) AS product_count,
-       COALESCE(t.stock_total, 0) AS stock_total,
-       COALESCE(t.base_price_total, 0) AS base_price_total,
-       r.barcode AS most_sold_barcode,
-       r.name AS most_sold_name,
-       r.quantity AS most_sold_quantity
-FROM category c
-LEFT JOIN product_totals t ON t.category_id = c.id
-LEFT JOIN ranked r ON r.category_id = c.id AND r.rank = 1
-`;
 
 const FIND_ALL_SQL = 'SELECT id, name, image_name FROM category';
 
@@ -105,7 +67,7 @@ export default class SqliteCategoryRepository {
     this._categoryFactory = categoryFactory;
     this._images = images;
     this._queryService = queryService;
-    this._summaries = this._database.prepare(SUMMARIES_SQL);
+    this._summaries = this._database.prepare(queryService.summariesSql());
   }
 
   findAll() {
@@ -125,6 +87,14 @@ export default class SqliteCategoryRepository {
     return Rx.Observable.defer(() => Rx.Observable.of(
       this._summaries.all().map(row => this._queryService.summaryFrom(row))
     ));
+  }
+
+  /**
+   * @param {CategoriesQuery} query
+   * @returns {Observable<{items: CategoryView[], total: number}>}
+   */
+  find(query) {
+    return Rx.Observable.defer(() => Rx.Observable.of(this._readViews(query)));
   }
 
   findById({id}) {
@@ -246,6 +216,31 @@ export default class SqliteCategoryRepository {
       }
       return Rx.Observable.of(null);
     });
+  }
+
+  /**
+   * @param {CategoriesQuery} query
+   * @returns {{items: CategoryView[], total: number}}
+   */
+  _readViews(query) {
+    const page = this._queryService.viewPage(query);
+    const rows = this._database.prepare(page.sql).all(...page.params);
+    const count = this._database.prepare(page.countSql).get(...page.countParams);
+    return {
+      items: rows.map(row => this._queryService.viewFrom(row, this._imageUrl(row.image_name))),
+      total: Number(count.total)
+    };
+  }
+
+  /**
+   * @param {*} imageName
+   * @returns {string | null}
+   */
+  _imageUrl(imageName) {
+    if (imageName && this._images) {
+      return this._images.readDataUrl(imageName);
+    }
+    return null;
   }
 
   _inTransaction(work) {
