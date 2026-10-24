@@ -27,7 +27,8 @@ How the redesign lands, one phase per PR series. Each phase keeps the existing e
 2. **Orders** — master-detail #111 (OM-07 #70, OM-19 #82, OM-20 #83). Mockup: `A-orders`. Before: `before/22-…`, `24-…`. Plan: [plans/phase-5-orders.md](plans/phase-5-orders.md) (split 5a list/quick ranges/summary, 5b detail route/reprint).
 3. **Products** — redesign #98 (OM-22 #85, OM-08 #71). Mockup: `A-products`. Before: `before/10-…`, `13-…`. Plan: [plans/phase-6-products.md](plans/phase-6-products.md) (split 6a read model + sell grid, 6b table/margin/empty states, 6c edit drawer).
 4. **Categories** — card grid on tokens and shared components. Before: `before/05-categories.webp`. Plan: [plans/phase-7-categories.md](plans/phase-7-categories.md) (split 7a read model, 7b card grid and dialog, 7c delete confirmation, 7d product links).
-5. **Settings** — OM-26 #89 (shop, printer, ticket, theme, language).
+5. **Settings** — OM-26 #89 (shop, printer, ticket, theme, language). Plan: [plans/phase-8-settings.md](plans/phase-8-settings.md) (split 8a read models, 8b comercio and appearance, 8c ticket, 8d printer and language). 8a–8d are `Version: none`. 8d closes #89.
 
 ## Final — Accessibility pass
-- #113 (OM-17 #80, OM-09 #72, OM-10 #73): automated contrast + target-size checks, keyboard walk-through of every screen.
+- After settings, in order: #87 (low stock still missing "Quedan N" and the nav count; `Version: none`), then #110 (layout presets, selected in Settings; `Version: none`), then this pass. The fit of each is in the phase 8 plan.
+- #113 (OM-17 #80, OM-09 #72, OM-10 #73): automated contrast + target-size checks, keyboard walk-through of every screen. **This is the final redesign PR that carries `Version: minor`.**
