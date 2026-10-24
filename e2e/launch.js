@@ -114,15 +114,15 @@ async function fillProduct(window, product) {
   await category.selectOption({label: product.category});
 }
 
-function productCard(window, name) {
-  return window.locator('.product-card').filter({
-    has: window.locator('.product-card-name', {hasText: new RegExp(`^${name}$`)})
+function productRow(window, name) {
+  return window.locator('tbody tr').filter({
+    has: window.locator('.products-name', {hasText: new RegExp(`^${name}$`)})
   });
 }
 
 async function openProductList(window) {
   await chooseMenu(window, 'Products', 'List Products!');
-  await expect(window.getByRole('heading', {name: 'List Products'})).toBeVisible();
+  await expect(window.getByRole('heading', {name: 'Productos', exact: true})).toBeVisible();
 }
 
 function orderRow(window, name) {
@@ -180,7 +180,7 @@ module.exports = {
   euros,
   chooseMenu,
   fillProduct,
-  productCard,
+  productRow,
   openProductList,
   orderRow,
   scanBarcode,
