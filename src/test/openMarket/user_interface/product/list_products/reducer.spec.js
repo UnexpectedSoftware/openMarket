@@ -1,92 +1,64 @@
 import {expect} from 'chai';
 import reducer from '../../../../../openMarket/user_interface/product/list_products/reducer';
-import {listProductsDisabled, listProductsFetched} from '../../../../../openMarket/user_interface/product/list_products/action';
-import {defaultCatalogSort, state} from '../../../../../openMarket/user_interface/product/list_products/model';
+import {
+  listProductsDisabled,
+  listProductsFetch,
+  productsFailed,
+  productsLoaded,
+  productsPageOpened
+} from '../../../../../openMarket/user_interface/product/list_products/action';
+import {state} from '../../../../../openMarket/user_interface/product/list_products/model';
 
-function card(barcode, status) {
-  return {
-    barcode,
-    name: barcode,
-    price: 1,
-    stock: 1,
-    status,
-    categoryName: 'Drinks',
-    imageSrc: null
-  };
-}
-
-function fetched(extra) {
-  return listProductsFetched({
+function loaded(extra) {
+  return productsLoaded({
     query: '',
     lowStock: false,
     status: null,
     categoryId: null,
-    sort: defaultCatalogSort,
-    products: [],
-    hasMore: false,
-    nextCursor: null,
-    append: false,
+    weighted: null,
+    sort: 'name_asc',
+    offset: 0,
+    items: [{barcode: '0001', status: 'ENABLED'}],
+    total: 1,
     ...extra
   });
 }
 
-describe('product catalog reducer', () => {
+describe('products list reducer', () => {
+  it('starts a page load from the route', () => {
+    const next = reducer(state(), productsPageOpened({lowStock: true}));
+    expect(next.lowStock).to.equal(true);
+    expect(next.loading).to.equal(true);
+    expect(next.items).to.deep.equal([]);
+  });
+
   it('ignores a result from an older search', () => {
     const current = {...state(), query: 'cola'};
-    expect(reducer(current, fetched({query: 'co', products: [card('0001', 'ENABLED')]}))).to.equal(current);
+    expect(reducer(current, loaded({query: 'co'}))).to.equal(current);
   });
 
-  it('ignores a result from an older filter', () => {
-    const current = {...state(), lowStock: true};
-    expect(reducer(current, fetched({products: [card('0001', 'ENABLED')]}))).to.equal(current);
-  });
-
-  it('ignores a result from an older sort', () => {
-    const current = {...state(), sort: 'stock_asc'};
-    expect(reducer(current, fetched({sort: 'name_asc', products: [card('0001', 'ENABLED')]}))).to.equal(current);
-  });
-
-  it('appends the next page and skips a barcode already shown', () => {
-    const current = {
-      ...state(),
-      products: [card('0001', 'ENABLED')],
-      nextCursor: {name: 'Cola', stock: 1, barcode: '0001'},
-      hasMore: true
-    };
-    const next = reducer(current, fetched({
-      products: [card('0001', 'ENABLED'), card('0002', 'ENABLED')],
-      append: true
+  it('stores the matching page and a failure', () => {
+    const next = reducer(state(), loaded({}));
+    expect(next.items.map(item => item.barcode)).to.deep.equal(['0001']);
+    expect(next.total).to.equal(1);
+    expect(next.loading).to.equal(false);
+    const failed = reducer(next, productsFailed({
+      query: '',
+      message: 'No se han podido cargar los productos'
     }));
-    expect(next.products.map(product => product.barcode)).to.deep.equal(['0001', '0002']);
-    expect(next.nextCursor).to.equal(null);
-    expect(next.hasMore).to.equal(false);
+    expect(failed.error).to.equal('No se han podido cargar los productos');
+    expect(failed.loading).to.equal(false);
   });
 
-  it('keeps a disabled product in place and keeps the cursor', () => {
-    const cursor = {name: 'Three', stock: 1, barcode: '0003'};
+  it('marks a photo refresh as loading and keeps a disabled row in place', () => {
     const current = {
       ...state(),
-      products: [card('0001', 'ENABLED'), card('0002', 'ENABLED'), card('0003', 'DISABLED')],
-      nextCursor: cursor,
-      hasMore: true
+      items: [{barcode: '0001', status: 'ENABLED'}, {barcode: '0002', status: 'DISABLED'}],
+      total: 2
     };
-    const next = reducer(current, listProductsDisabled('0001'));
-    expect(next.products.map(product => product.barcode)).to.deep.equal(['0001', '0002', '0003']);
-    expect(next.products[0].status).to.equal('DISABLED');
-    expect(next.nextCursor).to.equal(cursor);
-  });
-
-  it('keeps a disabled product on the list when the disabled filter is on', () => {
-    const cursor = {name: 'Two', stock: 1, barcode: '0002'};
-    const current = {
-      ...state(),
-      status: 'DISABLED',
-      products: [card('0001', 'ENABLED'), card('0002', 'DISABLED')],
-      nextCursor: cursor
-    };
-    const next = reducer(current, listProductsDisabled('0001'));
-    expect(next.products.map(product => product.barcode)).to.deep.equal(['0001', '0002']);
-    expect(next.products[0].status).to.equal('DISABLED');
-    expect(next.nextCursor).to.equal(cursor);
+    expect(reducer(current, listProductsFetch()).loading).to.equal(true);
+    const disabled = reducer(current, listProductsDisabled('0001'));
+    expect(disabled.items.map(item => item.status)).to.deep.equal(['DISABLED', 'DISABLED']);
+    expect(disabled.total).to.equal(2);
   });
 });

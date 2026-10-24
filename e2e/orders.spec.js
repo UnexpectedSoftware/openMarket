@@ -8,7 +8,7 @@ const {
   closeApp,
   chooseMenu,
   euros,
-  productCard,
+  productRow,
   openProductList,
   orderRow,
   scanBarcode,
@@ -114,8 +114,8 @@ test('sells, edits quantity, and warns on low stock', async () => {
     await expect(window.getByText('El ticket está vacío')).toBeVisible();
 
     await openProductList(window);
-    await expect(productCard(window, 'Milk').locator('.product-card-stock')).toHaveText('3');
-    await expect(productCard(window, 'Bread').locator('.product-card-stock')).toHaveText('19');
+    await expect(productRow(window, 'Milk').locator('.products-stock-qty')).toHaveText('3');
+    await expect(productRow(window, 'Bread').locator('.products-stock-qty')).toHaveText('19');
   } finally {
     await closeApp(app, userData);
   }
