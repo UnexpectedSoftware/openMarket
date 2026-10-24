@@ -113,12 +113,12 @@ describe('order payment', () => {
     file = path.join(os.tmpdir(), `om-sell-pref-${Date.now()}-${process.pid}.sqlite`);
     const connection = new SqliteConnection({filename: file});
     const repository = new SqliteSellPreferencesRepository({connection});
-    repository.find()
+    repository.findPreferences()
       .flatMap(preferences => {
         expect(preferences.autoPrint).to.equal(false);
         return repository.save({preferences: preferences.withAutoPrint(true)});
       })
-      .flatMap(() => repository.find())
+      .flatMap(() => repository.findPreferences())
       .subscribe(
         preferences => {
           expect(preferences.autoPrint).to.equal(true);

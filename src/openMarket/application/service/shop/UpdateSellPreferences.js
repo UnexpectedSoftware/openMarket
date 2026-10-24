@@ -17,7 +17,7 @@ export default class UpdateSellPreferences {
    * @returns {import('rxjs/Observable').Observable<SellPreferences>}
    */
   update({autoPrint}) {
-    return this._sellPreferencesRepository.find()
+    return this._sellPreferencesRepository.findPreferences()
       .flatMap(preferences => this._sellPreferencesRepository.save({
         preferences: preferences.withAutoPrint(autoPrint === true)
       }));

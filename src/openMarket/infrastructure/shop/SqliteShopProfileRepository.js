@@ -1,8 +1,10 @@
 import * as Rx from 'rxjs';
 import ShopProfile from '../../domain/shop/ShopProfile';
+import ShopProfileView from '../../domain/shop/ShopProfileView';
 import TaxId from '../../domain/shop/TaxId';
 import {rethrow} from '../logging/ErrorLog';
 /** @typedef {import('../../domain/shop/ShopProfileRepository').default} ShopProfileRepository */
+/** @typedef {import('../../domain/shop/ShopProfileQuery').default} ShopProfileQuery */
 
 const KEY = 'shop_profile';
 const FIND_SQL = 'SELECT value_json FROM setting WHERE key = ?';
@@ -22,15 +24,18 @@ export default class SqliteShopProfileRepository {
     this._database = connection.database;
   }
 
+  /**
+   * One row. `query` has no fields, so it does not change the read.
+   * @param {ShopProfileQuery} query
+   * @returns {import('rxjs/Observable').Observable<ShopProfileView>}
+   */
+  find(query) {
+    return this._load(viewFromJson, () => new ShopProfileView({}));
+  }
+
   /** @returns {import('rxjs/Observable').Observable<ShopProfile>} */
-  find() {
-    return Rx.Observable.defer(() => {
-      const row = this._database.prepare(FIND_SQL).get(KEY);
-      if (!row) {
-        return Rx.Observable.of(ShopProfile.empty());
-      }
-      return Rx.Observable.of(fromJson(row.value_json));
-    });
+  findProfile() {
+    return this._load(profileFromJson, () => ShopProfile.empty());
   }
 
   /**
@@ -45,6 +50,13 @@ export default class SqliteShopProfileRepository {
         rethrow(error, {message: 'Could not save the shop profile', context: {operation: 'save'}});
       }
       return Rx.Observable.of(profile);
+    });
+  }
+
+  _load(present, missing) {
+    return Rx.Observable.defer(() => {
+      const row = this._database.prepare(FIND_SQL).get(KEY);
+      return Rx.Observable.of(row ? present(row.value_json) : missing());
     });
   }
 
@@ -67,9 +79,30 @@ function toJson(profile) {
 
 /**
  * @param {string} text
+ * @returns {ShopProfileView}
+ */
+function viewFromJson(text) {
+  const data = JSON.parse(text);
+  const address = data.address || {};
+  return new ShopProfileView({
+    nif: data.nif,
+    legalName: data.legalName,
+    tradeName: data.tradeName,
+    street: address.street,
+    postalCode: address.postalCode,
+    city: address.city,
+    province: address.province,
+    country: address.country,
+    timeZone: data.timeZone,
+    invoicingEnabled: data.invoicingEnabled
+  });
+}
+
+/**
+ * @param {string} text
  * @returns {ShopProfile}
  */
-function fromJson(text) {
+function profileFromJson(text) {
   const data = JSON.parse(text);
   return new ShopProfile({
     nif: data.nif ? TaxId.parse(data.nif) : null,

@@ -15,22 +15,22 @@ import {
 } from './action';
 
 /**
- * @param {object} profile
+ * Fields the flat settings reducer already stores, copied off a ShopProfileView.
+ * @param {object} view
  * @returns {object}
  */
-export function shopProfileView(profile) {
-  const address = profile.address || {};
+function fieldsOf(view) {
   return {
-    nif: profile.nif ? profile.nif.value : '',
-    legalName: profile.legalName || '',
-    tradeName: profile.tradeName || '',
-    street: address.street || '',
-    postalCode: address.postalCode || '',
-    city: address.city || '',
-    province: address.province || '',
-    country: address.country || 'ES',
-    invoicingEnabled: profile.invoicingEnabled === true,
-    issuer: typeof profile.snapshot === 'function' ? profile.snapshot() : null
+    nif: view.nif || '',
+    legalName: view.legalName,
+    tradeName: view.tradeName,
+    street: view.street,
+    postalCode: view.postalCode,
+    city: view.city,
+    province: view.province,
+    country: view.country,
+    invoicingEnabled: view.invoicingEnabled,
+    issuer: view.issuer
   };
 }
 
@@ -41,13 +41,14 @@ export function makeShopProfileEpic({getShopProfile, updateShopProfile}) {
   const load = action$ => action$
     .filter(action => action.type === SHOP_PROFILE_REQUESTED)
     .flatMap(() => getShopProfile.getProfile()
-      .map(profile => shopProfileLoaded(shopProfileView(profile)))
+      .map(view => shopProfileLoaded(fieldsOf(view)))
       .catch(error => Rx.Observable.of(shopProfileFailed(userText(error, 'Shop settings could not be loaded')))));
 
   const save = action$ => action$
     .filter(action => action.type === SHOP_PROFILE_SAVE_REQUESTED)
     .flatMap(action => updateShopProfile.update(action.command)
-      .map(profile => shopProfileSaved(shopProfileView(profile)))
+      .flatMap(() => getShopProfile.getProfile())
+      .map(view => shopProfileSaved(fieldsOf(view)))
       .catch(error => Rx.Observable.of(shopProfileFailed(userText(error, 'Shop settings were not saved')))));
 
   return action$ => Rx.Observable.merge(load(action$), save(action$));

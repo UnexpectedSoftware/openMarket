@@ -1,5 +1,7 @@
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 /** @typedef {import('./SellPreferences').default} SellPreferences */
+/** @typedef {import('./SellPreferencesQuery').default} SellPreferencesQuery */
+/** @typedef {import('./SellPreferencesView').default} SellPreferencesView */
 
 /**
  * Port: whether the till prints a ticket on its own.
@@ -8,11 +10,21 @@
 export default class SellPreferencesRepository {
 
   /**
-   * The stored preference, or the default when the key has never been saved.
+   * The stored preference as a screen reads it. A missing row is the default view.
+   * It does not complete empty.
+   * @param {SellPreferencesQuery} query
+   * @returns {Observable<SellPreferencesView>}
+   */
+  find(query) {
+    throw new Error('SellPreferencesRepository#find must be implemented');
+  }
+
+  /**
+   * The write aggregate, or the default when the key has never been saved.
    * @returns {Observable<SellPreferences>}
    */
-  find() {
-    throw new Error('SellPreferencesRepository#find must be implemented');
+  findPreferences() {
+    throw new Error('SellPreferencesRepository#findPreferences must be implemented');
   }
 
   /**

@@ -18,7 +18,7 @@ export default class ChangeTheme {
    * @returns {import('rxjs/Observable').Observable<AppearancePreferences>}
    */
   changeTheme({theme}) {
-    return this._appearancePreferencesRepository.find().flatMap(preferences => {
+    return this._appearancePreferencesRepository.findPreferences().flatMap(preferences => {
       try {
         preferences.changeTheme({theme});
       } catch (error) {

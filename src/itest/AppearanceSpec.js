@@ -43,14 +43,14 @@ describe('Appearance preferences', () => {
 
   it('returns Mercado when the setting row is missing', done => {
     getAppearance.get().subscribe(preferences => {
-      expect(preferences.theme.id).to.equal('mercado');
+      expect(preferences.theme).to.equal('mercado');
       done();
     }, done);
   });
 
   it('saves a theme and reads it back from the setting table', done => {
     changeTheme.changeTheme({theme: 'ultramarinos'}).subscribe(() => {
-      repository.find().subscribe(preferences => {
+      repository.findPreferences().subscribe(preferences => {
         const row = database.prepare('SELECT value_json FROM setting WHERE key = ?').get('appearance');
         expect(preferences.theme.id).to.equal('ultramarinos');
         expect(JSON.parse(row.value_json).theme).to.equal('ultramarinos');
@@ -81,7 +81,7 @@ describe('Appearance preferences', () => {
       }
       getAppearance.get().subscribe(preferences => {
         try {
-          expect(preferences.theme.id).to.equal('mostrador-noche');
+          expect(preferences.theme).to.equal('mostrador-noche');
           const row = database.prepare('SELECT value_json FROM setting WHERE key = ?').get('shop_profile');
           expect(row).to.not.equal(undefined);
           done();

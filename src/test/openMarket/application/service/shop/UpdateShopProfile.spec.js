@@ -3,12 +3,27 @@ import * as Rx from 'rxjs';
 import UpdateShopProfile from '../../../../../openMarket/application/service/shop/UpdateShopProfile';
 import GetShopProfile from '../../../../../openMarket/application/service/shop/GetShopProfile';
 import ShopProfile from '../../../../../openMarket/domain/shop/ShopProfile';
+import ShopProfileView from '../../../../../openMarket/domain/shop/ShopProfileView';
 import ErrorCode from '../../../../../openMarket/domain/error/ErrorCode';
 
 function repository() {
   let stored = ShopProfile.empty();
   return {
-    find: () => Rx.Observable.of(stored),
+    find() {
+      const address = stored.address;
+      return Rx.Observable.of(new ShopProfileView({
+        nif: stored.nif ? stored.nif.value : null,
+        legalName: stored.legalName,
+        tradeName: stored.tradeName,
+        street: address.street,
+        postalCode: address.postalCode,
+        city: address.city,
+        province: address.province,
+        country: address.country,
+        timeZone: stored.timeZone,
+        invoicingEnabled: stored.invoicingEnabled
+      }));
+    },
     save({profile}) {
       stored = profile;
       return Rx.Observable.of(profile);
@@ -30,10 +45,13 @@ describe('UpdateShopProfile', () => {
       invoicingEnabled: true
     }).flatMap(() => get.getProfile()).subscribe(
       profile => {
-        expect(profile.nif.value).to.equal('B12345674');
+        expect(profile).to.be.instanceof(ShopProfileView);
+        expect(profile).to.not.be.instanceof(ShopProfile);
+        expect(profile.nif).to.equal('B12345674');
         expect(profile.legalName).to.equal('Ultramarinos Pérez SL');
         expect(profile.timeZone).to.equal('Europe/Madrid');
-        expect(profile.snapshot().nif).to.equal('B12345674');
+        expect(profile.issuer.nif).to.equal('B12345674');
+        expect(profile.snapshot).to.equal(undefined);
       },
       error => done(error),
       () => done()
