@@ -11,3 +11,7 @@ global.Node = window.Node;
 global.DocumentFragment = window.DocumentFragment;
 global.requestAnimationFrame = callback => setTimeout(callback, 0);
 global.cancelAnimationFrame = id => clearTimeout(id);
+
+require.extensions['.svg'] = (module, filename) => {
+  module.exports = filename;
+};

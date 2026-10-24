@@ -1,61 +1,52 @@
 import {
-  CATEGORIES_CHANGE_FAILED,
-  CATEGORIES_FETCHED,
-  CATEGORIES_IMAGE_CLEAR,
-  CATEGORIES_IMAGE_REPLACE,
-  CATEGORIES_DELETE,
-  CATEGORIES_RENAME,
+  CATEGORIES_DIALOG_CLOSED,
+  CATEGORIES_DIALOG_OPENED,
+  CATEGORIES_DRAFT_CHANGED,
+  CATEGORIES_FAILED,
+  CATEGORIES_LOADED,
+  CATEGORIES_PAGE_LOADED,
+  CATEGORIES_QUERY_CHANGED,
   CATEGORIES_SAVE,
-  CATEGORIES_SAVED
+  CATEGORIES_SAVED,
+  CATEGORIES_SAVE_FAILED
 } from './action';
+import {
+  categoriesFailed,
+  categoriesLoaded,
+  dialogClosed,
+  dialogOpened,
+  draftChanged,
+  pageOpened,
+  queryChanged,
+  saved,
+  saveFailed,
+  saveStarted,
+  state
+} from './model';
 
-const initialState = {
-  categories: [],
-  draftKey: 0,
-  savingId: null,
-  savingDraft: false,
-  changeError: null
-};
-
-export default function reducer(state = initialState, action) {
+export default function reducer(current = state(), action) {
   switch (action.type) {
-    case CATEGORIES_FETCHED:
-      return {
-        ...state,
-        categories: action.categories,
-        savingId: null,
-        changeError: null
-      };
+    case CATEGORIES_PAGE_LOADED:
+      return pageOpened(current);
+    case CATEGORIES_QUERY_CHANGED:
+      return queryChanged(current, action.text);
+    case CATEGORIES_LOADED:
+      return categoriesLoaded(current, action);
+    case CATEGORIES_FAILED:
+      return categoriesFailed(current, action.message);
+    case CATEGORIES_DIALOG_OPENED:
+      return dialogOpened(current, action);
+    case CATEGORIES_DIALOG_CLOSED:
+      return dialogClosed(current);
+    case CATEGORIES_DRAFT_CHANGED:
+      return draftChanged(current, action.patch);
     case CATEGORIES_SAVE:
-      return {
-        ...state,
-        savingDraft: true,
-        changeError: null
-      };
+      return saveStarted(current);
     case CATEGORIES_SAVED:
-      return {
-        ...state,
-        draftKey: state.draftKey + 1,
-        savingDraft: false,
-        changeError: null
-      };
-    case CATEGORIES_RENAME:
-    case CATEGORIES_IMAGE_REPLACE:
-    case CATEGORIES_IMAGE_CLEAR:
-    case CATEGORIES_DELETE:
-      return {
-        ...state,
-        savingId: action.id,
-        changeError: null
-      };
-    case CATEGORIES_CHANGE_FAILED:
-      return {
-        ...state,
-        savingId: null,
-        savingDraft: false,
-        changeError: {id: action.id, message: action.message}
-      };
+      return saved(current);
+    case CATEGORIES_SAVE_FAILED:
+      return saveFailed(current, action.message);
     default:
-      return state;
+      return current;
   }
 }

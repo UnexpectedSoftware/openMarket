@@ -1,6 +1,9 @@
 import React, {Component} from 'react';
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+const DEFAULT_LABEL = 'Image';
+const DEFAULT_HINT = 'Optional. Drop an image here, or choose a file';
+const DEFAULT_TYPE_ERROR = 'Use a JPEG, PNG, GIF, or WebP image';
 
 export function pathForImageFile(file) {
   const { webUtils } = require('electron');
@@ -9,11 +12,12 @@ export function pathForImageFile(file) {
 
 /**
  * @param {?File} file
+ * @param {string} [message] Replaces the English sentence when the caller passes one.
  * @returns {?string} error message when the browser type is not an allowed image
  */
-export function imageTypeError(file) {
+export function imageTypeError(file, message) {
   if (file && file.type && ALLOWED_TYPES.indexOf(file.type) === -1) {
-    return 'Use a JPEG, PNG, GIF, or WebP image';
+    return message || DEFAULT_TYPE_ERROR;
   }
   return null;
 }
@@ -78,12 +82,10 @@ export default class ImageField extends Component {
       this.setState({ dragOver: false });
       return;
     }
-    const typeError = imageTypeError(file);
-    if (typeError) {
-      this.setState({
-        dragOver: false,
-        fileError: typeError
-      });
+    const chosen = this.chosenFile(file);
+    if (chosen.error) {
+      this.setState({ dragOver: false, fileError: chosen.error });
+      this.notify(chosen);
       return;
     }
     this.revokePreview();
@@ -93,7 +95,25 @@ export default class ImageField extends Component {
       dragOver: false,
       fileError: null
     });
+    this.notify(chosen);
   };
+
+  chosenFile(file) {
+    const typeError = imageTypeError(file, this.props.typeError);
+    if (typeError) {
+      return {imagePath: null, error: typeError};
+    }
+    if (!this.props.onChosen) {
+      return {imagePath: null, error: null};
+    }
+    return chosenImagePath(file);
+  }
+
+  notify(chosen) {
+    if (this.props.onChosen) {
+      this.props.onChosen(chosen);
+    }
+  }
 
   onDragOver = (event) => {
     event.preventDefault();
@@ -141,9 +161,11 @@ export default class ImageField extends Component {
   render() {
     const { inputId } = this.props;
     const { previewUrl, dragOver, fileError } = this.state;
+    const label = this.props.label || DEFAULT_LABEL;
+    const hint = this.props.hint || DEFAULT_HINT;
     return (
       <div>
-        <label htmlFor={inputId}>Image</label>
+        <label htmlFor={inputId}>{label}</label>
         <div
           className={dragOver ? 'image-drop is-over' : 'image-drop'}
           onDragOver={this.onDragOver}
@@ -159,7 +181,7 @@ export default class ImageField extends Component {
         >
           {previewUrl
             ? <img src={previewUrl} alt="" />
-            : <span>Optional. Drop an image here, or choose a file</span>}
+            : <span>{hint}</span>}
           <input
             id={inputId}
             className="image-file"

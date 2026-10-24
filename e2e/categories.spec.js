@@ -1,5 +1,6 @@
-const {test, expect} = require('@playwright/test');
+const fs = require('fs');
 const path = require('path');
+const {test, expect} = require('@playwright/test');
 const {
   root,
   assertDist,
@@ -13,68 +14,77 @@ const {
   dismissTicket
 } = require('./launch');
 
+const THEMES = ['mercado', 'mostrador-noche', 'ultramarinos', 'unexpected-neon'];
+
 function fact(card, label) {
   return card.locator('.category-card-facts div', {
     hasText: new RegExp(`^${label}`)
   }).locator('dd');
 }
 
-async function cardNamed(window, name) {
-  let match = -1;
-  await expect.poll(async () => {
-    const values = await window.locator('.category-card:not(.is-draft) .category-card-name').evaluateAll(
-      nodes => nodes.map(node => node.value)
-    );
-    match = values.indexOf(name);
-    return match;
-  }).toBeGreaterThanOrEqual(0);
-  return window.locator('.category-card:not(.is-draft)').nth(match);
+function cardNamed(window, name) {
+  return window.locator('.category-card').filter({
+    has: window.locator('.category-card-name', {hasText: new RegExp(`^${name}$`)})
+  });
+}
+
+async function openCategories(window) {
+  await window.getByRole('link', {name: 'Categorías', exact: true}).click();
+  await expect(window.getByRole('heading', {name: 'Categorías', exact: true})).toBeVisible();
+}
+
+function newCategory(window) {
+  return window.locator('.om-page-header').getByRole('button', {name: 'Nueva categoría'});
 }
 
 test.beforeAll(() => {
   assertDist();
 });
 
-test('creates a category from the blank card', async () => {
+test('creates categories from the dialog', async () => {
   const {app, window, userData} = await launchApp();
   const image = path.join(userData, 'pixel.png');
   const text = path.join(userData, 'note.txt');
   try {
-    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
-    const draft = window.locator('.category-card.is-draft');
-    await expect(draft).toBeVisible();
-    await expect(window.locator('.category-add')).toHaveCount(0);
-    await expect(window.locator('.category-cards > :first-child')).toHaveClass(/is-draft/);
-    await expect(window.locator('.category-card:not(.is-draft)')).toHaveCount(0);
-    await expect(draft.getByRole('button', {name: 'Save'})).toBeDisabled();
+    await openCategories(window);
+    await expect(window.getByText('Aún no hay categorías')).toBeVisible();
+    await expect(window.getByText('Crea la primera categoría para agrupar los productos.')).toBeVisible();
+    await expect(window.getByRole('button', {name: 'Nueva categoría'})).toHaveCount(2);
+    await expect(window.locator('.category-card.is-draft')).toHaveCount(0);
+    await expect(window.locator('.category-card')).toHaveCount(0);
 
-    await draft.getByRole('textbox', {name: 'Category name'}).focus();
-    await draft.getByRole('textbox', {name: 'Category name'}).blur();
-    await expect(draft.locator('.category-card-error')).toHaveText('Required');
-    await expect(window.locator('.category-card:not(.is-draft)')).toHaveCount(0);
+    await newCategory(window).click();
+    const dialog = window.getByRole('dialog');
+    await expect(dialog.getByRole('heading', {name: 'Nueva categoría'})).toBeVisible();
+    await expect(dialog.getByRole('textbox', {name: 'Nombre'})).toBeFocused();
+    await dialog.getByRole('button', {name: 'Guardar'}).click();
+    await expect(dialog.getByText('Obligatorio')).toBeVisible();
+    await expect(window.locator('.category-card')).toHaveCount(0);
 
-    await draft.locator('input[type="file"]').setInputFiles(text);
-    await expect(draft.locator('.category-card-error')).toHaveText('Use a JPEG, PNG, GIF, or WebP image');
+    await dialog.locator('input[type="file"]').setInputFiles(text);
+    await expect(dialog.locator('.error')).toHaveText('Usa una imagen JPEG, PNG, GIF o WebP');
+    await expect(window.locator('.category-card')).toHaveCount(0);
 
-    await draft.getByRole('textbox', {name: 'Category name'}).fill('Inline Plain');
-    await draft.getByRole('button', {name: 'Save'}).click();
-    await expect(await cardNamed(window, 'Inline Plain')).toBeVisible();
-    await expect(draft.getByRole('textbox', {name: 'Category name'})).toHaveValue('');
-    await expect(window.getByText('Category saved!')).toBeVisible();
+    await dialog.getByRole('button', {name: 'Cancelar'}).click();
+    await expect(dialog).toHaveCount(0);
 
-    await draft.locator('input[type="file"]').setInputFiles(image);
-    await expect(draft.locator('img')).toHaveAttribute('src', /^blob:/);
-    await draft.getByRole('textbox', {name: 'Category name'}).fill('Inline Photo');
-    await draft.getByRole('button', {name: 'Save'}).click();
-    const photo = await cardNamed(window, 'Inline Photo');
-    await expect(photo.locator('img')).toHaveAttribute('src', /^data:image\/png/);
-    await expect(draft.getByRole('textbox', {name: 'Category name'})).toHaveValue('');
+    await newCategory(window).click();
+    await dialog.getByRole('textbox', {name: 'Nombre'}).fill('Inline Plain');
+    await dialog.getByRole('textbox', {name: 'Nombre'}).press('Enter');
+    await expect(cardNamed(window, 'Inline Plain')).toBeVisible();
+    await expect(window.getByText('Categoría guardada')).toBeVisible();
+
+    await newCategory(window).click();
+    await dialog.locator('input[type="file"]').setInputFiles(image);
+    await expect(dialog.locator('img')).toHaveAttribute('src', /^blob:/);
+    await dialog.getByRole('textbox', {name: 'Nombre'}).fill('Inline Photo');
+    await dialog.getByRole('button', {name: 'Guardar'}).click();
+    await expect(cardNamed(window, 'Inline Photo').locator('img')).toHaveAttribute('src', /^data:image\/png/);
 
     await window.reload();
-    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
-    await expect((await cardNamed(window, 'Inline Plain')).locator('img')).not.toHaveAttribute('src', /^data:image/);
-    await expect((await cardNamed(window, 'Inline Photo')).locator('img')).toHaveAttribute('src', /^data:image\/png/);
-    await expect(draft.getByRole('textbox', {name: 'Category name'})).toHaveValue('');
+    await openCategories(window);
+    await expect(cardNamed(window, 'Inline Plain').locator('img')).not.toHaveAttribute('src', /^data:image/);
+    await expect(cardNamed(window, 'Inline Photo').locator('img')).toHaveAttribute('src', /^data:image\/png/);
 
     await window.evaluate(() => {
       location.hash = '#/create_product';
@@ -86,7 +96,7 @@ test('creates a category from the blank card', async () => {
   }
 });
 
-test('edits a category on the card', async () => {
+test('edits a category in the dialog', async () => {
   const {app, window, userData} = await launchApp({
     shop: {
       categories: [
@@ -97,50 +107,51 @@ test('edits a category on the card', async () => {
   });
   const image = path.join(userData, 'pixel.png');
   try {
-    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
-    const draft = window.locator('.category-card.is-draft');
-    const photo = await cardNamed(window, 'Inline Photo');
+    await openCategories(window);
+    const photo = cardNamed(window, 'Inline Photo');
     await expect(photo.locator('img')).toHaveAttribute('src', /^data:image\/png/);
 
-    const plain = await cardNamed(window, 'Inline Plain');
-    await plain.locator('.category-card-name').fill('Inline Plain renamed');
-    await plain.locator('.category-card-name').blur();
-    await expect(plain.locator('.category-card-name')).toHaveValue('Inline Plain renamed');
-    await expect(window.getByText('Changes applied')).toBeVisible();
+    await cardNamed(window, 'Inline Plain').getByRole('button', {name: 'Editar'}).click();
+    const dialog = window.getByRole('dialog');
+    await expect(dialog.getByRole('heading', {name: 'Editar categoría'})).toBeVisible();
+    await dialog.getByRole('textbox', {name: 'Nombre'}).fill('Inline Plain renamed');
+    await dialog.getByRole('button', {name: 'Guardar'}).click();
+    await expect(cardNamed(window, 'Inline Plain renamed')).toBeVisible();
+    await expect(window.getByText('Cambios aplicados')).toBeVisible();
 
-    const photoName = photo.locator('.category-card-name');
-    await photoName.fill('nope');
-    await photoName.press('Escape');
-    await expect(photoName).toHaveValue('Inline Photo');
+    await photo.getByRole('button', {name: 'Editar'}).click();
+    await dialog.getByRole('textbox', {name: 'Nombre'}).fill('nope');
+    await dialog.getByRole('button', {name: 'Cancelar'}).click();
+    await expect(cardNamed(window, 'Inline Photo')).toBeVisible();
+    await expect(cardNamed(window, 'nope')).toHaveCount(0);
 
-    await photoName.fill('   ');
-    await photoName.blur();
-    await expect(photo.locator('.category-card-error')).toHaveText('Required');
-    await photoName.press('Escape');
-    await expect(photoName).toHaveValue('Inline Photo');
+    await photo.getByRole('button', {name: 'Editar'}).click();
+    await dialog.getByRole('textbox', {name: 'Nombre'}).fill('   ');
+    await dialog.getByRole('button', {name: 'Guardar'}).click();
+    await expect(dialog.getByText('Obligatorio')).toBeVisible();
+    await dialog.getByRole('button', {name: 'Cancelar'}).click();
+    await expect(cardNamed(window, 'Inline Photo')).toBeVisible();
 
-    const imageBox = await photo.locator('img').boundingBox();
-    const changeBox = await photo.getByRole('button', {name: 'Change image'}).boundingBox();
-    const clearBox = await photo.getByRole('button', {name: 'Use default image'}).boundingBox();
-    expect(changeBox.y).toBeGreaterThanOrEqual(imageBox.y);
-    expect(changeBox.x + changeBox.width).toBeLessThanOrEqual(imageBox.x + imageBox.width + 1);
-    expect(clearBox.x + clearBox.width).toBeLessThanOrEqual(changeBox.x + 1);
+    await cardNamed(window, 'Inline Plain renamed').getByRole('button', {name: 'Editar'}).click();
+    await dialog.locator('input[type="file"]').setInputFiles(image);
+    await dialog.getByRole('button', {name: 'Guardar'}).click();
+    await expect(cardNamed(window, 'Inline Plain renamed').locator('img')).toHaveAttribute('src', /^data:image\/png/);
 
-    const renamed = await cardNamed(window, 'Inline Plain renamed');
-    await renamed.locator('input[type="file"]').setInputFiles(image);
-    await expect(renamed.locator('img')).toHaveAttribute('src', /^data:image\/png/);
-    await expect(renamed.getByRole('button', {name: 'Use default image'})).toBeVisible();
-
-    await photo.getByRole('button', {name: 'Use default image'}).click();
+    await photo.getByRole('button', {name: 'Editar'}).click();
+    await dialog.getByRole('button', {name: 'Usar imagen por defecto'}).click();
+    await dialog.getByRole('button', {name: 'Guardar'}).click();
     await expect(photo.locator('img')).not.toHaveAttribute('src', /^data:image/);
-    await expect(photo.getByRole('button', {name: 'Use default image'})).toHaveCount(0);
-
-    await window.screenshot({path: path.join(root, 'test-results/categories.png')});
 
     await window.reload();
-    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
-    await expect((await cardNamed(window, 'Inline Plain renamed')).locator('img')).toHaveAttribute('src', /^data:image\/png/);
-    await expect((await cardNamed(window, 'Inline Photo')).locator('img')).not.toHaveAttribute('src', /^data:image/);
+    await openCategories(window);
+    await expect(cardNamed(window, 'Inline Plain renamed').locator('img')).toHaveAttribute('src', /^data:image\/png/);
+    await expect(cardNamed(window, 'Inline Photo').locator('img')).not.toHaveAttribute('src', /^data:image/);
+
+    await window.getByRole('textbox', {name: 'Buscar por nombre'}).fill('zzz');
+    await expect(window.getByText('Ninguna categoría coincide con la búsqueda')).toBeVisible();
+    await window.getByRole('button', {name: 'Quitar búsqueda'}).click();
+    await expect(cardNamed(window, 'Inline Photo')).toBeVisible();
+    await expect(cardNamed(window, 'Inline Plain renamed')).toBeVisible();
 
     await app.evaluate(({BrowserWindow}) => {
       const browserWindow = BrowserWindow.getAllWindows()[0];
@@ -150,16 +161,11 @@ test('edits a category on the card', async () => {
     await window.evaluate(() => {
       location.hash = '#/categories';
     });
-    await expect(draft).toBeVisible();
+    await expect(cardNamed(window, 'Inline Photo')).toBeVisible();
     const cards = window.locator('.category-card');
     const first = await cards.nth(0).boundingBox();
     const second = await cards.nth(1).boundingBox();
     expect(second.y).toBeGreaterThanOrEqual(first.y + first.height - 1);
-    const narrowImage = await cards.nth(1).locator('img').boundingBox();
-    const narrowChange = await cards.nth(1).getByRole('button', {name: 'Change image'}).boundingBox();
-    expect(narrowChange.y).toBeGreaterThanOrEqual(narrowImage.y);
-    expect(narrowChange.x + narrowChange.width).toBeLessThanOrEqual(narrowImage.x + narrowImage.width + 1);
-    await window.screenshot({path: path.join(root, 'test-results/categories-narrow.png')});
   } finally {
     await closeApp(app, userData);
   }
@@ -181,68 +187,104 @@ test('shows totals and deletes an empty category', async () => {
     }
   });
   try {
-    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
-    const empty = await cardNamed(window, 'Empty Shelf');
-    await expect(fact(empty, 'Products')).toHaveText('0');
-    await expect(fact(empty, 'Value')).toHaveText(euros(0));
+    await openCategories(window);
+    const empty = cardNamed(window, 'Empty Shelf');
+    await expect(fact(empty, 'Productos')).toHaveText('0');
+    await expect(fact(empty, 'Valor')).toHaveText(euros(0));
     await expect(fact(empty, 'Stock')).toHaveText('0');
-    await expect(fact(empty, 'Most sold')).toHaveText('—');
+    await expect(fact(empty, 'Más vendido')).toHaveText('—');
+    await expect(empty.getByRole('button', {name: 'Eliminar categoría'})).toBeVisible();
 
-    const photo = await empty.locator('img').boundingBox();
-    const change = await empty.getByRole('button', {name: 'Change image'}).boundingBox();
-    const nameBox = await empty.locator('.category-card-name').boundingBox();
-    const deleteButton = empty.getByRole('button', {name: 'Delete category'});
-    const deleteBox = await deleteButton.boundingBox();
-    expect(change.y).toBeGreaterThanOrEqual(photo.y);
-    expect(change.x + change.width).toBeLessThanOrEqual(photo.x + photo.width + 1);
-    expect(deleteBox.y).toBeGreaterThanOrEqual(photo.y + photo.height - 1);
-    expect(deleteBox.y).toBeGreaterThanOrEqual(nameBox.y + nameBox.height - 1);
-
-    const stocked = await cardNamed(window, 'Stocked');
-    await expect(fact(stocked, 'Products')).toHaveText('1');
-    await expect(fact(stocked, 'Value')).toHaveText(euros(1.5));
+    const stocked = cardNamed(window, 'Stocked');
+    await expect(fact(stocked, 'Productos')).toHaveText('1');
+    await expect(fact(stocked, 'Valor')).toHaveText(euros(1.5));
     await expect(fact(stocked, 'Stock')).toHaveText('4');
-    await expect(fact(stocked, 'Most sold')).toHaveText('—');
-    await expect(stocked.getByRole('button', {name: 'Delete category'})).toHaveCount(0);
+    await expect(fact(stocked, 'Más vendido')).toHaveText('—');
+    await expect(stocked.getByRole('button', {name: 'Eliminar categoría'})).toHaveCount(0);
 
     await chooseMenu(window, 'Orders', 'new Order!');
-    await expect(window.getByRole('heading', {name: "Vender"})).toBeVisible();
+    await expect(window.getByRole('heading', {name: 'Vender'})).toBeVisible();
     await scanBarcode(window, '8400000000011');
     await expect(orderRow(window, 'Milk').locator('input')).toHaveValue('1');
     await window.getByRole('button', {name: 'Cobrar'}).click();
     await confirmPayment(window);
     await dismissTicket(window);
 
-    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
-    const sold = await cardNamed(window, 'Stocked');
-    await expect(fact(sold, 'Products')).toHaveText('1');
-    await expect(fact(sold, 'Value')).toHaveText(euros(1.5));
+    await openCategories(window);
+    const sold = cardNamed(window, 'Stocked');
+    await expect(fact(sold, 'Productos')).toHaveText('1');
+    await expect(fact(sold, 'Valor')).toHaveText(euros(1.5));
     await expect(fact(sold, 'Stock')).toHaveText('3');
-    await expect(fact(sold, 'Most sold')).toHaveText('Milk');
-    await fact(sold, 'Most sold').getByRole('link', {name: 'Milk'}).click();
+    await expect(fact(sold, 'Más vendido')).toHaveText('Milk');
+    await fact(sold, 'Más vendido').getByRole('link', {name: 'Milk'}).click();
     await expect(window.getByRole('heading', {name: "Let's edit a product!"})).toBeVisible();
     await expect(window.locator('input[name="name"]')).toHaveValue('Milk');
-    await window.getByRole('link', {name: 'Categorías', exact: true}).click();
+    await openCategories(window);
 
-    const emptyAgain = await cardNamed(window, 'Empty Shelf');
-    window.once('dialog', async (dialog) => {
-      expect(dialog.message()).toBe('Delete Empty Shelf?');
-      await dialog.accept();
+    const emptyAgain = cardNamed(window, 'Empty Shelf');
+    window.once('dialog', async (nativeDialog) => {
+      expect(nativeDialog.message()).toBe('¿Eliminar Empty Shelf?');
+      await nativeDialog.accept();
     });
-    await emptyAgain.getByRole('button', {name: 'Delete category'}).click();
-    await expect(window.getByRole('heading', {name: 'Category deleted'})).toBeVisible();
-    await expect.poll(async () => {
-      const values = await window.locator('.category-card:not(.is-draft) .category-card-name').evaluateAll(
-        nodes => nodes.map(node => node.value)
-      );
-      return values.includes('Empty Shelf');
-    }).toBe(false);
+    await emptyAgain.getByRole('button', {name: 'Eliminar categoría'}).click();
+    await expect(window.getByRole('heading', {name: 'Categoría eliminada'})).toBeVisible();
+    await expect(cardNamed(window, 'Empty Shelf')).toHaveCount(0);
 
     await window.evaluate(() => {
       location.hash = '#/create_product';
     });
     await expect(window.locator('select option', {hasText: 'Empty Shelf'})).toHaveCount(0);
     await expect(window.locator('select option', {hasText: 'Stocked'})).toHaveCount(1);
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
+test('screenshots the grid and the edit dialog in the four themes', async () => {
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: [
+        {name: 'Lácteos', image: true},
+        {name: 'Fruta'},
+        {name: 'Panadería'},
+        'Limpieza'
+      ],
+      products: [{
+        name: 'Leche',
+        barcode: '8400000001018',
+        price: 2,
+        basePrice: 1.5,
+        stock: 4,
+        stockMin: 1,
+        category: 'Lácteos'
+      }]
+    }
+  });
+  const after = path.join(root, 'docs/design/after');
+  fs.mkdirSync(after, {recursive: true});
+  try {
+    await window.setViewportSize({width: 1366, height: 768});
+    await openCategories(window);
+    await expect(cardNamed(window, 'Lácteos')).toBeVisible();
+    await expect(fact(cardNamed(window, 'Lácteos'), 'Productos')).toHaveText('1');
+
+    for (const theme of THEMES) {
+      await window.evaluate(name => {
+        document.documentElement.dataset.theme = name;
+      }, theme);
+      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
+      await window.screenshot({path: path.join(after, `categories-${theme}.png`)});
+    }
+
+    await cardNamed(window, 'Lácteos').getByRole('button', {name: 'Editar'}).click();
+    await expect(window.getByRole('heading', {name: 'Editar categoría'})).toBeVisible();
+    for (const theme of THEMES) {
+      await window.evaluate(name => {
+        document.documentElement.dataset.theme = name;
+      }, theme);
+      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
+      await window.screenshot({path: path.join(after, `categories-dialog-${theme}.png`)});
+    }
   } finally {
     await closeApp(app, userData);
   }

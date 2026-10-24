@@ -11,6 +11,7 @@ import Spinner from './Spinner';
  * @property {string} [icon] Font Awesome name without the `fa-` prefix
  * @property {string} [className]
  * @property {string} [title]
+ * @property {string} [label] Accessible name when it should differ from the visible text.
  * @property {Function} [onClick]
  * @property {boolean} [expanded] Sets aria-expanded when the button toggles a panel.
  * @property {boolean} [pressed] Sets aria-pressed when the button toggles a choice.
@@ -40,6 +41,7 @@ export default function Button(props) {
       disabled={props.disabled || props.busy ? true : undefined}
       aria-busy={props.busy ? 'true' : undefined}
       title={props.title}
+      aria-label={props.label || undefined}
       aria-expanded={props.expanded == null ? undefined : String(!!props.expanded)}
       aria-pressed={props.pressed == null ? undefined : String(!!props.pressed)}
       onClick={props.onClick}
