@@ -30,6 +30,14 @@ describe('Button', () => {
     view.unmount();
   });
 
+  it('uses a longer accessible name when one is passed', () => {
+    const view = mount(<Button label="Eliminar categoría">Eliminar</Button>);
+    const button = view.node.querySelector('button');
+    expect(button.getAttribute('aria-label')).to.equal('Eliminar categoría');
+    expect(button.textContent).to.include('Eliminar');
+    view.unmount();
+  });
+
   it('marks a pressed choice', () => {
     const view = mount(<Button variant="secondary" pressed>Hoy</Button>);
     const button = view.node.querySelector('button');

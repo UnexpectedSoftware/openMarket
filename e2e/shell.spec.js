@@ -6,7 +6,7 @@ const SCREENS = [
   {link: 'Vender', heading: "Vender", shot: 'vender'},
   {link: 'Pedidos', heading: 'Pedidos', shot: 'pedidos'},
   {link: 'Productos', heading: 'Productos', shot: 'productos'},
-  {link: 'Categorías', heading: 'Categories', shot: 'categorias'},
+  {link: 'Categorías', heading: 'Categorías', shot: 'categorias'},
   {link: 'Informes', heading: 'Most sold', shot: 'informes'},
   {link: 'Plugins', heading: 'Plugins', shot: 'plugins'}
 ];

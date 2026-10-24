@@ -39,189 +39,139 @@
   border: 0;
 }
 
-.category-cards {
-  display: flex;
-  flex-wrap: wrap;
-  gap: $sp-base;
+.categories-screen .om-toolbar {
+  align-items: flex-end;
+}
+
+.categories-screen .om-field {
+  margin-bottom: var(--om-space-0);
+}
+
+.categories-search {
+  flex: 1 1 calc(var(--om-space-9) * 4);
+  min-width: calc(var(--om-space-9) * 3);
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--om-tile-min-width), 1fr));
+  gap: var(--om-space-4);
+}
+
+.category-grid .om-card-body {
+  padding: var(--om-space-0);
 }
 
 .category-card {
-  width: 200px;
-  background: var(--om-color-surface);
-  border: 1px solid var(--om-color-border);
-  overflow: hidden;
-  @include border-radius;
-
-  &.is-draft {
-    border-style: dashed;
-
-    &::after {
-      content: '';
-      display: block;
-      clear: both;
-    }
-  }
+  display: flex;
+  flex-direction: column;
+  gap: var(--om-space-3);
 }
 
 .category-card-photo {
-  position: relative;
   background: var(--om-color-surface-alt);
-
-  img {
-    display: block;
-    width: 100%;
-    height: 140px;
-    object-fit: cover;
-    background: var(--om-color-surface-alt);
-  }
-
-  &.is-over img {
-    outline: 2px solid var(--om-color-primary);
-    outline-offset: -2px;
-  }
 }
 
-.category-card.is-draft .category-card-photo {
-  cursor: pointer;
-}
-
-.category-card-icons {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  display: flex;
-  gap: 4px;
-}
-
-.category-card-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  float: none;
-  width: 28px;
-  height: 28px;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  border-radius: 50%;
-  background: var(--om-color-surface);
-  opacity: 0.92;
-  color: var(--om-color-text);
-  font-size: 1.3rem;
-  line-height: 1;
-  box-shadow: var(--om-shadow-md);
-
-  .fa {
-    padding-right: 0;
-  }
-
-  &:disabled {
-    opacity: 0.45;
-    cursor: default;
-  }
-}
-
-.category-card .category-card-name {
+.category-card-photo img {
   display: block;
   width: 100%;
-  box-sizing: border-box;
-  margin: 0;
-  padding: $sp-base / 2;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  color: var(--om-color-text);
-  font: inherit;
-  line-height: 1.4;
-
-  &:focus {
-    background: var(--om-color-primary-soft);
-  }
-
-  &:disabled {
-    opacity: 0.45;
-  }
+  height: var(--om-tile-image-height);
+  object-fit: cover;
+  border-radius: var(--om-tile-radius);
+  background: var(--om-color-surface-alt);
 }
 
-.category-card-error {
-  display: block;
-  margin: 0;
-  padding: 0 $sp-base / 2 $sp-base / 4;
-  color: var(--om-color-danger);
-  font-size: 1.2rem;
+.category-card-name {
+  margin: var(--om-space-0);
+  padding: var(--om-space-0) var(--om-space-4);
+  color: var(--om-color-text);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-lg);
+  font-weight: var(--om-font-weight-bold);
+  line-height: var(--om-line-height-tight);
 }
 
 .category-card-facts {
-  margin: 0;
-  padding: 0 $sp-base / 2 $sp-base / 4;
-
-  div {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    margin: 0 0 2px;
-  }
-
-  dt {
-    flex: 0 0 76px;
-    margin: 0;
-    color: var(--om-color-text-muted);
-    font-size: 1.2rem;
-    font-weight: normal;
-    white-space: nowrap;
-  }
-
-  dd {
-    display: flex;
-    align-items: baseline;
-    gap: 6px;
-    flex: 1;
-    min-width: 0;
-    margin: 0;
-    color: var(--om-color-text);
-    font-size: 1.2rem;
-  }
+  display: flex;
+  flex-direction: column;
+  gap: var(--om-space-1);
+  margin: var(--om-space-0);
+  padding: var(--om-space-0) var(--om-space-4);
 }
 
-.category-card-most-sold-name {
-  min-width: 0;
+.category-card-facts div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--om-space-2);
+}
+
+.category-card-facts dt {
+  margin: var(--om-space-0);
+  color: var(--om-color-text-muted);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+  font-weight: var(--om-font-weight-medium);
+}
+
+.category-card-facts dd {
+  margin: var(--om-space-0);
+  min-width: var(--om-space-0);
+  color: var(--om-color-text);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+  text-align: right;
+}
+
+.category-card-most-sold {
+  display: inline-block;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.category-card-delete {
+.category-card-actions {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  float: none;
-  box-sizing: border-box;
-  width: calc(100% - #{$sp-base});
-  margin: 0 $sp-base / 2 $sp-base / 2;
-  padding: 0.4rem 0.8rem;
-  color: var(--om-color-danger);
-  background: var(--om-color-surface);
-  border: 1px solid var(--om-color-danger);
-  border-radius: 999px;
-  font-size: 1.3rem;
-
-  .fa {
-    padding-right: 0;
-  }
-
-  &:disabled {
-    opacity: 0.45;
-    cursor: default;
-  }
+  flex-wrap: wrap;
+  gap: var(--om-space-2);
+  padding: var(--om-space-0) var(--om-space-4) var(--om-space-4);
 }
 
-.category-card-save {
-  float: right;
-  margin: 0 $sp-base / 2 $sp-base / 2;
+.category-dialog-photo-actions,
+.category-dialog-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--om-space-2);
+}
 
-  &:disabled {
-    opacity: 0.45;
-    cursor: default;
-  }
+.category-dialog-photo-actions {
+  margin-top: var(--om-space-3);
+}
+
+.category-dialog-error {
+  margin: var(--om-space-3) var(--om-space-0) var(--om-space-0);
+  color: var(--om-color-danger);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+}
+
+.category-skeleton {
+  padding: var(--om-space-4);
+  background: var(--om-color-surface);
+  border: var(--om-button-border-width) solid var(--om-color-border);
+  border-radius: var(--om-radius-lg);
+}
+
+.categories-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--om-space-3);
+}
+
+.categories-error p {
+  margin: var(--om-space-0);
+  color: var(--om-color-danger);
+  font-family: var(--om-font-sans);
 }
