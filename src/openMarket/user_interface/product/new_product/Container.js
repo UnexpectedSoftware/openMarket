@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router';
 import NewProductReduxForm from './ReduxForm';
-import ProductSales from '../../sales/ProductSales';
 
 class Container extends Component {
 
@@ -41,16 +40,8 @@ class Container extends Component {
     editProductFetch(barcode);
   }
 
-  onSalesWindow = (window) => {
-    const {productSalesWindowSelected, initialValues} = this.props;
-    if (!initialValues || !initialValues.barcode) {
-      return;
-    }
-    productSalesWindowSelected({barcode: initialValues.barcode, window});
-  }
-
   render() {
-    const { categories, edition, initialValues, statuses, formKey, categoryId, imageLookup, sales } = this.props;
+    const { categories, edition, initialValues, statuses, formKey, categoryId, imageLookup } = this.props;
     return (
       <div className="container-fluid">
         <h2>Let's {edition ? 'edit a':'create a new'} product!</h2>
@@ -66,9 +57,6 @@ class Container extends Component {
           initialValues={initialValues}
           statusesList={statuses}
         />
-        {edition && sales ? (
-          <ProductSales sales={sales} onWindowChange={this.onSalesWindow} />
-        ) : null}
       </div>
     );
   }

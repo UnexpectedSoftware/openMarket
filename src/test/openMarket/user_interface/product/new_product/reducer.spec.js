@@ -2,8 +2,12 @@ import {expect} from 'chai';
 import reducer from '../../../../../openMarket/user_interface/product/new_product/reducer';
 import {
   FIND_PRODUCT_IMAGE,
+  newProductFetchedCategories,
   newProductSaved,
+  productClose,
+  productFetchedStatuses,
   productImageFound,
+  productPageLoaded,
   productSalesLoaded,
   productSalesWindowSelected,
   PRODUCT_IMAGE_LOOKUP_FINISHED
@@ -70,16 +74,7 @@ describe('new product reducer', () => {
       type: LIST_PRODUCTS_DETAIL_LOADED,
       payload: {barcode: '1001', status: 'DISABLED'}
     });
-    expect(opened.edition).to.equal(true);
-    expect(opened.initialValues.status).to.equal('DISABLED');
-    expect(opened.imageLookup).to.deep.equal(idleLookup);
-    expect(opened.lookupGeneration).to.equal(found.lookupGeneration + 1);
-    expect(opened.sales).to.deep.equal({
-      window: 'last_7_days',
-      quantity: 0,
-      amount: 0,
-      series: []
-    });
+    expect(opened).to.equal(found);
   });
 
   it('keeps the loaded series when the window changes until the next result arrives', () => {
@@ -96,7 +91,26 @@ describe('new product reducer', () => {
       type: LIST_PRODUCTS_DETAIL_LOADED,
       payload: {barcode: '1002'}
     });
-    expect(opened.sales.quantity).to.equal(0);
-    expect(opened.sales.window).to.equal('last_7_days');
+    expect(opened).to.equal(selected);
+  });
+
+  it('stores categories and statuses and resets when the page closes', () => {
+    const withLists = reducer(undefined, newProductFetchedCategories([{id: 'a', name: 'A'}]));
+    expect(withLists.categories).to.deep.equal([{id: 'a', name: 'A'}]);
+    const withStatuses = reducer(withLists, productFetchedStatuses([{key: 'ENABLED'}]));
+    expect(withStatuses.statuses).to.deep.equal([{key: 'ENABLED'}]);
+    const closed = reducer(withStatuses, productClose());
+    expect(closed.categories).to.deep.equal([]);
+    expect(closed.formKey).to.equal(0);
+    const reloaded = reducer({...withStatuses, lookupGeneration: 0, sales: null, imageLookup: null}, productPageLoaded());
+    expect(reloaded.formKey).to.equal(0);
+    expect(reloaded.lookupGeneration).to.equal(1);
+    const started = reducer({imageLookup: null}, {type: FIND_PRODUCT_IMAGE});
+    expect(started.imageLookup.busy).to.equal(true);
+    const finished = reducer(started, {type: PRODUCT_IMAGE_LOOKUP_FINISHED});
+    expect(finished.imageLookup.busy).to.equal(false);
+    const windowOnly = reducer({sales: null}, productSalesWindowSelected({barcode: '1', window: 'day'}));
+    expect(windowOnly.sales.window).to.equal('day');
+    expect(windowOnly.sales.quantity).to.equal(0);
   });
 });

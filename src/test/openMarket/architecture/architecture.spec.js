@@ -48,8 +48,7 @@ const BANNED_SUFFIX_ALLOWED = [
 const KNOWN_VIOLATIONS = [
   'user_interface/home/epic.js -> infrastructure/service/ImageStore',
   'user_interface/home/epicFactory.js -> infrastructure/dic/Container',
-  'user_interface/order/new_product_dialog/epic.js -> infrastructure/dic/Container',
-  'user_interface/product/new_product/epic.js -> infrastructure/service/ImageStore'
+  'user_interface/order/new_product_dialog/epic.js -> infrastructure/dic/Container'
 ];
 
 function walk(dir) {

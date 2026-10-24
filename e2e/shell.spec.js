@@ -39,7 +39,9 @@ test('navigates from the rail with a click or a shortcut', async () => {
     const content = await window.locator('#main .container-fluid').evaluate(element => element.getBoundingClientRect().width);
     expect(content).toBeGreaterThan(1250);
     await window.getByRole('link', {name: 'Nuevo producto', exact: true}).click();
-    await expect(window.getByRole('heading', {name: "Let's create a new product!"})).toBeVisible();
+    await expect(window.getByRole('heading', {name: 'Nuevo producto', exact: true})).toBeVisible();
+    await window.keyboard.press('Escape');
+    await expect(window.getByRole('heading', {name: 'Nuevo producto', exact: true})).toHaveCount(0);
 
     await window.locator('.header').click({position: {x: 700, y: 20}});
     await window.keyboard.press('Tab');

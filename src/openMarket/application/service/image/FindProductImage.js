@@ -1,3 +1,4 @@
+import 'rxjs/add/operator/map';
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 /** @typedef {import('../../../domain/image/ProductImageSource').default} ProductImageSource */
 
@@ -7,17 +8,24 @@
  */
 export default class FindProductImage {
   /**
-   * @param {{productImageSource: ProductImageSource}} deps
+   * @param {{productImageSource: ProductImageSource, readDataUrl?: (filePath: string) => (string | null)}} deps
    */
-  constructor({productImageSource}) {
+  constructor({productImageSource, readDataUrl}) {
     this._productImageSource = productImageSource;
+    this._readDataUrl = readDataUrl || null;
   }
 
   /**
    * @param {{barcode: string}} query
-   * @returns {Observable<string | null>} absolute path of a downloaded image, or null
+   * @returns {Observable<{imagePath: string, imageUrl: string | null} | null>}
    */
   findByBarcode({barcode}) {
-    return this._productImageSource.findByBarcode({barcode});
+    return this._productImageSource.findByBarcode({barcode}).map(imagePath => {
+      if (!imagePath) {
+        return null;
+      }
+      const imageUrl = this._readDataUrl ? this._readDataUrl(imagePath) : null;
+      return {imagePath, imageUrl};
+    });
   }
 }

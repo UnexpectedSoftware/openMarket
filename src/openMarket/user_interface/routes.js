@@ -3,7 +3,6 @@ import { Route, IndexRoute, Redirect } from 'react-router';
 import App from './containers/App';
 import HomePage from './home/ReduxConnector';
 import MostSoldPage from './home/MostSoldReduxConnector';
-import ProductPage from './product/new_product/ReduxConnector';
 import ProductListing from './product/list_products/ReduxConnector';
 import CategoriesPage from './category/ReduxConnector';
 import OrderPage from './order/new_order/ReduxConnector';
@@ -22,7 +21,7 @@ function childRoutes() {
   const routes = [
     <IndexRoute key="home" component={MostSoldPage} />,
     <Route key="takings" path="/takings" component={HomePage} />,
-    <Route key="create-product" path="/create_product" component={ProductPage} />,
+    <Route key="create-product" path="/create_product" component={ProductListing} />,
     <Route key="list-products" path="/list_products" component={ProductListing} />,
     <Redirect key="low-stock" from="/list_products_low_stock" to="/list_products?lowStock=1" />,
     <Route key="categories" path="/categories" component={CategoriesPage} />,

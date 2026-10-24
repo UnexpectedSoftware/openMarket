@@ -21,6 +21,8 @@ let nextTitleId = 1;
  * @property {*} [actions] Footer actions, usually Buttons.
  * @property {{current: HTMLElement}} [initialFocusRef] Object whose `current` is focused on open.
  * @property {'dialog'|'alertdialog'} [role]
+ * @property {'drawer'} [placement] Right-hand sheet. Same focus trap, no portal.
+ * @property {string} [className]
  */
 
 /**
@@ -146,10 +148,19 @@ export default class Dialog extends Component {
       return null;
     }
     const role = this.props.role || 'dialog';
+    const drawer = this.props.placement === 'drawer';
+    const overlayClass = drawer ? 'om-dialog-overlay om-dialog-overlay--drawer' : 'om-dialog-overlay';
+    const panelClass = ['om-dialog'];
+    if (drawer) {
+      panelClass.push('om-dialog--drawer');
+    }
+    if (this.props.className) {
+      panelClass.push(this.props.className);
+    }
     return (
-      <div className="om-dialog-overlay">
+      <div className={overlayClass}>
         <div
-          className={this.props.className ? 'om-dialog ' + this.props.className : 'om-dialog'}
+          className={panelClass.join(' ')}
           role={role}
           aria-modal="true"
           aria-labelledby={this.titleId}

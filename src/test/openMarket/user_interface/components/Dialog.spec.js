@@ -67,4 +67,18 @@ describe('Dialog', () => {
     expect(document.activeElement).to.equal(opener);
     opener.parentNode.removeChild(opener);
   });
+
+  it('anchors a drawer to the end at full height', () => {
+    ReactDOM.render(
+      <Dialog open title="Editar producto" placement="drawer" onClose={() => {}}>
+        <button type="button">Guardar</button>
+      </Dialog>,
+      host
+    );
+    const overlay = host.querySelector('.om-dialog-overlay');
+    const dialog = host.querySelector('[role="dialog"]');
+    expect(overlay.className).to.include('om-dialog-overlay--drawer');
+    expect(dialog.className).to.include('om-dialog--drawer');
+    expect(dialog.querySelector('h2').textContent).to.equal('Editar producto');
+  });
 });

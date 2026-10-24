@@ -2,7 +2,9 @@
 /** @typedef {import('./Product').default} Product */
 /** @typedef {import('./ProductFilter').default} ProductFilter */
 /** @typedef {import('./ProductView').default} ProductView */
+/** @typedef {import('./ProductDetail').default} ProductDetail */
 /** @typedef {import('./ProductsQuery').default} ProductsQuery */
+/** @typedef {import('./ProductDetailQuery').default} ProductDetailQuery */
 
 /**
  * @typedef {object} CatalogQuery
@@ -92,6 +94,16 @@ export default class ProductRepository {
    */
   find(query) {
     throw new Error('ProductRepository#find must be implemented');
+  }
+
+  /**
+   * One product read model. Completes empty when the barcode is unknown.
+   * The result is a ProductDetail, not a Product aggregate.
+   * @param {ProductDetailQuery} query
+   * @returns {Observable<ProductDetail>}
+   */
+  findDetail(query) {
+    throw new Error('ProductRepository#findDetail must be implemented');
   }
 
   /**

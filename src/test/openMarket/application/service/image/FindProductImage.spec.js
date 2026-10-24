@@ -13,8 +13,27 @@ describe('FindProductImage', () => {
       }
     });
     return useCase.findByBarcode({barcode: '5449000131805'}).toPromise()
-      .then(imagePath => {
-        expect(imagePath).to.equal('/tmp/openfoodfacts-1.jpg');
+      .then(found => {
+        expect(found).to.deep.equal({imagePath: '/tmp/openfoodfacts-1.jpg', imageUrl: null});
+      });
+  });
+
+  it('previews the file when a reader is wired', () => {
+    const useCase = new FindProductImage({
+      productImageSource: {
+        findByBarcode() {
+          return Rx.Observable.of('/tmp/openfoodfacts-1.jpg');
+        }
+      },
+      readDataUrl(filePath) {
+        expect(filePath).to.equal('/tmp/openfoodfacts-1.jpg');
+        return 'data:image/jpeg;base64,aa';
+      }
+    });
+    return useCase.findByBarcode({barcode: '1'}).toPromise()
+      .then(found => {
+        expect(found.imageUrl).to.equal('data:image/jpeg;base64,aa');
+        expect(found.imagePath).to.equal('/tmp/openfoodfacts-1.jpg');
       });
   });
 
