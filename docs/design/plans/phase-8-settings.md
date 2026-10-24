@@ -11,15 +11,15 @@ This is roadmap item 5. The Phase 4 plan calls the shop and `sell_auto_print` UI
 | PR | `package.json` | Why |
 |---|---|---|
 | This plan | `Version: none` | Docs only. |
-| **8a** read models | `Version: patch` | No screen change. |
-| **8b** Comercio and Apariencia | `Version: patch` | A slice of the screen. #89 stays open. |
-| **8c** Ticket | `Version: patch` | A slice of the screen. #89 stays open. |
-| **8d** Impresora and Idioma | `Version: minor` | Finishes the screen and closes #89. The only minor inside this phase. |
-| #87 low stock, after 8d | `Version: minor` | Visible sell-screen and nav change. Its own later plan. |
-| #110 layout presets, after #87 | `Version: minor` | Visible layouts, chosen on this screen. Its own later plan. |
-| **#113 accessibility pass, last** | `Version: minor` | **The final redesign PR that carries `Version: minor`.** Nothing on this roadmap after it bumps minor. |
+| **8a** read models | `Version: none` | No bump. |
+| **8b** Comercio and Apariencia | `Version: none` | No bump. #89 stays open. |
+| **8c** Ticket | `Version: none` | No bump. #89 stays open. |
+| **8d** Impresora and Idioma | `Version: none` | No bump. Finishes the screen and closes #89. |
+| #87 low stock, after 8d | `Version: none` | No bump. Its own later plan. |
+| #110 layout presets, after #87 | `Version: none` | No bump. Its own later plan. |
+| **#113 accessibility pass, last** | `Version: minor` | **The only redesign PR that carries `Version: minor`.** It bumps `package.json`. Nothing on this roadmap after it bumps minor. |
 
-8b and 8c do change what the cashier sees. They stay `patch` so one settings release is one minor, on 8d. That is a deliberate difference from phases 6 and 7, which marked every UI slice minor.
+8a, 8b, 8c, 8d, #87, and #110 leave `package.json` unchanged. #113 is the only redesign PR that carries `Version: minor`. That is a deliberate difference from phases 6 and 7, which marked every UI slice minor.
 
 ## Ordering
 
@@ -33,9 +33,9 @@ Branch every implementation PR from **master**. Do not branch from `cursor/categ
 
 These three stay out of 8a–8d. Each one is its own later plan, branched from master once the PR it waits on is merged. The version of each is in the table above.
 
-1. **#87 (OM-24), after 8d.** The sell tile and the cart line already say "Stock bajo". The toast is still the English "Stock is low" / "has N left". There is no "Quedan N", and no low-stock count on the rail or on Informes. `ProductRepository.countProductsWithLowStock` already exists. The follow-up adds the count and the Spanish toast, and the e2e that sells down to the minimum and expects the tile badge and the count to update. It does not edit the settings screen.
-2. **#110, after #87.** Presets B "Escáner" and C "Táctil" (mockups `B-sell-scanner`, `C-sell-touch`), built from the sell-screen components, chosen in Apariencia, applied without a reload. 8d leaves Apariencia as the four themes only, so this PR adds the layout field instead of rewriting the section. Acceptance on the issue: switching the preset changes the layout without a reload, and an e2e smoke per preset.
-3. **#113, after #110.** The accessibility pass (covers #80, #72, #73): automated contrast and target-size checks, and a keyboard walk of every screen, including Ajustes and both presets. ROADMAP already places this last. **This is the final PR that carries `Version: minor`.**
+1. **#87 (OM-24), after 8d.** `Version: none`. The sell tile and the cart line already say "Stock bajo". The toast is still the English "Stock is low" / "has N left". There is no "Quedan N", and no low-stock count on the rail or on Informes. `ProductRepository.countProductsWithLowStock` already exists. The follow-up adds the count and the Spanish toast, and the e2e that sells down to the minimum and expects the tile badge and the count to update. It does not edit the settings screen.
+2. **#110, after #87.** `Version: none`. Presets B "Escáner" and C "Táctil" (mockups `B-sell-scanner`, `C-sell-touch`), built from the sell-screen components, chosen in Apariencia, applied without a reload. 8d leaves Apariencia as the four themes only, so this PR adds the layout field instead of rewriting the section. Acceptance on the issue: switching the preset changes the layout without a reload, and an e2e smoke per preset.
+3. **#113, after #110.** The accessibility pass (covers #80, #72, #73): automated contrast and target-size checks, and a keyboard walk of every screen, including Ajustes and both presets. ROADMAP already places this last. **This is the only redesign PR that carries `Version: minor`.**
 
 ## Ready-to-paste Grok Build prompt (8a)
 
@@ -48,11 +48,11 @@ not a port. Do not add a query port. The no-arg find() that returns the aggregat
 as the plan says, and every caller in the plan is updated. Plain JS + JSDoc + checkJs.
 Keep unit, integration, and Playwright tests green. Run npm test, npm run test:integration,
 npm run typecheck, npm run build, xvfb-run -a npm run test:ui, and mutation on the new domain
-files. PR body must contain "Version: patch" and the keywords in the plan. Do not merge and
-do not release.
+files. PR body must contain "Version: none" and the keywords in the plan. Do not bump
+package.json. Do not merge and do not release.
 ```
 
-The 8b prompt is the same with "8b", the 8b section, screenshots of the page in the four themes, and `Version: patch`. The 8c prompt is the same with "8c", the 8c section, and `Version: patch`. The 8d prompt is the same with "8d", the 8d section, screenshots, and `Version: minor`.
+The 8b prompt is the same with "8b", the 8b section, screenshots of the page in the four themes, and `Version: none`. The 8c prompt is the same with "8c", the 8c section, and `Version: none`. The 8d prompt is the same with "8d", the 8d section, screenshots, and `Version: none`.
 
 ## What exists today (verified on master 4a77003)
 
@@ -197,7 +197,7 @@ Leave the sale toast's English "Order saved!" text alone. That string is the sel
 
 ## 8d — Impresora, Idioma, and the #89 acceptance
 
-This PR finishes the page. It carries `Version: minor` and closes #89.
+This PR finishes the page. It carries `Version: none` and closes #89. It does not bump `package.json`.
 
 1. **`domain/shop/PrinterSettings.js`**, the till's device. Fields `type` (`epson` or `star`, default `epson`), `interface` (non-empty string, default `/dev/usb/lp`), `characterSet` (`SPAIN1`, `PC858`, `PC850`, or `WPC1252`, default `SPAIN1`). Methods `withType`, `withInterface`, `withCharacterSet`. A bad value throws `InvalidPrinterSettingsError` (`ErrorCode.PRINTER_SETTINGS_INVALID`). Interface trims; empty throws; longer than 200 characters throws. The use case `UpdatePrinterSettings` loads, calls the methods, and saves. It does not open the device.
 2. **`PrinterSettingsQuery` / `PrinterSettingsView`**, frozen, the three strings. `PrinterSettingsRepository.find(new PrinterSettingsQuery())` → the view (defaults when the row is missing). `findSettings()` → the aggregate, for the write use case. Key `printer` in the same `setting` table. Facade keys `shop_get_printer_use_case` and `shop_update_printer_use_case`.
@@ -261,7 +261,7 @@ Product decisions. Each item has a recommended default. Implementation PRs follo
 ```
 Phase 8a: settings reads go through find(ShopProfileQuery) and the sell and appearance queries, returning views. Aggregates stay on findProfile and findPreferences.
 Refs #89
-Version: patch
+Version: none
 ```
 
 8b:
@@ -269,7 +269,7 @@ Version: patch
 ```
 Phase 8b: settings page on tokens and shared components, one Guardar, Spanish copy. Phone and email are optional and stay off the invoice.
 Refs #89 #88 #79
-Version: patch
+Version: none
 ```
 
 8c:
@@ -277,7 +277,7 @@ Version: patch
 ```
 Phase 8c: ticket settings for print mode, header, footer, and paper width. Existing tills still ask before printing.
 Refs #89 #88
-Version: patch
+Version: none
 ```
 
 8d:
@@ -286,7 +286,7 @@ Version: patch
 Phase 8d: printer settings, a test ticket, and a stored locale of es. The printer reads its interface from settings.
 Closes #89
 Refs #88
-Version: minor
+Version: none
 ```
 
 ## Rationale (architecture decisions, Oct 2026)
@@ -297,4 +297,4 @@ Version: minor
 - Print mode extends `SellPreferences` instead of a new ticket aggregate. A second type would leave `autoPrint` and `printMode` both able to disagree. The old boolean maps once, on read.
 - Header and footer are receipt blocks around `coreBlocks`, outside the plugin slots, so a fiscal plugin still owns the QR and the legend.
 - `PrinterConnection` reads settings when a job starts, because `init` runs in the constructor today and a save would not otherwise reach it. The fake device used by tests never goes through `init`.
-- 8d is the only minor in the phase because it is the PR that meets the #89 acceptance (configured name and NIF on the device, configured interface on `init`, settings survive a reload, the old shop literals stay gone). 8a–8c are the slices that make that PR small. #113 is the last minor on the roadmap because it walks the screens #87 and #110 add after this one.
+- 8a, 8b, 8c, 8d, #87, and #110 are `Version: none`. They leave `package.json` where it is. 8d is still the PR that meets the #89 acceptance (configured name and NIF on the device, configured interface on `init`, settings survive a reload, the old shop literals stay gone). #113 is the only redesign PR that carries `Version: minor`, because it walks every screen those PRs add, including Ajustes and both layout presets.
