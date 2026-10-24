@@ -1,19 +1,22 @@
 import {mount} from '../components/mount';
 import React from 'react';
 import {expect} from 'chai';
+import RouterHarness from '../components/routerHarness';
 import CategoryCard from '../../../../openMarket/user_interface/category/CategoryCard';
 
 const noop = () => {};
 
 function card(category, extra) {
   return mount(
-    <CategoryCard
-      category={category}
-      onEdit={noop}
-      onDelete={noop}
-      onOpenProduct={noop}
-      {...extra}
-    />
+    <RouterHarness>
+      <CategoryCard
+        category={category}
+        onEdit={noop}
+        onDelete={noop}
+        onOpenProduct={noop}
+        {...extra}
+      />
+    </RouterHarness>
   );
 }
 
@@ -42,6 +45,9 @@ describe('CategoryCard', () => {
     expect(view.node.querySelector('[title="Suma de precios de coste"]')).to.not.equal(null);
     expect(view.node.querySelector('img').getAttribute('src')).to.include('category-placeholder.svg');
     expect(view.node.querySelector('[aria-label="Eliminar categoría"]')).to.equal(null);
+    const products = view.node.querySelector('a.om-button');
+    expect(products.textContent).to.include('Ver productos');
+    expect(products.getAttribute('href')).to.equal('#/list_products?category=1');
     view.unmount();
   });
 
@@ -59,6 +65,8 @@ describe('CategoryCard', () => {
       onOpenProduct: barcode => { opened = barcode; }
     });
     expect(view.node.textContent).to.include('—');
+    expect(view.node.textContent).to.include('Ver productos');
+    expect(view.node.querySelector('a.om-button').getAttribute('href')).to.equal('#/list_products?category=2');
     expect(view.node.querySelector('img').getAttribute('src')).to.equal('data:image/png,abc');
     const remove = view.node.querySelector('[aria-label="Eliminar categoría"]');
     expect(remove.textContent).to.include('Eliminar');

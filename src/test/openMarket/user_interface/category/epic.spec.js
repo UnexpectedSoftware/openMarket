@@ -3,9 +3,11 @@ import * as Rx from 'rxjs';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/toArray';
 import CategoriesQuery from '../../../../openMarket/domain/category/CategoriesQuery';
+import CategoryNotEmptyError from '../../../../openMarket/domain/category/CategoryNotEmptyError';
 import CategoryNotFoundError from '../../../../openMarket/domain/category/CategoryNotFoundError';
 import {
   CATEGORIES_DELETE,
+  CATEGORIES_DELETE_FAILED,
   CATEGORIES_FAILED,
   CATEGORIES_LOADED,
   CATEGORIES_PAGE_LOADED,
@@ -19,7 +21,7 @@ import {
   makeCategoryDeleteEpic,
   makeCategorySaveEpic
 } from '../../../../openMarket/user_interface/category/epicFactory';
-import {NOT_FOUND} from '../../../../openMarket/user_interface/category/model';
+import {NOT_EMPTY, NOT_FOUND} from '../../../../openMarket/user_interface/category/model';
 
 function row(name, extra) {
   return {
@@ -354,13 +356,46 @@ describe('makeCategoryDeleteEpic', () => {
       );
   });
 
-  it('toasts a delete failure', done => {
+  it('keeps a category that still has products on the dialog', done => {
+    const deleteCategory = {
+      deleteCategory: () => Rx.Observable.throw(new CategoryNotEmptyError({id: 'a'}))
+    };
+    makeCategoryDeleteEpic(deleteCategory)(Rx.Observable.of({type: CATEGORIES_DELETE, id: 'a'}))
+      .toArray()
+      .subscribe(
+        actions => {
+          expect(actions.map(action => action.type)).to.deep.equal([CATEGORIES_DELETE_FAILED]);
+          expect(actions[0].message).to.equal(NOT_EMPTY);
+          expect(actions.map(action => action.type)).to.not.include(CATEGORIES_PAGE_LOADED);
+          done();
+        },
+        error => done(error)
+      );
+  });
+
+  it('keeps a missing category on the dialog', done => {
+    const deleteCategory = {
+      deleteCategory: () => Rx.Observable.throw(new CategoryNotFoundError({id: 'a', operation: 'delete'}))
+    };
+    makeCategoryDeleteEpic(deleteCategory)(Rx.Observable.of({type: CATEGORIES_DELETE, id: 'a'}))
+      .toArray()
+      .subscribe(
+        actions => {
+          expect(actions.map(action => action.type)).to.deep.equal([CATEGORIES_DELETE_FAILED]);
+          expect(actions[0].message).to.equal(NOT_FOUND);
+          done();
+        },
+        error => done(error)
+      );
+  });
+
+  it('keeps a generic delete failure on the dialog', done => {
     const deleteCategory = {deleteCategory: () => Rx.Observable.throw(new Error('locked'))};
     makeCategoryDeleteEpic(deleteCategory)(Rx.Observable.of({type: CATEGORIES_DELETE, id: 'a'}))
       .toArray()
       .subscribe(
         actions => {
-          expect(actions.map(action => action.title)).to.deep.equal(['No se ha podido eliminar la categoría']);
+          expect(actions.map(action => action.type)).to.deep.equal([CATEGORIES_DELETE_FAILED]);
           expect(actions[0].message).to.equal('locked');
           done();
         },

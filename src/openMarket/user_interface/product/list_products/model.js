@@ -24,6 +24,7 @@ export function state() {
     offset: 0,
     limit: PAGE_SIZE,
     categories: [],
+    categoriesLoaded: false,
     items: [],
     total: 0,
     loading: false,
@@ -210,7 +211,8 @@ export function productsFailed(current, action) {
 export function categoriesLoaded(current, categories) {
   return {
     ...current,
-    categories: categories || []
+    categories: categories || [],
+    categoriesLoaded: true
   };
 }
 
@@ -717,4 +719,149 @@ function vatError(code) {
   }
   const known = VatRate.options().some(option => option.code === code);
   return known ? '' : 'Elige un IVA';
+}
+
+/**
+ * @param {string | null | undefined} value
+ * @returns {string | null}
+ */
+function textOrNull(value) {
+  if (value == null || String(value) === '') {
+    return null;
+  }
+  return String(value);
+}
+
+/**
+ * @param {{query?: object} | null | undefined} location
+ * @returns {object}
+ */
+function queryOf(location) {
+  return (location && location.query) || {};
+}
+
+/**
+ * @param {{query?: object} | null | undefined} location
+ * @returns {string | null}
+ */
+export function categoryParam(location) {
+  return textOrNull(queryOf(location).category);
+}
+
+/**
+ * @param {{query?: object} | null | undefined} location
+ * @returns {boolean}
+ */
+export function lowStockParam(location) {
+  return String(queryOf(location).lowStock) === '1';
+}
+
+/**
+ * A category query counts only when that id is one of the loaded categories.
+ * Before they load, the requested id is kept so the first fetch is already filtered.
+ * @param {Array<{id: string}> | null | undefined} categories
+ * @param {string | null | undefined} category
+ * @param {boolean} ready
+ * @returns {string | null}
+ */
+export function categoryFromQuery(categories, category, ready) {
+  const requested = textOrNull(category);
+  if (!requested) {
+    return null;
+  }
+  if (!ready) {
+    return requested;
+  }
+  const found = (categories || []).filter(item => String(item.id) === requested)[0];
+  return found ? found.id : null;
+}
+
+/**
+ * Route query for the catalog. A null categoryId drops `category` and keeps `lowStock`.
+ * @param {{lowStock?: boolean, categoryId?: string | null} | null | undefined} page
+ * @returns {{lowStock?: string, category?: string}}
+ */
+export function catalogRoute(page) {
+  const current = page || {};
+  /** @type {{lowStock?: string, category?: string}} */
+  const query = {};
+  if (current.lowStock) {
+    query.lowStock = '1';
+  }
+  const categoryId = textOrNull(current.categoryId);
+  if (categoryId) {
+    query.category = categoryId;
+  }
+  return query;
+}
+
+/**
+ * @param {{query?: object} | null | undefined} location
+ * @returns {{query: {lowStock?: string, category?: string}}}
+ */
+export function locationWithoutCategory(location) {
+  return {
+    query: catalogRoute({
+      lowStock: lowStockParam(location),
+      categoryId: null
+    })
+  };
+}
+
+/**
+ * Page-open payload. `categoriesLoaded` decides whether an unknown id is ignored.
+ * @param {{query?: object} | null | undefined} location
+ * @param {object | null | undefined} products
+ */
+export function catalogRequest(location, products) {
+  const page = products || {};
+  return {
+    query: '',
+    lowStock: lowStockParam(location),
+    status: null,
+    categoryId: categoryFromQuery(page.categories, categoryParam(location), !!page.categoriesLoaded),
+    weighted: null,
+    sort: defaultCatalogSort,
+    limit: PAGE_SIZE
+  };
+}
+
+/**
+ * Category id to write after the route or the loaded categories change.
+ * `undefined` means the store already matches and nothing should be dispatched.
+ * @param {{location?: object, products?: object}} current
+ * @param {{location?: object, products?: object}} next
+ * @returns {string | null | undefined}
+ */
+export function syncedCategory(current, next) {
+  if (!categorySyncDue(current, next)) {
+    return undefined;
+  }
+  const products = (next && next.products) || {};
+  const categoryId = categoryFromQuery(
+    products.categories,
+    categoryParam(next && next.location),
+    !!products.categoriesLoaded
+  );
+  if ((products.categoryId || null) === categoryId) {
+    return undefined;
+  }
+  if (!products.categoriesLoaded) {
+    return undefined;
+  }
+  return categoryId;
+}
+
+/**
+ * @param {{location?: object, products?: object}} current
+ * @param {{location?: object, products?: object}} next
+ * @returns {boolean}
+ */
+function categorySyncDue(current, next) {
+  if (categoryParam(current && current.location) !== categoryParam(next && next.location)) {
+    return true;
+  }
+  const before = (current && current.products) || {};
+  const after = (next && next.products) || {};
+  return before.categories !== after.categories || !before.categoriesLoaded && !!after.categoriesLoaded;
 }

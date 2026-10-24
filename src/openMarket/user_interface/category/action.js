@@ -8,8 +8,11 @@ export const CATEGORIES_DRAFT_CHANGED = 'CATEGORIES_DRAFT_CHANGED';
 export const CATEGORIES_SAVE = 'CATEGORIES_SAVE';
 export const CATEGORIES_SAVED = 'CATEGORIES_SAVED';
 export const CATEGORIES_SAVE_FAILED = 'CATEGORIES_SAVE_FAILED';
+export const CATEGORIES_DELETE_CONFIRM_OPENED = 'CATEGORIES_DELETE_CONFIRM_OPENED';
+export const CATEGORIES_DELETE_CONFIRM_CLOSED = 'CATEGORIES_DELETE_CONFIRM_CLOSED';
 export const CATEGORIES_DELETE = 'CATEGORIES_DELETE';
 export const CATEGORIES_DELETED = 'CATEGORIES_DELETED';
+export const CATEGORIES_DELETE_FAILED = 'CATEGORIES_DELETE_FAILED';
 
 export const categoriesPageLoaded = () => ({type: CATEGORIES_PAGE_LOADED});
 
@@ -46,6 +49,14 @@ export const categoriesSaved = () => ({type: CATEGORIES_SAVED});
 export const categoriesSaveFailed = message => ({type: CATEGORIES_SAVE_FAILED, message});
 
 /** @param {string} id */
+export const categoriesDeleteConfirmOpened = id => ({type: CATEGORIES_DELETE_CONFIRM_OPENED, id});
+
+export const categoriesDeleteConfirmClosed = () => ({type: CATEGORIES_DELETE_CONFIRM_CLOSED});
+
+/** @param {string} id */
 export const categoriesDelete = id => ({type: CATEGORIES_DELETE, id});
 
 export const categoriesDeleted = () => ({type: CATEGORIES_DELETED});
+
+/** @param {string} message */
+export const categoriesDeleteFailed = message => ({type: CATEGORIES_DELETE_FAILED, message});

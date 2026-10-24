@@ -1,11 +1,17 @@
 import {expect} from 'chai';
 import {
+  DELETE_ERROR,
   LOAD_ERROR,
   NAME_REQUIRED,
+  NOT_EMPTY,
   NOT_FOUND,
   SAVE_ERROR,
   categoriesFailed,
   categoriesLoaded,
+  deleteConfirmClosed,
+  deleteConfirmOpened,
+  deleteFailed,
+  deleted,
   dialogClosed,
   dialogOpened,
   draftChanged,
@@ -124,6 +130,37 @@ describe('categories model', () => {
     expect(failed.items).to.have.length(2);
     expect(saveFailed(state()).dialog).to.equal(null);
     expect(saveFailed(started).dialog.error).to.equal(SAVE_ERROR);
+  });
+
+  it('stores the category to delete and does not remove the row', () => {
+    const current = listed();
+    const editing = dialogOpened(current, {mode: 'edit', id: 'b'});
+    const opened = deleteConfirmOpened(editing, 'a');
+    expect(opened.confirmDelete).to.deep.equal({id: 'a', name: 'Alpha', error: null});
+    expect(opened.dialog).to.equal(null);
+    expect(opened.items).to.equal(current.items);
+    expect(deleteConfirmOpened(current, 'missing')).to.equal(current);
+
+    const cancelled = deleteConfirmClosed(opened);
+    expect(cancelled.confirmDelete).to.equal(null);
+    expect(cancelled.items).to.equal(current.items);
+
+    const refused = deleteFailed(opened, NOT_EMPTY);
+    expect(refused.confirmDelete.id).to.equal('a');
+    expect(refused.confirmDelete.error).to.equal(NOT_EMPTY);
+    expect(refused.items).to.equal(current.items);
+    expect(deleteFailed(opened).confirmDelete.error).to.equal(DELETE_ERROR);
+    const initial = state();
+    expect(deleteFailed(initial, NOT_EMPTY)).to.equal(initial);
+
+    const gone = deleted(refused);
+    expect(gone.confirmDelete).to.equal(null);
+    expect(gone.items).to.equal(current.items);
+
+    const creating = dialogOpened(opened, {mode: 'create'});
+    expect(creating.confirmDelete).to.equal(null);
+    expect(creating.dialog.mode).to.equal('create');
+    expect(creating.items).to.equal(current.items);
   });
 
   it('keeps the list when the page opens again and records a load failure', () => {

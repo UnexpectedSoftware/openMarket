@@ -9,6 +9,7 @@ const {
   euros,
   chooseMenu,
   orderRow,
+  productRow,
   scanBarcode,
   confirmPayment,
   dismissTicket
@@ -223,12 +224,24 @@ test('shows totals and deletes an empty category', async () => {
     await expect(window.getByRole('heading', {name: 'Editar producto'})).toHaveCount(0);
     await openCategories(window);
 
-    const emptyAgain = cardNamed(window, 'Empty Shelf');
-    window.once('dialog', async (nativeDialog) => {
-      expect(nativeDialog.message()).toBe('¿Eliminar Empty Shelf?');
-      await nativeDialog.accept();
+    await window.setViewportSize({width: 1366, height: 768});
+    await window.evaluate(() => {
+      document.documentElement.dataset.theme = 'mercado';
     });
+    const emptyAgain = cardNamed(window, 'Empty Shelf');
     await emptyAgain.getByRole('button', {name: 'Eliminar categoría'}).click();
+    const confirm = window.getByRole('alertdialog');
+    await expect(confirm.getByRole('heading', {name: '¿Eliminar Empty Shelf?'})).toBeVisible();
+    await expect(confirm.getByText('Esta categoría no tiene productos.')).toBeVisible();
+    const after = path.join(root, 'docs/design/after');
+    fs.mkdirSync(after, {recursive: true});
+    await window.screenshot({path: path.join(after, 'categories-delete-mercado.png')});
+    await confirm.getByRole('button', {name: 'Cancelar'}).click();
+    await expect(confirm).toHaveCount(0);
+    await expect(cardNamed(window, 'Empty Shelf')).toBeVisible();
+
+    await cardNamed(window, 'Empty Shelf').getByRole('button', {name: 'Eliminar categoría'}).click();
+    await confirm.getByRole('button', {name: 'Eliminar', exact: true}).click();
     await expect(window.getByRole('heading', {name: 'Categoría eliminada'})).toBeVisible();
     await expect(cardNamed(window, 'Empty Shelf')).toHaveCount(0);
 
@@ -237,6 +250,57 @@ test('shows totals and deletes an empty category', async () => {
     });
     await expect(window.locator('select[name="categoryId"] option', {hasText: 'Empty Shelf'})).toHaveCount(0);
     await expect(window.locator('select[name="categoryId"] option', {hasText: 'Stocked'})).toHaveCount(1);
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
+test('links a category card to its products', async () => {
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Stocked', 'Other'],
+      products: [
+        {
+          name: 'Milk',
+          barcode: '8400000000011',
+          price: 2,
+          basePrice: 1.5,
+          stock: 4,
+          stockMin: 1,
+          category: 'Stocked'
+        },
+        {
+          name: 'Bread',
+          barcode: '8400000000028',
+          price: 1,
+          basePrice: 1,
+          stock: 2,
+          stockMin: 1,
+          category: 'Other'
+        }
+      ]
+    }
+  });
+  const after = path.join(root, 'docs/design/after');
+  fs.mkdirSync(after, {recursive: true});
+  try {
+    await window.setViewportSize({width: 1366, height: 768});
+    await openCategories(window);
+    await window.evaluate(() => {
+      document.documentElement.dataset.theme = 'mercado';
+    });
+    await cardNamed(window, 'Stocked').getByRole('link', {name: 'Ver productos'}).click();
+    await expect(window).toHaveURL(/list_products\?category=/);
+    await expect(window.getByRole('heading', {name: 'Productos', exact: true})).toBeVisible();
+    await expect(productRow(window, 'Bread')).toHaveCount(0);
+    await expect(productRow(window, 'Milk')).toBeVisible();
+    await expect(window.getByLabel('Categoría')).not.toHaveValue('');
+    await window.screenshot({path: path.join(after, 'categories-products-mercado.png')});
+
+    await window.getByLabel('Categoría').selectOption({label: 'Todas'});
+    await expect(window).not.toHaveURL(/[?&]category=/);
+    await expect(productRow(window, 'Milk')).toBeVisible();
+    await expect(productRow(window, 'Bread')).toBeVisible();
   } finally {
     await closeApp(app, userData);
   }

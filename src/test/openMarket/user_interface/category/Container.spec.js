@@ -1,6 +1,7 @@
 import {mount} from '../components/mount';
 import React from 'react';
 import {expect} from 'chai';
+import RouterHarness from '../components/routerHarness';
 import Container from '../../../../openMarket/user_interface/category/Container';
 
 function render(page, spies) {
@@ -21,10 +22,16 @@ function render(page, spies) {
     categoriesDialogClosed: calls.close || (() => {}),
     categoriesDraftChanged: calls.draft || (() => {}),
     categoriesSave: calls.save || (() => {}),
+    categoriesDeleteConfirmOpened: calls.ask || (() => {}),
+    categoriesDeleteConfirmClosed: calls.dismiss || (() => {}),
     categoriesDelete: calls.remove || (() => {}),
     listProductsDetail: calls.detail || (() => {})
   };
-  return mount(<Container {...props} />);
+  return mount(
+    <RouterHarness>
+      <Container {...props} />
+    </RouterHarness>
+  );
 }
 
 const item = {
@@ -85,11 +92,13 @@ describe('categories Container', () => {
   });
 
   it('dispatches search, dialog, delete, and retry', () => {
-    const calls = {query: [], open: [], remove: [], loaded: 0, save: 0, draft: [], close: 0};
+    const calls = {query: [], open: [], ask: [], remove: [], loaded: 0, save: 0, draft: [], close: 0, dismiss: 0};
     const view = render({items: [item], total: 1, text: 'Al'}, {
       query: value => calls.query.push(value),
       open: value => calls.open.push(value),
+      ask: id => calls.ask.push(id),
       remove: id => calls.remove.push(id),
+      dismiss: () => { calls.dismiss += 1; },
       loaded: () => { calls.loaded += 1; },
       save: () => { calls.save += 1; },
       draft: patch => calls.draft.push(patch),
@@ -105,14 +114,32 @@ describe('categories Container', () => {
     view.node.querySelector('.om-page-header button').click();
     view.node.querySelector('.category-card-actions button').click();
 
-    const previous = window.confirm;
-    window.confirm = () => false;
     view.node.querySelector('[aria-label="Eliminar categoría"]').click();
-    window.confirm = () => true;
-    view.node.querySelector('[aria-label="Eliminar categoría"]').click();
-    window.confirm = previous;
-
     view.unmount();
+
+    const asking = render({
+      items: [item],
+      total: 1,
+      confirmDelete: {id: 'a', name: 'Alpha', error: null}
+    }, {
+      remove: id => calls.remove.push(id),
+      dismiss: () => { calls.dismiss += 1; }
+    });
+    expect(asking.node.querySelector('[role="alertdialog"]').textContent).to.include('¿Eliminar Alpha?');
+    expect(asking.node.textContent).to.include('Esta categoría no tiene productos.');
+    const header = asking.node.querySelector('.om-page-header button');
+    expect(header.className).to.include('om-button--secondary');
+    const cancel = Array.prototype.find.call(
+      asking.node.querySelectorAll('[role="alertdialog"] button'),
+      button => button.textContent.indexOf('Cancelar') !== -1
+    );
+    cancel.click();
+    const accept = Array.prototype.find.call(
+      asking.node.querySelectorAll('[role="alertdialog"] button'),
+      button => button.textContent === 'Eliminar'
+    );
+    accept.click();
+    asking.unmount();
 
     const missed = render({text: 'zzz'}, {query: value => calls.query.push(value)});
     missed.node.querySelector('.om-empty button').click();
@@ -128,6 +155,8 @@ describe('categories Container', () => {
 
     expect(calls.open[0]).to.deep.equal({mode: 'create'});
     expect(calls.open[1]).to.deep.equal({mode: 'edit', id: 'a'});
+    expect(calls.ask).to.deep.equal(['a']);
+    expect(calls.dismiss).to.equal(1);
     expect(calls.remove).to.deep.equal(['a']);
     expect(calls.query).to.include('');
     expect(calls.loaded).to.be.at.least(1);

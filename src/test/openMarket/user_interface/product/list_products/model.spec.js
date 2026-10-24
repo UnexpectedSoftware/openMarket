@@ -3,7 +3,11 @@ import {
   archiveDismissed,
   archivePrompted,
   archiveStarted,
+  catalogRequest,
+  catalogRoute,
   categoriesLoaded,
+  categoryFromQuery,
+  categoryParam,
   detailLoaded,
   draftChanged,
   draftErrors,
@@ -17,6 +21,8 @@ import {
   imageFound,
   imageMissed,
   imageRequested,
+  locationWithoutCategory,
+  lowStockParam,
   pageChanged,
   pageOpened,
   productArchived,
@@ -29,7 +35,8 @@ import {
   saveFailed,
   saveRequested,
   showingLabel,
-  state
+  state,
+  syncedCategory
 } from '../../../../../openMarket/user_interface/product/list_products/model';
 
 const page = {offset: 0, limit: 20, total: 0};
@@ -113,7 +120,105 @@ describe('products list model', () => {
       items: [{barcode: '1', status: 'ENABLED'}, {barcode: '2', status: 'ENABLED'}]
     }, '1');
     expect(disabled.items.map(item => item.status)).to.deep.equal(['DISABLED', 'ENABLED']);
-    expect(categoriesLoaded(state(), [{id: 'a', name: 'Fruta'}]).categories).to.have.length(1);
+    const listed = categoriesLoaded(state(), [{id: 'a', name: 'Fruta'}]);
+    expect(listed.categories).to.have.length(1);
+    expect(listed.categoriesLoaded).to.equal(true);
+    expect(categoriesLoaded(state(), null).categories).to.deep.equal([]);
+    expect(state().categoriesLoaded).to.equal(false);
+  });
+
+  it('applies a category query id and ignores an unknown one', () => {
+    const categories = [{id: 'dairy', name: 'Lácteos'}];
+    expect(categoryFromQuery(categories, 'dairy', true)).to.equal('dairy');
+    expect(categoryFromQuery(categories, 'missing', true)).to.equal(null);
+    expect(categoryFromQuery(categories, '', true)).to.equal(null);
+    expect(categoryFromQuery(categories, null, true)).to.equal(null);
+    expect(categoryFromQuery([], 'dairy', false)).to.equal('dairy');
+    expect(categoryFromQuery([], 'dairy', true)).to.equal(null);
+    expect(categoryParam(null)).to.equal(null);
+    expect(lowStockParam(null)).to.equal(false);
+
+    const pending = {categories: [], categoriesLoaded: false};
+    expect(catalogRequest({query: {category: 'dairy', lowStock: '1'}}, pending)).to.include({
+      lowStock: true,
+      categoryId: 'dairy',
+      query: ''
+    });
+    const known = {categories, categoriesLoaded: true};
+    expect(catalogRequest({query: {category: 'dairy'}}, known).categoryId).to.equal('dairy');
+    expect(catalogRequest({query: {category: 'missing'}}, known).categoryId).to.equal(null);
+  });
+
+  it('drops category from the route and keeps low stock', () => {
+    expect(catalogRoute({lowStock: true, categoryId: 'dairy'})).to.deep.equal({
+      lowStock: '1',
+      category: 'dairy'
+    });
+    expect(catalogRoute({lowStock: true, categoryId: null})).to.deep.equal({lowStock: '1'});
+    expect(catalogRoute({lowStock: false})).to.deep.equal({});
+    expect(catalogRoute(null)).to.deep.equal({});
+    expect(locationWithoutCategory({query: {lowStock: '1', category: 'dairy'}})).to.deep.equal({
+      query: {lowStock: '1'}
+    });
+    expect(locationWithoutCategory({query: {category: 'dairy'}})).to.deep.equal({query: {}});
+  });
+
+  it('syncs a loaded category and leaves an early query alone', () => {
+    const waiting = {
+      location: {query: {}},
+      products: {categoryId: null, categories: [], categoriesLoaded: false}
+    };
+    const asked = {
+      location: {query: {category: 'dairy'}},
+      products: {categoryId: null, categories: [], categoriesLoaded: false}
+    };
+    expect(syncedCategory(waiting, asked)).to.equal(undefined);
+    expect(syncedCategory(waiting, waiting)).to.equal(undefined);
+
+    const optimistic = {
+      location: {query: {category: 'missing'}},
+      products: {categoryId: 'missing', categories: [], categoriesLoaded: false}
+    };
+    const unknown = {
+      location: {query: {category: 'missing'}},
+      products: {categoryId: 'missing', categories: [{id: 'dairy'}], categoriesLoaded: true}
+    };
+    expect(syncedCategory(optimistic, unknown)).to.equal(null);
+
+    const matched = {
+      location: {query: {category: 'dairy'}},
+      products: {categoryId: 'dairy', categories: [{id: 'dairy'}], categoriesLoaded: true}
+    };
+    const beforeMatch = {
+      location: {query: {category: 'dairy'}},
+      products: {categoryId: 'dairy', categories: [], categoriesLoaded: false}
+    };
+    expect(syncedCategory(beforeMatch, matched)).to.equal(undefined);
+
+    const cleared = {
+      location: {query: {lowStock: '1'}},
+      products: matched.products
+    };
+    expect(syncedCategory(matched, cleared)).to.equal(null);
+
+    const revealed = {
+      location: {query: {category: 'dairy'}},
+      products: {categoryId: null, categories: [{id: 'dairy'}], categoriesLoaded: true}
+    };
+    expect(syncedCategory(asked, revealed)).to.equal('dairy');
+
+    const sameCategories = [{id: 'dairy'}];
+    expect(syncedCategory(
+      {
+        location: {query: {}},
+        products: {categoryId: 'dairy', categories: sameCategories, categoriesLoaded: false}
+      },
+      {
+        location: {query: {}},
+        products: {categoryId: 'dairy', categories: sameCategories, categoriesLoaded: true}
+      }
+    )).to.equal(null);
+    expect(catalogRequest(null, null).categoryId).to.equal(null);
   });
 
   it('keeps a drawer the navigation just opened', () => {
