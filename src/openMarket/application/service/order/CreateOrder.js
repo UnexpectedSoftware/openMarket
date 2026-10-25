@@ -159,7 +159,7 @@ export default class CreateOrder {
     if (!this._shopProfileRepository) {
       return Observable.of(null);
     }
-    return this._shopProfileRepository.find().defaultIfEmpty(null);
+    return this._shopProfileRepository.findProfile().defaultIfEmpty(null);
   }
 
   /**

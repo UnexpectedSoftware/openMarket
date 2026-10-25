@@ -172,6 +172,7 @@ function tileOf(view) {
 }
 
 /**
+ * The sell view's auto-print flag. A missing use case asks before printing.
  * @param {{get: Function} | null | undefined} useCase
  * @returns {Rx.Observable<{autoPrint: boolean}>}
  */
@@ -180,7 +181,7 @@ function sellPreferences(useCase) {
     return Rx.Observable.of({autoPrint: false});
   }
   return useCase.get().map(preferences => ({
-    autoPrint: !!(preferences && preferences.autoPrint)
+    autoPrint: !!(preferences && preferences.autoPrint === true)
   })).defaultIfEmpty({autoPrint: false});
 }
 

@@ -9,7 +9,7 @@ describe('ChangeTheme', () => {
     let stored = initial || AppearancePreferences.defaults();
     return {
       stored: () => stored,
-      find: () => Rx.Observable.of(stored),
+      findPreferences: () => Rx.Observable.of(stored),
       save: ({preferences}) => {
         stored = preferences;
         return Rx.Observable.of(preferences);

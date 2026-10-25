@@ -13,34 +13,10 @@ import { syncHistoryWithStore } from 'react-router-redux';
 import routes from './routes';
 import configureStore from './store/configureStore';
 import OpenMarket from '../application/index';
-import {record} from '../infrastructure/logging/ErrorLog';
-import Theme from '../domain/appearance/Theme';
+import savedThemeId from './appearance/savedThemeId';
 import './file.scss';
 
-/**
- * SQLite answers synchronously, so the theme is on `<html>` before React paints.
- * @returns {string}
- */
-function savedThemeId() {
-  let themeId = Theme.DEFAULT.id;
-  try {
-    OpenMarket.get('appearance_get_use_case').get().subscribe(
-      preferences => {
-        themeId = preferences.theme.id;
-      },
-      error => {
-        record(error);
-        themeId = Theme.DEFAULT.id;
-      }
-    );
-  } catch (error) {
-    record(error);
-    themeId = Theme.DEFAULT.id;
-  }
-  return themeId;
-}
-
-const themeId = savedThemeId();
+const themeId = savedThemeId(OpenMarket.get('appearance_get_use_case'));
 document.documentElement.dataset.theme = themeId;
 
 const store = configureStore({

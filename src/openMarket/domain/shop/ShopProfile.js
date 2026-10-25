@@ -1,4 +1,5 @@
 import TaxId from './TaxId';
+import issuerSnapshot from './issuerSnapshot';
 
 /**
  * The shop that issues invoices. One profile for the whole database.
@@ -80,15 +81,12 @@ export default class ShopProfile {
    * @returns {{nif: string, legalName: string, tradeName: string | null, address: {street: string, postalCode: string, city: string, province: string, country: string}} | null}
    */
   snapshot() {
-    if (!this.isComplete()) {
-      return null;
-    }
-    return {
-      nif: this._nif.value,
+    return issuerSnapshot({
+      nif: this._nif ? this._nif.value : null,
       legalName: this._legalName,
-      tradeName: this._tradeName || null,
+      tradeName: this._tradeName,
       address: this.address
-    };
+    });
   }
 
 }

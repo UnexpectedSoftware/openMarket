@@ -1,10 +1,12 @@
 import * as Rx from 'rxjs';
 import AppearancePreferences from '../../domain/appearance/AppearancePreferences';
+import AppearancePreferencesView from '../../domain/appearance/AppearancePreferencesView';
 import {rethrow} from '../logging/ErrorLog';
+import {loadSetting} from '../service/readSettingText';
 /** @typedef {import('../../domain/appearance/AppearancePreferencesRepository').default} AppearancePreferencesRepository */
+/** @typedef {import('../../domain/appearance/AppearancePreferencesQuery').default} AppearancePreferencesQuery */
 
 const KEY = 'appearance';
-const FIND_SQL = 'SELECT value_json FROM setting WHERE key = ?';
 const SAVE_SQL = 'INSERT INTO setting (key, value_json) VALUES (?, ?) ' +
   'ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json';
 
@@ -21,20 +23,18 @@ export default class SqliteAppearancePreferencesRepository {
     this._database = connection.database;
   }
 
+  /**
+   * One row. `query` has no fields, so it does not change the read.
+   * @param {AppearancePreferencesQuery} query
+   * @returns {import('rxjs/Observable').Observable<AppearancePreferencesView>}
+   */
+  find(query) {
+    return loadSetting(this._database, KEY, 'Could not read the appearance', viewFromJson, () => new AppearancePreferencesView({}));
+  }
+
   /** @returns {import('rxjs/Observable').Observable<AppearancePreferences>} */
-  find() {
-    return Rx.Observable.defer(() => {
-      let row;
-      try {
-        row = this._database.prepare(FIND_SQL).get(KEY);
-      } catch (error) {
-        rethrow(error, {message: 'Could not read the appearance', context: {operation: 'find'}});
-      }
-      if (!row) {
-        return Rx.Observable.of(AppearancePreferences.defaults());
-      }
-      return Rx.Observable.of(fromJson(row.value_json));
-    });
+  findPreferences() {
+    return loadSetting(this._database, KEY, 'Could not read the appearance', aggregateFromJson, () => AppearancePreferences.defaults());
   }
 
   /**
@@ -59,14 +59,30 @@ export default class SqliteAppearancePreferencesRepository {
 
 /**
  * @param {string} text
- * @returns {AppearancePreferences}
+ * @returns {string | null | undefined}
  */
-function fromJson(text) {
+function themeIdOf(text) {
   let data;
   try {
     data = JSON.parse(text);
   } catch (error) {
     rethrow(error, {message: 'Could not read the appearance', context: {operation: 'find'}});
   }
-  return new AppearancePreferences({theme: data && data.theme});
+  return data && data.theme;
+}
+
+/**
+ * @param {string} text
+ * @returns {AppearancePreferencesView}
+ */
+function viewFromJson(text) {
+  return new AppearancePreferencesView({theme: themeIdOf(text)});
+}
+
+/**
+ * @param {string} text
+ * @returns {AppearancePreferences}
+ */
+function aggregateFromJson(text) {
+  return new AppearancePreferences({theme: themeIdOf(text)});
 }

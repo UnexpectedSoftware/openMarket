@@ -283,7 +283,7 @@ describe('CreateOrder domain events', () => {
       invoicingEnabled: true
     });
     createOrder({
-      shopProfileRepository: {find: () => Rx.Observable.of(current)}
+      shopProfileRepository: {findProfile: () => Rx.Observable.of(current)}
     }).createOrder({lines}).subscribe(
       () => {
         const invoice = storedInvoices[0];
@@ -312,7 +312,7 @@ describe('CreateOrder domain events', () => {
   it('refuses the sale when invoicing is on and the shop has no NIF', (done) => {
     createOrder({
       shopProfileRepository: {
-        find: () => Rx.Observable.of(new ShopProfile({
+        findProfile: () => Rx.Observable.of(new ShopProfile({
           nif: null,
           legalName: '',
           invoicingEnabled: true

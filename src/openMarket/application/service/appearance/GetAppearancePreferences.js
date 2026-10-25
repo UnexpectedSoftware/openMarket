@@ -1,7 +1,8 @@
 import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/defer';
+import AppearancePreferencesQuery from '../../../domain/appearance/AppearancePreferencesQuery';
 /** @typedef {import('../../../domain/appearance/AppearancePreferencesRepository').default} AppearancePreferencesRepository */
-/** @typedef {import('../../../domain/appearance/AppearancePreferences').default} AppearancePreferences */
+/** @typedef {import('../../../domain/appearance/AppearancePreferencesView').default} AppearancePreferencesView */
 
 /**
  * Reads the till theme before the first paint and for the Settings screen.
@@ -13,9 +14,9 @@ export default class GetAppearancePreferences {
     this._appearancePreferencesRepository = appearancePreferencesRepository;
   }
 
-  /** @returns {import('rxjs/Observable').Observable<AppearancePreferences>} */
+  /** @returns {import('rxjs/Observable').Observable<AppearancePreferencesView>} */
   get() {
-    return Observable.defer(() => this._appearancePreferencesRepository.find());
+    return Observable.defer(() => this._appearancePreferencesRepository.find(new AppearancePreferencesQuery()));
   }
 
 }
