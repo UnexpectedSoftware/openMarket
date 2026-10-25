@@ -1,7 +1,9 @@
 import {expect} from 'chai';
 import * as Rx from 'rxjs';
 import 'rxjs/add/observable/of';
+import SellPreferencesView from '../../../../openMarket/domain/shop/SellPreferencesView';
 import ShopProfileView from '../../../../openMarket/domain/shop/ShopProfileView';
+import InvalidSellPreferencesError from '../../../../openMarket/domain/shop/InvalidSellPreferencesError';
 import InvalidTaxIdError from '../../../../openMarket/domain/shop/InvalidTaxIdError';
 import ShopProfileIncompleteError from '../../../../openMarket/domain/shop/ShopProfileIncompleteError';
 import {THEME_CHANGED, THEME_CHANGE_FAILED} from '../../../../openMarket/user_interface/appearance/action';
@@ -16,7 +18,7 @@ import {
   SHOP_PROFILE_REQUESTED
 } from '../../../../openMarket/user_interface/settings/action';
 import {makeSettingsLoadEpic, makeSettingsSaveEpic} from '../../../../openMarket/user_interface/settings/epicFactory';
-import {LOAD_ERROR, NIF_INVALID, REQUIRED, SAVE_ERROR, THEME_SAVE_ERROR, draftChanged, shopLoaded, state} from '../../../../openMarket/user_interface/settings/model';
+import {COPY_TOO_LONG, LOAD_ERROR, NIF_INVALID, REQUIRED, SAVE_ERROR, THEME_SAVE_ERROR, draftChanged, shopLoaded, state} from '../../../../openMarket/user_interface/settings/model';
 import reducer from '../../../../openMarket/user_interface/settings/reducer';
 
 function view(extra) {
@@ -257,6 +259,159 @@ describe('settings epics', () => {
       getShopProfile: {getProfile: () => Rx.Observable.of(view())}
     });
     collect(epic, {type: SETTINGS_SAVE_REQUESTED}, storeOf(current), done, actions => {
+      expect(actions).to.deep.equal([{type: SETTINGS_SAVE_FAILED, failure: {message: SAVE_ERROR}}]);
+    });
+  });
+
+  it('copies the ticket view into the draft on page open', done => {
+    const ticket = new SellPreferencesView({
+      printMode: 'never',
+      headerText: 'Hola',
+      footerText: 'Pie',
+      paperWidthMm: 58
+    });
+    const epic = makeSettingsLoadEpic(
+      {getProfile: () => Rx.Observable.of(view())},
+      {get: () => Rx.Observable.of(ticket)}
+    );
+    collect(epic, {type: SETTINGS_PAGE_OPENED}, storeOf(state()), done, actions => {
+      expect(actions[0].ticket).to.equal(ticket);
+      const loaded = reducer(state(), actions[0]);
+      expect(loaded.draft.printMode).to.equal('never');
+      expect(loaded.draft.headerText).to.equal('Hola');
+      expect(loaded.draft.paperWidthMm).to.equal(58);
+      expect(loaded.saved.footerText).to.equal('Pie');
+    });
+  });
+
+  it('writes the shop, then the ticket, then the theme', done => {
+    const calls = [];
+    const ticket = new SellPreferencesView({printMode: 'never', headerText: 'Hola', footerText: '', paperWidthMm: 58});
+    const current = reducer(draftChanged(shopLoaded(state(), view(), {ticket: new SellPreferencesView()}), {
+      legalName: 'Nuevo',
+      printMode: 'never',
+      headerText: 'Hola',
+      paperWidthMm: 58,
+      theme: 'ultramarinos'
+    }), {type: SETTINGS_SAVE_REQUESTED});
+    let ticketCommand = null;
+    const epic = makeSettingsSaveEpic({
+      updateShopProfile: {update: () => {
+        calls.push('shop');
+        return Rx.Observable.of(null);
+      }},
+      updateSellPreferences: {update: value => {
+        calls.push('ticket');
+        ticketCommand = value;
+        return Rx.Observable.of(null);
+      }},
+      changeTheme: {changeTheme: () => {
+        calls.push('theme');
+        return Rx.Observable.of({theme: {id: 'ultramarinos'}});
+      }},
+      getShopProfile: {getProfile: () => Rx.Observable.of(view({legalName: 'Nuevo'}))},
+      getSellPreferences: {get: () => Rx.Observable.of(ticket)}
+    });
+    collect(epic, {type: SETTINGS_SAVE_REQUESTED}, storeOf(current), done, actions => {
+      expect(calls).to.deep.equal(['shop', 'ticket', 'theme']);
+      expect(ticketCommand).to.deep.equal({
+        printMode: 'never',
+        headerText: 'Hola',
+        footerText: '',
+        paperWidthMm: 58
+      });
+      expect(actions[0].ticket).to.equal(ticket);
+      expect(actions[0].type).to.equal(SETTINGS_SAVED);
+      const stored = reducer(current, actions[0]);
+      expect(stored.draft.printMode).to.equal('never');
+      expect(stored.draft.headerText).to.equal('Hola');
+      expect(stored.draft.paperWidthMm).to.equal(58);
+      expect(stored.saving).to.equal(false);
+    });
+  });
+
+  it('sends the ticket command and does not call the shop update for a ticket-only change', done => {
+    let shop = 0;
+    let ticketCommand = null;
+    const current = reducer(draftChanged(page(), {printMode: 'always', headerText: '  Gracias  '}), {
+      type: SETTINGS_SAVE_REQUESTED
+    });
+    const epic = makeSettingsSaveEpic({
+      updateShopProfile: {update: () => {
+        shop += 1;
+        return Rx.Observable.of(null);
+      }},
+      updateSellPreferences: {update: value => {
+        ticketCommand = value;
+        return Rx.Observable.of(null);
+      }},
+      changeTheme: {changeTheme: () => Rx.Observable.of({theme: {id: 'mercado'}})},
+      getShopProfile: {getProfile: () => Rx.Observable.of(view())},
+      getSellPreferences: {get: () => Rx.Observable.of(new SellPreferencesView({
+        printMode: 'always',
+        headerText: 'Gracias'
+      }))}
+    });
+    collect(epic, {type: SETTINGS_SAVE_REQUESTED}, storeOf(current), done, actions => {
+      expect(shop).to.equal(0);
+      expect(ticketCommand).to.deep.equal({
+        printMode: 'always',
+        headerText: 'Gracias',
+        footerText: '',
+        paperWidthMm: 80
+      });
+      expect(actions[0].type).to.equal(SETTINGS_SAVED);
+      expect(actions.map(action => action.title)).to.include('Ajustes guardados');
+    });
+  });
+
+  it('maps a too-long header onto the field and does not start the theme save', done => {
+    let themes = 0;
+    const current = reducer(draftChanged(page(), {headerText: 'a'.repeat(81), theme: 'ultramarinos'}), {
+      type: SETTINGS_SAVE_REQUESTED
+    });
+    expect(current.saving).to.equal(false);
+    const open = reducer(draftChanged(page(), {headerText: 'Hola', theme: 'ultramarinos'}), {
+      type: SETTINGS_SAVE_REQUESTED
+    });
+    const epic = makeSettingsSaveEpic({
+      updateShopProfile: {update: () => Rx.Observable.of(null)},
+      updateSellPreferences: {update: () => Rx.Observable.throw(new InvalidSellPreferencesError({
+        field: 'headerText',
+        value: 'Hola'
+      }))},
+      changeTheme: {changeTheme: () => {
+        themes += 1;
+        return Rx.Observable.of({theme: {id: 'ultramarinos'}});
+      }},
+      getShopProfile: {getProfile: () => Rx.Observable.of(view())}
+    });
+    collect(epic, {type: SETTINGS_SAVE_REQUESTED}, storeOf(open), done, actions => {
+      expect(themes).to.equal(0);
+      expect(actions).to.deep.equal([{
+        type: SETTINGS_SAVE_FAILED,
+        failure: {fieldErrors: {headerText: COPY_TOO_LONG}}
+      }]);
+      expect(actions.map(action => action.title)).to.not.include('Ajustes guardados');
+    });
+  });
+
+  it('stops the theme save when the ticket save fails', done => {
+    let themes = 0;
+    const current = reducer(draftChanged(page(), {printMode: 'never', theme: 'ultramarinos'}), {
+      type: SETTINGS_SAVE_REQUESTED
+    });
+    const epic = makeSettingsSaveEpic({
+      updateShopProfile: {update: () => Rx.Observable.of(null)},
+      updateSellPreferences: {update: () => Rx.Observable.throw(new Error('disk'))},
+      changeTheme: {changeTheme: () => {
+        themes += 1;
+        return Rx.Observable.of({theme: {id: 'ultramarinos'}});
+      }},
+      getShopProfile: {getProfile: () => Rx.Observable.of(view())}
+    });
+    collect(epic, {type: SETTINGS_SAVE_REQUESTED}, storeOf(current), done, actions => {
+      expect(themes).to.equal(0);
       expect(actions).to.deep.equal([{type: SETTINGS_SAVE_FAILED, failure: {message: SAVE_ERROR}}]);
     });
   });

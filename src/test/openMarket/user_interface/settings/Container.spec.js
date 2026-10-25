@@ -52,7 +52,7 @@ function render(props) {
 describe('settings Container', () => {
   it('shows skeletons while loading and does not save', () => {
     const {view, calls} = render({settings: page({loading: true})});
-    expect(view.node.querySelectorAll('.settings-skeleton').length).to.equal(2);
+    expect(view.node.querySelectorAll('.settings-skeleton').length).to.equal(3);
     expect(view.node.querySelector('button').disabled).to.equal(true);
     ReactTestUtils.Simulate.submit(view.node.querySelector('form'));
     expect(calls.save).to.equal(0);
@@ -80,6 +80,8 @@ describe('settings Container', () => {
     });
     expect(view.node.querySelector('h1').textContent).to.equal('Ajustes');
     expect(view.node.textContent).to.contain('Comercio');
+    expect(view.node.textContent).to.contain('Ticket');
+    expect(view.node.textContent).to.contain('Al imprimir');
     expect(view.node.textContent).to.contain('Apariencia');
     expect(view.node.querySelector('.settings-save-error').textContent).to.equal(
       'No se han podido guardar los ajustes'

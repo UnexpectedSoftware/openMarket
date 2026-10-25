@@ -11,7 +11,9 @@ const SAVE_SQL = 'INSERT INTO setting (key, value_json) VALUES (?, ?) ' +
   'ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json';
 
 /**
- * The `sell_auto_print` setting. Missing row means do not print on its own.
+ * The `sell_auto_print` setting. A missing row asks before printing.
+ * A stored `{autoPrint: true}` with no print mode is `always`. Anything else
+ * without a print mode is `ask`.
  * @implements {SellPreferencesRepository}
  */
 export default class SqliteSellPreferencesRepository {
@@ -42,12 +44,18 @@ export default class SqliteSellPreferencesRepository {
   save({preferences}) {
     return Rx.Observable.defer(() => {
       const stored = preferences instanceof SellPreferences ? preferences : SellPreferences.defaults();
+      const payload = {
+        printMode: stored.printMode,
+        headerText: stored.headerText,
+        footerText: stored.footerText,
+        paperWidthMm: stored.paperWidthMm
+      };
       try {
-        this._database.prepare(SAVE_SQL).run(KEY, JSON.stringify({autoPrint: stored.autoPrint}));
+        this._database.prepare(SAVE_SQL).run(KEY, JSON.stringify(payload));
       } catch (error) {
         rethrow(error, {
           message: 'Could not save the sell preferences',
-          context: {operation: 'save', autoPrint: stored.autoPrint}
+          context: {operation: 'save', printMode: stored.printMode}
         });
       }
       return Rx.Observable.of(stored);
@@ -58,24 +66,10 @@ export default class SqliteSellPreferencesRepository {
 
 /**
  * @param {string} text
- * @returns {boolean}
- */
-function autoPrintOf(text) {
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch (error) {
-    rethrow(error, {message: 'Could not read the sell preferences', context: {operation: 'find'}});
-  }
-  return !!(data && data.autoPrint === true);
-}
-
-/**
- * @param {string} text
  * @returns {SellPreferencesView}
  */
 function viewFromJson(text) {
-  return new SellPreferencesView({autoPrint: autoPrintOf(text)});
+  return new SellPreferencesView(fieldsFromJson(text));
 }
 
 /**
@@ -83,5 +77,80 @@ function viewFromJson(text) {
  * @returns {SellPreferences}
  */
 function aggregateFromJson(text) {
-  return new SellPreferences({autoPrint: autoPrintOf(text)});
+  return new SellPreferences(fieldsFromJson(text));
+}
+
+/**
+ * @param {string} text
+ * @returns {{printMode: string, headerText: string, footerText: string, paperWidthMm: number}}
+ */
+function fieldsFromJson(text) {
+  const data = parsed(text);
+  return {
+    printMode: modeFrom(data),
+    headerText: textField(data.headerText),
+    footerText: textField(data.footerText),
+    paperWidthMm: widthFrom(data)
+  };
+}
+
+/**
+ * @typedef {object} StoredSellPreferences
+ * @property {string} [printMode]
+ * @property {boolean} [autoPrint]
+ * @property {string} [headerText]
+ * @property {string} [footerText]
+ * @property {number} [paperWidthMm]
+ */
+
+/**
+ * @param {string} text
+ * @returns {StoredSellPreferences}
+ */
+function parsed(text) {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    rethrow(error, {message: 'Could not read the sell preferences', context: {operation: 'find'}});
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return {};
+  }
+  return /** @type {StoredSellPreferences} */ (data);
+}
+
+/**
+ * A row that already has a print mode keeps it. `{autoPrint: true}` and no
+ * mode is always. Every other legacy row asks.
+ * @param {StoredSellPreferences} data
+ * @returns {'always' | 'ask' | 'never'}
+ */
+function modeFrom(data) {
+  if (data.printMode === 'always' || data.printMode === 'ask' || data.printMode === 'never') {
+    return data.printMode;
+  }
+  if (data.printMode == null && data.autoPrint === true) {
+    return 'always';
+  }
+  return 'ask';
+}
+
+/**
+ * @param {StoredSellPreferences} data
+ * @returns {58 | 80}
+ */
+function widthFrom(data) {
+  if (data.paperWidthMm === 58 || data.paperWidthMm === 80) {
+    return data.paperWidthMm;
+  }
+  return 80;
+}
+
+/**
+ * @param {*} value
+ * @returns {string}
+ */
+function textField(value) {
+  return typeof value === 'string' ? value : '';
 }

@@ -24,7 +24,7 @@ export default function reducer(current = state(), action) {
     case SETTINGS_PAGE_OPENED:
       return pageOpened(current);
     case SETTINGS_LOADED:
-      return shopLoaded(current, action.profile, {theme: action.theme});
+      return shopLoaded(current, action.profile, {theme: action.theme, ticket: action.ticket});
     case SHOP_PROFILE_LOADED:
       return shopLoaded(current, action.profile, {keepDraft: true});
     case SETTINGS_FAILED:
@@ -34,7 +34,7 @@ export default function reducer(current = state(), action) {
     case SETTINGS_SAVE_REQUESTED:
       return saveStarted(current);
     case SETTINGS_SAVED:
-      return saved(current, action.profile, action.theme);
+      return saved(current, action.profile, action.theme, action.ticket);
     case SETTINGS_SAVE_FAILED:
       return saveFailed(current, action.failure);
     default:

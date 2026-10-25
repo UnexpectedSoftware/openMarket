@@ -3,7 +3,9 @@ import 'rxjs/add/operator/mergeMap';
 /** @typedef {import('../../../domain/shop/SellPreferences').default} SellPreferences */
 
 /**
- * Stores the till's auto-print choice. The Settings screen is a later phase.
+ * Stores how this till prints a ticket. A header or footer longer than 80
+ * characters fails with `SELL_PREFERENCES_INVALID` on that field. The settings
+ * screen maps that failure to "Máximo 80 caracteres".
  */
 export default class UpdateSellPreferences {
 
@@ -13,13 +15,20 @@ export default class UpdateSellPreferences {
   }
 
   /**
-   * @param {{autoPrint?: boolean}} command
+   * @param {object} command
+   * @param {string} command.printMode
+   * @param {string} command.headerText
+   * @param {string} command.footerText
+   * @param {number} command.paperWidthMm
    * @returns {import('rxjs/Observable').Observable<SellPreferences>}
    */
-  update({autoPrint}) {
+  update({printMode, headerText, footerText, paperWidthMm}) {
     return this._sellPreferencesRepository.findPreferences()
       .flatMap(preferences => this._sellPreferencesRepository.save({
-        preferences: preferences.withAutoPrint(autoPrint === true)
+        preferences: preferences
+          .withPrintMode(printMode)
+          .withCopy({headerText, footerText})
+          .withPaperWidth(paperWidthMm)
       }));
   }
 

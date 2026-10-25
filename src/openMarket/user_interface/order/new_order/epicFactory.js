@@ -172,43 +172,64 @@ function tileOf(view) {
 }
 
 /**
- * The sell view's auto-print flag. A missing use case asks before printing.
+ * The sell view's print mode. A missing use case asks before printing.
  * @param {{get: Function} | null | undefined} useCase
- * @returns {Rx.Observable<{autoPrint: boolean}>}
+ * @returns {Rx.Observable<{printMode: string}>}
  */
 function sellPreferences(useCase) {
   if (!useCase || typeof useCase.get !== 'function') {
-    return Rx.Observable.of({autoPrint: false});
+    return Rx.Observable.of({printMode: 'ask'});
   }
   return useCase.get().map(preferences => ({
-    autoPrint: !!(preferences && preferences.autoPrint === true)
-  })).defaultIfEmpty({autoPrint: false});
+    printMode: printModeOf(preferences)
+  })).defaultIfEmpty({printMode: 'ask'});
 }
 
 /**
- * @param {{savedOrder: {id: string, payment?: {method?: string, changeCents?: number}}, preferences: {autoPrint: boolean}, resetForm: Function, store?: {dispatch: Function}}} params
+ * @param {{printMode?: string} | null | undefined} preferences
+ * @returns {'always' | 'ask' | 'never'}
+ */
+function printModeOf(preferences) {
+  const mode = preferences && preferences.printMode;
+  if (mode === 'always' || mode === 'never' || mode === 'ask') {
+    return mode;
+  }
+  return 'ask';
+}
+
+/**
+ * Paid sales print, ask, or stay quiet. An unpaid sale never prints and never offers the action.
+ * @param {{savedOrder: {id: string, payment?: {method?: string, changeCents?: number}}, preferences: {printMode?: string}, resetForm: Function, store?: {dispatch: Function}}} params
  * @returns {object[]}
  */
-function savedActions({savedOrder, preferences, resetForm, store}) {
-  const paid = savedOrder && savedOrder.payment;
-  const autoPrint = !!(preferences && preferences.autoPrint && paid);
+export function savedActions({savedOrder, preferences, resetForm, store}) {
+  const paid = !!(savedOrder && savedOrder.payment);
+  const mode = paid ? printModeOf(preferences) : null;
   const notice = toast.success('Order saved!', savedMessage(savedOrder), {
     uid: `order-saved-${savedOrder.id}`,
-    autoDismiss: paid && !autoPrint ? 0 : undefined,
-    action: paid && !autoPrint ? {
-      label: 'Imprimir ticket',
-      callback: () => {
-        if (store && store.dispatch) {
-          store.dispatch(newOrderActions.printOrderButtonClicked(savedOrder));
-        }
-      }
-    } : undefined
+    autoDismiss: mode === 'ask' ? 0 : undefined,
+    action: mode === 'ask' ? printAction(savedOrder, store) : undefined
   });
   const actions = [notice, resetForm('new_order'), newOrderActions.newOrderSaved(savedOrder)];
-  if (autoPrint) {
+  if (mode === 'always') {
     actions.push(newOrderActions.printOrderButtonClicked(savedOrder));
   }
   return actions;
+}
+
+/**
+ * @param {{id: string}} savedOrder
+ * @param {{dispatch: Function}} [store]
+ */
+function printAction(savedOrder, store) {
+  return {
+    label: 'Imprimir ticket',
+    callback: () => {
+      if (store && store.dispatch) {
+        store.dispatch(newOrderActions.printOrderButtonClicked(savedOrder));
+      }
+    }
+  };
 }
 
 /**

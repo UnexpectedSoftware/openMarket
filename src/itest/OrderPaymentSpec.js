@@ -109,23 +109,37 @@ describe('order payment', () => {
       );
   });
 
-  it('defaults sell auto-print to off and stores the setting', done => {
+  it('round-trips print mode and the new JSON', done => {
     file = path.join(os.tmpdir(), `om-sell-pref-${Date.now()}-${process.pid}.sqlite`);
     const connection = new SqliteConnection({filename: file});
     const repository = new SqliteSellPreferencesRepository({connection});
     repository.findPreferences()
       .flatMap(preferences => {
-        expect(preferences.autoPrint).to.equal(false);
-        return repository.save({preferences: preferences.withAutoPrint(true)});
+        expect(preferences.printMode).to.equal('ask');
+        expect(preferences.paperWidthMm).to.equal(80);
+        return repository.save({
+          preferences: preferences
+            .withPrintMode('always')
+            .withCopy({headerText: 'Hola', footerText: 'Adios'})
+            .withPaperWidth(58)
+        });
       })
       .flatMap(() => repository.findPreferences())
       .subscribe(
         preferences => {
-          expect(preferences.autoPrint).to.equal(true);
+          expect(preferences.printMode).to.equal('always');
+          expect(preferences.headerText).to.equal('Hola');
+          expect(preferences.footerText).to.equal('Adios');
+          expect(preferences.paperWidthMm).to.equal(58);
           const row = connection.database.prepare(
             'SELECT value_json FROM setting WHERE key = ?'
           ).get('sell_auto_print');
-          expect(JSON.parse(row.value_json).autoPrint).to.equal(true);
+          const json = JSON.parse(row.value_json);
+          expect(json.printMode).to.equal('always');
+          expect(json.headerText).to.equal('Hola');
+          expect(json.footerText).to.equal('Adios');
+          expect(json.paperWidthMm).to.equal(58);
+          expect(json.autoPrint).to.equal(undefined);
           connection.database.close();
         },
         error => {

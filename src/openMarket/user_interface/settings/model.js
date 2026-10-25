@@ -2,24 +2,28 @@ export const REQUIRED = 'Obligatorio';
 export const NIF_INVALID = 'NIF no válido';
 export const PHONE_TOO_LONG = 'Máximo 40 caracteres';
 export const EMAIL_TOO_LONG = 'Máximo 80 caracteres';
+export const COPY_TOO_LONG = 'Máximo 80 caracteres';
 export const LOAD_ERROR = 'No se han podido cargar los ajustes';
 export const SAVE_ERROR = 'No se han podido guardar los ajustes';
 export const THEME_SAVE_ERROR = 'El tema no se ha guardado';
 
 const PHONE_MAX = 40;
 const EMAIL_MAX = 80;
+const COPY_MAX = 80;
 const SHOP_KEYS = [
   'nif', 'legalName', 'tradeName', 'street', 'postalCode', 'city',
   'province', 'country', 'phone', 'email'
 ];
-const DRAFT_KEYS = SHOP_KEYS.concat(['invoicingEnabled', 'theme']);
+const TICKET_KEYS = ['printMode', 'headerText', 'footerText', 'paperWidthMm'];
+const DRAFT_KEYS = SHOP_KEYS.concat(['invoicingEnabled'], TICKET_KEYS, ['theme']);
 
 /** @returns {object} */
 export function state() {
   const shop = blankShop();
+  const ticket = blankTicket();
   return {
-    saved: {...shop, issuer: null},
-    draft: {...shop, theme: 'mercado'},
+    saved: {...shop, ...ticket, issuer: null},
+    draft: {...shop, ...ticket, theme: 'mercado'},
     issuer: null,
     persistedTheme: 'mercado',
     loading: true,
@@ -36,25 +40,29 @@ export function pageOpened(current) {
 }
 
 /**
- * A page open copies the view and the stored theme into the draft.
+ * A page open copies the shop view, the ticket view, and the stored theme into the draft.
  * A sell-screen refresh (`keepDraft`) updates `saved` and `issuer` only.
  * @param {object} current
  * @param {object} [profile]
- * @param {{theme?: string, keepDraft?: boolean}} [options]
+ * @param {{theme?: string, ticket?: object, keepDraft?: boolean}} [options]
  */
 export function shopLoaded(current, profile, options) {
   const fields = shopFields(profile);
   const issuer = issuerOf(profile);
-  const saved = {...fields, issuer};
   if (options && options.keepDraft) {
-    return {...current, saved, issuer};
+    return {
+      ...current,
+      saved: {...ticketFields(current.saved), ...fields, issuer},
+      issuer
+    };
   }
+  const copy = ticketFields(options && options.ticket);
   const theme = storedTheme(options, current);
   return {
     ...current,
-    saved,
+    saved: {...fields, ...copy, issuer},
     issuer,
-    draft: {...fields, theme},
+    draft: {...fields, ...copy, theme},
     persistedTheme: theme,
     loading: false,
     error: null,
@@ -102,20 +110,23 @@ export function draftChanged(current, patch) {
 }
 
 /**
- * Decides whether Guardar writes the shop, the theme, both, or nothing.
+ * Decides whether Guardar writes the shop, the ticket, the theme, or nothing.
  * @param {object} current
  */
 export function savePlan(current) {
   const fieldErrors = fieldErrorsFor(current.draft);
   const blocked = hasErrors(fieldErrors);
   const shop = !blocked && shopDirty(current);
+  const ticket = !blocked && ticketDirty(current);
   const theme = !blocked && themeDirty(current);
   return {
-    proceed: shop || theme,
+    proceed: shop || ticket || theme,
     shop,
+    ticket,
     theme,
     fieldErrors,
     command: shopCommand(current.draft),
+    ticketCommand: ticketCommand(current.draft),
     themeId: current.draft.theme,
     previousTheme: current.persistedTheme
   };
@@ -137,15 +148,17 @@ export function saveStarted(current) {
  * @param {object} current
  * @param {object} [profile]
  * @param {string | null} [theme]
+ * @param {object | null} [ticket]
  */
-export function saved(current, profile, theme) {
+export function saved(current, profile, theme, ticket) {
   const fields = shopFields(profile);
+  const copy = ticket == null ? ticketFields(current.draft) : ticketFields(ticket);
   const issuer = issuerOf(profile);
   const nextTheme = theme == null ? current.draft.theme : theme;
   return {
     ...current,
-    saved: {...fields, issuer},
-    draft: {...fields, theme: nextTheme},
+    saved: {...fields, ...copy, issuer},
+    draft: {...fields, ...copy, theme: nextTheme},
     issuer,
     persistedTheme: nextTheme,
     loading: false,
@@ -190,6 +203,19 @@ export function incompleteErrors(draft) {
 }
 
 /**
+ * Header and footer length failures land on that field.
+ * @param {{code?: string, context?: {field?: string}}} [error]
+ * @returns {object | null}
+ */
+export function copyFieldErrors(error) {
+  const field = error && error.context && error.context.field;
+  if (field !== 'headerText' && field !== 'footerText') {
+    return null;
+  }
+  return {[field]: COPY_TOO_LONG};
+}
+
+/**
  * @param {{theme?: string}} [options]
  * @param {object} current
  * @returns {string}
@@ -218,6 +244,11 @@ function blankShop() {
   };
 }
 
+/** @returns {object} */
+function blankTicket() {
+  return ticketFields();
+}
+
 /**
  * @param {object} [profile]
  * @returns {object}
@@ -237,6 +268,31 @@ function shopFields(profile) {
     email: textOrEmpty(source.email),
     invoicingEnabled: source.invoicingEnabled === true
   };
+}
+
+/**
+ * @param {object} [source]
+ * @returns {{printMode: string, headerText: string, footerText: string, paperWidthMm: number}}
+ */
+function ticketFields(source) {
+  const value = source || {};
+  return {
+    printMode: modeOf(value.printMode),
+    headerText: textOrEmpty(value.headerText),
+    footerText: textOrEmpty(value.footerText),
+    paperWidthMm: Number(value.paperWidthMm) === 58 ? 58 : 80
+  };
+}
+
+/**
+ * @param {string} [printMode]
+ * @returns {'always' | 'ask' | 'never'}
+ */
+function modeOf(printMode) {
+  if (printMode === 'always' || printMode === 'never') {
+    return printMode;
+  }
+  return 'ask';
 }
 
 /**
@@ -277,6 +333,8 @@ function fieldErrorsFor(draft) {
   const errors = {};
   putLimit(errors, 'phone', source.phone, PHONE_MAX, PHONE_TOO_LONG);
   putLimit(errors, 'email', source.email, EMAIL_MAX, EMAIL_TOO_LONG);
+  putLimit(errors, 'headerText', source.headerText, COPY_MAX, COPY_TOO_LONG);
+  putLimit(errors, 'footerText', source.footerText, COPY_MAX, COPY_TOO_LONG);
   if (source.invoicingEnabled === true) {
     Object.assign(errors, incompleteErrors(source));
   }
@@ -342,6 +400,16 @@ function shopDirty(current) {
 }
 
 /**
+ * @param {object} current
+ * @returns {boolean}
+ */
+function ticketDirty(current) {
+  const next = ticketCommand(current.draft);
+  const saved = ticketCommand(current.saved);
+  return TICKET_KEYS.some(key => next[key] !== saved[key]);
+}
+
+/**
  * @param {object} saved
  * @param {string} key
  * @returns {string}
@@ -382,5 +450,19 @@ function shopCommand(draft) {
     phone: trimmed(source.phone),
     email: trimmed(source.email),
     invoicingEnabled: source.invoicingEnabled === true
+  };
+}
+
+/**
+ * @param {object} draft
+ * @returns {{printMode: string, headerText: string, footerText: string, paperWidthMm: number}}
+ */
+function ticketCommand(draft) {
+  const fields = ticketFields(draft);
+  return {
+    printMode: fields.printMode,
+    headerText: trimmed(fields.headerText),
+    footerText: trimmed(fields.footerText),
+    paperWidthMm: fields.paperWidthMm
   };
 }

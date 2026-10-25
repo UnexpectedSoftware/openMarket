@@ -129,3 +129,72 @@ test('changing the theme does not change the receipt blocks', async () => {
     await closeApp(session.app, userData);
   }
 });
+
+test('saves print mode, header, and paper width', async () => {
+  test.setTimeout(90000);
+  const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
+  await seedShop(userData, MILK);
+  const session = await launchApp({userData, env: FAKE_PRINTER});
+  const logFile = path.join(userData, 'printer-log.jsonl');
+  try {
+    await session.window.setViewportSize({width: 1366, height: 768});
+    await session.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
+    await expect(session.window.getByRole('heading', {name: 'Ticket'})).toBeVisible();
+    await session.window.getByRole('combobox', {name: 'Al imprimir'}).selectOption({label: 'Siempre'});
+    await session.window.getByRole('textbox', {name: 'Cabecera'}).fill('Gracias');
+    await session.window.getByRole('combobox', {name: 'Ancho del papel'}).selectOption({label: '58 mm'});
+    await session.window.getByRole('button', {name: 'Guardar', exact: true}).click();
+    await expect(session.window.getByText('Ajustes guardados').first()).toBeVisible();
+    await expect(session.window.getByText('Ajustes guardados')).toHaveCount(0);
+    await expect.poll(() => session.window.evaluate(() => document.documentElement.dataset.theme)).toBe('mercado');
+    const after = path.join(__dirname, '..', 'docs', 'design', 'after');
+    fs.mkdirSync(after, {recursive: true});
+    await session.window.screenshot({
+      path: path.join(after, 'settings-ticket-mercado.png'),
+      fullPage: true
+    });
+
+    async function sell() {
+      await openNewOrder(session.window);
+      await scanBarcode(session.window, '8400000000011');
+      await session.window.locator('button', {hasText: 'Cobrar'}).click();
+      await confirmPayment(session.window);
+    }
+
+    await sell();
+    await expect.poll(() => fs.existsSync(logFile) && fs.readFileSync(logFile, 'utf8').includes('Gracias')).toBe(true);
+    await expect(session.window.getByRole('button', {name: 'Imprimir ticket'})).toHaveCount(0);
+    const afterAlways = fs.readFileSync(logFile, 'utf8');
+
+    await session.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
+    await session.window.getByRole('combobox', {name: 'Al imprimir'}).selectOption({label: 'Nunca'});
+    await session.window.getByRole('button', {name: 'Guardar', exact: true}).click();
+    await expect(session.window.getByText('Ajustes guardados').first()).toBeVisible();
+
+    await sell();
+    await expect(session.window.getByText('Order saved!').first()).toBeVisible();
+    await expect(session.window.getByRole('button', {name: 'Imprimir ticket'})).toHaveCount(0);
+    await expect(session.window.getByText('Order saved!')).toHaveCount(0);
+    expect(fs.readFileSync(logFile, 'utf8')).toBe(afterAlways);
+
+    await session.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
+    await session.window.getByRole('combobox', {name: 'Al imprimir'}).selectOption({label: 'Preguntar'});
+    await session.window.getByRole('button', {name: 'Guardar', exact: true}).click();
+    await expect(session.window.getByText('Ajustes guardados').first()).toBeVisible();
+
+    await sell();
+    await expect(session.window.getByRole('button', {name: 'Imprimir ticket'})).toBeVisible();
+  } finally {
+    await closeApp(session.app, userData, {keep: true});
+  }
+
+  const second = await launchApp({userData, env: FAKE_PRINTER});
+  try {
+    await second.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
+    await expect(second.window.getByRole('combobox', {name: 'Al imprimir'})).toHaveValue('ask');
+    await expect(second.window.getByRole('combobox', {name: 'Ancho del papel'})).toHaveValue('58');
+    await expect(second.window.getByRole('textbox', {name: 'Cabecera'})).toHaveValue('Gracias');
+  } finally {
+    await closeApp(second.app, userData);
+  }
+});

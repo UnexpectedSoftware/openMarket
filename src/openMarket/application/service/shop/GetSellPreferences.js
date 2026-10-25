@@ -5,7 +5,7 @@ import SellPreferencesQuery from '../../../domain/shop/SellPreferencesQuery';
 /** @typedef {import('../../../domain/shop/SellPreferencesView').default} SellPreferencesView */
 
 /**
- * Reads whether the till prints a ticket as soon as the sale is saved.
+ * Reads how the till prints a ticket: the mode, the copy, and the paper width.
  */
 export default class GetSellPreferences {
 

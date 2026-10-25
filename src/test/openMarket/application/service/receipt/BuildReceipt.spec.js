@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import * as Rx from 'rxjs';
 import 'rxjs/add/operator/defaultIfEmpty';
 import BuildReceipt from '../../../../../openMarket/application/service/receipt/BuildReceipt';
+import SellPreferencesView from '../../../../../openMarket/domain/shop/SellPreferencesView';
 import ReceiptSlots from '../../../../../openMarket/infrastructure/receipt/ReceiptSlots';
 import Invoice from '../../../../../openMarket/domain/invoice/Invoice';
 import InvoiceNumber from '../../../../../openMarket/domain/invoice/InvoiceNumber';
@@ -37,7 +38,15 @@ function invoice() {
   });
 }
 
-function useCase(slots, recordError) {
+function preferences(fields) {
+  return {
+    find() {
+      return Rx.Observable.of(new SellPreferencesView(fields));
+    }
+  };
+}
+
+function useCase(slots, recordError, sellPreferencesRepository) {
   return new BuildReceipt({
     invoiceRepository: {
       findByOrderId() {
@@ -45,8 +54,31 @@ function useCase(slots, recordError) {
       }
     },
     receiptSlots: slots,
-    recordError
+    recordError,
+    sellPreferencesRepository
   });
+}
+
+function slotsWithMarkers() {
+  const seen = {fiscal: null, footer: null};
+  const slots = new ReceiptSlots();
+  slots.register({
+    pluginId: 'fiscal',
+    slot: 'receipt.header.fiscal',
+    render: payload => {
+      seen.fiscal = payload;
+      return [{type: 'text', text: 'FISCAL'}];
+    }
+  });
+  slots.register({
+    pluginId: 'fiscal',
+    slot: 'receipt.footer',
+    render: payload => {
+      seen.footer = payload;
+      return [{type: 'text', text: 'FOOTER-SLOT'}];
+    }
+  });
+  return {slots, seen};
 }
 
 describe('BuildReceipt', () => {
@@ -72,6 +104,81 @@ describe('BuildReceipt', () => {
       expect(receipt.blocks.map(block => block.text).join('\n')).to.include('Leche  2 x 0.95 = 1.90');
       done();
     }, done);
+  });
+
+  it('wraps the shop blocks with header and footer outside the plugin slots', done => {
+    const {slots, seen} = slotsWithMarkers();
+    const rendered = [];
+    const receiptCase = new BuildReceipt({
+      invoiceRepository: {
+        findByOrderId() {
+          return Rx.Observable.of(invoice());
+        }
+      },
+      receiptSlots: slots,
+      sellPreferencesRepository: preferences({headerText: ' Gracias ', footerText: 'Hasta pronto'}),
+      htmlReceiptRenderer: {
+        render(document) {
+          rendered.push(document);
+          return '<p>ticket</p>';
+        }
+      }
+    });
+    receiptCase.build({orderId: 'order-1'}).subscribe(receipt => {
+      const texts = receipt.blocks.map(block => block.text);
+      const fiscal = texts.indexOf('FISCAL');
+      const header = texts.indexOf('Gracias');
+      const shop = texts.indexOf('Ultramarinos Pérez');
+      const footer = texts.indexOf('Hasta pronto');
+      const slot = texts.indexOf('FOOTER-SLOT');
+      expect(fiscal).to.equal(0);
+      expect(header).to.equal(1);
+      expect(shop).to.be.above(header);
+      expect(footer).to.be.above(shop);
+      expect(slot).to.equal(texts.length - 1);
+      expect(JSON.stringify(seen.fiscal)).to.not.include('Gracias');
+      expect(JSON.stringify(seen.footer)).to.not.include('Hasta pronto');
+      expect(seen.fiscal.headerText).to.equal(undefined);
+      expect(rendered[0].paperWidthMm).to.equal(undefined);
+      expect(rendered[0].blocks).to.equal(receipt.blocks);
+      expect(receipt.html).to.equal('<p>ticket</p>');
+      done();
+    }, done);
+  });
+
+  it('adds no block for blank header and footer copy', done => {
+    const {slots} = slotsWithMarkers();
+    useCase(slots, null, preferences({headerText: null, footerText: '   '})).build({orderId: 'order-1'})
+      .subscribe(receipt => {
+        const texts = receipt.blocks.map(block => block.text);
+        expect(texts[0]).to.equal('FISCAL');
+        expect(texts[1]).to.equal('Ultramarinos Pérez');
+        expect(texts[texts.length - 1]).to.equal('FOOTER-SLOT');
+        expect(texts).to.not.include('');
+        expect(texts).to.not.include('   ');
+        done();
+      }, done);
+  });
+
+  it('puts the same copy around a preview and keeps it off the slot payload', done => {
+    const {slots, seen} = slotsWithMarkers();
+    useCase(slots, null, preferences({headerText: 'Gracias', footerText: 'Hasta pronto'}))
+      .preview({
+        lines: [{name: 'Leche', quantity: 1, price: 1}],
+        issuer: {tradeName: 'Ultramarinos Pérez', legalName: 'SL', nif: 'B12345674'}
+      })
+      .subscribe(receipt => {
+        const texts = receipt.blocks.map(block => block.text);
+        expect(texts[0]).to.equal('FISCAL');
+        expect(texts[1]).to.equal('Gracias');
+        expect(texts).to.include('Ultramarinos Pérez');
+        expect(texts[texts.indexOf('Hasta pronto')]).to.equal('Hasta pronto');
+        expect(texts[texts.length - 1]).to.equal('FOOTER-SLOT');
+        expect(texts.indexOf('Hasta pronto')).to.be.below(texts.length - 1);
+        expect(JSON.stringify(seen.fiscal)).to.not.include('Gracias');
+        expect(seen.fiscal).to.equal(null);
+        done();
+      }, done);
   });
 
   it('drops a plugin renderer that throws and still builds the ticket', done => {
