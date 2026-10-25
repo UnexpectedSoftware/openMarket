@@ -1,10 +1,13 @@
 import {expect} from 'chai';
+import SellPreferencesView from '../../../../openMarket/domain/shop/SellPreferencesView';
 import ShopProfileView from '../../../../openMarket/domain/shop/ShopProfileView';
 import {
+  COPY_TOO_LONG,
   EMAIL_TOO_LONG,
   PHONE_TOO_LONG,
   REQUIRED,
   THEME_SAVE_ERROR,
+  copyFieldErrors,
   draftChanged,
   pageOpened,
   saveFailed,
@@ -148,5 +151,65 @@ describe('settings model', () => {
     expect(rolled.draft.legalName).to.equal('Otro');
     expect(rolled.draft.theme).to.equal('mercado');
     expect(rolled.saveError).to.equal(THEME_SAVE_ERROR);
+  });
+
+  it('copies the ticket view into the draft and leaves the issuer alone', () => {
+    const ticket = new SellPreferencesView({
+      printMode: 'always',
+      headerText: 'Hola',
+      footerText: 'Pie',
+      paperWidthMm: 58
+    });
+    const current = shopLoaded(state(), view(), {theme: 'mercado', ticket});
+    expect(current.draft.printMode).to.equal('always');
+    expect(current.draft.headerText).to.equal('Hola');
+    expect(current.draft.footerText).to.equal('Pie');
+    expect(current.draft.paperWidthMm).to.equal(58);
+    expect(current.saved.paperWidthMm).to.equal(58);
+    expect(current.issuer).to.equal(current.saved.issuer);
+    const edited = draftChanged(current, {headerText: 'Temporal', issuer: {nif: 'NO'}});
+    expect(edited.draft.headerText).to.equal('Temporal');
+    expect(edited.issuer).to.equal(current.issuer);
+    expect(edited.saved.headerText).to.equal('Hola');
+    const again = shopLoaded(pageOpened(edited), view(), {theme: 'mercado', ticket: new SellPreferencesView()});
+    expect(again.draft.headerText).to.equal('');
+    expect(again.draft.printMode).to.equal('ask');
+    expect(again.draft.legalName).to.equal('Ultramarinos Pérez SL');
+  });
+
+  it('keeps a ticket draft when the sell screen refreshes the shop', () => {
+    const ticket = new SellPreferencesView({printMode: 'never', headerText: 'Hola', footerText: '', paperWidthMm: 58});
+    const loaded = shopLoaded(state(), view(), {ticket});
+    const edited = draftChanged(loaded, {headerText: 'Temporal', legalName: 'Otro'});
+    const next = shopLoaded(edited, view({legalName: 'Guardado'}), {keepDraft: true});
+    expect(next.draft.headerText).to.equal('Temporal');
+    expect(next.draft.legalName).to.equal('Otro');
+    expect(next.saved.headerText).to.equal('Hola');
+    expect(next.saved.printMode).to.equal('never');
+    expect(next.saved.paperWidthMm).to.equal(58);
+    expect(next.saved.legalName).to.equal('Guardado');
+  });
+
+  it('does not start a save when the header or footer is over 80 characters', () => {
+    const header = saveStarted(draftChanged(loaded(), {headerText: 'a'.repeat(81)}));
+    expect(header.saving).to.equal(false);
+    expect(header.fieldErrors.headerText).to.equal(COPY_TOO_LONG);
+    const footer = saveStarted(draftChanged(loaded(), {footerText: 'b'.repeat(81)}));
+    expect(footer.saving).to.equal(false);
+    expect(footer.fieldErrors.footerText).to.equal(COPY_TOO_LONG);
+    const ok = saveStarted(draftChanged(loaded(), {headerText: 'a'.repeat(80), printMode: 'never'}));
+    expect(ok.saving).to.equal(true);
+    expect(ok.fieldErrors.headerText).to.equal(undefined);
+    const spaced = draftChanged(shopLoaded(state(), view(), {
+      ticket: new SellPreferencesView({headerText: 'Hola'})
+    }), {headerText: '  Hola  '});
+    expect(saveStarted(spaced)).to.equal(spaced);
+  });
+
+  it('maps a too-long header or footer onto that field', () => {
+    expect(copyFieldErrors({context: {field: 'headerText'}})).to.deep.equal({headerText: COPY_TOO_LONG});
+    expect(copyFieldErrors({context: {field: 'footerText'}})).to.deep.equal({footerText: COPY_TOO_LONG});
+    expect(copyFieldErrors({context: {field: 'printMode'}})).to.equal(null);
+    expect(copyFieldErrors(null)).to.equal(null);
   });
 });

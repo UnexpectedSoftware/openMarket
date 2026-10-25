@@ -132,7 +132,8 @@ class Container {
   _orderPrinterService(){
     return new OrderPrinterService({
       printerConnection: this.getInstance({key: 'printerConnection'}),
-      renderer: this.getInstance({key: 'escPosReceiptRenderer'})
+      renderer: this.getInstance({key: 'escPosReceiptRenderer'}),
+      sellPreferencesRepository: this.getInstance({key: 'sellPreferencesRepository'})
     });
   }
 
@@ -140,6 +141,7 @@ class Container {
     return new BuildReceipt({
       invoiceRepository: this.getInstance({key: 'invoiceRepository'}),
       receiptSlots: this.getInstance({key: 'receiptSlots'}),
+      sellPreferencesRepository: this.getInstance({key: 'sellPreferencesRepository'}),
       recordError: record,
       htmlReceiptRenderer: this.getInstance({key: 'htmlReceiptRenderer'})
     });

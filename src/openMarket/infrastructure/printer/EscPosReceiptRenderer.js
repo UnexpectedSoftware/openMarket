@@ -13,9 +13,11 @@ export default class EscPosReceiptRenderer {
 
   /**
    * @param {*} printer
-   * @param {{blocks: object[]}} receipt
+   * @param {{blocks?: object[]}} receipt
+   * @param {{paperWidthMm?: number}} [options] Width for this job. Falls back to the renderer default.
    */
-  render(printer, receipt) {
+  render(printer, receipt, options) {
+    const paperWidthMm = options && options.paperWidthMm != null ? options.paperWidthMm : this._paperWidthMm;
     /** @type {Array<*>} */
     const blocks = receipt && receipt.blocks ? receipt.blocks : [];
     blocks.forEach(block => {
@@ -23,7 +25,7 @@ export default class EscPosReceiptRenderer {
         this._text(printer, block);
       } else if (block.type === 'qr') {
         printer.printQR(block.data, {
-          cellSize: cellSize(block.sizeMm, this._paperWidthMm),
+          cellSize: cellSize(block.sizeMm, paperWidthMm),
           correction: 'M',
           model: 2
         });

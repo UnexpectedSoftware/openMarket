@@ -2,13 +2,18 @@ import {Observable} from 'rxjs/Observable';
 import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/defaultIfEmpty';
 import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/mergeMap';
 import {issuedPayload} from '../../../domain/invoice/invoicePayload';
 import {coreBlocks} from '../../../domain/receipt/coreBlocks';
+import {receiptBlock} from '../../../domain/receipt/ReceiptBlock';
 import Money from '../../../domain/money/Money';
 import Quantity from '../../../domain/money/Quantity';
+import SellPreferencesQuery from '../../../domain/shop/SellPreferencesQuery';
+import SellPreferencesView from '../../../domain/shop/SellPreferencesView';
 import VatRate from '../../../domain/tax/VatRate';
 import VatBreakdown from '../../../domain/tax/VatBreakdown';
 /** @typedef {import('../../../domain/invoice/InvoiceRepository').default} InvoiceRepository */
+/** @typedef {import('../../../domain/shop/SellPreferencesRepository').default} SellPreferencesRepository */
 /** @typedef {import('../../../infrastructure/receipt/ReceiptSlots').default} ReceiptSlots */
 
 /**
@@ -32,7 +37,9 @@ import VatBreakdown from '../../../domain/tax/VatBreakdown';
  */
 
 /**
- * Builds the ticket for one order: fiscal slot, the shop's blocks, then the footer slot.
+ * Builds the ticket for one order: fiscal slot, optional shop header, the shop's
+ * blocks, optional shop footer, then the footer slot. Header and footer are
+ * not part of the invoice payload. The HTML preview ignores the paper width.
  */
 export default class BuildReceipt {
 
@@ -40,12 +47,14 @@ export default class BuildReceipt {
    * @param {object} deps
    * @param {InvoiceRepository} deps.invoiceRepository
    * @param {ReceiptSlots} deps.receiptSlots
+   * @param {SellPreferencesRepository} [deps.sellPreferencesRepository]
    * @param {(error: unknown) => void} [deps.recordError]
    * @param {{render: (receipt: {blocks?: object[]}) => string}} [deps.htmlReceiptRenderer]
    */
-  constructor({invoiceRepository, receiptSlots, recordError, htmlReceiptRenderer}) {
+  constructor({invoiceRepository, receiptSlots, sellPreferencesRepository, recordError, htmlReceiptRenderer}) {
     this._invoiceRepository = invoiceRepository;
     this._receiptSlots = receiptSlots;
+    this._sellPreferencesRepository = sellPreferencesRepository || null;
     this._recordError = typeof recordError === 'function' ? recordError : () => {};
     this._html = htmlReceiptRenderer || null;
   }
@@ -55,12 +64,13 @@ export default class BuildReceipt {
    * @returns {Observable<{blocks: object[], html: string}>}
    */
   build({orderId}) {
-    return this._invoiceRepository.findByOrderId({orderId: orderId == null ? '' : String(orderId)})
-      .defaultIfEmpty(null)
-      .map(invoice => {
-        const payload = invoice ? issuedPayload(invoice) : null;
-        return this._document(payload);
-      });
+    return this._preferences().flatMap(preferences =>
+      this._invoiceRepository.findByOrderId({orderId: orderId == null ? '' : String(orderId)})
+        .defaultIfEmpty(null)
+        .map(invoice => {
+          const payload = invoice ? issuedPayload(invoice) : null;
+          return this._document(payload, undefined, preferences);
+        }));
   }
 
   /**
@@ -69,15 +79,18 @@ export default class BuildReceipt {
    * @returns {Observable<{blocks: object[], html: string}>}
    */
   preview({lines, issuer}) {
-    return Observable.of(this._document(previewPayload({lines, issuer}), null));
+    return this._preferences().map(preferences =>
+      this._document(previewPayload({lines, issuer}), null, preferences));
   }
 
   /**
    * @param {object | null} payload
    * @param {object | null} [slotPayload]
+   * @param {SellPreferencesView} [preferences]
    * @returns {{blocks: object[], html: string}}
    */
-  _document(payload, slotPayload) {
+  _document(payload, slotPayload, preferences) {
+    const copy = preferences || new SellPreferencesView();
     const slots = slotPayload === undefined ? payload : slotPayload;
     const fiscal = this._receiptSlots.blocks({
       slot: 'receipt.header.fiscal',
@@ -89,11 +102,36 @@ export default class BuildReceipt {
       payload: slots,
       recordError: this._recordError
     });
-    const blocks = fiscal.concat(coreBlocks(payload), footer);
+    const blocks = fiscal
+      .concat(copyBlock(copy.headerText))
+      .concat(coreBlocks(payload))
+      .concat(copyBlock(copy.footerText))
+      .concat(footer);
     const html = this._html ? this._html.render({blocks}) : '';
     return {blocks, html};
   }
 
+  /** @returns {Observable<SellPreferencesView>} */
+  _preferences() {
+    if (!this._sellPreferencesRepository) {
+      return Observable.of(new SellPreferencesView());
+    }
+    return this._sellPreferencesRepository.find(new SellPreferencesQuery());
+  }
+
+}
+
+/**
+ * A non-empty shop line around the core blocks. Blank copy adds nothing.
+ * @param {string | null | undefined} text
+ * @returns {object[]}
+ */
+function copyBlock(text) {
+  const value = text == null ? '' : String(text).trim();
+  if (value === '') {
+    return [];
+  }
+  return [receiptBlock({type: 'text', text: value})];
 }
 
 /**

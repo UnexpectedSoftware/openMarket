@@ -31,4 +31,27 @@ describe('EscPosReceiptRenderer', () => {
     expect(qr).to.be.below(header);
     expect(calls[qr]).to.equal('printQR:https://aeat.example/qr:M:2:10');
   });
+
+  it('passes 58 mm and 80 mm into the QR cell size', () => {
+    const receipt = {
+      blocks: [{type: 'qr', data: 'https://aeat.example/qr', sizeMm: 35, correction: 'M'}]
+    };
+    function cell(paperWidthMm) {
+      const calls = [];
+      const printer = {
+        printQR(data, options) { calls.push(options.cellSize); },
+        cut() {}
+      };
+      new EscPosReceiptRenderer().render(printer, receipt, {paperWidthMm});
+      return calls[0];
+    }
+    expect(cell(80)).to.equal(10);
+    expect(cell(58)).to.equal(14);
+    const fallback = [];
+    new EscPosReceiptRenderer({paperWidthMm: 58}).render({
+      printQR(data, options) { fallback.push(options.cellSize); },
+      cut() {}
+    }, receipt);
+    expect(fallback).to.deep.equal([14]);
+  });
 });

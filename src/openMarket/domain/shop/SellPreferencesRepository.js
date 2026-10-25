@@ -4,7 +4,7 @@
 /** @typedef {import('./SellPreferencesView').default} SellPreferencesView */
 
 /**
- * Port: whether the till prints a ticket on its own.
+ * Port: how the till prints a ticket.
  * @interface
  */
 export default class SellPreferencesRepository {

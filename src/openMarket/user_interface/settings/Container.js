@@ -5,6 +5,7 @@ import {PageHeader} from '../components/PageHeader';
 import Skeleton from '../components/Skeleton';
 import ShopForm from './ShopForm';
 import ThemePicker from './ThemePicker';
+import TicketForm from './TicketForm';
 
 export default class Container extends Component {
 
@@ -74,6 +75,9 @@ export default class Container extends Component {
         <Card title="Comercio">
           <ShopForm values={page.draft} fieldErrors={page.fieldErrors} onChange={this.change} />
         </Card>
+        <Card title="Ticket">
+          <TicketForm values={page.draft} fieldErrors={page.fieldErrors} onChange={this.change} />
+        </Card>
         <Card title="Apariencia">
           <ThemePicker
             theme={appearance.theme}
@@ -92,6 +96,7 @@ function SettingsSkeletons() {
   return (
     <div className="settings-sections" aria-hidden="true">
       <div className="settings-skeleton"><Skeleton lines={6} /></div>
+      <div className="settings-skeleton"><Skeleton lines={4} /></div>
       <div className="settings-skeleton"><Skeleton lines={3} /></div>
     </div>
   );

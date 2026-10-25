@@ -15,13 +15,13 @@
   gap: var(--om-space-4);
 }
 
-.settings-shop {
+.settings-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   column-gap: var(--om-space-4);
 }
 
-.settings-shop .settings-span {
+.settings-fields .settings-span {
   grid-column: 1 / -1;
 }
 

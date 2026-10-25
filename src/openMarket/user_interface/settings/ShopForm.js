@@ -21,7 +21,7 @@ export default function ShopForm(props) {
   const values = props.values || {};
   const fieldErrors = props.fieldErrors || {};
   return (
-    <div className="settings-shop">
+    <div className="settings-fields">
       {FIELDS.map(field => (
         <TextField
           key={field.name}

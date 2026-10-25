@@ -124,17 +124,33 @@ describe('Settings read models', () => {
       .flatMap(missing => {
         expect(missing).to.be.instanceof(SellPreferencesView);
         expect(missing).to.not.be.instanceof(SellPreferences);
-        expect(missing.autoPrint).to.equal(false);
-        return updateSellPreferences.update({autoPrint: true});
+        expect(missing.printMode).to.equal('ask');
+        expect(missing.headerText).to.equal('');
+        expect(missing.footerText).to.equal('');
+        expect(missing.paperWidthMm).to.equal(80);
+        expect(missing.autoPrint).to.equal(undefined);
+        return updateSellPreferences.update({
+          printMode: 'always',
+          headerText: ' Hola ',
+          footerText: 'Adios',
+          paperWidthMm: 58
+        });
       })
       .flatMap(() => sellRepository.find(new SellPreferencesQuery()))
       .flatMap(view => sellRepository.findPreferences().map(profile => ({view, profile})))
       .subscribe(({view, profile}) => {
-        expect(view.autoPrint).to.equal(true);
+        expect(view.printMode).to.equal('always');
+        expect(view.headerText).to.equal('Hola');
+        expect(view.footerText).to.equal('Adios');
+        expect(view.paperWidthMm).to.equal(58);
         expect(view).to.not.be.instanceof(SellPreferences);
-        expect(view.withAutoPrint).to.equal(undefined);
+        expect(view.withPrintMode).to.equal(undefined);
+        expect(view.autoPrint).to.equal(undefined);
         expect(profile).to.be.instanceof(SellPreferences);
-        expect(profile.autoPrint).to.equal(true);
+        expect(profile.printMode).to.equal('always');
+        expect(profile.headerText).to.equal('Hola');
+        expect(profile.paperWidthMm).to.equal(58);
+        expect(profile.autoPrint).to.equal(undefined);
         done();
       }, done);
   });

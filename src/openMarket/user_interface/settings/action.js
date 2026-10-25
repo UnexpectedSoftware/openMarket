@@ -27,9 +27,10 @@ export function settingsPageOpened() {
 /**
  * @param {object} profile
  * @param {string} theme
+ * @param {object | null} [ticket]
  */
-export function settingsLoaded(profile, theme) {
-  return {type: SETTINGS_LOADED, profile, theme};
+export function settingsLoaded(profile, theme, ticket) {
+  return {type: SETTINGS_LOADED, profile, theme, ticket};
 }
 
 /** @param {string} message */
@@ -49,9 +50,10 @@ export function settingsSaveRequested() {
 /**
  * @param {object} profile
  * @param {string | null} theme
+ * @param {object | null} [ticket]
  */
-export function settingsSaved(profile, theme) {
-  return {type: SETTINGS_SAVED, profile, theme};
+export function settingsSaved(profile, theme, ticket) {
+  return {type: SETTINGS_SAVED, profile, theme, ticket};
 }
 
 /**
