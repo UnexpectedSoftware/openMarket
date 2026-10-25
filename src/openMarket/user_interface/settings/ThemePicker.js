@@ -1,5 +1,4 @@
 import React, {Component} from 'react';
-import Button from '../components/Button';
 import Theme from '../../domain/appearance/Theme';
 
 const NAMES = {
@@ -14,7 +13,7 @@ const THEMES = Theme.ids().map(id => ({id, name: NAMES[id] || id}));
 const SWATCHES = ['background', 'surface', 'primary', 'accent', 'text'];
 
 /**
- * Radio cards for the four themes. Choosing one previews it; Guardar persists it.
+ * Radio cards for the four themes. Choosing one previews it. The page Guardar persists it.
  */
 export default class ThemePicker extends Component {
 
@@ -24,7 +23,6 @@ export default class ThemePicker extends Component {
     this._focusId = null;
     this._select = this._select.bind(this);
     this._key = this._key.bind(this);
-    this._save = this._save.bind(this);
   }
 
   componentWillUnmount() {
@@ -66,12 +64,6 @@ export default class ThemePicker extends Component {
     this._select(next.id);
   }
 
-  _save() {
-    if (this.props.onSave) {
-      this.props.onSave(this.props.applied);
-    }
-  }
-
   render() {
     const applied = this.props.applied;
     const cards = THEMES.map(theme => {
@@ -104,15 +96,9 @@ export default class ThemePicker extends Component {
       );
     });
     return (
-      <section className="settings-appearance">
-        <h3 id="appearance-heading">Apariencia</h3>
-        <div className="theme-picker" role="radiogroup" aria-labelledby="appearance-heading">
-          {cards}
-        </div>
-        <Button type="button" className="theme-save" onClick={this._save}>
-          Guardar
-        </Button>
-      </section>
+      <div className="theme-picker" role="radiogroup" aria-label="Apariencia">
+        {cards}
+      </div>
     );
   }
 

@@ -13,6 +13,8 @@ describe('ShopProfile', () => {
     });
     expect(profile.timeZone).to.equal('Europe/Madrid');
     expect(profile.invoicingEnabled).to.equal(false);
+    expect(profile.phone).to.equal('');
+    expect(profile.email).to.equal('');
     expect(profile.isComplete()).to.equal(false);
     expect(profile.snapshot()).to.equal(null);
   });
@@ -77,5 +79,23 @@ describe('ShopProfile', () => {
       address
     });
     expect(profile.address).to.not.equal(profile.snapshot().address);
+    expect(profile.snapshot()).to.not.have.property('phone');
+    expect(profile.snapshot()).to.not.have.property('email');
+  });
+
+  it('trims phone and email and leaves them off the invoice', () => {
+    const profile = new ShopProfile({
+      nif: TaxId.parse('B12345674'),
+      legalName: 'Ultramarinos Pérez SL',
+      phone: '  600111222  ',
+      email: '  perez@example.com  '
+    });
+    expect(profile.phone).to.equal('600111222');
+    expect(profile.email).to.equal('perez@example.com');
+    expect(Object.keys(profile.snapshot())).to.not.include('phone');
+    expect(Object.keys(profile.snapshot())).to.not.include('email');
+    const blank = new ShopProfile({nif: null, legalName: '', phone: null, email: null});
+    expect(blank.phone).to.equal('');
+    expect(blank.email).to.equal('');
   });
 });

@@ -31,8 +31,6 @@ export function applyTheme(theme) {
   }
 }
 
-const savedToast = () => toast.success('Tema guardado', 'La apariencia se ha guardado');
-
 /**
  * @param {*} failure
  */
@@ -67,7 +65,7 @@ export function makeAppearanceEpic({changeTheme}) {
         .flatMap(preferences => {
           const theme = preferences.theme.id;
           applyTheme(theme);
-          return Rx.Observable.of(themeChanged(theme), savedToast());
+          return Rx.Observable.of(themeChanged(theme));
         })
         .catch(failure => {
           const theme = action.previous || 'mercado';

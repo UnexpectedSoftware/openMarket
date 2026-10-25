@@ -34,6 +34,8 @@ describe('ShopProfileView', () => {
     expect(view.country).to.equal('ES');
     expect(view.timeZone).to.equal('Europe/Madrid');
     expect(view.invoicingEnabled).to.equal(false);
+    expect(view.phone).to.equal('');
+    expect(view.email).to.equal('');
     expect(view.issuer).to.equal(null);
   });
 
@@ -93,5 +95,21 @@ describe('ShopProfileView', () => {
     expect(view.country).to.equal('ES');
     expect(view.issuer).to.equal(null);
     expect(view.nif).to.equal('B12345674');
+  });
+
+  it('stores phone and email without putting them on the issuer', () => {
+    const missing = new ShopProfileView({phone: null, email: null});
+    expect(missing.phone).to.equal('');
+    expect(missing.email).to.equal('');
+    const view = new ShopProfileView({
+      nif: 'B12345674',
+      legalName: 'Ultramarinos Pérez SL',
+      phone: '600111222',
+      email: 'perez@example.com'
+    });
+    expect(view.phone).to.equal('600111222');
+    expect(view.email).to.equal('perez@example.com');
+    expect(view.issuer).to.not.have.property('phone');
+    expect(view.issuer).to.not.have.property('email');
   });
 });

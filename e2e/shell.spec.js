@@ -33,7 +33,7 @@ test('navigates from the rail with a click or a shortcut', async () => {
     await expect(window.getByRole('link', {name: 'Informes', exact: true})).not.toHaveAttribute('aria-current', 'page');
 
     await window.getByRole('link', {name: 'Ajustes', exact: true}).click();
-    await expect(window.getByRole('heading', {name: 'Settings'})).toBeVisible();
+    await expect(window.getByRole('heading', {name: 'Ajustes'})).toBeVisible();
 
     await window.getByRole('link', {name: 'Productos', exact: true}).click();
     const content = await window.locator('#main .container-fluid').evaluate(element => element.getBoundingClientRect().width);

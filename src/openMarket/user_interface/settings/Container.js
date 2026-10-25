@@ -1,98 +1,110 @@
 import React, {Component} from 'react';
 import Button from '../components/Button';
-import ReduxForm from './ReduxForm';
+import Card from '../components/Card';
+import {PageHeader} from '../components/PageHeader';
+import Skeleton from '../components/Skeleton';
+import ShopForm from './ShopForm';
 import ThemePicker from './ThemePicker';
-
-function fields(settings) {
-  return {
-    nif: settings.nif || '',
-    legalName: settings.legalName || '',
-    tradeName: settings.tradeName || '',
-    street: settings.street || '',
-    postalCode: settings.postalCode || '',
-    city: settings.city || '',
-    province: settings.province || '',
-    country: settings.country || 'ES',
-    invoicingEnabled: settings.invoicingEnabled === true
-  };
-}
 
 export default class Container extends Component {
 
-  constructor(props) {
-    super(props);
-    this.state = fields(props.settings);
-    this._change = this._change.bind(this);
-    this._save = this._save.bind(this);
-    this._persistTheme = this._persistTheme.bind(this);
-  }
-
   componentWillMount() {
-    if (this.props.shopProfileRequested) {
-      this.props.shopProfileRequested();
+    if (this.props.settingsPageOpened) {
+      this.props.settingsPageOpened();
     }
   }
 
-  componentWillReceiveProps(next) {
-    if (next.settings.revision !== this.props.settings.revision) {
-      this.setState(fields(next.settings));
+  save = event => {
+    if (event && event.preventDefault) {
+      event.preventDefault();
     }
-  }
-
-  _change(name, value) {
-    this.setState({[name]: value});
-  }
-
-  _persistTheme(applied) {
-    if (!this.props.themeChangeRequested || !applied) {
+    const page = this.props.settings || {};
+    if (page.saving || page.loading || page.error) {
       return;
     }
-    const saved = this.props.appearance && this.props.appearance.theme;
-    this.props.themeChangeRequested(applied, saved || 'mercado');
-  }
+    this.props.settingsSaveRequested();
+  };
 
-  _save(event) {
-    event.preventDefault();
-    const appearance = this.props.appearance || {};
-    if (appearance.applied && appearance.applied !== appearance.theme) {
-      this._persistTheme(appearance.applied);
+  change = (name, value) => {
+    this.props.settingsDraftChanged({[name]: value});
+  };
+
+  previewTheme = id => {
+    if (this.props.themePreviewRequested) {
+      this.props.themePreviewRequested(id);
     }
-    this.props.shopProfileSaveRequested(this.state);
-  }
+    this.props.settingsDraftChanged({theme: id});
+  };
+
+  discardTheme = theme => {
+    if (this.props.themePreviewDiscardRequested) {
+      this.props.themePreviewDiscardRequested(theme);
+    }
+    this.props.settingsDraftChanged({theme});
+  };
 
   render() {
-    const {settings, appearance} = this.props;
-    const theme = appearance || {theme: 'mercado', applied: 'mercado'};
-    const picker = (
-      <ThemePicker
-        theme={theme.theme}
-        applied={theme.applied}
-        onPreview={this.props.themePreviewRequested}
-        onSave={this._persistTheme}
-        onDiscard={this.props.themePreviewDiscardRequested}
-      />
-    );
-    if (!settings.loaded) {
-      return (
-        <section className="settings-page">
-          <h2>Settings</h2>
-          {picker}
-          {settings.error ? <p className="settings-error" role="alert">{settings.error}</p> : <p>Loading shop settings…</p>}
-        </section>
-      );
-    }
+    const page = this.props.settings || {};
+    const appearance = this.props.appearance || {theme: 'mercado', applied: 'mercado'};
     return (
-      <section className="settings-page">
-        <h2>Settings</h2>
-        {picker}
-        <form className="settings-shop" onSubmit={this._save}>
-          <h3>Comercio</h3>
-          <ReduxForm values={this.state} onChange={this._change} error={settings.error} />
-          {settings.saved ? <p className="settings-saved" role="status">Shop saved</p> : null}
-          <Button type="submit">Save</Button>
-        </form>
-      </section>
+      <form className="container-fluid settings-page" onSubmit={this.save}>
+        <PageHeader
+          title="Ajustes"
+          actions={
+            <Button type="submit" disabled={page.loading || page.saving || !!page.error}>
+              Guardar
+            </Button>
+          }
+        />
+        {this.body(page, appearance)}
+      </form>
     );
   }
 
+  body(page, appearance) {
+    if (page.loading) {
+      return <SettingsSkeletons />;
+    }
+    if (page.error) {
+      return <SettingsFailure message={page.error} onRetry={this.props.settingsPageOpened} />;
+    }
+    return (
+      <div className="settings-sections">
+        {page.saveError ? <p className="settings-save-error" role="alert">{page.saveError}</p> : null}
+        <Card title="Comercio">
+          <ShopForm values={page.draft} fieldErrors={page.fieldErrors} onChange={this.change} />
+        </Card>
+        <Card title="Apariencia">
+          <ThemePicker
+            theme={appearance.theme}
+            applied={appearance.applied}
+            onPreview={this.previewTheme}
+            onDiscard={this.discardTheme}
+          />
+        </Card>
+      </div>
+    );
+  }
+
+}
+
+function SettingsSkeletons() {
+  return (
+    <div className="settings-sections" aria-hidden="true">
+      <div className="settings-skeleton"><Skeleton lines={6} /></div>
+      <div className="settings-skeleton"><Skeleton lines={3} /></div>
+    </div>
+  );
+}
+
+/**
+ * @param {{message: string, onRetry: Function}} props
+ */
+function SettingsFailure(props) {
+  return (
+    <div className="settings-failure">
+      <p role="alert">{props.message}</p>
+      <Button variant="secondary" onClick={props.onRetry}>Reintentar</Button>
+    </div>
+  );
 }
