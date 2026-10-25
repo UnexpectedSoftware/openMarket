@@ -25,6 +25,8 @@ export default class UpdateShopProfile {
    * @param {string} [command.city]
    * @param {string} [command.province]
    * @param {string} [command.country]
+   * @param {string} [command.phone]
+   * @param {string} [command.email]
    * @param {boolean} [command.invoicingEnabled]
    * @returns {import('rxjs/Observable').Observable<ShopProfile>}
    */
@@ -56,7 +58,9 @@ export default class UpdateShopProfile {
           country: command.country || 'ES'
         },
         timeZone: 'Europe/Madrid',
-        invoicingEnabled
+        invoicingEnabled,
+        phone: command.phone,
+        email: command.email
       });
       return this._shopProfileRepository.save({profile});
     });

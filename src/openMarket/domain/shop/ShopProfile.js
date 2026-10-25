@@ -28,14 +28,18 @@ export default class ShopProfile {
    * @param {{street?: string, postalCode?: string, city?: string, province?: string, country?: string}} [props.address]
    * @param {string} [props.timeZone]
    * @param {boolean} [props.invoicingEnabled]
+   * @param {string} [props.phone]
+   * @param {string} [props.email]
    */
-  constructor({nif, legalName, tradeName, address, timeZone, invoicingEnabled}) {
+  constructor({nif, legalName, tradeName, address, timeZone, invoicingEnabled, phone, email}) {
     this._nif = nif instanceof TaxId ? nif : null;
     this._legalName = legalName == null ? '' : String(legalName);
     this._tradeName = tradeName == null ? '' : String(tradeName);
     this._address = {...emptyAddress(), ...(address || {})};
     this._timeZone = timeZone || 'Europe/Madrid';
     this._invoicingEnabled = Boolean(invoicingEnabled);
+    this._phone = trimmed(phone);
+    this._email = trimmed(email);
   }
 
   /** @returns {TaxId | null} */
@@ -68,6 +72,16 @@ export default class ShopProfile {
     return this._invoicingEnabled;
   }
 
+  /** @returns {string} */
+  get phone() {
+    return this._phone;
+  }
+
+  /** @returns {string} */
+  get email() {
+    return this._email;
+  }
+
   /**
    * A sale can name the issuer only when the NIF and the legal name are set.
    * @returns {boolean}
@@ -93,4 +107,17 @@ export default class ShopProfile {
 
 function emptyAddress() {
   return {street: '', postalCode: '', city: '', province: '', country: 'ES'};
+}
+
+/**
+ * Phone and email are contact fields. Empty is allowed. They are not part of
+ * the invoice snapshot.
+ * @param {string | null | undefined} value
+ * @returns {string}
+ */
+function trimmed(value) {
+  if (value == null) {
+    return '';
+  }
+  return String(value).trim();
 }

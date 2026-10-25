@@ -61,12 +61,19 @@ describe('Settings read models', () => {
       city: 'Madrid',
       province: 'Madrid',
       country: 'ES',
-      invoicingEnabled: true
+      invoicingEnabled: true,
+      phone: '  600111222  ',
+      email: '  perez@example.com  '
     }).flatMap(() => shopRepository.find(new ShopProfileQuery()))
       .flatMap(view => shopRepository.findProfile().map(profile => ({view, profile})))
       .subscribe(({view, profile}) => {
         expect(view.nif).to.equal('B12345674');
         expect(view.issuer.legalName).to.equal('Ultramarinos Pérez SL');
+        expect(view.phone).to.equal('600111222');
+        expect(view.email).to.equal('perez@example.com');
+        expect(view.issuer).to.not.have.property('phone');
+        expect(profile.phone).to.equal('600111222');
+        expect(profile.snapshot()).to.not.have.property('phone');
         expect(view).to.be.instanceof(ShopProfileView);
         expect(view).to.not.be.instanceof(ShopProfile);
         expect(profile).to.be.instanceof(ShopProfile);
@@ -85,6 +92,8 @@ describe('Settings read models', () => {
       expect(view.country).to.equal('ES');
       expect(view.timeZone).to.equal('Europe/Madrid');
       expect(view.invoicingEnabled).to.equal(false);
+      expect(view.phone).to.equal('');
+      expect(view.email).to.equal('');
       expect(view.issuer).to.equal(null);
       done();
     }, done);

@@ -9,7 +9,7 @@ import issuerSnapshot from './issuerSnapshot';
 export default class ShopProfileView {
 
   /**
-   * @param {{nif?: string | null, legalName?: string | null, tradeName?: string | null, street?: string | null, postalCode?: string | null, city?: string | null, province?: string | null, country?: string | null, timeZone?: string | null, invoicingEnabled?: boolean}} [props]
+   * @param {{nif?: string | null, legalName?: string | null, tradeName?: string | null, street?: string | null, postalCode?: string | null, city?: string | null, province?: string | null, country?: string | null, timeZone?: string | null, invoicingEnabled?: boolean, phone?: string | null, email?: string | null}} [props]
    */
   constructor({
     nif = null,
@@ -21,7 +21,9 @@ export default class ShopProfileView {
     province = '',
     country = 'ES',
     timeZone = 'Europe/Madrid',
-    invoicingEnabled = false
+    invoicingEnabled = false,
+    phone = '',
+    email = ''
   } = {}) {
     this.nif = blankToNull(nif);
     this.legalName = text(legalName, '');
@@ -33,6 +35,8 @@ export default class ShopProfileView {
     this.country = text(country, 'ES');
     this.timeZone = text(timeZone, 'Europe/Madrid');
     this.invoicingEnabled = invoicingEnabled === true;
+    this.phone = text(phone, '');
+    this.email = text(email, '');
     this.issuer = issuerSnapshot({
       nif: this.nif,
       legalName: this.legalName,

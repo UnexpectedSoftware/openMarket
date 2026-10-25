@@ -73,7 +73,9 @@ function toJson(profile) {
     tradeName: profile.tradeName,
     address: profile.address,
     timeZone: profile.timeZone,
-    invoicingEnabled: profile.invoicingEnabled
+    invoicingEnabled: profile.invoicingEnabled,
+    phone: profile.phone,
+    email: profile.email
   };
 }
 
@@ -94,7 +96,9 @@ function viewFromJson(text) {
     province: address.province,
     country: address.country,
     timeZone: data.timeZone,
-    invoicingEnabled: data.invoicingEnabled
+    invoicingEnabled: data.invoicingEnabled,
+    phone: data.phone,
+    email: data.email
   });
 }
 
@@ -110,6 +114,8 @@ function profileFromJson(text) {
     tradeName: data.tradeName,
     address: data.address,
     timeZone: data.timeZone,
-    invoicingEnabled: data.invoicingEnabled
+    invoicingEnabled: data.invoicingEnabled,
+    phone: data.phone,
+    email: data.email
   });
 }

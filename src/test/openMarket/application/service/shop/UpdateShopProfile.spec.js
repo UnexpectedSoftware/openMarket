@@ -21,7 +21,9 @@ function repository() {
         province: address.province,
         country: address.country,
         timeZone: stored.timeZone,
-        invoicingEnabled: stored.invoicingEnabled
+        invoicingEnabled: stored.invoicingEnabled,
+        phone: stored.phone,
+        email: stored.email
       }));
     },
     save({profile}) {
@@ -42,7 +44,9 @@ describe('UpdateShopProfile', () => {
       tradeName: 'Ultramarinos Pérez',
       street: 'Mayor 1',
       city: 'Madrid',
-      invoicingEnabled: true
+      invoicingEnabled: true,
+      phone: '  600111222  ',
+      email: '  perez@example.com  '
     }).flatMap(() => get.getProfile()).subscribe(
       profile => {
         expect(profile).to.be.instanceof(ShopProfileView);
@@ -51,6 +55,10 @@ describe('UpdateShopProfile', () => {
         expect(profile.legalName).to.equal('Ultramarinos Pérez SL');
         expect(profile.timeZone).to.equal('Europe/Madrid');
         expect(profile.issuer.nif).to.equal('B12345674');
+        expect(profile.phone).to.equal('600111222');
+        expect(profile.email).to.equal('perez@example.com');
+        expect(profile.issuer).to.not.have.property('phone');
+        expect(profile.issuer).to.not.have.property('email');
         expect(profile.snapshot).to.equal(undefined);
       },
       error => done(error),

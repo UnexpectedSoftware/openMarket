@@ -115,7 +115,7 @@ test('changing the theme does not change the receipt blocks', async () => {
     await session.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
     await session.window.getByRole('radio', {name: 'Unexpected Neon', exact: true}).click();
     await session.window.getByRole('button', {name: 'Guardar', exact: true}).click();
-    await expect(session.window.getByText('Tema guardado').first()).toBeVisible();
+    await expect(session.window.getByText('Ajustes guardados').first()).toBeVisible();
     await expect.poll(() => session.window.evaluate(() => document.documentElement.dataset.theme))
       .toBe('unexpected-neon');
 
