@@ -2,7 +2,7 @@ import {expect} from 'chai';
 import Order from '../../../../../openMarket/domain/order/Order';
 import Money from '../../../../../openMarket/domain/money/Money';
 import VatRate from '../../../../../openMarket/domain/tax/VatRate';
-import {addProduct, addFreeLine, asLine, cartTotal, updateQuantity, vatRows} from '../../../../../openMarket/user_interface/order/new_order/model';
+import {addProduct, addFreeLine, asLine, cartTotal, ticketFacts, updateQuantity, vatRows} from '../../../../../openMarket/user_interface/order/new_order/model';
 
 describe('sell cart', () => {
   it('matches the order total for mixed rates, a weighed line, and a free line', () => {
@@ -27,10 +27,40 @@ describe('sell cart', () => {
       .addFreeLine({description: 'Venta libre', amount: '3.50', vatRate: 'S1:21'})
       .place();
 
+    expect(cart.order.lines[1].weighted).to.equal(true);
     expect(cart.order.total.cents).to.equal(order.total.cents);
     expect(cartTotal(cart.order.lines).cents).to.equal(110 + 648 + 350);
     expect(vatRows([])).to.deep.equal([]);
     expect(vatRows(cart.order.lines).map(row => row.label)).to.deep.equal(['10 %', '21 %']);
+    const facts = ticketFacts(cart.order.lines);
+    expect(facts.lineCount).to.equal(3);
+    expect(facts.articleCount).to.equal(3);
+    expect(facts.baseCents + facts.quotaCents).to.equal(cart.order.total.cents);
+    expect(facts.rates).to.deep.equal(['10 %', '21 %']);
+    expect(ticketFacts(null)).to.deep.equal({
+      lineCount: 0,
+      articleCount: 0,
+      baseCents: 0,
+      quotaCents: 0,
+      rates: []
+    });
+    const fromStore = addProduct({
+      lines: [],
+      product: {barcode: '9', name: 'Jamón', price: '18.50', isWeighted: 1},
+      quantity: 0.75
+    });
+    expect(fromStore.order.lines[0].weighted).to.equal(true);
+    expect(ticketFacts(fromStore.order.lines).articleCount).to.equal(1);
+    const counted = addProduct({
+      lines: [],
+      product: {barcode: '8', name: 'Pan', price: '1.00', isWeighted: 0},
+      quantity: 1
+    });
+    expect(counted.order.lines[0].weighted).to.equal(false);
+
+    const partial = ticketFacts([{kind: 'PRODUCT', quantity: {milli: 500}, weighted: false}]);
+    expect(partial.lineCount).to.equal(1);
+    expect(partial.articleCount).to.equal(0);
   });
 
   it('keeps on-hand stock on a low line when the quantity changes', () => {

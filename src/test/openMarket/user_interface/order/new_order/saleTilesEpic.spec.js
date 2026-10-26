@@ -125,6 +125,28 @@ describe('makeSaleTilesEpic', () => {
     subscription.unsubscribe();
   });
 
+  it('keeps the selected category when the request omits one', done => {
+    let criteria;
+    const listProducts = {
+      list: query => {
+        criteria = query;
+        return Rx.Observable.of({items: [], total: 0});
+      }
+    };
+    const store = {getState: () => ({newOrder: {categoryId: 'dairy'}})};
+    makeSaleTilesEpic(listProducts)(Rx.Observable.of({
+      type: SALE_TILES_REQUESTED,
+      payload: {text: '', limit: 24}
+    }), store).toArray().subscribe(
+      () => {
+        expect(criteria.categoryId).to.equal('dairy');
+        expect(criteria.text).to.equal(null);
+      },
+      error => done(error),
+      () => done()
+    );
+  });
+
   it('reports a failure as saleTilesFailed', done => {
     const listProducts = {list: () => Rx.Observable.throw(new Error('db down'))};
     makeSaleTilesEpic(listProducts)(Rx.Observable.of({type: SALE_TILES_REQUESTED, payload: {text: 'mi'}}))

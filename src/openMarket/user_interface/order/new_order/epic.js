@@ -14,7 +14,8 @@ import {
   makeLowStockWarningEpic,
   makeProductEnabledAgainEpic,
   makeProductNotFoundEpic,
-  makeSaleTilesEpic
+  makeSaleTilesEpic,
+  makeSaleCategoriesEpic
 } from "./epicFactory";
 
 /* TODO Maybe make a DIC for user_interface layer */
@@ -25,6 +26,7 @@ const domainEventBus = OpenMarket.get("domain_event_bus");
 const buildReceipt = OpenMarket.get('receipts_build_use_case');
 const printReceipt = OpenMarket.get('receipts_print_use_case');
 const listProducts = OpenMarket.get('products_list_all_use_case');
+const listCategories = OpenMarket.get('categories_list_all_use_case');
 const getSellPreferences = OpenMarket.get('sell_get_preferences_use_case');
 
 const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(enableProductUseCase)(reset);
@@ -45,7 +47,8 @@ export default (action$, store) =>
     makeReprintPreviewEpic(buildReceipt)(action$),
     weightedDialogEpic(action$),
     makeProductNotFoundEpic(action$),
-    makeSaleTilesEpic(listProducts)(action$),
+    makeSaleTilesEpic(listProducts)(action$, store),
+    makeSaleCategoriesEpic(listCategories)(action$),
     lowStockWarningEpic(),
     productEnabledAgainEpic()
   ).do(() => null, (error) => record(error));

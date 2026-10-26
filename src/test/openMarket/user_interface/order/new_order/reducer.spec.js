@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import newOrderReducer from '../../../../../openMarket/user_interface/order/new_order/reducer';
 import {
+  NEW_ORDER_CLEARED,
   NEW_ORDER_CLOSED,
   NEW_ORDER_FREE_LINE_ADDED,
   NEW_ORDER_NOTE_LOW_STOCK,
@@ -12,6 +13,8 @@ import {
   PAYMENT_FAILED,
   PAYMENT_PREVIEW_LOADED,
   REPRINT_PREVIEW_LOADED,
+  SALE_CATEGORIES_LOADED,
+  SALE_CATEGORY_SELECTED,
   SALE_TILES_FAILED,
   SALE_TILES_LOADED,
   SALE_TILES_REQUESTED
@@ -34,6 +37,28 @@ function view(current) {
 
 describe('reducers', () => {
   describe('newOrder', () => {
+    it('keeps the category chip across a sale', () => {
+      const picked = newOrderReducer(undefined, {type: SALE_CATEGORY_SELECTED, categoryId: 'dairy'});
+      const named = newOrderReducer(picked, {
+        type: SALE_CATEGORIES_LOADED,
+        payload: [{id: 'dairy', name: 'Lácteos'}]
+      });
+      expect(named.categoryId).to.equal('dairy');
+      expect(named.categories).to.deep.equal([{id: 'dairy', name: 'Lácteos'}]);
+      const selling = newOrderReducer(named, {
+        type: NEW_ORDER_PRODUCT_FETCHED,
+        payload: {product: {barcode: '1', name: 'Milk', price: 1}, quantity: 1}
+      });
+      expect(selling.categoryId).to.equal('dairy');
+      expect(selling.categories).to.deep.equal([{id: 'dairy', name: 'Lácteos'}]);
+      const saved = newOrderReducer(selling, {type: NEW_ORDER_SAVED, payload: {id: 'sale'}});
+      expect(saved.order.lines).to.deep.equal([]);
+      expect(saved.categoryId).to.equal('dairy');
+      expect(saved.categories).to.deep.equal([{id: 'dairy', name: 'Lácteos'}]);
+      const cleared = newOrderReducer(saved, {type: SALE_CATEGORY_SELECTED, categoryId: null});
+      expect(cleared.categoryId).to.equal(null);
+    });
+
     it('should handle initial state', () => {
       expect(view(newOrderReducer(undefined, {}))).to.deep.equal({
         totalCents: 0,
@@ -239,6 +264,16 @@ describe('reducers', () => {
         {barcode: '0002', name: 'Ninja2', cents: 60, milli: 1000, amountCents: 60}
       ]);
       expect(view(state).totalCents).to.equal(60);
+    });
+
+    it('clears every line and keeps the category filter', () => {
+      const stocked = newOrderReducer(euroLines([
+        {barcode: '0001', name: 'Ninja', price: 0.55, quantity: 1}
+      ]), {type: SALE_CATEGORY_SELECTED, categoryId: 'dairy'});
+      const cleared = newOrderReducer(stocked, {type: NEW_ORDER_CLEARED});
+      expect(cleared.order.lines).to.deep.equal([]);
+      expect(cleared.order.total.cents).to.equal(0);
+      expect(cleared.categoryId).to.equal('dairy');
     });
   });
 

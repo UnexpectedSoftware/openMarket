@@ -20,6 +20,7 @@ import "rxjs/add/operator/defaultIfEmpty";
 import "rxjs/add/observable/of";
 import "rxjs/add/observable/from";
 import ProductsQuery from "../../../domain/product/ProductsQuery";
+import CategoriesQuery from "../../../domain/category/CategoriesQuery";
 
 export const makeNewOrderProductFetchEpic = findProductUseCase => enableProductUseCase => resetForm => action$ =>
   action$
@@ -132,24 +133,56 @@ export const makeProductNotFoundEpic = action$ =>
       {uid: `product-not-found-${Date.now()}`}
     ))
 
-export const makeSaleTilesEpic = listProducts => action$ =>
+export const makeSaleTilesEpic = listProducts => (action$, store) =>
   action$.filter(action => action.type === newOrderActions.SALE_TILES_REQUESTED)
-    .switchMap(action => listProducts.list(saleQuery(action.payload))
+    .switchMap(action => listProducts.list(saleQuery(action.payload, store))
       .map(page => newOrderActions.saleTilesLoaded(tilesOf(page)))
       .catch(() => Rx.Observable.of(newOrderActions.saleTilesFailed())))
 
+export const makeSaleCategoriesEpic = listCategories => action$ =>
+  action$.filter(action => action.type === newOrderActions.SALE_CATEGORIES_REQUESTED)
+    .switchMap(() => listCategories.list(new CategoriesQuery({sort: 'name_asc'}))
+      .map(page => newOrderActions.saleCategoriesLoaded(categoryNames(page)))
+      .catch(() => Rx.Observable.of(newOrderActions.saleCategoriesFailed())))
+
 /**
- * @param {{text?: string, categoryId?: string, limit?: number} | null | undefined} payload
+ * @param {{text?: string, categoryId?: string | null, limit?: number} | null | undefined} payload
+ * @param {{getState?: Function} | null | undefined} store
  * @returns {ProductsQuery}
  */
-function saleQuery(payload) {
+function saleQuery(payload, store) {
   const request = payload || {};
+  const categoryId = Object.prototype.hasOwnProperty.call(request, 'categoryId')
+    ? request.categoryId
+    : storedCategory(store);
   return new ProductsQuery({
     text: request.text,
-    categoryId: request.categoryId,
+    categoryId: categoryId || null,
     limit: request.limit,
     forSale: true
   });
+}
+
+/**
+ * The chip the cashier picked. A request that omits categoryId keeps it.
+ * @param {{getState?: Function} | null | undefined} store
+ * @returns {string | null}
+ */
+function storedCategory(store) {
+  const state = store && store.getState ? store.getState() : null;
+  const id = state && state.newOrder && state.newOrder.categoryId;
+  return id || null;
+}
+
+/**
+ * @param {{items?: object[]} | null | undefined} page
+ * @returns {{id: string, name: string}[]}
+ */
+function categoryNames(page) {
+  return ((page && page.items) || []).filter(item => item && item.id && item.name).map(item => ({
+    id: String(item.id),
+    name: String(item.name)
+  }));
 }
 
 /**

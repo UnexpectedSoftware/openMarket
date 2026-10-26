@@ -2,6 +2,7 @@ import {
   NEW_ORDER_PRODUCT_FETCHED,
   NEW_ORDER_PRODUCT_QUANTITY_CHANGE,
   NEW_ORDER_PRODUCT_DELETED,
+  NEW_ORDER_CLEARED,
   NEW_ORDER_FREE_LINE_ADDED,
   NEW_ORDER_SAVED,
   NEW_ORDER_CLOSED,
@@ -9,12 +10,14 @@ import {
   SALE_TILES_REQUESTED,
   SALE_TILES_LOADED,
   SALE_TILES_FAILED,
+  SALE_CATEGORIES_LOADED,
+  SALE_CATEGORY_SELECTED,
   NEW_ORDER_SAVE,
   PAYMENT_FAILED,
   PAYMENT_PREVIEW_LOADED,
   REPRINT_PREVIEW_LOADED
 } from './action';
-import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, applyLowStock} from './model';
+import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, clearLines, applyLowStock} from './model';
 
 /**
  * Keeps the grid, the low-stock set, and the last ticket across a cart edit.
@@ -30,15 +33,24 @@ function keep(current, next) {
     tilesStatus: current.tilesStatus || 'idle',
     saving: !!current.saving,
     previewHtml: current.previewHtml || '',
-    reprintHtml: current.reprintHtml || ''
+    reprintHtml: current.reprintHtml || '',
+    categories: current.categories || [],
+    categoryId: current.categoryId || null
   };
 }
 
-export default function reducer(current = initialState(), action) {
+/**
+ * Line adds, quantity edits, and deletes. Null leaves the action to the screen reducer.
+ * @param {object} current
+ * @param {{type: string, payload?: object, barcode?: string, index?: number}} action
+ * @returns {object | null}
+ */
+function editLines(current, action) {
+  const lines = current.order.lines;
   switch (action.type) {
     case NEW_ORDER_PRODUCT_FETCHED:
       return keep(current, addProduct({
-        lines: current.order.lines,
+        lines,
         product: action.payload.product,
         quantity: action.payload.quantity,
         lowStockBarcodes: current.lowStockBarcodes,
@@ -47,7 +59,7 @@ export default function reducer(current = initialState(), action) {
 
     case NEW_ORDER_FREE_LINE_ADDED:
       return keep(current, addFreeLine({
-        lines: current.order.lines,
+        lines,
         description: action.payload.description,
         amount: action.payload.amount,
         vatRate: action.payload.vatRate
@@ -57,16 +69,30 @@ export default function reducer(current = initialState(), action) {
       return keep(current, updateQuantity({
         barcode: action.payload.barcode,
         quantity: action.payload.quantityChanged,
-        lines: current.order.lines
+        lines
       }));
 
     case NEW_ORDER_PRODUCT_DELETED:
       return keep(current, removeProduct({
-        lines: current.order.lines,
+        lines,
         barcode: action.barcode,
         index: action.index
       }));
 
+    case NEW_ORDER_CLEARED:
+      return keep(current, clearLines());
+
+    default:
+      return null;
+  }
+}
+
+export default function reducer(current = initialState(), action) {
+  const edited = editLines(current, action);
+  if (edited) {
+    return edited;
+  }
+  switch (action.type) {
     case NEW_ORDER_NOTE_LOW_STOCK:
       return applyLowStock(current, action.payload);
 
@@ -78,6 +104,12 @@ export default function reducer(current = initialState(), action) {
 
     case SALE_TILES_FAILED:
       return {...current, tilesStatus: 'error'};
+
+    case SALE_CATEGORIES_LOADED:
+      return {...current, categories: action.payload || []};
+
+    case SALE_CATEGORY_SELECTED:
+      return {...current, categoryId: action.categoryId || null};
 
     case NEW_ORDER_SAVE:
       return {...current, saving: true};
@@ -97,7 +129,9 @@ export default function reducer(current = initialState(), action) {
         lowStockBarcodes: current.lowStockBarcodes || [],
         lastOrder: action.payload || null,
         tiles: current.tiles || [],
-        tilesStatus: current.tilesStatus || 'idle'
+        tilesStatus: current.tilesStatus || 'idle',
+        categories: current.categories || [],
+        categoryId: current.categoryId || null
       };
 
     case NEW_ORDER_CLOSED:

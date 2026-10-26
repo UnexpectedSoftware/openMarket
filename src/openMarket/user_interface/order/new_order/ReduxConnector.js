@@ -12,6 +12,8 @@ function mapStateToProps(state) {
     issuer: state.settings.issuer,
     tiles: state.newOrder.tiles,
     tilesStatus: state.newOrder.tilesStatus,
+    categories: state.newOrder.categories || [],
+    categoryId: state.newOrder.categoryId || null,
     lowStockBarcodes: state.newOrder.lowStockBarcodes,
     lastOrder: state.newOrder.lastOrder,
     saving: state.newOrder.saving,

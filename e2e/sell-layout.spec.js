@@ -47,8 +47,13 @@ test('switches Mostrador, Escáner, and Táctil without reloading', async () => 
     await expect.poll(() => window.evaluate(() => document.documentElement.dataset.layout)).toBe('mostrador');
     await expect(window.locator('.sell-layout-mostrador')).toBeVisible();
     await expect(window.locator('.sell-tile-name', {hasText: /^Lentejas$/})).toBeVisible();
+    await expect(window.getByRole('button', {name: 'Shop', exact: true})).toBeVisible();
     await expect(window.locator('.sell-keypad')).toHaveCount(0);
+    await scanBarcode(window, '8400000000417');
+    await expect(orderRow(window, 'Lentejas')).toBeVisible();
     await window.screenshot({path: path.join(after, 'sell-layout-mostrador.png')});
+    await window.getByRole('button', {name: 'Quitar', exact: true}).click();
+    await expect(window.getByText('El ticket está vacío')).toBeVisible();
 
     await chooseLayout(window, 'Escáner');
     await openSell(window);
@@ -56,6 +61,7 @@ test('switches Mostrador, Escáner, and Táctil without reloading', async () => 
     await expect.poll(() => window.evaluate(() => document.documentElement.dataset.layout)).toBe('escaner');
     await expect(window.locator('.sell-layout-escaner')).toBeVisible();
     await expect(window.locator('.sell-grid')).toHaveCount(0);
+    await expect(window.locator('.sell-chips')).toHaveCount(0);
     await expect(window.locator('input[name="barcode"]')).toBeVisible();
     await scanBarcode(window, '8400000000417');
     await expect(orderRow(window, 'Lentejas')).toBeVisible();
