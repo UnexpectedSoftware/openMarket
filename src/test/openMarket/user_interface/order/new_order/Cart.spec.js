@@ -118,6 +118,58 @@ describe('Cart', () => {
     const names = calls.map(call => Array.isArray(call) ? call[0] : call);
     expect(names).to.include.members(['charge', 'select', 'qty', 'changed', 'delete', 'weight']);
   });
+
+  it('types a quantity on the keypad and skips a weighted line', () => {
+    const calls = [];
+    ReactDOM.render(
+      <Cart
+        order={{
+          lines: [{
+            kind: 'PRODUCT',
+            barcode: 'rice',
+            name: 'Arroz',
+            unitPrice: Money.from(2),
+            quantity: Quantity.from(1),
+            vatRate: VatRate.standard(),
+            weighted: false
+          }],
+          total: Money.from(2)
+        }}
+        selected={0}
+        keypad
+        onQuantityChange={payload => calls.push(payload)}
+        onChanged={() => calls.push('changed')}
+      />,
+      host
+    );
+    expect(host.querySelector('.sell-keypad')).to.not.equal(null);
+    buttonNamed(host, '2').click();
+    expect(calls[0]).to.deep.equal({barcode: 'rice', quantityChanged: '12'});
+    expect(calls[1]).to.equal('changed');
+    ReactDOM.render(
+      <Cart
+        order={{
+          lines: [{
+            kind: 'PRODUCT',
+            barcode: 'ham',
+            name: 'Ham',
+            unitPrice: Money.from(10),
+            quantity: Quantity.from(1),
+            vatRate: VatRate.standard(),
+            weighted: true
+          }],
+          total: Money.from(10)
+        }}
+        selected={0}
+        keypad
+        onQuantityChange={payload => calls.push(payload)}
+      />,
+      host
+    );
+    const before = calls.length;
+    buttonNamed(host, '5').click();
+    expect(calls.length).to.equal(before);
+  });
 });
 
 /**

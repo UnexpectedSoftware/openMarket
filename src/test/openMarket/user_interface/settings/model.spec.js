@@ -132,6 +132,28 @@ describe('settings model', () => {
     expect(theme.draft.theme).to.equal('ultramarinos');
   });
 
+  it('copies a layout into the draft and starts a save that leaves the shop alone', () => {
+    const profile = view();
+    const next = shopLoaded(pageOpened(state()), profile, {theme: 'mercado', layout: 'tactil'});
+    expect(next.draft.layout).to.equal('tactil');
+    expect(next.persistedLayout).to.equal('tactil');
+    expect(next.draft.theme).to.equal('mercado');
+    expect(shopLoaded(state(), profile).draft.layout).to.equal('mostrador');
+    const started = saveStarted(draftChanged(loaded(), {layout: 'escaner'}));
+    expect(started.saving).to.equal(true);
+    expect(started.draft.layout).to.equal('escaner');
+    expect(started.draft.legalName).to.equal('Ultramarinos Pérez SL');
+    expect(started.persistedLayout).to.equal('mostrador');
+    const stored = saved(started, profile, null, null, null, null, 'escaner');
+    expect(stored.draft.layout).to.equal('escaner');
+    expect(stored.persistedLayout).to.equal('escaner');
+    expect(stored.draft.legalName).to.equal('Ultramarinos Pérez SL');
+    const rolled = saveFailed(started, {message: 'La disposición no se ha guardado', layout: 'mostrador'});
+    expect(rolled.saving).to.equal(false);
+    expect(rolled.draft.layout).to.equal('mostrador');
+    expect(rolled.draft.legalName).to.equal('Ultramarinos Pérez SL');
+  });
+
   it('rejects a phone over 40 characters and an email over 80', () => {
     const phoneOk = saveStarted(draftChanged(loaded(), {phone: '6'.repeat(40)}));
     expect(phoneOk.saving).to.equal(true);

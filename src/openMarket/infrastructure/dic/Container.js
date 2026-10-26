@@ -86,6 +86,7 @@ import PrintTestTicket from "../../application/service/shop/PrintTestTicket";
 import SqliteAppearancePreferencesRepository from "../appearance/SqliteAppearancePreferencesRepository";
 import GetAppearancePreferences from "../../application/service/appearance/GetAppearancePreferences";
 import ChangeTheme from "../../application/service/appearance/ChangeTheme";
+import ChangeLayout from "../../application/service/appearance/ChangeLayout";
 const env = process.env.NODE_ENV
 
 class Container {
@@ -529,6 +530,12 @@ class Container {
 
   _changeTheme() {
     return new ChangeTheme({
+      appearancePreferencesRepository: this.getInstance({key: 'appearancePreferencesRepository'})
+    });
+  }
+
+  _changeLayout() {
+    return new ChangeLayout({
       appearancePreferencesRepository: this.getInstance({key: 'appearancePreferencesRepository'})
     });
   }

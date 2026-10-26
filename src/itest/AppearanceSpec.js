@@ -1,5 +1,6 @@
 import {expect} from 'chai';
 import 'rxjs/add/operator/mergeMap';
+import AppearancePreferences from '../openMarket/domain/appearance/AppearancePreferences';
 import {DatabaseSync} from 'node:sqlite';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
@@ -8,6 +9,7 @@ import sqliteDatabasePath from '../openMarket/infrastructure/service/sqliteDatab
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 const repository = container.getInstance({key: 'appearancePreferencesRepository'});
 const changeTheme = openMarket.get('appearance_change_theme_use_case');
+const changeLayout = openMarket.get('appearance_change_layout_use_case');
 const getAppearance = openMarket.get('appearance_get_use_case');
 const updateShopProfile = openMarket.get('shop_update_profile_use_case');
 
@@ -41,11 +43,45 @@ describe('Appearance preferences', () => {
     database.prepare('DELETE FROM setting WHERE key = ?').run('appearance');
   });
 
-  it('returns Mercado when the setting row is missing', done => {
+  it('returns Mercado and Mostrador when the setting row is missing', done => {
     getAppearance.get().subscribe(preferences => {
       expect(preferences.theme).to.equal('mercado');
+      expect(preferences.layout).to.equal('mostrador');
+      expect(preferences).to.not.be.instanceof(AppearancePreferences);
       done();
     }, done);
+  });
+
+  it('reads Mostrador from a row that only stored a theme', done => {
+    database.prepare(SAVE_SETTING).run('appearance', JSON.stringify({theme: 'ultramarinos'}));
+    getAppearance.get().flatMap(view => repository.findPreferences().map(aggregate => ({view, aggregate}))).subscribe(
+      loaded => {
+        expect(loaded.view.theme).to.equal('ultramarinos');
+        expect(loaded.view.layout).to.equal('mostrador');
+        expect(loaded.view).to.not.be.instanceof(AppearancePreferences);
+        expect(loaded.aggregate).to.be.instanceof(AppearancePreferences);
+        expect(loaded.aggregate.layout.id).to.equal('mostrador');
+        expect(loaded.aggregate.theme.id).to.equal('ultramarinos');
+        done();
+      },
+      done
+    );
+  });
+
+  it('saves a layout and leaves the theme in place', done => {
+    changeTheme.changeTheme({theme: 'unexpected-neon'}).flatMap(() => changeLayout.changeLayout({layout: 'tactil'}))
+      .subscribe(() => {
+        const row = database.prepare('SELECT value_json FROM setting WHERE key = ?').get('appearance');
+        const stored = JSON.parse(row.value_json);
+        expect(stored.theme).to.equal('unexpected-neon');
+        expect(stored.layout).to.equal('tactil');
+        getAppearance.get().subscribe(preferences => {
+          expect(preferences.layout).to.equal('tactil');
+          expect(preferences.theme).to.equal('unexpected-neon');
+          expect(preferences).to.not.be.instanceof(AppearancePreferences);
+          done();
+        }, done);
+      }, done);
   });
 
   it('saves a theme and reads it back from the setting table', done => {

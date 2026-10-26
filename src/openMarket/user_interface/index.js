@@ -13,14 +13,22 @@ import { syncHistoryWithStore } from 'react-router-redux';
 import routes from './routes';
 import configureStore from './store/configureStore';
 import OpenMarket from '../application/index';
-import savedThemeId from './appearance/savedThemeId';
+import savedThemeId, {savedLayoutId} from './appearance/savedThemeId';
 import './file.scss';
 
-const themeId = savedThemeId(OpenMarket.get('appearance_get_use_case'));
+const appearanceRead = OpenMarket.get('appearance_get_use_case');
+const themeId = savedThemeId(appearanceRead);
+const layoutId = savedLayoutId(appearanceRead);
 document.documentElement.dataset.theme = themeId;
+document.documentElement.dataset.layout = layoutId;
 
 const store = configureStore({
-  appearance: {theme: themeId, applied: themeId}
+  appearance: {
+    theme: themeId,
+    applied: themeId,
+    layout: layoutId,
+    appliedLayout: layoutId
+  }
 });
 const history = syncHistoryWithStore(hashHistory, store);
 

@@ -3,6 +3,7 @@ import { connect } from 'react-redux';
 import newOrderContainer from './Container';
 import * as newOrderActions from './action';
 import {shopProfileRequested} from '../../settings/action';
+import SellLayout from '../../../domain/appearance/SellLayout';
 import {showWeightedDialog} from '../weighted_dialog/action';
 
 function mapStateToProps(state) {
@@ -15,7 +16,8 @@ function mapStateToProps(state) {
     lastOrder: state.newOrder.lastOrder,
     saving: state.newOrder.saving,
     previewHtml: state.newOrder.previewHtml,
-    reprintHtml: state.newOrder.reprintHtml
+    reprintHtml: state.newOrder.reprintHtml,
+    layout: SellLayout.orDefault(state.appearance && state.appearance.appliedLayout)
   };
 }
 

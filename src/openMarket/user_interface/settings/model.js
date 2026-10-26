@@ -7,6 +7,7 @@ export const INTERFACE_TOO_LONG = 'Máximo 200 caracteres';
 export const LOAD_ERROR = 'No se han podido cargar los ajustes';
 export const SAVE_ERROR = 'No se han podido guardar los ajustes';
 export const THEME_SAVE_ERROR = 'El tema no se ha guardado';
+export const LAYOUT_SAVE_ERROR = 'La disposición no se ha guardado';
 export const PRINT_ERROR = 'No se ha podido imprimir';
 
 const PHONE_MAX = 40;
@@ -20,7 +21,13 @@ const SHOP_KEYS = [
 const TICKET_KEYS = ['printMode', 'headerText', 'footerText', 'paperWidthMm'];
 const PRINTER_KEYS = ['printerType', 'printerInterface', 'printerCharacterSet'];
 const LANGUAGE_KEYS = ['locale'];
-const DRAFT_KEYS = SHOP_KEYS.concat(['invoicingEnabled'], TICKET_KEYS, PRINTER_KEYS, LANGUAGE_KEYS, ['theme']);
+const DRAFT_KEYS = SHOP_KEYS.concat(
+  ['invoicingEnabled'],
+  TICKET_KEYS,
+  PRINTER_KEYS,
+  LANGUAGE_KEYS,
+  ['theme', 'layout']
+);
 
 /** @returns {object} */
 export function state() {
@@ -30,9 +37,10 @@ export function state() {
   const language = blankLanguage();
   return {
     saved: {...shop, ...ticket, ...printer, ...language, issuer: null},
-    draft: {...shop, ...ticket, ...printer, ...language, theme: 'mercado'},
+    draft: {...shop, ...ticket, ...printer, ...language, theme: 'mercado', layout: 'mostrador'},
     issuer: null,
     persistedTheme: 'mercado',
+    persistedLayout: 'mostrador',
     loading: true,
     error: null,
     saveError: null,
@@ -53,7 +61,7 @@ export function pageOpened(current) {
  * A sell-screen refresh (`keepDraft`) updates `saved` and `issuer` only.
  * @param {object} current
  * @param {object} [profile]
- * @param {{theme?: string, ticket?: object, printer?: object, language?: object, keepDraft?: boolean}} [options]
+ * @param {{theme?: string, layout?: string, ticket?: object, printer?: object, language?: object, keepDraft?: boolean}} [options]
  */
 export function shopLoaded(current, profile, options) {
   const fields = shopFields(profile);
@@ -75,12 +83,14 @@ export function shopLoaded(current, profile, options) {
   const device = printerFields(asPrinterDraft(options && options.printer));
   const locale = languageFields(options && options.language);
   const theme = storedTheme(options, current);
+  const layout = storedLayout(options, current);
   return {
     ...current,
     saved: {...fields, ...copy, ...device, ...locale, issuer},
     issuer,
-    draft: {...fields, ...copy, ...device, ...locale, theme},
+    draft: {...fields, ...copy, ...device, ...locale, theme, layout},
     persistedTheme: theme,
+    persistedLayout: layout,
     loading: false,
     error: null,
     saveError: null,
@@ -130,7 +140,7 @@ export function draftChanged(current, patch) {
 }
 
 /**
- * Decides whether Guardar writes the shop, the ticket, the printer, the language, the theme, or nothing.
+ * Decides whether Guardar writes the shop, the ticket, the printer, the language, the theme, the layout, or nothing.
  * @param {object} current
  */
 export function savePlan(current) {
@@ -141,20 +151,24 @@ export function savePlan(current) {
   const printer = !blocked && printerDirty(current);
   const language = !blocked && languageDirty(current);
   const theme = !blocked && themeDirty(current);
+  const layout = !blocked && layoutDirty(current);
   return {
-    proceed: shop || ticket || printer || language || theme,
+    proceed: shop || ticket || printer || language || theme || layout,
     shop,
     ticket,
     printer,
     language,
     theme,
+    layout,
     fieldErrors,
     command: shopCommand(current.draft),
     ticketCommand: ticketCommand(current.draft),
     printerCommand: printerCommand(current.draft),
     languageCommand: languageCommand(current.draft),
     themeId: current.draft.theme,
-    previousTheme: current.persistedTheme
+    previousTheme: current.persistedTheme,
+    layoutId: current.draft.layout,
+    previousLayout: current.persistedLayout
   };
 }
 
@@ -194,20 +208,23 @@ export function saveStarted(current) {
  * @param {object | null} [ticket]
  * @param {object | null} [printer]
  * @param {object | null} [language]
+ * @param {string | null} [layout]
  */
-export function saved(current, profile, theme, ticket, printer, language) {
+export function saved(current, profile, theme, ticket, printer, language, layout) {
   const fields = shopFields(profile);
   const copy = ticket == null ? ticketFields(current.draft) : ticketFields(ticket);
   const device = printer == null ? printerFields(current.draft) : printerFields(asPrinterDraft(printer));
   const locale = language == null ? languageFields(current.draft) : languageFields(language);
   const issuer = issuerOf(profile);
   const nextTheme = theme == null ? current.draft.theme : theme;
+  const nextLayout = layout == null ? layoutOf(current) : layout;
   return {
     ...current,
     saved: {...fields, ...copy, ...device, ...locale, issuer},
-    draft: {...fields, ...copy, ...device, ...locale, theme: nextTheme},
+    draft: {...fields, ...copy, ...device, ...locale, theme: nextTheme, layout: nextLayout},
     issuer,
     persistedTheme: nextTheme,
+    persistedLayout: nextLayout,
     loading: false,
     error: null,
     saveError: null,
@@ -219,21 +236,43 @@ export function saved(current, profile, theme, ticket, printer, language) {
 }
 
 /**
- * A shop failure leaves the draft. A theme failure puts the previous id back.
+ * A shop failure leaves the draft. A theme or layout failure puts that id back.
+ * A layout id on a later failure is the one already stored.
  * @param {object} current
- * @param {{message?: string, fieldErrors?: object, theme?: string}} [failure]
+ * @param {{message?: string, fieldErrors?: object, theme?: string, layout?: string}} [failure]
  */
 export function saveFailed(current, failure) {
   const problem = failure || {};
-  const draft = problem.theme == null ? current.draft : {...current.draft, theme: problem.theme};
+  const draft = failedDraft(current.draft, problem);
+  const persistedLayout = problem.layout != null ? problem.layout : current.persistedLayout;
   return {
     ...current,
     draft,
+    persistedLayout,
     saving: false,
     printing: false,
     saveError: problem.message || null,
     fieldErrors: problem.fieldErrors || {}
   };
+}
+
+/**
+ * @param {object} draft
+ * @param {{theme?: string, layout?: string}} problem
+ * @returns {object}
+ */
+function failedDraft(draft, problem) {
+  if (problem.theme == null && problem.layout == null) {
+    return draft;
+  }
+  const next = {...draft};
+  if (problem.theme != null) {
+    next.theme = problem.theme;
+  }
+  if (problem.layout != null) {
+    next.layout = problem.layout;
+  }
+  return next;
 }
 
 /**
@@ -339,6 +378,27 @@ function storedTheme(options, current) {
     return options.theme;
   }
   return current.persistedTheme || 'mercado';
+}
+
+/**
+ * @param {{layout?: string}} [options]
+ * @param {object} current
+ * @returns {string}
+ */
+function storedLayout(options, current) {
+  if (options && options.layout) {
+    return options.layout;
+  }
+  return current.persistedLayout || 'mostrador';
+}
+
+/**
+ * @param {object} current
+ * @returns {string}
+ */
+function layoutOf(current) {
+  const value = current && current.draft && current.draft.layout;
+  return value || 'mostrador';
 }
 
 /** @returns {object} */
@@ -605,6 +665,14 @@ function savedText(saved, key) {
  */
 function themeDirty(current) {
   return String(current.draft.theme || '') !== String(current.persistedTheme || '');
+}
+
+/**
+ * @param {object} current
+ * @returns {boolean}
+ */
+function layoutDirty(current) {
+  return String((current.draft && current.draft.layout) || '') !== String(current.persistedLayout || '');
 }
 
 /**

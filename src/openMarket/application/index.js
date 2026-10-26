@@ -57,6 +57,7 @@ class OpenMarket {
     this.deps.set('shop_print_test_use_case', container.getInstance({key:'printTestTicket'}));
     this.deps.set('appearance_get_use_case', container.getInstance({key:'getAppearancePreferences'}));
     this.deps.set('appearance_change_theme_use_case', container.getInstance({key:'changeTheme'}));
+    this.deps.set('appearance_change_layout_use_case', container.getInstance({key:'changeLayout'}));
     container.getInstance({key:'pluginHost'}).start();
     container.getInstance({key:'recordProductSales'}).start();
     container.getInstance({key:'domainEventDispatcher'}).start();

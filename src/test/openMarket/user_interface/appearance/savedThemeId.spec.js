@@ -1,6 +1,6 @@
 import {expect} from 'chai';
 import * as Rx from 'rxjs';
-import savedThemeId from '../../../../openMarket/user_interface/appearance/savedThemeId';
+import savedThemeId, {savedLayoutId} from '../../../../openMarket/user_interface/appearance/savedThemeId';
 
 describe('savedThemeId', () => {
   it('reads a string theme', () => {
@@ -19,5 +19,25 @@ describe('savedThemeId', () => {
         throw new Error('down');
       }
     })).to.equal('mercado');
+  });
+
+  it('reads a known layout and stays on Mostrador otherwise', () => {
+    expect(savedLayoutId({
+      get: () => Rx.Observable.of({layout: 'tactil'})
+    })).to.equal('tactil');
+    expect(savedLayoutId({
+      get: () => Rx.Observable.of({layout: 'pastel'})
+    })).to.equal('mostrador');
+    expect(savedLayoutId({
+      get: () => Rx.Observable.of(null)
+    })).to.equal('mostrador');
+    expect(savedLayoutId({
+      get: () => Rx.Observable.throw(new Error('disk'))
+    })).to.equal('mostrador');
+    expect(savedLayoutId({
+      get: () => {
+        throw new Error('down');
+      }
+    })).to.equal('mostrador');
   });
 });
