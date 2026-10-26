@@ -38,6 +38,8 @@ test('saves the shop and shows its NIF on a new order', async () => {
     await first.window.getByRole('textbox', {name: 'Correo'}).fill('perez@example.com');
     await first.window.getByRole('button', {name: 'Guardar', exact: true}).click();
     await expect(first.window.getByText('Ajustes guardados').first()).toBeVisible();
+    await expect(first.window.locator('.nav-rail-mark')).toHaveText('UP');
+    await expect(first.window.locator('.nav-rail-mark')).toHaveAttribute('aria-label', 'Ultramarinos Pérez');
     await first.window.screenshot({path: path.join('test-results', 'settings-1366x768.png')});
   } finally {
     await closeApp(first.app, userData, {keep: true});
@@ -50,6 +52,7 @@ test('saves the shop and shows its NIF on a new order', async () => {
     await expect(second.window.getByRole('textbox', {name: 'Razón social'})).toHaveValue('Ultramarinos Pérez SL');
     await expect(second.window.getByRole('textbox', {name: 'Teléfono'})).toHaveValue('600111222');
     await expect(second.window.getByRole('textbox', {name: 'Correo'})).toHaveValue('perez@example.com');
+    await expect(second.window.locator('.nav-rail-mark')).toHaveText('UP');
     await chooseMenu(second.window, 'Orders', 'new Order!');
     await expect(second.window.locator('.om-page-header-subtitle')).toContainText('NIF B12345674');
   } finally {
