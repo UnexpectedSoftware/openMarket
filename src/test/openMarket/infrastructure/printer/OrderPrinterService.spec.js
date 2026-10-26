@@ -86,4 +86,37 @@ describe('OrderPrinterService', () => {
     expect(finished).to.equal(4);
     expect(widths).to.deep.equal([58, 80, 80, 80]);
   });
+
+  it('records the configured trade name and NIF on the device', () => {
+    const lines = [];
+    const device = {
+      println(text) {
+        lines.push(String(text));
+      },
+      cut() {
+        lines.push('cut');
+      }
+    };
+    const service = new OrderPrinterService({
+      printerConnection: {
+        print(fill) {
+          fill(device);
+          return Rx.Observable.of(true);
+        }
+      }
+    });
+    let done = false;
+    service.print({
+      receipt: {
+        blocks: [
+          {type: 'text', text: 'Ultramarinos Pérez'},
+          {type: 'text', text: 'NIF B12345674'}
+        ]
+      }
+    }).subscribe(() => {
+      done = true;
+    });
+    expect(done).to.equal(true);
+    expect(lines).to.deep.equal(['Ultramarinos Pérez', 'NIF B12345674', 'cut']);
+  });
 });

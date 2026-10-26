@@ -1,19 +1,28 @@
 import {expect} from 'chai';
 import SellPreferencesView from '../../../../openMarket/domain/shop/SellPreferencesView';
 import ShopProfileView from '../../../../openMarket/domain/shop/ShopProfileView';
+import PrinterSettingsView from '../../../../openMarket/domain/shop/PrinterSettingsView';
+import LanguagePreferencesView from '../../../../openMarket/domain/shop/LanguagePreferencesView';
 import {
   COPY_TOO_LONG,
   EMAIL_TOO_LONG,
+  INTERFACE_TOO_LONG,
   PHONE_TOO_LONG,
+  PRINT_ERROR,
   REQUIRED,
   THEME_SAVE_ERROR,
   copyFieldErrors,
   draftChanged,
   pageOpened,
+  printerFieldErrors,
   saveFailed,
   saveStarted,
+  saved,
   shopLoaded,
-  state
+  state,
+  testPrintFailed,
+  testPrintStarted,
+  testPrinted
 } from '../../../../openMarket/user_interface/settings/model';
 
 function view(extra) {
@@ -211,5 +220,102 @@ describe('settings model', () => {
     expect(copyFieldErrors({context: {field: 'footerText'}})).to.deep.equal({footerText: COPY_TOO_LONG});
     expect(copyFieldErrors({context: {field: 'printMode'}})).to.equal(null);
     expect(copyFieldErrors(null)).to.equal(null);
+  });
+
+  it('copies the printer and the locale into the draft', () => {
+    const printer = new PrinterSettingsView({
+      type: 'star',
+      interface: 'tcp://127.0.0.1:9100',
+      characterSet: 'PC858'
+    });
+    const language = new LanguagePreferencesView({locale: 'es'});
+    const current = shopLoaded(state(), view(), {theme: 'mercado', printer, language});
+    expect(current.draft.printerType).to.equal('star');
+    expect(current.draft.printerInterface).to.equal('tcp://127.0.0.1:9100');
+    expect(current.draft.printerCharacterSet).to.equal('PC858');
+    expect(current.draft.locale).to.equal('es');
+    expect(current.saved.printerType).to.equal('star');
+    expect(current.saved.locale).to.equal('es');
+    const edited = draftChanged(current, {printerInterface: 'tcp://10.0.0.2:9100', locale: 'en'});
+    const kept = shopLoaded(edited, view(), {keepDraft: true});
+    expect(kept.draft.printerInterface).to.equal('tcp://10.0.0.2:9100');
+    expect(kept.draft.locale).to.equal('en');
+    expect(kept.saved.printerInterface).to.equal('tcp://127.0.0.1:9100');
+    expect(kept.saved.locale).to.equal('es');
+    const stored = saved(edited, view(), null, null, printer, language);
+    expect(stored.draft.printerType).to.equal('star');
+    expect(stored.draft.printerInterface).to.equal('tcp://127.0.0.1:9100');
+    expect(stored.draft.locale).to.equal('es');
+    expect(stored.saving).to.equal(false);
+    expect(stored.printerError).to.equal(null);
+  });
+
+  it('starts a save for a printer or locale edit and refuses an empty interface', () => {
+    const star = saveStarted(draftChanged(loaded(), {printerType: 'star'}));
+    expect(star.saving).to.equal(true);
+    expect(star.fieldErrors.printerInterface).to.equal(undefined);
+    const locale = saveStarted(draftChanged(loaded(), {locale: 'en'}));
+    expect(locale.saving).to.equal(true);
+    expect(locale.draft.locale).to.equal('en');
+    const blank = saveStarted(draftChanged(loaded(), {printerInterface: '   '}));
+    expect(blank.saving).to.equal(false);
+    expect(blank.fieldErrors.printerInterface).to.equal(REQUIRED);
+    const limit = saveStarted(draftChanged(loaded(), {printerInterface: 'a'.repeat(201)}));
+    expect(limit.saving).to.equal(false);
+    expect(limit.fieldErrors.printerInterface).to.equal(INTERFACE_TOO_LONG);
+    const ok = saveStarted(draftChanged(loaded(), {printerInterface: 'a'.repeat(200)}));
+    expect(ok.saving).to.equal(true);
+    const spaced = draftChanged(loaded(), {printerInterface: '  /dev/usb/lp  '});
+    expect(saveStarted(spaced)).to.equal(spaced);
+    const missing = {...loaded()};
+    const draft = {...missing.draft};
+    delete draft.printerInterface;
+    expect(saveStarted({...missing, draft}).saving).to.equal(false);
+  });
+
+  it('prints when the interface is saved and saves a dirty one first', () => {
+    const current = loaded();
+    const clean = testPrintStarted(current);
+    expect(clean.printing).to.equal(true);
+    expect(clean.printerError).to.equal(null);
+    const dirty = testPrintStarted(draftChanged(current, {printerInterface: 'tcp://127.0.0.1:9100'}));
+    expect(dirty.printing).to.equal(true);
+    const blocked = testPrintStarted(draftChanged(current, {printerInterface: ''}));
+    expect(blocked.printing).to.equal(false);
+    expect(blocked.fieldErrors.printerInterface).to.equal(REQUIRED);
+    expect(testPrintStarted(blocked)).to.equal(blocked);
+    const printed = testPrinted(dirty, {
+      type: 'epson',
+      interface: 'tcp://127.0.0.1:9100',
+      characterSet: 'SPAIN1'
+    });
+    expect(printed.printing).to.equal(false);
+    expect(printed.saved.printerInterface).to.equal('tcp://127.0.0.1:9100');
+    expect(printed.draft.printerInterface).to.equal('tcp://127.0.0.1:9100');
+    expect(testPrinted(clean, null).printing).to.equal(false);
+    const failed = testPrintFailed(dirty, {
+      message: PRINT_ERROR,
+      printer: {type: 'star', interface: 'tcp://127.0.0.1:9100', characterSet: 'PC850'}
+    });
+    expect(failed.printing).to.equal(false);
+    expect(failed.printerError).to.equal(PRINT_ERROR);
+    expect(failed.saved.printerType).to.equal('star');
+    expect(failed.saved.printerCharacterSet).to.equal('PC850');
+    expect(testPrintFailed(dirty).printerError).to.equal(PRINT_ERROR);
+    expect(testPrintFailed(dirty, {}).saved.printerInterface).to.equal('/dev/usb/lp');
+  });
+
+  it('maps an invalid interface onto the field', () => {
+    expect(printerFieldErrors({context: {field: 'interface', value: ''}})).to.deep.equal({
+      printerInterface: REQUIRED
+    });
+    expect(printerFieldErrors({context: {field: 'interface', value: '   '}})).to.deep.equal({
+      printerInterface: REQUIRED
+    });
+    expect(printerFieldErrors({context: {field: 'interface', value: 'a'.repeat(201)}})).to.deep.equal({
+      printerInterface: INTERFACE_TOO_LONG
+    });
+    expect(printerFieldErrors({context: {field: 'type', value: 'tanca'}})).to.equal(null);
+    expect(printerFieldErrors(null)).to.equal(null);
   });
 });

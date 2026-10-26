@@ -6,6 +6,9 @@ import {
   SETTINGS_SAVE_FAILED,
   SETTINGS_SAVE_REQUESTED,
   SETTINGS_SAVED,
+  SETTINGS_TEST_PRINT_FAILED,
+  SETTINGS_TEST_PRINT_REQUESTED,
+  SETTINGS_TEST_PRINTED,
   SHOP_PROFILE_LOADED
 } from './action';
 import {
@@ -16,7 +19,10 @@ import {
   saveFailed,
   saveStarted,
   shopLoaded,
-  state
+  state,
+  testPrintFailed,
+  testPrinted,
+  testPrintStarted
 } from './model';
 
 export default function reducer(current = state(), action) {
@@ -24,7 +30,12 @@ export default function reducer(current = state(), action) {
     case SETTINGS_PAGE_OPENED:
       return pageOpened(current);
     case SETTINGS_LOADED:
-      return shopLoaded(current, action.profile, {theme: action.theme, ticket: action.ticket});
+      return shopLoaded(current, action.profile, {
+        theme: action.theme,
+        ticket: action.ticket,
+        printer: action.printer,
+        language: action.language
+      });
     case SHOP_PROFILE_LOADED:
       return shopLoaded(current, action.profile, {keepDraft: true});
     case SETTINGS_FAILED:
@@ -34,9 +45,15 @@ export default function reducer(current = state(), action) {
     case SETTINGS_SAVE_REQUESTED:
       return saveStarted(current);
     case SETTINGS_SAVED:
-      return saved(current, action.profile, action.theme, action.ticket);
+      return saved(current, action.profile, action.theme, action.ticket, action.printer, action.language);
     case SETTINGS_SAVE_FAILED:
       return saveFailed(current, action.failure);
+    case SETTINGS_TEST_PRINT_REQUESTED:
+      return testPrintStarted(current);
+    case SETTINGS_TEST_PRINTED:
+      return testPrinted(current, action.printer);
+    case SETTINGS_TEST_PRINT_FAILED:
+      return testPrintFailed(current, action.failure);
     default:
       return current;
   }

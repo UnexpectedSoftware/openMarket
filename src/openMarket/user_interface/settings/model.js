@@ -3,40 +3,49 @@ export const NIF_INVALID = 'NIF no válido';
 export const PHONE_TOO_LONG = 'Máximo 40 caracteres';
 export const EMAIL_TOO_LONG = 'Máximo 80 caracteres';
 export const COPY_TOO_LONG = 'Máximo 80 caracteres';
+export const INTERFACE_TOO_LONG = 'Máximo 200 caracteres';
 export const LOAD_ERROR = 'No se han podido cargar los ajustes';
 export const SAVE_ERROR = 'No se han podido guardar los ajustes';
 export const THEME_SAVE_ERROR = 'El tema no se ha guardado';
+export const PRINT_ERROR = 'No se ha podido imprimir';
 
 const PHONE_MAX = 40;
 const EMAIL_MAX = 80;
 const COPY_MAX = 80;
+const INTERFACE_MAX = 200;
 const SHOP_KEYS = [
   'nif', 'legalName', 'tradeName', 'street', 'postalCode', 'city',
   'province', 'country', 'phone', 'email'
 ];
 const TICKET_KEYS = ['printMode', 'headerText', 'footerText', 'paperWidthMm'];
-const DRAFT_KEYS = SHOP_KEYS.concat(['invoicingEnabled'], TICKET_KEYS, ['theme']);
+const PRINTER_KEYS = ['printerType', 'printerInterface', 'printerCharacterSet'];
+const LANGUAGE_KEYS = ['locale'];
+const DRAFT_KEYS = SHOP_KEYS.concat(['invoicingEnabled'], TICKET_KEYS, PRINTER_KEYS, LANGUAGE_KEYS, ['theme']);
 
 /** @returns {object} */
 export function state() {
   const shop = blankShop();
   const ticket = blankTicket();
+  const printer = blankPrinter();
+  const language = blankLanguage();
   return {
-    saved: {...shop, ...ticket, issuer: null},
-    draft: {...shop, ...ticket, theme: 'mercado'},
+    saved: {...shop, ...ticket, ...printer, ...language, issuer: null},
+    draft: {...shop, ...ticket, ...printer, ...language, theme: 'mercado'},
     issuer: null,
     persistedTheme: 'mercado',
     loading: true,
     error: null,
     saveError: null,
     saving: false,
+    printing: false,
+    printerError: null,
     fieldErrors: {}
   };
 }
 
 /** @param {object} current */
 export function pageOpened(current) {
-  return {...current, loading: true, error: null};
+  return {...current, loading: true, error: null, printing: false, printerError: null};
 }
 
 /**
@@ -44,7 +53,7 @@ export function pageOpened(current) {
  * A sell-screen refresh (`keepDraft`) updates `saved` and `issuer` only.
  * @param {object} current
  * @param {object} [profile]
- * @param {{theme?: string, ticket?: object, keepDraft?: boolean}} [options]
+ * @param {{theme?: string, ticket?: object, printer?: object, language?: object, keepDraft?: boolean}} [options]
  */
 export function shopLoaded(current, profile, options) {
   const fields = shopFields(profile);
@@ -52,22 +61,32 @@ export function shopLoaded(current, profile, options) {
   if (options && options.keepDraft) {
     return {
       ...current,
-      saved: {...ticketFields(current.saved), ...fields, issuer},
+      saved: {
+        ...printerFields(current.saved),
+        ...languageFields(current.saved),
+        ...ticketFields(current.saved),
+        ...fields,
+        issuer
+      },
       issuer
     };
   }
   const copy = ticketFields(options && options.ticket);
+  const device = printerFields(asPrinterDraft(options && options.printer));
+  const locale = languageFields(options && options.language);
   const theme = storedTheme(options, current);
   return {
     ...current,
-    saved: {...fields, ...copy, issuer},
+    saved: {...fields, ...copy, ...device, ...locale, issuer},
     issuer,
-    draft: {...fields, ...copy, theme},
+    draft: {...fields, ...copy, ...device, ...locale, theme},
     persistedTheme: theme,
     loading: false,
     error: null,
     saveError: null,
     saving: false,
+    printing: false,
+    printerError: null,
     fieldErrors: {}
   };
 }
@@ -81,6 +100,7 @@ export function loadFailed(current, message) {
     ...current,
     loading: false,
     saving: false,
+    printing: false,
     error: message || LOAD_ERROR
   };
 }
@@ -106,11 +126,11 @@ export function draftChanged(current, patch) {
   if (!touched) {
     return current;
   }
-  return {...current, draft, fieldErrors, saveError: null};
+  return {...current, draft, fieldErrors, saveError: null, printerError: null};
 }
 
 /**
- * Decides whether Guardar writes the shop, the ticket, the theme, or nothing.
+ * Decides whether Guardar writes the shop, the ticket, the printer, the language, the theme, or nothing.
  * @param {object} current
  */
 export function savePlan(current) {
@@ -118,17 +138,40 @@ export function savePlan(current) {
   const blocked = hasErrors(fieldErrors);
   const shop = !blocked && shopDirty(current);
   const ticket = !blocked && ticketDirty(current);
+  const printer = !blocked && printerDirty(current);
+  const language = !blocked && languageDirty(current);
   const theme = !blocked && themeDirty(current);
   return {
-    proceed: shop || ticket || theme,
+    proceed: shop || ticket || printer || language || theme,
     shop,
     ticket,
+    printer,
+    language,
     theme,
     fieldErrors,
     command: shopCommand(current.draft),
     ticketCommand: ticketCommand(current.draft),
+    printerCommand: printerCommand(current.draft),
+    languageCommand: languageCommand(current.draft),
     themeId: current.draft.theme,
     previousTheme: current.persistedTheme
+  };
+}
+
+/**
+ * The sample uses the saved printer, so a dirty interface is written first.
+ * An empty interface does not print.
+ * @param {object} current
+ */
+export function testPrintPlan(current) {
+  const fieldErrors = {};
+  addPrinterErrors(fieldErrors, current && current.draft);
+  const blocked = hasErrors(fieldErrors);
+  return {
+    proceed: !blocked,
+    save: !blocked && printerDirty(current),
+    fieldErrors,
+    command: printerCommand(current && current.draft)
   };
 }
 
@@ -149,22 +192,28 @@ export function saveStarted(current) {
  * @param {object} [profile]
  * @param {string | null} [theme]
  * @param {object | null} [ticket]
+ * @param {object | null} [printer]
+ * @param {object | null} [language]
  */
-export function saved(current, profile, theme, ticket) {
+export function saved(current, profile, theme, ticket, printer, language) {
   const fields = shopFields(profile);
   const copy = ticket == null ? ticketFields(current.draft) : ticketFields(ticket);
+  const device = printer == null ? printerFields(current.draft) : printerFields(asPrinterDraft(printer));
+  const locale = language == null ? languageFields(current.draft) : languageFields(language);
   const issuer = issuerOf(profile);
   const nextTheme = theme == null ? current.draft.theme : theme;
   return {
     ...current,
-    saved: {...fields, ...copy, issuer},
-    draft: {...fields, ...copy, theme: nextTheme},
+    saved: {...fields, ...copy, ...device, ...locale, issuer},
+    draft: {...fields, ...copy, ...device, ...locale, theme: nextTheme},
     issuer,
     persistedTheme: nextTheme,
     loading: false,
     error: null,
     saveError: null,
     saving: false,
+    printing: false,
+    printerError: null,
     fieldErrors: {}
   };
 }
@@ -181,9 +230,57 @@ export function saveFailed(current, failure) {
     ...current,
     draft,
     saving: false,
+    printing: false,
     saveError: problem.message || null,
     fieldErrors: problem.fieldErrors || {}
   };
+}
+
+/**
+ * @param {object} current
+ */
+export function testPrintStarted(current) {
+  const plan = testPrintPlan(current);
+  if (!plan.proceed) {
+    const fieldErrors = withPrinterError(current, plan.fieldErrors);
+    if (!current.printing && !current.saving && sameErrors(current.fieldErrors, fieldErrors)) {
+      return current;
+    }
+    return {...current, saving: false, printing: false, fieldErrors, error: null};
+  }
+  return {
+    ...current,
+    printing: true,
+    printerError: null,
+    fieldErrors: withPrinterError(current, {}),
+    error: null
+  };
+}
+
+/**
+ * @param {object} current
+ * @param {object | null} [printer]
+ */
+export function testPrinted(current, printer) {
+  const device = printer == null ? null : printerFields(asPrinterDraft(printer));
+  return {
+    ...current,
+    saved: device == null ? current.saved : {...current.saved, ...device},
+    draft: device == null ? current.draft : {...current.draft, ...device},
+    printing: false,
+    printerError: null,
+    saving: false
+  };
+}
+
+/**
+ * @param {object} current
+ * @param {{message?: string, printer?: object}} [failure]
+ */
+export function testPrintFailed(current, failure) {
+  const problem = failure || {};
+  const next = testPrinted(current, problem.printer);
+  return {...next, printerError: problem.message || PRINT_ERROR};
 }
 
 /**
@@ -213,6 +310,23 @@ export function copyFieldErrors(error) {
     return null;
   }
   return {[field]: COPY_TOO_LONG};
+}
+
+/**
+ * An empty interface is "Obligatorio". A longer one is the length message.
+ * @param {{context?: {field?: string, value?: string}}} [error]
+ * @returns {object | null}
+ */
+export function printerFieldErrors(error) {
+  const field = error && error.context && error.context.field;
+  if (field !== 'interface') {
+    return null;
+  }
+  const value = error.context.value == null ? '' : String(error.context.value).trim();
+  if (value === '') {
+    return {printerInterface: REQUIRED};
+  }
+  return {printerInterface: INTERFACE_TOO_LONG};
 }
 
 /**
@@ -247,6 +361,16 @@ function blankShop() {
 /** @returns {object} */
 function blankTicket() {
   return ticketFields();
+}
+
+/** @returns {object} */
+function blankPrinter() {
+  return printerFields({});
+}
+
+/** @returns {object} */
+function blankLanguage() {
+  return languageFields({});
 }
 
 /**
@@ -338,7 +462,38 @@ function fieldErrorsFor(draft) {
   if (source.invoicingEnabled === true) {
     Object.assign(errors, incompleteErrors(source));
   }
+  addPrinterErrors(errors, source);
   return errors;
+}
+
+/**
+ * @param {object} errors
+ * @param {object} [draft]
+ */
+function addPrinterErrors(errors, draft) {
+  const source = draft || {};
+  if (!Object.prototype.hasOwnProperty.call(source, 'printerInterface')) {
+    return;
+  }
+  const device = trimmed(source.printerInterface);
+  if (device === '') {
+    errors.printerInterface = REQUIRED;
+    return;
+  }
+  if (device.length > INTERFACE_MAX) {
+    errors.printerInterface = INTERFACE_TOO_LONG;
+  }
+}
+
+/**
+ * @param {object} current
+ * @param {object} printerErrors
+ * @returns {object}
+ */
+function withPrinterError(current, printerErrors) {
+  const fieldErrors = {...(current.fieldErrors || {})};
+  delete fieldErrors.printerInterface;
+  return {...fieldErrors, ...printerErrors};
 }
 
 /**
@@ -410,6 +565,26 @@ function ticketDirty(current) {
 }
 
 /**
+ * @param {object} current
+ * @returns {boolean}
+ */
+function printerDirty(current) {
+  const next = printerCommand(current.draft);
+  const saved = printerCommand(current.saved);
+  return next.type !== saved.type || next.interface !== saved.interface || next.characterSet !== saved.characterSet;
+}
+
+/**
+ * @param {object} current
+ * @returns {boolean}
+ */
+function languageDirty(current) {
+  const next = languageCommand(current.draft);
+  const saved = languageCommand(current.saved);
+  return next.locale !== saved.locale;
+}
+
+/**
  * @param {object} saved
  * @param {string} key
  * @returns {string}
@@ -465,4 +640,71 @@ function ticketCommand(draft) {
     footerText: trimmed(fields.footerText),
     paperWidthMm: fields.paperWidthMm
   };
+}
+
+/**
+ * @param {object} [source]
+ * @returns {{printerType: string, printerInterface: string, printerCharacterSet: string}}
+ */
+function printerFields(source) {
+  const value = source || {};
+  return {
+    printerType: value.printerType == null || value.printerType === '' ? 'epson' : String(value.printerType),
+    printerInterface: value.printerInterface == null ? '/dev/usb/lp' : String(value.printerInterface),
+    printerCharacterSet: value.printerCharacterSet == null || value.printerCharacterSet === ''
+      ? 'SPAIN1'
+      : String(value.printerCharacterSet)
+  };
+}
+
+/**
+ * A stored view uses `type` / `interface` / `characterSet`. The draft uses `printer*`.
+ * @param {object | null | undefined} printer
+ * @returns {object}
+ */
+function asPrinterDraft(printer) {
+  if (!printer) {
+    return {};
+  }
+  if (Object.prototype.hasOwnProperty.call(printer, 'printerInterface')
+    || Object.prototype.hasOwnProperty.call(printer, 'printerType')
+    || Object.prototype.hasOwnProperty.call(printer, 'printerCharacterSet')) {
+    return printer;
+  }
+  return {
+    printerType: printer.type,
+    printerInterface: printer.interface,
+    printerCharacterSet: printer.characterSet
+  };
+}
+
+/**
+ * @param {object} draft
+ * @returns {{type: string, interface: string, characterSet: string}}
+ */
+function printerCommand(draft) {
+  const fields = printerFields(draft);
+  return {
+    type: fields.printerType,
+    interface: trimmed(fields.printerInterface),
+    characterSet: fields.printerCharacterSet
+  };
+}
+
+/**
+ * @param {object} [source]
+ * @returns {{locale: string}}
+ */
+function languageFields(source) {
+  const value = source || {};
+  const locale = value.locale == null || value.locale === '' ? 'es' : String(value.locale);
+  return {locale};
+}
+
+/**
+ * @param {object} draft
+ * @returns {{locale: string}}
+ */
+function languageCommand(draft) {
+  return {locale: languageFields(draft).locale};
 }

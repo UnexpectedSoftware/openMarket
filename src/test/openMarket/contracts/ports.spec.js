@@ -22,6 +22,8 @@ import SecretStore from '../../../openMarket/domain/plugin/SecretStore';
 import ShopProfileRepository from '../../../openMarket/domain/shop/ShopProfileRepository';
 import AppearancePreferencesRepository from '../../../openMarket/domain/appearance/AppearancePreferencesRepository';
 import SellPreferencesRepository from '../../../openMarket/domain/shop/SellPreferencesRepository';
+import PrinterSettingsRepository from '../../../openMarket/domain/shop/PrinterSettingsRepository';
+import LanguagePreferencesRepository from '../../../openMarket/domain/shop/LanguagePreferencesRepository';
 
 import RandomUUIDIdentity from '../../../openMarket/domain/RandomUUIDIdentity';
 import SequentialIdentity from '../../../openMarket/infrastructure/service/SequentialIdentity';
@@ -46,6 +48,8 @@ import SafeStorageSecretStore from '../../../openMarket/infrastructure/plugins/S
 import SqliteShopProfileRepository from '../../../openMarket/infrastructure/shop/SqliteShopProfileRepository';
 import SqliteAppearancePreferencesRepository from '../../../openMarket/infrastructure/appearance/SqliteAppearancePreferencesRepository';
 import SqliteSellPreferencesRepository from '../../../openMarket/infrastructure/shop/SqliteSellPreferencesRepository';
+import SqlitePrinterSettingsRepository from '../../../openMarket/infrastructure/shop/SqlitePrinterSettingsRepository';
+import SqliteLanguagePreferencesRepository from '../../../openMarket/infrastructure/shop/SqliteLanguagePreferencesRepository';
 
 describe('ports and adapters', () => {
   describeContract(Identity, RandomUUIDIdentity);
@@ -71,4 +75,6 @@ describe('ports and adapters', () => {
   describeContract(ShopProfileRepository, SqliteShopProfileRepository);
   describeContract(AppearancePreferencesRepository, SqliteAppearancePreferencesRepository);
   describeContract(SellPreferencesRepository, SqliteSellPreferencesRepository);
+  describeContract(PrinterSettingsRepository, SqlitePrinterSettingsRepository);
+  describeContract(LanguagePreferencesRepository, SqliteLanguagePreferencesRepository);
 });
