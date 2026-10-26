@@ -123,10 +123,11 @@ describe('Cart', () => {
     expect(host.textContent).to.contain('Bolsa');
     expect(host.textContent).to.contain('/ ud');
     expect(host.textContent).to.contain('kg ×');
-    expect(host.textContent).to.contain('0,350 kg');
+    expect(host.textContent).to.contain('0,35 kg');
+    expect(host.textContent).to.not.contain('0,350');
     expect(host.querySelector('.sell-stepper .fa-plus')).to.not.equal(null);
     expect(host.querySelector('.sell-weight .fa-balance-scale')).to.not.equal(null);
-    expect(host.querySelector('.sell-weight').textContent).to.contain('0,350');
+    expect(host.querySelector('.sell-weight').textContent).to.contain('0,35 kg');
     expect(host.textContent).to.contain('3 líneas · 4 artículos');
     expect(host.textContent).to.contain('Base imponible');
     expect(host.textContent).to.contain('IVA incluido');
@@ -200,6 +201,46 @@ describe('Cart', () => {
     const before = calls.length;
     buttonNamed(host, '5').click();
     expect(calls.length).to.equal(before);
+  });
+
+  it('shows whole and fractional kilos without trailing zeros', () => {
+    const samples = [
+      [1, '1 kg'],
+      [0.5, '0,5 kg'],
+      [0.35, '0,35 kg'],
+      [1.25, '1,25 kg']
+    ];
+    ReactDOM.render(
+      <Cart
+        order={{
+          lines: samples.map(([qty], index) => ({
+            kind: 'PRODUCT',
+            barcode: 'w' + index,
+            name: 'Peso ' + index,
+            unitPrice: Money.from(2.89),
+            quantity: Quantity.from(qty),
+            vatRate: VatRate.standard(),
+            weighted: true
+          })),
+          total: Money.ofCents(0)
+        }}
+      />,
+      host
+    );
+    const rows = host.querySelectorAll('.sell-line');
+    expect(rows.length).to.equal(samples.length);
+    samples.forEach(([, label], index) => {
+      const row = rows[index];
+      const pill = row.querySelector('.sell-weight');
+      expect(pill.textContent).to.contain(label);
+      expect(pill.getAttribute('aria-label')).to.equal('Peso ' + label);
+      expect(row.querySelector('.sell-line-meta').textContent).to.contain(label + ' ×');
+      expect(row.querySelector('.sell-line-meta').textContent).to.contain('/kg');
+    });
+    expect(host.textContent).to.not.contain('1,000');
+    expect(host.textContent).to.not.contain('0,500');
+    expect(host.textContent).to.not.contain('0,350');
+    expect(host.textContent).to.not.contain('1,250');
   });
 
   it('removes a single unit with the trash and empties the ticket after confirm', () => {

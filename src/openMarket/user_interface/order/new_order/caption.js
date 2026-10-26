@@ -1,4 +1,5 @@
 import {formatMoney} from '../../i18n/money';
+import {formatStock} from '../../product/list_products/format';
 
 /**
  * Spanish decimal for a quantity. The cart input keeps the raw value the tests type.
@@ -33,7 +34,7 @@ export function lineCaption(line) {
     return formatMoney(line.unitPrice);
   }
   if (line.weighted) {
-    return formatQuantity(line.quantity, 3) + ' kg × ' + formatMoney(line.unitPrice) + '/kg';
+    return weightLabel(line) + ' × ' + formatMoney(line.unitPrice) + '/kg';
   }
   return formatMoney(line.unitPrice) + ' / ud';
 }
@@ -44,10 +45,10 @@ export function lineCaption(line) {
  * @returns {string}
  */
 export function weightLabel(line) {
-  if (!line || !line.weighted) {
+  if (!line || !line.weighted || !line.quantity) {
     return '';
   }
-  return formatQuantity(line.quantity, 3) + ' kg';
+  return formatStock(line.quantity.units, true);
 }
 
 /**

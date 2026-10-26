@@ -10,7 +10,7 @@ import Quantity from '../../../domain/money/Quantity';
 import {formatMoney} from '../../i18n/money';
 import PluginSlot from '../../components/PluginSlot';
 import {lineAmount, lineIsValid, ticketFacts} from './model';
-import {formatQuantity, lineCaption, ticketCountLabel, vatIncludedLabel} from './caption';
+import {lineCaption, ticketCountLabel, vatIncludedLabel, weightLabel} from './caption';
 import {lineQuedan} from '../../low_stock/label';
 import Keypad from './Keypad';
 import {nextKeypadQuantity} from './keypadQuantity';
@@ -200,6 +200,7 @@ export function TicketLine(props) {
   const quedan = lineQuedan(line, props.lowSet || []);
   const weighted = !!line.weighted;
   const free = line.kind === 'FREE';
+  const kilos = weightLabel(line);
   return (
     <div
       className={lineClass(valid, props.selected === props.index)}
@@ -217,11 +218,11 @@ export function TicketLine(props) {
           <button
             type="button"
             className="sell-weight"
-            aria-label={'Peso ' + formatQuantity(line.quantity, 3) + ' kg'}
+            aria-label={'Peso ' + kilos}
             onClick={() => editWeight(props.onEditWeighted, line)}
           >
             <i className="fa fa-balance-scale" aria-hidden="true" />
-            <span>{formatQuantity(line.quantity, 3)}</span>
+            <span>{kilos}</span>
           </button>
         ) : null}
         {stepperFor(line, props)}

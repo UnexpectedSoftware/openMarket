@@ -30,11 +30,11 @@ describe('ticket captions', () => {
     expect(formatQuantity(null, 3)).to.equal('');
     expect(formatQuantity('nope', 3)).to.equal('');
     expect(lineCaption(unit)).to.contain('/ ud');
-    expect(lineCaption(weighed)).to.contain('0,750 kg ×');
+    expect(lineCaption(weighed)).to.contain('0,75 kg ×');
     expect(lineCaption(weighed)).to.contain('/kg');
     expect(lineCaption({kind: 'FREE', unitPrice: Money.from(3.5)})).to.not.contain('/ ud');
     expect(lineCaption(null)).to.equal('');
-    expect(weightLabel(weighed)).to.equal('0,750 kg');
+    expect(weightLabel(weighed)).to.equal('0,75 kg');
     expect(weightLabel(unit)).to.equal('');
     expect(weightLabel(null)).to.equal('');
     expect(ticketCountLabel({lineCount: 4, articleCount: 7})).to.equal('4 líneas · 7 artículos');

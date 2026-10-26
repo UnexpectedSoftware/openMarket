@@ -116,7 +116,7 @@ test('removes a unit line, a weighed line, and the whole ticket', async () => {
     await expect(weight.getByRole('heading', {name: 'Peso (kg)'})).toBeVisible();
     await weight.locator('input[name="quantity"]').fill('0,750');
     await weight.getByRole('button', {name: 'Añadir'}).click();
-    await expect(orderRow(window, 'Ham')).toContainText('0,750 kg');
+    await expect(orderRow(window, 'Ham')).toContainText('0,75 kg');
     await orderRow(window, 'Ham').getByRole('button', {name: 'Quitar', exact: true}).click();
     await expect(window.getByText('El ticket está vacío')).toBeVisible();
 
@@ -248,7 +248,7 @@ test('sells scanned, weighed, and free lines and blocks an invalid quantity', as
     await expect(rows).toContainText(euros(3.51));
     await expect(window.locator('.sell-ticket-count')).toHaveText('4 líneas · 5 artículos');
     await expect(orderRow(window, 'Arroz')).toContainText('/ ud');
-    await expect(orderRow(window, 'Ham')).toContainText('0,750 kg');
+    await expect(orderRow(window, 'Ham')).toContainText('0,75 kg');
 
     await window.getByRole('button', {name: 'Cobrar'}).click();
     await confirmPayment(window);
@@ -296,9 +296,10 @@ test('screenshots the sell screen and the weighted dialog in every theme', async
     await scanBarcode(window, '8400000000226');
     const weighed = window.getByRole('dialog');
     await expect(weighed.getByRole('heading', {name: 'Peso (kg)'})).toBeVisible();
-    await weighed.locator('input[name="quantity"]').fill('0,750');
+    await weighed.locator('input[name="quantity"]').fill('1');
     await weighed.getByRole('button', {name: 'Añadir'}).click();
-    await expect(orderRow(window, 'Ham')).toContainText('0,750 kg');
+    await expect(orderRow(window, 'Ham').locator('.sell-weight')).toHaveText('1 kg');
+    await expect(orderRow(window, 'Ham')).toContainText('1 kg ×');
 
     for (const theme of THEMES) {
       await window.evaluate(name => {
