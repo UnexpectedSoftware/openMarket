@@ -27,6 +27,7 @@ describe('sell cart', () => {
       .addFreeLine({description: 'Venta libre', amount: '3.50', vatRate: 'S1:21'})
       .place();
 
+    expect(cart.order.lines[1].weighted).to.equal(true);
     expect(cart.order.total.cents).to.equal(order.total.cents);
     expect(cartTotal(cart.order.lines).cents).to.equal(110 + 648 + 350);
     expect(vatRows([])).to.deep.equal([]);
@@ -43,6 +44,20 @@ describe('sell cart', () => {
       quotaCents: 0,
       rates: []
     });
+    const fromStore = addProduct({
+      lines: [],
+      product: {barcode: '9', name: 'Jamón', price: '18.50', isWeighted: 1},
+      quantity: 0.75
+    });
+    expect(fromStore.order.lines[0].weighted).to.equal(true);
+    expect(ticketFacts(fromStore.order.lines).articleCount).to.equal(1);
+    const counted = addProduct({
+      lines: [],
+      product: {barcode: '8', name: 'Pan', price: '1.00', isWeighted: 0},
+      quantity: 1
+    });
+    expect(counted.order.lines[0].weighted).to.equal(false);
+
     const partial = ticketFacts([{kind: 'PRODUCT', quantity: {milli: 500}, weighted: false}]);
     expect(partial.lineCount).to.equal(1);
     expect(partial.articleCount).to.equal(0);

@@ -397,7 +397,22 @@ function weightedOf(product) {
     return undefined;
   }
   const value = typeof product.isWeighted === 'function' ? product.isWeighted() : product.isWeighted;
-  return typeof value === 'boolean' ? value : undefined;
+  return weighedFlag(value);
+}
+
+/**
+ * SQLite stores the column as 0 or 1. The product getter returns that number.
+ * @param {*} value
+ * @returns {boolean | undefined}
+ */
+function weighedFlag(value) {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (value === 1 || value === 0) {
+    return value === 1;
+  }
+  return undefined;
 }
 
 /**
