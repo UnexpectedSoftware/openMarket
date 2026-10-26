@@ -196,12 +196,15 @@
 }
 
 .sell-tile-initials {
-  position: relative;
-  top: var(--om-space-6);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: 0;
   color: var(--om-color-text-muted);
   font-size: var(--om-font-size-3xl);
   font-weight: var(--om-font-weight-bold);
-  line-height: var(--om-line-height-tight);
+  line-height: 1;
+  transform: translate(-50%, -50%);
 }
 
 .sell-tile-photo img {
