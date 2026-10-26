@@ -3,6 +3,8 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import {PageHeader} from '../components/PageHeader';
 import Skeleton from '../components/Skeleton';
+import LanguageForm from './LanguageForm';
+import PrinterForm from './PrinterForm';
 import ShopForm from './ShopForm';
 import ThemePicker from './ThemePicker';
 import TicketForm from './TicketForm';
@@ -20,10 +22,20 @@ export default class Container extends Component {
       event.preventDefault();
     }
     const page = this.props.settings || {};
-    if (page.saving || page.loading || page.error) {
+    if (page.saving || page.printing || page.loading || page.error) {
       return;
     }
     this.props.settingsSaveRequested();
+  };
+
+  testPrint = () => {
+    const page = this.props.settings || {};
+    if (page.saving || page.printing || page.loading || page.error) {
+      return;
+    }
+    if (this.props.settingsTestPrintRequested) {
+      this.props.settingsTestPrintRequested();
+    }
   };
 
   change = (name, value) => {
@@ -52,7 +64,7 @@ export default class Container extends Component {
         <PageHeader
           title="Ajustes"
           actions={
-            <Button type="submit" disabled={page.loading || page.saving || !!page.error}>
+            <Button type="submit" disabled={page.loading || page.saving || page.printing || !!page.error}>
               Guardar
             </Button>
           }
@@ -78,6 +90,17 @@ export default class Container extends Component {
         <Card title="Ticket">
           <TicketForm values={page.draft} fieldErrors={page.fieldErrors} onChange={this.change} />
         </Card>
+        <Card title="Impresora">
+          <PrinterForm
+            values={page.draft}
+            fieldErrors={page.fieldErrors}
+            printerError={page.printerError}
+            printing={page.printing}
+            saving={page.saving}
+            onChange={this.change}
+            onTestPrint={this.testPrint}
+          />
+        </Card>
         <Card title="Apariencia">
           <ThemePicker
             theme={appearance.theme}
@@ -85,6 +108,9 @@ export default class Container extends Component {
             onPreview={this.previewTheme}
             onDiscard={this.discardTheme}
           />
+        </Card>
+        <Card title="Idioma">
+          <LanguageForm values={page.draft} onChange={this.change} />
         </Card>
       </div>
     );
@@ -98,6 +124,8 @@ function SettingsSkeletons() {
       <div className="settings-skeleton"><Skeleton lines={6} /></div>
       <div className="settings-skeleton"><Skeleton lines={4} /></div>
       <div className="settings-skeleton"><Skeleton lines={3} /></div>
+      <div className="settings-skeleton"><Skeleton lines={3} /></div>
+      <div className="settings-skeleton"><Skeleton lines={2} /></div>
     </div>
   );
 }

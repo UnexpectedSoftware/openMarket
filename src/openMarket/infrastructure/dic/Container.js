@@ -76,6 +76,13 @@ import UpdateShopProfile from "../../application/service/shop/UpdateShopProfile"
 import SqliteSellPreferencesRepository from "../shop/SqliteSellPreferencesRepository";
 import GetSellPreferences from "../../application/service/shop/GetSellPreferences";
 import UpdateSellPreferences from "../../application/service/shop/UpdateSellPreferences";
+import SqlitePrinterSettingsRepository from "../shop/SqlitePrinterSettingsRepository";
+import GetPrinterSettings from "../../application/service/shop/GetPrinterSettings";
+import UpdatePrinterSettings from "../../application/service/shop/UpdatePrinterSettings";
+import SqliteLanguagePreferencesRepository from "../shop/SqliteLanguagePreferencesRepository";
+import GetLanguagePreferences from "../../application/service/shop/GetLanguagePreferences";
+import UpdateLanguagePreferences from "../../application/service/shop/UpdateLanguagePreferences";
+import PrintTestTicket from "../../application/service/shop/PrintTestTicket";
 import SqliteAppearancePreferencesRepository from "../appearance/SqliteAppearancePreferencesRepository";
 import GetAppearancePreferences from "../../application/service/appearance/GetAppearancePreferences";
 import ChangeTheme from "../../application/service/appearance/ChangeTheme";
@@ -114,7 +121,9 @@ class Container {
   }
 
   _printerConnection(){
-    return new PrinterConnection();
+    return new PrinterConnection({
+      printerSettingsRepository: this.getInstance({key: 'printerSettingsRepository'})
+    });
   }
 
   _receiptSlots() {
@@ -459,6 +468,50 @@ class Container {
   _updateSellPreferences() {
     return new UpdateSellPreferences({
       sellPreferencesRepository: this.getInstance({key: 'sellPreferencesRepository'})
+    });
+  }
+
+  _printerSettingsRepository() {
+    return new SqlitePrinterSettingsRepository({
+      connection: this.getInstance({key: 'sqliteConnection'})
+    });
+  }
+
+  _getPrinterSettings() {
+    return new GetPrinterSettings({
+      printerSettingsRepository: this.getInstance({key: 'printerSettingsRepository'})
+    });
+  }
+
+  _updatePrinterSettings() {
+    return new UpdatePrinterSettings({
+      printerSettingsRepository: this.getInstance({key: 'printerSettingsRepository'})
+    });
+  }
+
+  _languagePreferencesRepository() {
+    return new SqliteLanguagePreferencesRepository({
+      connection: this.getInstance({key: 'sqliteConnection'})
+    });
+  }
+
+  _getLanguagePreferences() {
+    return new GetLanguagePreferences({
+      languagePreferencesRepository: this.getInstance({key: 'languagePreferencesRepository'})
+    });
+  }
+
+  _updateLanguagePreferences() {
+    return new UpdateLanguagePreferences({
+      languagePreferencesRepository: this.getInstance({key: 'languagePreferencesRepository'})
+    });
+  }
+
+  _printTestTicket() {
+    return new PrintTestTicket({
+      shopProfileRepository: this.getInstance({key: 'shopProfileRepository'}),
+      sellPreferencesRepository: this.getInstance({key: 'sellPreferencesRepository'}),
+      orderPrinterService: this.getInstance({key: 'orderPrinterService'})
     });
   }
 

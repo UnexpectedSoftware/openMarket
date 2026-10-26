@@ -2,9 +2,16 @@ import fs from 'fs';
 import path from 'path';
 import printer from 'node-thermal-printer';
 import * as Rx from 'rxjs';
+import 'rxjs/add/operator/catch';
+import 'rxjs/add/operator/defaultIfEmpty';
+import 'rxjs/add/operator/map';
+import 'rxjs/add/operator/mergeMap';
 import PrinterBusyError from '../../domain/error/PrinterBusyError';
+import PrinterSettingsQuery from '../../domain/shop/PrinterSettingsQuery';
+import PrinterSettingsView from '../../domain/shop/PrinterSettingsView';
 import {userDataDirectory} from '../service/sqliteDatabasePath';
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
+/** @typedef {import('../../domain/shop/PrinterSettingsRepository').default} PrinterSettingsRepository */
 
 /**
  * Subset of node-thermal-printer used by the ticket and catalog jobs.
@@ -63,23 +70,29 @@ function recordingPrinter() {
 
 export default class PrinterConnection {
   /**
-   * @param {{device?: ThermalPrinter}} [options]
+   * `device` and `OPENMARKET_FAKE_PRINTER=1` skip `init`. Otherwise the first
+   * job, and any later job whose type, interface, or character set changed,
+   * calls `init` with the stored printer view.
+   * @param {object} [options]
+   * @param {ThermalPrinter} [options.device]
+   * @param {PrinterSettingsRepository} [options.printerSettingsRepository]
+   * @param {{init: Function}} [options.thermalPrinter]
    */
-  constructor({device} = {}) {
+  constructor({device, printerSettingsRepository, thermalPrinter} = {}) {
+    this._injected = device || null;
+    this._settings = printerSettingsRepository || null;
+    this._thermal = thermalPrinter || printer;
+    this._fake = !device && process.env.OPENMARKET_FAKE_PRINTER === '1';
     if (device) {
       this._printer = device;
-    } else if (process.env.OPENMARKET_FAKE_PRINTER === '1') {
+    } else if (this._fake) {
       this._printer = recordingPrinter();
     } else {
-      printer.init({
-        type: 'epson',
-        interface: '/dev/usb/lp',
-        characterSet: 'SPAIN1',
-        extraSpecialCharacters: {'€': 128}
-      });
-      this._printer = printer;
+      this._printer = this._thermal;
     }
     this._busy = false;
+    /** @type {{type: string, interface: string, characterSet: string} | null} */
+    this._applied = null;
   }
 
   get printer() {
@@ -96,6 +109,62 @@ export default class PrinterConnection {
       return Rx.Observable.throw(new PrinterBusyError());
     }
     this._busy = true;
+    return this._prepare()
+      .catch(error => {
+        this._busy = false;
+        return Rx.Observable.throw(error);
+      })
+      .mergeMap(() => this._run(fill));
+  }
+
+  /**
+   * Reads the stored printer and calls `init` when the device settings changed.
+   * @returns {Observable<null>}
+   */
+  _prepare() {
+    if (this._injected || this._fake) {
+      return Rx.Observable.of(null);
+    }
+    return this._loadSettings().map(settings => {
+      this._apply(settings);
+      return null;
+    });
+  }
+
+  /** @returns {Observable<PrinterSettingsView>} */
+  _loadSettings() {
+    if (!this._settings || typeof this._settings.find !== 'function') {
+      return Rx.Observable.of(new PrinterSettingsView({}));
+    }
+    return this._settings.find(new PrinterSettingsQuery())
+      .map(view => view || new PrinterSettingsView({}))
+      .defaultIfEmpty(new PrinterSettingsView({}));
+  }
+
+  /**
+   * @param {PrinterSettingsView} settings
+   */
+  _apply(settings) {
+    const type = settings && settings.type ? settings.type : 'epson';
+    const device = settings && settings.interface ? settings.interface : '/dev/usb/lp';
+    const characterSet = settings && settings.characterSet ? settings.characterSet : 'SPAIN1';
+    if (sameDevice(this._applied, type, device, characterSet)) {
+      return;
+    }
+    this._thermal.init({
+      type,
+      interface: device,
+      characterSet,
+      extraSpecialCharacters: {'€': 128}
+    });
+    this._applied = {type, interface: device, characterSet};
+  }
+
+  /**
+   * @param {(printer: ThermalPrinter) => void} fill
+   * @returns {Observable<boolean>}
+   */
+  _run(fill) {
     return Rx.Observable.create(observer => {
       let settled = false;
       const finish = (error) => {
@@ -126,4 +195,15 @@ export default class PrinterConnection {
       }
     });
   }
+}
+
+/**
+ * @param {{type: string, interface: string, characterSet: string} | null} applied
+ * @param {string} type
+ * @param {string} device
+ * @param {string} characterSet
+ * @returns {boolean}
+ */
+function sameDevice(applied, type, device, characterSet) {
+  return !!applied && applied.type === type && applied.interface === device && applied.characterSet === characterSet;
 }

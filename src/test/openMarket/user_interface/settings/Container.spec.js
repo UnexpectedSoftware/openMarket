@@ -30,7 +30,7 @@ function page(overrides) {
 }
 
 function render(props) {
-  const calls = {opened: 0, save: 0, draft: [], preview: [], discard: []};
+  const calls = {opened: 0, save: 0, print: 0, draft: [], preview: [], discard: []};
   const view = mount(
     <Container
       settings={props.settings}
@@ -40,6 +40,9 @@ function render(props) {
       }}
       settingsSaveRequested={() => {
         calls.save += 1;
+      }}
+      settingsTestPrintRequested={() => {
+        calls.print += 1;
       }}
       settingsDraftChanged={patch => calls.draft.push(patch)}
       themePreviewRequested={id => calls.preview.push(id)}
@@ -52,7 +55,7 @@ function render(props) {
 describe('settings Container', () => {
   it('shows skeletons while loading and does not save', () => {
     const {view, calls} = render({settings: page({loading: true})});
-    expect(view.node.querySelectorAll('.settings-skeleton').length).to.equal(3);
+    expect(view.node.querySelectorAll('.settings-skeleton').length).to.equal(5);
     expect(view.node.querySelector('button').disabled).to.equal(true);
     ReactTestUtils.Simulate.submit(view.node.querySelector('form'));
     expect(calls.save).to.equal(0);
@@ -82,7 +85,16 @@ describe('settings Container', () => {
     expect(view.node.textContent).to.contain('Comercio');
     expect(view.node.textContent).to.contain('Ticket');
     expect(view.node.textContent).to.contain('Al imprimir');
+    expect(view.node.textContent).to.contain('Impresora');
+    expect(view.node.textContent).to.contain('Imprimir prueba');
+    expect(view.node.textContent).to.contain('Idioma');
+    expect(view.node.textContent).to.contain('Español');
     expect(view.node.textContent).to.contain('Apariencia');
+    const print = Array.prototype.find.call(
+      view.node.querySelectorAll('button'),
+      button => button.textContent === 'Imprimir prueba'
+    );
+    ReactTestUtils.Simulate.click(print);
     expect(view.node.querySelector('.settings-save-error').textContent).to.equal(
       'No se han podido guardar los ajustes'
     );
@@ -94,6 +106,7 @@ describe('settings Container', () => {
     expect(calls.draft[0]).to.deep.equal({nif: 'B00000000'});
     expect(calls.preview).to.deep.equal(['ultramarinos']);
     expect(calls.draft[1]).to.deep.equal({theme: 'ultramarinos'});
+    expect(calls.print).to.equal(1);
     expect(calls.save).to.equal(1);
     view.unmount();
     expect(calls.discard).to.deep.equal(['mercado']);
@@ -103,9 +116,22 @@ describe('settings Container', () => {
   it('keeps Guardar disabled while a save is in flight and when settings are missing', () => {
     const saving = render({settings: page({saving: true})});
     expect(saving.view.node.querySelector('button[type="submit"]').disabled).to.equal(true);
+    const print = Array.prototype.find.call(
+      saving.view.node.querySelectorAll('button'),
+      button => button.textContent === 'Imprimir prueba'
+    );
+    expect(print.disabled).to.equal(true);
+    ReactTestUtils.Simulate.click(print);
     ReactTestUtils.Simulate.submit(saving.view.node.querySelector('form'));
     expect(saving.calls.save).to.equal(0);
+    expect(saving.calls.print).to.equal(0);
     saving.view.unmount();
+
+    const printing = render({settings: page({printing: true})});
+    expect(printing.view.node.querySelector('button[type="submit"]').disabled).to.equal(true);
+    ReactTestUtils.Simulate.submit(printing.view.node.querySelector('form'));
+    expect(printing.calls.save).to.equal(0);
+    printing.view.unmount();
 
     const empty = render({settings: undefined, appearance: undefined});
     expect(empty.view.node.querySelector('h1').textContent).to.equal('Ajustes');

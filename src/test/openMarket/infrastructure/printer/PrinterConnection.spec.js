@@ -1,4 +1,5 @@
 import {expect} from 'chai';
+import * as Rx from 'rxjs';
 import PrinterConnection from '../../../../openMarket/infrastructure/printer/PrinterConnection';
 
 function device() {
@@ -75,5 +76,108 @@ describe('PrinterConnection', () => {
     let opened = false;
     connection.print(() => { opened = true; }).subscribe(() => {}, () => {});
     expect(opened).to.equal(true);
+  });
+
+  it('inits with the stored interface and skips init when a device is injected', () => {
+    const events = [];
+    let current = {type: 'star', interface: 'tcp://127.0.0.1:9100', characterSet: 'PC850'};
+    const thermal = {
+      init(options) {
+        events.push({name: 'init', options});
+      },
+      clear() {
+        events.push({name: 'clear'});
+      },
+      execute(callback) {
+        events.push({name: 'execute'});
+        callback(null);
+      }
+    };
+    const repository = {
+      find() {
+        return Rx.Observable.of({...current});
+      }
+    };
+    const connection = new PrinterConnection({
+      printerSettingsRepository: repository,
+      thermalPrinter: thermal
+    });
+    let first = false;
+    connection.print(() => {}).subscribe(() => {
+      first = true;
+    });
+    expect(first).to.equal(true);
+    let second = false;
+    connection.print(() => {}).subscribe(() => {
+      second = true;
+    });
+    expect(second).to.equal(true);
+    expect(events.map(event => event.name)).to.deep.equal(['init', 'clear', 'execute', 'clear', 'execute']);
+    expect(events[0].options).to.deep.equal({
+      type: 'star',
+      interface: 'tcp://127.0.0.1:9100',
+      characterSet: 'PC850',
+      extraSpecialCharacters: {'€': 128}
+    });
+
+    current = {type: 'epson', interface: '/dev/usb/lp0', characterSet: 'WPC1252'};
+    connection.print(() => {}).subscribe(() => {});
+    expect(events[events.length - 3].options.interface).to.equal('/dev/usb/lp0');
+    expect(events[events.length - 3].options.type).to.equal('epson');
+    expect(events[events.length - 3].options.characterSet).to.equal('WPC1252');
+
+    const before = events.filter(event => event.name === 'init').length;
+    const hardware = device();
+    let finds = 0;
+    const injected = new PrinterConnection({
+      device: hardware,
+      printerSettingsRepository: {
+        find() {
+          finds += 1;
+          return Rx.Observable.of(current);
+        }
+      },
+      thermalPrinter: thermal
+    });
+    let filled = false;
+    injected.print(() => {
+      filled = true;
+    }).subscribe(() => {});
+    expect(filled).to.equal(true);
+    expect(finds).to.equal(0);
+    expect(events.filter(event => event.name === 'init')).to.have.length(before);
+    hardware.release(null);
+  });
+
+  it('does not init when the fake printer is on', () => {
+    const previous = process.env.OPENMARKET_FAKE_PRINTER;
+    process.env.OPENMARKET_FAKE_PRINTER = '1';
+    const inits = [];
+    try {
+      const connection = new PrinterConnection({
+        printerSettingsRepository: {
+          find() {
+            return Rx.Observable.of({type: 'star', interface: 'tcp://127.0.0.1:9100', characterSet: 'PC858'});
+          }
+        },
+        thermalPrinter: {
+          init() {
+            inits.push('init');
+          }
+        }
+      });
+      let printed = false;
+      connection.print(() => {}).subscribe(() => {
+        printed = true;
+      });
+      expect(printed).to.equal(true);
+      expect(inits).to.deep.equal([]);
+    } finally {
+      if (previous == null) {
+        delete process.env.OPENMARKET_FAKE_PRINTER;
+      } else {
+        process.env.OPENMARKET_FAKE_PRINTER = previous;
+      }
+    }
   });
 });

@@ -50,6 +50,11 @@ class OpenMarket {
     this.deps.set('shop_update_profile_use_case', container.getInstance({key:'updateShopProfile'}));
     this.deps.set('sell_get_preferences_use_case', container.getInstance({key:'getSellPreferences'}));
     this.deps.set('sell_update_preferences_use_case', container.getInstance({key:'updateSellPreferences'}));
+    this.deps.set('shop_get_printer_use_case', container.getInstance({key:'getPrinterSettings'}));
+    this.deps.set('shop_update_printer_use_case', container.getInstance({key:'updatePrinterSettings'}));
+    this.deps.set('shop_get_language_use_case', container.getInstance({key:'getLanguagePreferences'}));
+    this.deps.set('shop_update_language_use_case', container.getInstance({key:'updateLanguagePreferences'}));
+    this.deps.set('shop_print_test_use_case', container.getInstance({key:'printTestTicket'}));
     this.deps.set('appearance_get_use_case', container.getInstance({key:'getAppearancePreferences'}));
     this.deps.set('appearance_change_theme_use_case', container.getInstance({key:'changeTheme'}));
     container.getInstance({key:'pluginHost'}).start();

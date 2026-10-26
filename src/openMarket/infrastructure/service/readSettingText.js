@@ -33,3 +33,23 @@ export function loadSetting(database, key, message, present, missing) {
     return Rx.Observable.of(text == null ? missing() : present(text));
   });
 }
+
+/**
+ * A JSON object stored in a setting row. An array, null, or any other
+ * non-object becomes {}. Corrupt JSON fails the read.
+ * @param {string} text
+ * @param {string} message
+ * @returns {Record<string, any>}
+ */
+export function parseSettingObject(text, message) {
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (error) {
+    rethrow(error, {message, context: {operation: 'find'}});
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return {};
+  }
+  return data;
+}

@@ -5,6 +5,12 @@ import container from '../openMarket/infrastructure/dic/Container';
 import AppearancePreferences from '../openMarket/domain/appearance/AppearancePreferences';
 import AppearancePreferencesQuery from '../openMarket/domain/appearance/AppearancePreferencesQuery';
 import AppearancePreferencesView from '../openMarket/domain/appearance/AppearancePreferencesView';
+import LanguagePreferences from '../openMarket/domain/shop/LanguagePreferences';
+import LanguagePreferencesQuery from '../openMarket/domain/shop/LanguagePreferencesQuery';
+import LanguagePreferencesView from '../openMarket/domain/shop/LanguagePreferencesView';
+import PrinterSettings from '../openMarket/domain/shop/PrinterSettings';
+import PrinterSettingsQuery from '../openMarket/domain/shop/PrinterSettingsQuery';
+import PrinterSettingsView from '../openMarket/domain/shop/PrinterSettingsView';
 import SellPreferences from '../openMarket/domain/shop/SellPreferences';
 import SellPreferencesQuery from '../openMarket/domain/shop/SellPreferencesQuery';
 import SellPreferencesView from '../openMarket/domain/shop/SellPreferencesView';
@@ -16,11 +22,15 @@ const database = container.getInstance({key: 'sqliteConnection'}).database;
 const shopRepository = container.getInstance({key: 'shopProfileRepository'});
 const sellRepository = container.getInstance({key: 'sellPreferencesRepository'});
 const appearanceRepository = container.getInstance({key: 'appearancePreferencesRepository'});
+const printerRepository = container.getInstance({key: 'printerSettingsRepository'});
+const languageRepository = container.getInstance({key: 'languagePreferencesRepository'});
 const updateShopProfile = openMarket.get('shop_update_profile_use_case');
 const updateSellPreferences = openMarket.get('sell_update_preferences_use_case');
+const updatePrinterSettings = openMarket.get('shop_update_printer_use_case');
+const updateLanguagePreferences = openMarket.get('shop_update_language_use_case');
 const changeTheme = openMarket.get('appearance_change_theme_use_case');
 
-const KEYS = ['shop_profile', 'appearance', 'sell_auto_print'];
+const KEYS = ['shop_profile', 'appearance', 'sell_auto_print', 'printer', 'language'];
 const SAVE_SETTING = 'INSERT INTO setting (key, value_json) VALUES (?, ?) ' +
   'ON CONFLICT(key) DO UPDATE SET value_json = excluded.value_json';
 
@@ -151,6 +161,59 @@ describe('Settings read models', () => {
         expect(profile.headerText).to.equal('Hola');
         expect(profile.paperWidthMm).to.equal(58);
         expect(profile.autoPrint).to.equal(undefined);
+        done();
+      }, done);
+  });
+
+  it('reads a printer view after the settings are saved, and the default when the row is missing', done => {
+    printerRepository.find(new PrinterSettingsQuery())
+      .flatMap(missing => {
+        expect(missing).to.be.instanceof(PrinterSettingsView);
+        expect(missing).to.not.be.instanceof(PrinterSettings);
+        expect(missing.type).to.equal('epson');
+        expect(missing.interface).to.equal('/dev/usb/lp');
+        expect(missing.characterSet).to.equal('SPAIN1');
+        expect(missing.withType).to.equal(undefined);
+        return updatePrinterSettings.update({
+          type: 'star',
+          interface: '  tcp://127.0.0.1:9100  ',
+          characterSet: 'PC858'
+        });
+      })
+      .flatMap(() => printerRepository.find(new PrinterSettingsQuery()))
+      .flatMap(view => printerRepository.findSettings().map(settings => ({view, settings})))
+      .subscribe(({view, settings}) => {
+        expect(view.type).to.equal('star');
+        expect(view.interface).to.equal('tcp://127.0.0.1:9100');
+        expect(view.characterSet).to.equal('PC858');
+        expect(view).to.be.instanceof(PrinterSettingsView);
+        expect(view).to.not.be.instanceof(PrinterSettings);
+        expect(settings).to.be.instanceof(PrinterSettings);
+        expect(settings.type).to.equal('star');
+        expect(settings.interface).to.equal('tcp://127.0.0.1:9100');
+        expect(settings.characterSet).to.equal('PC858');
+        done();
+      }, done);
+  });
+
+  it('reads a language view of es and still returns the aggregate', done => {
+    languageRepository.find(new LanguagePreferencesQuery())
+      .flatMap(missing => {
+        expect(missing).to.be.instanceof(LanguagePreferencesView);
+        expect(missing).to.not.be.instanceof(LanguagePreferences);
+        expect(missing.locale).to.equal('es');
+        return updateLanguagePreferences.update({locale: 'es'});
+      })
+      .flatMap(() => languageRepository.find(new LanguagePreferencesQuery()))
+      .flatMap(view => languageRepository.findPreferences().map(preferences => ({view, preferences})))
+      .subscribe(({view, preferences}) => {
+        expect(view.locale).to.equal('es');
+        expect(view).to.not.be.instanceof(LanguagePreferences);
+        expect(view.withLocale).to.equal(undefined);
+        expect(preferences).to.be.instanceof(LanguagePreferences);
+        expect(preferences.locale).to.equal('es');
+        const row = database.prepare('SELECT value_json FROM setting WHERE key = ?').get('language');
+        expect(JSON.parse(row.value_json).locale).to.equal('es');
         done();
       }, done);
   });

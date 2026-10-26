@@ -32,8 +32,17 @@
   gap: var(--om-space-3);
 }
 
+.settings-printer-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--om-space-3);
+  margin-top: var(--om-space-3);
+}
+
 .settings-failure p,
-.settings-save-error {
+.settings-save-error,
+.settings-printer-error {
   margin: 0;
   color: var(--om-color-danger);
   font-family: var(--om-font-sans);

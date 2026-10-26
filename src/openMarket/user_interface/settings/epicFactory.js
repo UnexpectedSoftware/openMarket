@@ -21,40 +21,65 @@ import {
   settingsLoaded,
   settingsSaved,
   settingsSaveFailed,
+  settingsTestPrintFailed,
+  settingsTestPrinted,
+  SETTINGS_TEST_PRINT_REQUESTED,
   shopProfileLoaded
 } from './action';
 import {
   LOAD_ERROR,
   NIF_INVALID,
+  PRINT_ERROR,
   REQUIRED,
   SAVE_ERROR,
   THEME_SAVE_ERROR,
   copyFieldErrors,
   incompleteErrors,
+  printerFieldErrors,
   savePlan,
-  state
+  state,
+  testPrintPlan
 } from './model';
 
 const savedToast = () => toast.success('Ajustes guardados', 'Los cambios quedan guardados');
 
 /**
  * Latest open wins. A sell-screen request refreshes the issuer and leaves the draft.
- * A page open also reads the ticket view.
+ * A page open also reads the ticket, the printer, and the locale.
  * @param {{getProfile: Function}} getShopProfile
  * @param {{get: Function}} [getSellPreferences]
+ * @param {{get: Function}} [getPrinterSettings]
+ * @param {{get: Function}} [getLanguagePreferences]
  */
-export function makeSettingsLoadEpic(getShopProfile, getSellPreferences) {
+export function makeSettingsLoadEpic(getShopProfile, getSellPreferences, getPrinterSettings, getLanguagePreferences) {
   return (action$, store) => action$
     .filter(isLoad)
     .switchMap(action => getShopProfile.getProfile()
-      .flatMap(profile => ticketFor(action, getSellPreferences)
-        .map(ticket => loadedAction(action, profile, readTheme(store), ticket)))
+      .flatMap(profile => readSection(action, getSellPreferences).map(ticket => ({profile, ticket})))
+      .flatMap(loaded => readSection(action, getPrinterSettings).map(printer => ({...loaded, printer})))
+      .flatMap(loaded => readSection(action, getLanguagePreferences).map(language => loadedAction(
+        action,
+        loaded.profile,
+        readTheme(store),
+        loaded.ticket,
+        loaded.printer,
+        language
+      )))
       .catch(error => failedLoad(action, error)));
 }
 
 /**
  * Writes the shop, then the ticket, then the theme. A failure stops the rest of the click.
- * @param {{updateShopProfile: {update: Function}, updateSellPreferences?: {update: Function}, changeTheme: {changeTheme: Function}, getShopProfile: {getProfile: Function}, getSellPreferences?: {get: Function}}} deps
+ * @param {object} deps
+ * @param {{update: Function}} deps.updateShopProfile
+ * @param {{update: Function}} [deps.updateSellPreferences]
+ * @param {{update: Function}} [deps.updatePrinterSettings]
+ * @param {{update: Function}} [deps.updateLanguagePreferences]
+ * @param {{changeTheme: Function}} deps.changeTheme
+ * @param {{getProfile: Function}} deps.getShopProfile
+ * @param {{get: Function}} [deps.getSellPreferences]
+ * @param {{get: Function}} [deps.getPrinterSettings]
+ * @param {{get: Function}} [deps.getLanguagePreferences]
  */
 export function makeSettingsSaveEpic(deps) {
   return (action$, store) => action$
@@ -71,14 +96,15 @@ function isLoad(action) {
 }
 
 /**
+ * Page open reads one section. A sell-screen refresh does not.
  * @param {{type: string}} action
- * @param {{get: Function}} [getSellPreferences]
+ * @param {{get: Function}} [useCase]
  */
-function ticketFor(action, getSellPreferences) {
-  if (action.type !== SETTINGS_PAGE_OPENED || !getSellPreferences || typeof getSellPreferences.get !== 'function') {
+function readSection(action, useCase) {
+  if (action.type !== SETTINGS_PAGE_OPENED || !useCase || typeof useCase.get !== 'function') {
     return Rx.Observable.of(null);
   }
-  return getSellPreferences.get();
+  return useCase.get();
 }
 
 /**
@@ -86,12 +112,14 @@ function ticketFor(action, getSellPreferences) {
  * @param {object} profile
  * @param {string} theme
  * @param {object | null} ticket
+ * @param {object | null} printer
+ * @param {object | null} language
  */
-function loadedAction(action, profile, theme, ticket) {
+function loadedAction(action, profile, theme, ticket, printer, language) {
   if (action.type === SHOP_PROFILE_REQUESTED) {
     return shopProfileLoaded(profile);
   }
-  return settingsLoaded(profile, theme, ticket);
+  return settingsLoaded(profile, theme, ticket, printer, language);
 }
 
 /**
@@ -125,7 +153,7 @@ function readSettings(store) {
 }
 
 /**
- * @param {{updateShopProfile: {update: Function}, updateSellPreferences?: {update: Function}, changeTheme: {changeTheme: Function}, getShopProfile: {getProfile: Function}, getSellPreferences?: {get: Function}}} deps
+ * @param {object} deps
  * @param {object} page
  */
 function writeSettings(deps, page) {
@@ -136,6 +164,8 @@ function writeSettings(deps, page) {
   const shop$ = plan.shop ? deps.updateShopProfile.update(plan.command) : Rx.Observable.of(null);
   return shop$
     .flatMap(() => writeTicket(deps, plan))
+    .flatMap(() => writePrinter(deps, plan))
+    .flatMap(() => writeLanguage(deps, plan))
     .flatMap(() => plan.theme ? writeTheme(deps, plan) : finish(deps, null))
     .catch(error => saveRejected(page, error));
 }
@@ -149,6 +179,28 @@ function writeTicket(deps, plan) {
     return Rx.Observable.of(null);
   }
   return deps.updateSellPreferences.update(plan.ticketCommand);
+}
+
+/**
+ * @param {{updatePrinterSettings?: {update: Function}}} deps
+ * @param {{printer: boolean, printerCommand: object}} plan
+ */
+function writePrinter(deps, plan) {
+  if (!plan.printer) {
+    return Rx.Observable.of(null);
+  }
+  return deps.updatePrinterSettings.update(plan.printerCommand);
+}
+
+/**
+ * @param {{updateLanguagePreferences?: {update: Function}}} deps
+ * @param {{language: boolean, languageCommand: object}} plan
+ */
+function writeLanguage(deps, plan) {
+  if (!plan.language) {
+    return Rx.Observable.of(null);
+  }
+  return deps.updateLanguagePreferences.update(plan.languageCommand);
 }
 
 /**
@@ -167,29 +219,39 @@ function writeTheme(deps, plan) {
  */
 function finish(deps, themeId) {
   return deps.getShopProfile.getProfile()
-    .flatMap(view => savedTicket(deps).map(ticket => ({view, ticket})))
-    .mergeMap(({view, ticket}) => Rx.Observable.from(successActions(view, themeId, ticket)))
+    .flatMap(view => readOptional(deps.getSellPreferences).map(ticket => ({view, ticket})))
+    .flatMap(loaded => readOptional(deps.getPrinterSettings).map(printer => ({...loaded, printer})))
+    .flatMap(loaded => readOptional(deps.getLanguagePreferences).map(language => ({...loaded, language})))
+    .mergeMap(loaded => Rx.Observable.from(successActions(
+      loaded.view,
+      themeId,
+      loaded.ticket,
+      loaded.printer,
+      loaded.language
+    )))
     .catch(error => reloadFailed(themeId, error));
 }
 
 /**
- * @param {{getSellPreferences?: {get: Function}}} deps
+ * @param {{get?: Function}} [useCase]
  */
-function savedTicket(deps) {
-  if (!deps.getSellPreferences || typeof deps.getSellPreferences.get !== 'function') {
+function readOptional(useCase) {
+  if (!useCase || typeof useCase.get !== 'function') {
     return Rx.Observable.of(null);
   }
-  return deps.getSellPreferences.get();
+  return useCase.get();
 }
 
 /**
  * @param {object} view
  * @param {string | null} themeId
  * @param {object | null} ticket
+ * @param {object | null} printer
+ * @param {object | null} language
  * @returns {object[]}
  */
-function successActions(view, themeId, ticket) {
-  const actions = [settingsSaved(view, themeId, ticket)];
+function successActions(view, themeId, ticket, printer, language) {
+  const actions = [settingsSaved(view, themeId, ticket, printer, language)];
   if (themeId) {
     actions.push(themeChanged(themeId));
   }
@@ -223,6 +285,12 @@ function saveRejected(page, error) {
   if (copyErrors) {
     return Rx.Observable.of(settingsSaveFailed({fieldErrors: copyErrors}));
   }
+  const deviceErrors = error && error.code === ErrorCode.PRINTER_SETTINGS_INVALID
+    ? printerFieldErrors(error)
+    : null;
+  if (deviceErrors) {
+    return Rx.Observable.of(settingsSaveFailed({fieldErrors: deviceErrors}));
+  }
   if (error && error.code === ErrorCode.TAX_ID_INVALID) {
     return Rx.Observable.of(settingsSaveFailed({fieldErrors: {nif: NIF_INVALID}}));
   }
@@ -254,4 +322,47 @@ function themeFailed(plan, error) {
     themeChangeFailed(theme),
     settingsSaveFailed({message: THEME_SAVE_ERROR, theme})
   );
+}
+
+/**
+ * Saves a dirty printer, then prints the sample. A device failure stays on the card.
+ * @param {{updatePrinterSettings?: {update: Function}, printTestTicket: {print: Function}}} deps
+ */
+export function makeSettingsTestPrintEpic(deps) {
+  return (action$, store) => action$
+    .filter(action => action.type === SETTINGS_TEST_PRINT_REQUESTED)
+    .exhaustMap(() => printSample(deps, readSettings(store)));
+}
+
+/**
+ * @param {{updatePrinterSettings?: {update: Function}, printTestTicket: {print: Function}}} deps
+ * @param {object} page
+ */
+function printSample(deps, page) {
+  const plan = testPrintPlan(page);
+  if (!plan.proceed) {
+    return Rx.Observable.empty();
+  }
+  const save$ = plan.save
+    ? deps.updatePrinterSettings.update(plan.command)
+    : Rx.Observable.of(null);
+  return save$
+    .flatMap(savedPrinter => printNow(deps, savedPrinter))
+    .catch(error => saveRejected(page, error));
+}
+
+/**
+ * @param {{printTestTicket: {print: Function}}} deps
+ * @param {object | null} savedPrinter
+ */
+function printNow(deps, savedPrinter) {
+  return deps.printTestTicket.print()
+    .map(() => settingsTestPrinted(savedPrinter))
+    .catch(error => {
+      record(error);
+      return Rx.Observable.of(settingsTestPrintFailed({
+        message: PRINT_ERROR,
+        printer: savedPrinter
+      }));
+    });
 }
