@@ -56,6 +56,7 @@ class Container extends Component {
     this.onFreeAmount = this.onFreeAmount.bind(this);
     this.onFreeVat = this.onFreeVat.bind(this);
     this.selectCategory = this.selectCategory.bind(this);
+    this.clearTicket = this.clearTicket.bind(this);
     this.selectLine = this.selectLine.bind(this);
     this.editWeighted = this.editWeighted.bind(this);
     this.lookup = this.lookup.bind(this);
@@ -131,6 +132,13 @@ class Container extends Component {
 
   selectLine(index) {
     this.setState({selected: index});
+  }
+
+  clearTicket() {
+    if (this.props.newOrderCleared) {
+      this.props.newOrderCleared();
+    }
+    this.focusSearch();
   }
 
   focusSearch() {
@@ -462,6 +470,7 @@ class Container extends Component {
         onQuantityChange={this.props.newOrderProductQuantityChange}
         onChanged={this.focusSearch}
         onDelete={this.props.newOrderProductDeleted}
+        onClear={this.clearTicket}
         onEditWeighted={this.editWeighted}
         onCharge={this.charge}
         onCloseFree={this.closeFree}

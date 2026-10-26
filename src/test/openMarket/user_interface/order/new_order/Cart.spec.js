@@ -31,7 +31,10 @@ describe('Cart', () => {
     expect(host.textContent).to.contain('IVA incluido');
     expect(host.textContent).to.not.contain('VERI');
     expect(buttonNamed(host, 'Cobrar').disabled).to.equal(true);
-    expect(buttonNamed(host, 'Quitar').disabled).to.equal(true);
+    expect(buttonNamed(host, 'Vaciar ticket').disabled).to.equal(true);
+    expect(buttonNamed(host, 'Aparcar').querySelector('.fa-pause')).to.not.equal(null);
+    expect(buttonNamed(host, 'Descuento').querySelector('.fa-percent')).to.not.equal(null);
+    expect(buttonNamed(host, 'Cajón').querySelector('.fa-inbox')).to.not.equal(null);
     expect(buttonNamed(host, 'Aparcar').disabled).to.equal(true);
   });
 
@@ -73,11 +76,11 @@ describe('Cart', () => {
           barcode: 'milk',
           name: 'Milk',
           unitPrice: Money.from(2),
-          quantity: Quantity.from(1),
-          vatRate: VatRate.standard(),
-          weighted: false,
-          lowStock: true,
-          stock: 2
+            quantity: Quantity.from(2),
+            vatRate: VatRate.standard(),
+            weighted: false,
+            lowStock: true,
+            stock: 2
         },
         {
           kind: 'PRODUCT',
@@ -121,10 +124,14 @@ describe('Cart', () => {
     expect(host.textContent).to.contain('/ ud');
     expect(host.textContent).to.contain('kg ×');
     expect(host.textContent).to.contain('0,350 kg');
-    expect(host.textContent).to.contain('3 líneas · 3 artículos');
+    expect(host.querySelector('.sell-stepper .fa-plus')).to.not.equal(null);
+    expect(host.querySelector('.sell-weight .fa-balance-scale')).to.not.equal(null);
+    expect(host.querySelector('.sell-weight').textContent).to.contain('0,350');
+    expect(host.textContent).to.contain('3 líneas · 4 artículos');
     expect(host.textContent).to.contain('Base imponible');
     expect(host.textContent).to.contain('IVA incluido');
     expect(host.textContent).to.not.contain('VERI');
+    expect(host.querySelector('.sell-line.is-selected')).to.not.equal(null);
     expect(host.querySelector('.om-icon-button--danger')).to.equal(null);
     expect(buttonNamed(host, 'Aparcar').disabled).to.equal(true);
     expect(buttonNamed(host, 'Descuento').disabled).to.equal(true);
@@ -136,8 +143,8 @@ describe('Cart', () => {
     host.querySelector('.sell-line').click();
     buttonNamed(host, 'Más').click();
     buttonNamed(host, 'Menos').click();
-    buttonNamed(host, 'Quitar').click();
     const ham = host.querySelectorAll('.sell-line')[1];
+    buttonNamed(ham, 'Quitar').click();
     ham.querySelector('input').focus();
     const names = calls.map(call => Array.isArray(call) ? call[0] : call);
     expect(names).to.include.members(['charge', 'select', 'qty', 'changed', 'delete', 'weight']);
@@ -193,6 +200,41 @@ describe('Cart', () => {
     const before = calls.length;
     buttonNamed(host, '5').click();
     expect(calls.length).to.equal(before);
+  });
+
+  it('removes a single unit with the trash and empties the ticket after confirm', () => {
+    const calls = [];
+    const line = {
+      kind: 'PRODUCT',
+      barcode: 'rice',
+      name: 'Arroz',
+      unitPrice: Money.from(2),
+      quantity: Quantity.from(1),
+      vatRate: VatRate.standard(),
+      weighted: false
+    };
+    ReactDOM.render(
+      <Cart
+        order={{lines: [line], total: Money.from(2)}}
+        onDelete={(barcode, index) => calls.push(['delete', barcode, index])}
+        onChanged={() => calls.push('changed')}
+        onClear={() => calls.push('clear')}
+      />,
+      host
+    );
+    expect(buttonNamed(host, 'Menos')).to.equal(undefined);
+    buttonNamed(host, 'Quitar').click();
+    expect(calls).to.deep.equal([['delete', 'rice', 0], 'changed']);
+
+    buttonNamed(host, 'Vaciar ticket').click();
+    expect(host.textContent).to.contain('Se quitarán todas las líneas');
+    buttonNamed(host, 'Cancelar').click();
+    expect(host.textContent).to.not.contain('Se quitarán todas las líneas');
+    expect(calls).to.not.include('clear');
+
+    buttonNamed(host, 'Vaciar ticket').click();
+    buttonNamed(host, 'Vaciar').click();
+    expect(calls[calls.length - 1]).to.equal('clear');
   });
 });
 

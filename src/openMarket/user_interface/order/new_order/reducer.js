@@ -2,6 +2,7 @@ import {
   NEW_ORDER_PRODUCT_FETCHED,
   NEW_ORDER_PRODUCT_QUANTITY_CHANGE,
   NEW_ORDER_PRODUCT_DELETED,
+  NEW_ORDER_CLEARED,
   NEW_ORDER_FREE_LINE_ADDED,
   NEW_ORDER_SAVED,
   NEW_ORDER_CLOSED,
@@ -16,7 +17,7 @@ import {
   PAYMENT_PREVIEW_LOADED,
   REPRINT_PREVIEW_LOADED
 } from './action';
-import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, applyLowStock} from './model';
+import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, clearLines, applyLowStock} from './model';
 
 /**
  * Keeps the grid, the low-stock set, and the last ticket across a cart edit.
@@ -38,11 +39,18 @@ function keep(current, next) {
   };
 }
 
-export default function reducer(current = initialState(), action) {
+/**
+ * Line adds, quantity edits, and deletes. Null leaves the action to the screen reducer.
+ * @param {object} current
+ * @param {{type: string, payload?: object, barcode?: string, index?: number}} action
+ * @returns {object | null}
+ */
+function editLines(current, action) {
+  const lines = current.order.lines;
   switch (action.type) {
     case NEW_ORDER_PRODUCT_FETCHED:
       return keep(current, addProduct({
-        lines: current.order.lines,
+        lines,
         product: action.payload.product,
         quantity: action.payload.quantity,
         lowStockBarcodes: current.lowStockBarcodes,
@@ -51,7 +59,7 @@ export default function reducer(current = initialState(), action) {
 
     case NEW_ORDER_FREE_LINE_ADDED:
       return keep(current, addFreeLine({
-        lines: current.order.lines,
+        lines,
         description: action.payload.description,
         amount: action.payload.amount,
         vatRate: action.payload.vatRate
@@ -61,16 +69,30 @@ export default function reducer(current = initialState(), action) {
       return keep(current, updateQuantity({
         barcode: action.payload.barcode,
         quantity: action.payload.quantityChanged,
-        lines: current.order.lines
+        lines
       }));
 
     case NEW_ORDER_PRODUCT_DELETED:
       return keep(current, removeProduct({
-        lines: current.order.lines,
+        lines,
         barcode: action.barcode,
         index: action.index
       }));
 
+    case NEW_ORDER_CLEARED:
+      return keep(current, clearLines());
+
+    default:
+      return null;
+  }
+}
+
+export default function reducer(current = initialState(), action) {
+  const edited = editLines(current, action);
+  if (edited) {
+    return edited;
+  }
+  switch (action.type) {
     case NEW_ORDER_NOTE_LOW_STOCK:
       return applyLowStock(current, action.payload);
 

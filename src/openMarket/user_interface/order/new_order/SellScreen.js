@@ -22,7 +22,7 @@ import PrinterDialog from '../printer_dialog/ReduxConnector';
 import NewProductDialog from '../new_product_dialog/ReduxConnector';
 
 /**
- * @param {{view: object, search: *, onOpenFree: Function, onSelectCategory: Function, onPick: Function, onSelectLine: Function, onQuantityChange: Function, onChanged: Function, onDelete: Function, onEditWeighted: Function, onCharge: Function, onCloseFree: Function, onConfirmFree: Function, onFreeDescription: Function, onFreeAmount: Function, onFreeVat: Function, onCloseHelp: Function, onPayMethod: Function, onTendered: Function, onTogglePreview: Function, onConfirmPayment: Function, onClosePayment: Function, onCloseReprint: Function, onPrintLast: Function, freeAmountRef: object, setFreeAmountNode: Function}} props
+ * @param {{view: object, search: *, onOpenFree: Function, onSelectCategory: Function, onPick: Function, onSelectLine: Function, onQuantityChange: Function, onChanged: Function, onDelete: Function, onClear: Function, onEditWeighted: Function, onCharge: Function, onCloseFree: Function, onConfirmFree: Function, onFreeDescription: Function, onFreeAmount: Function, onFreeVat: Function, onCloseHelp: Function, onPayMethod: Function, onTendered: Function, onTogglePreview: Function, onConfirmPayment: Function, onClosePayment: Function, onCloseReprint: Function, onPrintLast: Function, freeAmountRef: object, setFreeAmountNode: Function}} props
  */
 export default function SellScreen(props) {
   const view = props.view;
@@ -55,6 +55,7 @@ export default function SellScreen(props) {
           onQuantityChange={props.onQuantityChange}
           onChanged={props.onChanged}
           onDelete={props.onDelete}
+          onClear={props.onClear}
           onEditWeighted={props.onEditWeighted}
           onCharge={props.onCharge}
         />
@@ -252,6 +253,7 @@ function helpDialog(props, view) {
         <li>F8: Venta libre</li>
         <li>+ y −: cantidad de la última línea</li>
         <li>Supr: quitar la línea seleccionada</li>
+        <li>Papelera del ticket: vaciar todas las líneas</li>
         <li>Flechas: seleccionar una línea</li>
         <li>Esc: limpiar la búsqueda</li>
         <li>F9: vista previa del último ticket</li>

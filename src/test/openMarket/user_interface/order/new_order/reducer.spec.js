@@ -1,6 +1,7 @@
 import {expect} from 'chai';
 import newOrderReducer from '../../../../../openMarket/user_interface/order/new_order/reducer';
 import {
+  NEW_ORDER_CLEARED,
   NEW_ORDER_CLOSED,
   NEW_ORDER_FREE_LINE_ADDED,
   NEW_ORDER_NOTE_LOW_STOCK,
@@ -263,6 +264,16 @@ describe('reducers', () => {
         {barcode: '0002', name: 'Ninja2', cents: 60, milli: 1000, amountCents: 60}
       ]);
       expect(view(state).totalCents).to.equal(60);
+    });
+
+    it('clears every line and keeps the category filter', () => {
+      const stocked = newOrderReducer(euroLines([
+        {barcode: '0001', name: 'Ninja', price: 0.55, quantity: 1}
+      ]), {type: SALE_CATEGORY_SELECTED, categoryId: 'dairy'});
+      const cleared = newOrderReducer(stocked, {type: NEW_ORDER_CLEARED});
+      expect(cleared.order.lines).to.deep.equal([]);
+      expect(cleared.order.total.cents).to.equal(0);
+      expect(cleared.categoryId).to.equal('dairy');
     });
   });
 

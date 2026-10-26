@@ -7,6 +7,7 @@ export const NEW_ORDER_PRODUCT_FETCHED = 'NEW_ORDER_PRODUCT_FETCHED';
 
 export const NEW_ORDER_PRODUCT_QUANTITY_CHANGE = 'NEW_ORDER_PRODUCT_QUANTITY_CHANGE';
 export const NEW_ORDER_PRODUCT_DELETED = 'NEW_ORDER_PRODUCT_DELETED';
+export const NEW_ORDER_CLEARED = 'NEW_ORDER_CLEARED';
 export const NEW_ORDER_FREE_LINE_ADDED = 'NEW_ORDER_FREE_LINE_ADDED';
 export const NEW_ORDER_PRODUCT_NOT_FOUND = 'NEW_ORDER_PRODUCT_NOT_FOUND';
 export const NEW_ORDER_NOTE_LOW_STOCK = 'NEW_ORDER_NOTE_LOW_STOCK';
@@ -38,6 +39,7 @@ export const newOrderProductFetch = barcode => ({ type: NEW_ORDER_PRODUCT_FETCH,
 export const newOrderProductQuantityChange = payload => ({ type: NEW_ORDER_PRODUCT_QUANTITY_CHANGE,payload});
 
 export const newOrderProductDeleted = (barcode, index) => ({ type: NEW_ORDER_PRODUCT_DELETED, barcode, index});
+export const newOrderCleared = () => ({ type: NEW_ORDER_CLEARED });
 export const newOrderFreeLineAdded = payload => ({ type: NEW_ORDER_FREE_LINE_ADDED, payload});
 export const newOrderProductNotFound = payload => ({ type: NEW_ORDER_PRODUCT_NOT_FOUND,payload});
 export const noteLowStock = payload => ({ type: NEW_ORDER_NOTE_LOW_STOCK, payload});

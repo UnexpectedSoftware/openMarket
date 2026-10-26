@@ -242,6 +242,13 @@
 
 .sell-ticket-actions .om-button {
   flex: 1;
+  padding-right: var(--om-space-2);
+  padding-left: var(--om-space-2);
+}
+
+.sell-clear-actions {
+  display: flex;
+  gap: var(--om-space-2);
 }
 
 .sell-lines {
@@ -280,16 +287,40 @@
   gap: var(--om-space-2);
 }
 
-.sell-stepper {
-  display: flex;
+.sell-stepper,
+.sell-weight {
+  display: inline-flex;
   align-items: center;
+  height: var(--om-space-8);
+  background: var(--om-color-surface);
+  border: var(--om-button-border-width) solid var(--om-color-border);
+  border-radius: var(--om-radius-pill);
+}
+
+.sell-stepper {
   gap: var(--om-space-1);
+  padding: 0 var(--om-space-1);
+}
+
+.sell-stepper .om-icon-button,
+.sell-line-qty > .om-icon-button {
+  width: var(--om-space-7);
+  height: var(--om-space-7);
+  min-width: 0;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.sell-stepper .om-icon-button {
+  color: var(--om-color-primary);
 }
 
 .sell-stepper .om-field,
 .sell-weight-field .om-field {
   position: relative;
-  width: calc(var(--om-space-9) + var(--om-space-2));
+  width: var(--om-space-8);
   margin-bottom: 0;
 }
 
@@ -303,19 +334,28 @@
 }
 
 .sell-stepper .om-field-control {
-  padding-right: var(--om-space-2);
-  padding-left: var(--om-space-2);
+  min-height: 0;
+  height: var(--om-space-7);
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
   font-family: var(--om-font-numeric);
   font-feature-settings: var(--om-font-feature-numeric);
   text-align: center;
 }
 
 .sell-weight {
-  min-height: var(--om-control-height);
-  padding: 0;
-  background: transparent;
-  border: 0;
+  gap: var(--om-space-2);
+  padding: 0 var(--om-space-3);
+  color: var(--om-color-text);
+  font-family: var(--om-font-numeric);
+  font-feature-settings: var(--om-font-feature-numeric);
   cursor: pointer;
+}
+
+.sell-weight .fa {
+  color: var(--om-color-text-muted);
 }
 
 .sell-weight-field {
@@ -353,7 +393,7 @@
 }
 
 .sell-line.is-selected {
-  outline: var(--om-button-border-width) solid var(--om-color-primary);
+  background: var(--om-color-surface-alt);
 }
 
 .sell-line.is-invalid {

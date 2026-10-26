@@ -170,6 +170,14 @@ export const removeProduct = ({lines, barcode, index}) => {
 };
 
 /**
+ * Drops every line after the cashier confirms emptying the ticket.
+ * @returns {{order: {lines: object[], total: Money}}}
+ */
+export function clearLines() {
+  return pack([]);
+}
+
+/**
  * @param {object | null | undefined} line
  * @returns {object}
  */

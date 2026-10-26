@@ -70,6 +70,76 @@ test('filters the product grid with a category chip', async () => {
   }
 });
 
+test('removes a unit line, a weighed line, and the whole ticket', async () => {
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Shop'],
+      products: [
+        {
+          name: 'Arroz',
+          barcode: '8400000000615',
+          price: 2,
+          basePrice: 1,
+          stock: 20,
+          stockMin: 2,
+          category: 'Shop'
+        },
+        {
+          name: 'Ham',
+          barcode: '8400000000622',
+          price: 18.5,
+          basePrice: 10,
+          stock: 5,
+          stockMin: 1,
+          category: 'Shop',
+          weighted: true
+        }
+      ]
+    }
+  });
+  try {
+    await openSell(window);
+    await scanBarcode(window, '8400000000615');
+    await expect(orderRow(window, 'Arroz').locator('input')).toHaveValue('1');
+    await expect(orderRow(window, 'Arroz').getByRole('button', {name: 'Menos'})).toHaveCount(0);
+    await orderRow(window, 'Arroz').getByRole('button', {name: 'Quitar', exact: true}).click();
+    await expect(window.getByText('El ticket está vacío')).toBeVisible();
+
+    await scanBarcode(window, '8400000000615');
+    await orderRow(window, 'Arroz').getByRole('button', {name: 'Más'}).click();
+    await expect(orderRow(window, 'Arroz').locator('input')).toHaveValue('2');
+    await window.keyboard.press('Delete');
+    await expect(window.getByText('El ticket está vacío')).toBeVisible();
+
+    await scanBarcode(window, '8400000000622');
+    const weight = window.getByRole('dialog');
+    await expect(weight.getByRole('heading', {name: 'Peso (kg)'})).toBeVisible();
+    await weight.locator('input[name="quantity"]').fill('0,750');
+    await weight.getByRole('button', {name: 'Añadir'}).click();
+    await expect(orderRow(window, 'Ham')).toContainText('0,750 kg');
+    await orderRow(window, 'Ham').getByRole('button', {name: 'Quitar', exact: true}).click();
+    await expect(window.getByText('El ticket está vacío')).toBeVisible();
+
+    await scanBarcode(window, '8400000000615');
+    await scanBarcode(window, '8400000000622');
+    const again = window.getByRole('dialog');
+    await again.locator('input[name="quantity"]').fill('0,500');
+    await again.getByRole('button', {name: 'Añadir'}).click();
+    await expect(orderRow(window, 'Arroz')).toBeVisible();
+    await expect(orderRow(window, 'Ham')).toBeVisible();
+    await window.getByRole('button', {name: 'Vaciar ticket', exact: true}).click();
+    const confirm = window.getByRole('alertdialog');
+    await expect(confirm.getByRole('heading', {name: 'Vaciar ticket'})).toBeVisible();
+    await confirm.getByRole('button', {name: 'Cancelar'}).click();
+    await expect(orderRow(window, 'Arroz')).toBeVisible();
+    await window.getByRole('button', {name: 'Vaciar ticket', exact: true}).click();
+    await window.getByRole('alertdialog').getByRole('button', {name: 'Vaciar', exact: true}).click();
+    await expect(window.getByText('El ticket está vacío')).toBeVisible();
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
 test('shows the product grid when Vender opens', async () => {
   const {app, window, userData} = await launchApp({
     shop: {
