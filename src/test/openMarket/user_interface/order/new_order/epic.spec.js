@@ -475,24 +475,24 @@ describe('Order Epics', () => {
           actions => expect(actions).to.deep.equal([
             {
               type: 'RNS_SHOW_NOTIFICATION',
-              title: 'Stock is low',
-              message: 'Coca-Cola has 4 left (minimum 10).',
+              title: 'Stock bajo',
+              message: 'Quedan 4 de Coca-Cola (mínimo 10).',
               position: 'bc',
               autoDismiss: 2.5,
               uid: 'low-stock-0001-4',
               level: 'warning'
             },
-            {type: 'NEW_ORDER_NOTE_LOW_STOCK', payload: {barcode: '0001'}},
+            {type: 'NEW_ORDER_NOTE_LOW_STOCK', payload: {barcode: '0001', stock: 4, weighted: false}},
             {
               type: 'RNS_SHOW_NOTIFICATION',
-              title: 'Stock is low',
-              message: 'Water has 0 left (minimum 5).',
+              title: 'Stock bajo',
+              message: 'Quedan 0 de Water (mínimo 5).',
               position: 'bc',
               autoDismiss: 2.5,
               uid: 'low-stock-0002-0',
               level: 'warning'
             },
-            {type: 'NEW_ORDER_NOTE_LOW_STOCK', payload: {barcode: '0002'}}
+            {type: 'NEW_ORDER_NOTE_LOW_STOCK', payload: {barcode: '0002', stock: 0, weighted: false}}
           ]),
           error => done(new Error(error)),
           () => done()

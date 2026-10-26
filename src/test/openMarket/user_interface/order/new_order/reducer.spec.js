@@ -197,6 +197,39 @@ describe('reducers', () => {
       expect(closed.order.lines).to.deep.equal([]);
     });
 
+    it('stamps Quedan stock onto the tile and replaces it when the same product is sold again', () => {
+      const selling = newOrderReducer(undefined, {
+        type: NEW_ORDER_PRODUCT_FETCHED,
+        payload: {product: {barcode: '0001', name: 'Milk', price: 2, stock: 5, stockMin: 4}, quantity: 1}
+      });
+      const tiles = [{barcode: '0001', name: 'Milk', stock: 5, lowStock: false, weighted: false}];
+      const loaded = newOrderReducer(selling, {type: SALE_TILES_LOADED, payload: tiles});
+      const noted = newOrderReducer(loaded, {
+        type: NEW_ORDER_NOTE_LOW_STOCK,
+        payload: {barcode: '0001', stock: 3, weighted: false}
+      });
+      expect(noted.tiles[0]).to.deep.equal({
+        barcode: '0001', name: 'Milk', stock: 3, lowStock: true, weighted: false
+      });
+      expect(noted.order.lines[0].stock).to.equal(3);
+      expect(noted.order.lines[0].lowStock).to.equal(true);
+      expect(newOrderReducer(noted, {
+        type: NEW_ORDER_NOTE_LOW_STOCK,
+        payload: {barcode: '0001', stock: 3, weighted: false}
+      })).to.equal(noted);
+
+      const lower = newOrderReducer(noted, {
+        type: NEW_ORDER_NOTE_LOW_STOCK,
+        payload: {barcode: '0001', stock: 1, weighted: false}
+      });
+      expect(lower.tiles[0].stock).to.equal(1);
+      expect(lower.lowStockBarcodes).to.deep.equal(['0001']);
+      const saved = newOrderReducer(lower, {type: NEW_ORDER_SAVED, payload: {id: 'sale'}});
+      expect(saved.tiles[0].stock).to.equal(1);
+      expect(saved.tiles[0].lowStock).to.equal(true);
+      expect(saved.order.lines).to.deep.equal([]);
+    });
+
     it('should handle NEW_ORDER_PRODUCT_DELETED with an order with some products on it', () => {
       const state = newOrderReducer(euroLines([
         {barcode: '0001', name: 'Ninja', price: 0.55, quantity: 1},

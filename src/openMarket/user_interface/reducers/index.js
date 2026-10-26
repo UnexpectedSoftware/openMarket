@@ -18,6 +18,7 @@ import pluginsReducer from '../plugin/reducer';
 import settingsReducer from '../settings/reducer';
 import appearanceReducer from '../appearance/reducer';
 import notifications from './notifications';
+import lowStockReducer from '../low_stock/reducer';
 
 
 export const rootReducer = combineReducers({
@@ -36,6 +37,7 @@ export const rootReducer = combineReducers({
   pluginsPage: pluginsReducer,
   settings: settingsReducer,
   appearance: appearanceReducer,
+  lowStock: lowStockReducer,
   notifications,
   form: formReducer,
   routing

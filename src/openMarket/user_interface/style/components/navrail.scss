@@ -82,6 +82,15 @@
   font-size: var(--om-font-size-lg);
 }
 
+.nav-rail-count {
+  display: inline-flex;
+  max-width: 100%;
+}
+
+.nav-rail-count .om-badge {
+  max-width: 100%;
+}
+
 .nav-rail-secondary {
   margin-top: var(--om-space-1);
   margin-bottom: var(--om-space-2);

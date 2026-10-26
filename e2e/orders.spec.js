@@ -106,8 +106,12 @@ test('sells, edits quantity, and warns on low stock', async () => {
     await saveOrder(window);
     await expect(window.getByText('Order saved!')).toBeVisible();
     await expect(window.getByText(/Cambio/)).toBeVisible();
-    await expect(window.getByText('Stock is low')).toHaveCount(1);
-    await expect(window.getByText('Milk has 3 left (minimum 4).')).toBeVisible();
+    await expect(window.getByText('Stock bajo')).toHaveCount(1);
+    await expect(window.getByText('Quedan 3 de Milk (mínimo 4).')).toBeVisible();
+    await expect(window.locator('.sell-tile', {hasText: 'Milk'}).getByText('Quedan 3', {exact: true})).toBeVisible();
+    await expect(window.locator('.sell-tile', {hasText: 'Bread'}).getByText(/Quedan/)).toHaveCount(0);
+    await expect(window.getByRole('link', {name: /^Productos\b/}).locator('.om-badge')).toHaveText('1');
+    await expect(window.getByRole('link', {name: /^Informes\b/}).locator('.om-badge')).toHaveText('1');
     await expect(window.getByText(/Bread has \d+ left/)).toHaveCount(0);
     await dismissTicket(window);
     await expect(orderRow(window, 'Milk')).toHaveCount(0);

@@ -1,7 +1,9 @@
 import React, {Component} from 'react';
 import {connect} from 'react-redux';
+import {bindActionCreators} from 'redux';
 import Dialog from '../dialog/ReduxConnector';
 import NavRail, {handleNavShortcut} from './NavRail';
+import {lowStockCountRequested} from '../low_stock/action';
 import Notifications from 'react-notification-system-redux';
 import Spinner from '../components/Spinner';
 import {notificationStyle} from '../components/toast';
@@ -18,6 +20,9 @@ class App extends Component {
     const version = process.env.OPENMARKET_VERSION;
     if (version) {
       document.title = `OpenMarket ${version}`;
+    }
+    if (this.props.lowStockCountRequested) {
+      this.props.lowStockCountRequested();
     }
   }
 
@@ -66,7 +71,7 @@ class App extends Component {
           </span>
         </header>
         <div className="app-body">
-          <NavRail />
+          <NavRail lowStockCount={this.props.lowStockCount} />
           <main id="main" className="app-main" tabIndex="-1">
             {children}
           </main>
@@ -82,6 +87,8 @@ export default connect(
   state => ({
     notifications: state.notifications,
     imageFetch: state.imageFetch,
-    catalogPrint: state.catalogPrint
-  })
+    catalogPrint: state.catalogPrint,
+    lowStockCount: state.lowStock ? state.lowStock.count : null
+  }),
+  dispatch => bindActionCreators({lowStockCountRequested}, dispatch)
 )(App);

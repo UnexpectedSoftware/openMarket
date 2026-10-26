@@ -13,12 +13,14 @@ export default class ProductWithLowStock {
    * @param {string} params.name
    * @param {number} params.stock
    * @param {number} params.stockMin
+   * @param {boolean} [params.weighted] Sold by weight, so the remaining stock is kilograms.
    */
-  constructor({barcode, name, stock, stockMin}) {
+  constructor({barcode, name, stock, stockMin, weighted}) {
     this.barcode = barcode;
     this.name = name;
     this.stock = stock;
     this.stockMin = stockMin;
+    this.weighted = weighted === true;
   }
 
 }

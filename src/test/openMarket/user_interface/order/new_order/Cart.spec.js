@@ -64,7 +64,8 @@ describe('Cart', () => {
           quantity: Quantity.from(1),
           vatRate: VatRate.standard(),
           weighted: false,
-          lowStock: true
+          lowStock: true,
+          stock: 2
         },
         {
           kind: 'PRODUCT',
@@ -101,7 +102,8 @@ describe('Cart', () => {
       />,
       host
     );
-    expect(host.textContent).to.contain('Stock bajo');
+    expect(host.textContent).to.contain('Quedan 2');
+    expect(host.textContent).to.not.contain('Stock bajo');
     expect(host.textContent).to.contain('Ham');
     expect(host.textContent).to.contain('Bolsa');
     const charge = buttonNamed(host, 'Cobrar');

@@ -101,6 +101,7 @@ describe('Order create use case', () => {
             expect(events[0].name).to.equal('Coca-Cola');
             expect(events[0].stock).to.equal(10);
             expect(events[0].stockMin).to.equal(10);
+            expect(events[0].weighted).to.equal(false);
           },
           (error) => {
             subscription.unsubscribe();

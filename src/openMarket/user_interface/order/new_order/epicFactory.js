@@ -10,6 +10,8 @@ import Money from "../../../domain/money/Money";
 import {record, userText} from "../../../infrastructure/logging/ErrorLog";
 import {formatMoney} from "../../i18n/money";
 import {toast} from "../../components/toast";
+import {lowStockMessage} from "../../low_stock/label";
+import "rxjs/add/operator/mergeMap";
 import "rxjs/add/operator/filter";
 import "rxjs/add/operator/map";
 import "rxjs/add/operator/switchMap";
@@ -111,11 +113,15 @@ export const makeLowStockWarningEpic = domainEventBus => () =>
   domainEventBus.ofType(ProductWithLowStock)
     .mergeMap(event => Rx.Observable.of(
       toast.warning(
-        'Stock is low',
-        `${event.name} has ${event.stock} left (minimum ${event.stockMin}).`,
+        'Stock bajo',
+        lowStockMessage(event),
         {uid: `low-stock-${event.barcode}-${event.stock}`}
       ),
-      newOrderActions.noteLowStock({barcode: event.barcode})
+      newOrderActions.noteLowStock({
+        barcode: event.barcode,
+        stock: event.stock,
+        weighted: event.weighted === true
+      })
     ))
 
 export const makeProductNotFoundEpic = action$ =>
@@ -157,7 +163,7 @@ function tilesOf(page) {
 /**
  * Fields the sell grid reads off a ProductView.
  * @param {object} view
- * @returns {{barcode: string, name: string, priceCents: number, vat: object | null, weighted: boolean, lowStock: boolean, imageUrl: string | null}}
+ * @returns {{barcode: string, name: string, priceCents: number, vat: object | null, weighted: boolean, lowStock: boolean, stock: number | null, imageUrl: string | null}}
  */
 function tileOf(view) {
   return {
@@ -167,6 +173,7 @@ function tileOf(view) {
     vat: view.vat,
     weighted: view.weighted,
     lowStock: view.lowStock,
+    stock: view.stock == null ? null : view.stock,
     imageUrl: view.imageUrl
   };
 }

@@ -14,6 +14,16 @@
   font-weight: normal;
 }
 
+.dashboard-low-stock {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--om-control-height);
+  margin: 0 0 var(--om-space-4);
+  padding: 0 var(--om-space-2);
+  color: inherit;
+  text-decoration: none;
+}
+
 .dashboard-toolbar {
   display: flex;
   align-items: flex-end;

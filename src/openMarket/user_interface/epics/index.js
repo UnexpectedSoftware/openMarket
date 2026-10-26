@@ -10,6 +10,7 @@ import fetchImagesEpic from '../image/epic';
 import pluginsEpic from '../plugin/epic';
 import settingsEpic from '../settings/epic';
 import appearanceEpic from '../appearance/epic';
+import lowStockEpic from '../low_stock/epic';
 
 export const rootEpic = combineEpics(
   newProductEpic,
@@ -22,5 +23,6 @@ export const rootEpic = combineEpics(
   fetchImagesEpic,
   pluginsEpic,
   settingsEpic,
-  appearanceEpic
+  appearanceEpic,
+  lowStockEpic
 );
