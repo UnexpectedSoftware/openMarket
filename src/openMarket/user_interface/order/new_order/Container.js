@@ -1,26 +1,12 @@
 import React, {Component} from 'react';
-import {PageHeader} from '../../components/PageHeader';
 import TextField from '../../components/TextField';
-import NumberField, {parseDecimal} from '../../components/NumberField';
-import Select from '../../components/Select';
-import Button from '../../components/Button';
-import Dialog from '../../components/Dialog';
-import EmptyState from '../../components/EmptyState';
-import Skeleton from '../../components/Skeleton';
-import Badge from '../../components/Badge';
-import Money from '../../../domain/money/Money';
+import {parseDecimal} from '../../components/NumberField';
 import Quantity from '../../../domain/money/Quantity';
 import VatRate from '../../../domain/tax/VatRate';
-import {formatMoney} from '../../i18n/money';
 import {lineIsValid} from './model';
-import SellLayout from '../../../domain/appearance/SellLayout';
-import {quedanText} from '../../low_stock/label';
 import {isScannerBurst, applyShortcut} from './input';
-import Cart from './Cart';
-import PaymentSheet from './PaymentSheet';
-import WeightedDialog from '../weighted_dialog/ReduxConnector';
-import PrinterDialog from '../printer_dialog/ReduxConnector';
-import NewProductDialog from '../new_product_dialog/ReduxConnector';
+import SellScreen from './SellScreen';
+import {sellView} from './sellView';
 
 const TILE_LIMIT = 24;
 
@@ -69,6 +55,10 @@ class Container extends Component {
     this.onFreeDescription = this.onFreeDescription.bind(this);
     this.onFreeAmount = this.onFreeAmount.bind(this);
     this.onFreeVat = this.onFreeVat.bind(this);
+    this.selectCategory = this.selectCategory.bind(this);
+    this.selectLine = this.selectLine.bind(this);
+    this.editWeighted = this.editWeighted.bind(this);
+    this.lookup = this.lookup.bind(this);
   }
 
   componentWillMount() {
@@ -82,6 +72,9 @@ class Container extends Component {
     window.addEventListener('focus', this.onWindowFocus);
     if (this.props.saleTilesRequested) {
       this.props.saleTilesRequested({text: '', limit: TILE_LIMIT});
+    }
+    if (this.props.saleCategoriesRequested) {
+      this.props.saleCategoriesRequested();
     }
     this.focusSearch();
   }
@@ -120,6 +113,24 @@ class Container extends Component {
 
   setFreeAmountNode(node) {
     this.freeAmountRef.current = node;
+  }
+
+  selectCategory(categoryId) {
+    const next = categoryId || null;
+    if (this.props.saleCategorySelected) {
+      this.props.saleCategorySelected(next);
+    }
+    if (this.props.saleTilesRequested) {
+      this.props.saleTilesRequested({
+        text: this.state.search || '',
+        categoryId: next,
+        limit: TILE_LIMIT
+      });
+    }
+  }
+
+  selectLine(index) {
+    this.setState({selected: index});
   }
 
   focusSearch() {
@@ -439,157 +450,54 @@ class Container extends Component {
   }
 
   render() {
-    const {order, issuer, tiles, tilesStatus, lowStockBarcodes} = this.props;
-    const layout = SellLayout.orDefault(this.props.layout);
-    const scanner = layout === 'escaner';
-    const issuerName = issuer && (issuer.tradeName || issuer.legalName);
-    const subtitle = issuer && issuer.nif ? issuerName + ' · NIF ' + issuer.nif : undefined;
-    const amount = parseDecimal(this.state.freeAmount);
-    const freeValid = String(this.state.freeDescription || '').trim() !== '' && amount != null && amount > 0;
+    const view = sellView(this.props, this.state);
     return (
-      <div className={'sell sell-layout-' + layout} data-layout={layout}>
-        <div className="sell-catalog">
-          <PageHeader title="Vender" subtitle={subtitle} />
-          <div className={scanner ? 'sell-search sell-search-lg' : 'sell-search'}>
-            <TextField
-              id="sell-search"
-              name="barcode"
-              label="Buscar o escanear"
-              value={this.state.search}
-              onChange={this.onSearch}
-              inputRef={this.setSearchNode}
-              autoFocus
-            />
-          </div>
-          {scanner ? (
-            <Button type="button" variant="secondary" className="sell-free" onClick={this.openFree}>
-              Venta libre
-            </Button>
-          ) : this.renderGrid(tiles, tilesStatus)}
-        </div>
-        <Cart
-          order={order}
-          selected={this.state.selected}
-          lowStockBarcodes={lowStockBarcodes}
-          keypad={layout === 'tactil'}
-          onSelect={index => this.setState({selected: index})}
-          onQuantityChange={this.props.newOrderProductQuantityChange}
-          onChanged={this.focusSearch}
-          onDelete={this.props.newOrderProductDeleted}
-          onEditWeighted={line => this.editWeighted(line)}
-          onCharge={this.charge}
-        />
-        <Dialog
-          open={this.state.freeOpen}
-          title="Venta libre"
-          onClose={this.closeFree}
-          initialFocusRef={this.freeAmountRef}
-          actions={(
-            <Button type="button" disabled={!freeValid} onClick={this.confirmFree}>Guardar</Button>
-          )}
-        >
-          <TextField
-            id="free-description"
-            label="Descripción"
-            value={this.state.freeDescription}
-            onChange={this.onFreeDescription}
-          />
-          <NumberField
-            id="free-amount"
-            label="Importe"
-            unit="€"
-            decimals={2}
-            value={this.state.freeAmount}
-            onChange={this.onFreeAmount}
-            inputRef={this.setFreeAmountNode}
-          />
-          <Select
-            id="free-vat"
-            label="IVA"
-            value={this.state.freeVat}
-            options={VatRate.options().map(option => ({value: option.code, label: option.label}))}
-            onChange={this.onFreeVat}
-          />
-        </Dialog>
-        <Dialog open={this.state.helpOpen} title="Atajos" onClose={this.closeHelp}>
-          <ul className="sell-help">
-            <li>F12 o Ctrl+Enter: Cobrar</li>
-            <li>F8: Venta libre</li>
-            <li>+ y −: cantidad de la última línea</li>
-            <li>Supr: quitar la línea seleccionada</li>
-            <li>Flechas: seleccionar una línea</li>
-            <li>Esc: limpiar la búsqueda</li>
-            <li>F9: vista previa del último ticket</li>
-          </ul>
-        </Dialog>
-        <PaymentSheet
-          open={this.state.paymentOpen}
-          total={order && order.total}
-          method={this.state.payMethod}
-          tendered={this.state.tendered}
-          saving={this.props.saving}
-          previewHtml={this.props.previewHtml}
-          previewOpen={this.state.previewOpen}
-          onMethod={this.onPayMethod}
-          onTendered={this.onTendered}
-          onTogglePreview={this.togglePreview}
-          onConfirm={this.confirmPayment}
-          onClose={this.closePayment}
-        />
-        <Dialog
-          open={this.state.reprintOpen}
-          title="Ticket"
-          onClose={this.closeReprint}
-          actions={(
-            <Button type="button" icon="print" onClick={this.printLast}>Imprimir</Button>
-          )}
-        >
-          {this.props.reprintHtml ? (
-            <div className="om-receipt-preview" dangerouslySetInnerHTML={{__html: this.props.reprintHtml}} />
-          ) : (
-            <p className="payment-preview-wait">Preparando el ticket…</p>
-          )}
-        </Dialog>
-        <WeightedDialog />
-        <PrinterDialog />
-        <NewProductDialog />
-      </div>
+      <SellScreen
+        view={view}
+        search={this.renderSearch(view.scanner)}
+        onOpenFree={this.openFree}
+        onSelectCategory={this.selectCategory}
+        onPick={this.lookup}
+        onSelectLine={this.selectLine}
+        onQuantityChange={this.props.newOrderProductQuantityChange}
+        onChanged={this.focusSearch}
+        onDelete={this.props.newOrderProductDeleted}
+        onEditWeighted={this.editWeighted}
+        onCharge={this.charge}
+        onCloseFree={this.closeFree}
+        onConfirmFree={this.confirmFree}
+        onFreeDescription={this.onFreeDescription}
+        onFreeAmount={this.onFreeAmount}
+        onFreeVat={this.onFreeVat}
+        onCloseHelp={this.closeHelp}
+        onPayMethod={this.onPayMethod}
+        onTendered={this.onTendered}
+        onTogglePreview={this.togglePreview}
+        onConfirmPayment={this.confirmPayment}
+        onClosePayment={this.closePayment}
+        onCloseReprint={this.closeReprint}
+        onPrintLast={this.printLast}
+        freeAmountRef={this.freeAmountRef}
+        setFreeAmountNode={this.setFreeAmountNode}
+      />
     );
   }
 
-  renderTile(tile) {
-    const quedan = quedanText(tile);
+  renderSearch(large) {
+    const className = large ? 'sell-search sell-search-lg' : 'sell-search';
     return (
-      <button
-        type="button"
-        className="sell-tile"
-        key={tile.barcode}
-        onClick={() => this.lookup(tile.barcode)}
-      >
-        {tile.imageUrl ? <img src={tile.imageUrl} alt="" /> : null}
-        <span className="sell-tile-name">{tile.name}</span>
-        <span className="sell-tile-price">{formatMoney(Money.ofCents(tile.priceCents))}</span>
-        {quedan ? <Badge tone="warning">{quedan}</Badge> : null}
-      </button>
-    );
-  }
-
-  renderGrid(tiles, tilesStatus) {
-    const list = tiles || [];
-    return (
-      <div className="sell-grid">
-        <button type="button" className="sell-tile sell-tile-free" onClick={this.openFree}>
-          <span className="sell-tile-name">Venta libre</span>
-          <span>F8</span>
-        </button>
-        {tilesStatus === 'loading' && list.length === 0 ? <Skeleton lines={3} /> : null}
-        {tilesStatus === 'error' ? (
-          <EmptyState icon="exclamation-triangle" title="No se pudieron cargar los productos" />
-        ) : null}
-        {tilesStatus !== 'error' && tilesStatus !== 'loading' && list.length === 0 ? (
-          <EmptyState icon="barcode" title="No hay productos" />
-        ) : null}
-        {list.map(tile => this.renderTile(tile))}
+      <div className={className}>
+        <TextField
+          id="sell-search"
+          name="barcode"
+          label="Buscar o escanear"
+          placeholder="Buscar producto o escanear código"
+          suffix="F2"
+          value={this.state.search}
+          onChange={this.onSearch}
+          inputRef={this.setSearchNode}
+          autoFocus
+        />
       </div>
     );
   }

@@ -9,6 +9,8 @@ import {
   SALE_TILES_REQUESTED,
   SALE_TILES_LOADED,
   SALE_TILES_FAILED,
+  SALE_CATEGORIES_LOADED,
+  SALE_CATEGORY_SELECTED,
   NEW_ORDER_SAVE,
   PAYMENT_FAILED,
   PAYMENT_PREVIEW_LOADED,
@@ -30,7 +32,9 @@ function keep(current, next) {
     tilesStatus: current.tilesStatus || 'idle',
     saving: !!current.saving,
     previewHtml: current.previewHtml || '',
-    reprintHtml: current.reprintHtml || ''
+    reprintHtml: current.reprintHtml || '',
+    categories: current.categories || [],
+    categoryId: current.categoryId || null
   };
 }
 
@@ -79,6 +83,12 @@ export default function reducer(current = initialState(), action) {
     case SALE_TILES_FAILED:
       return {...current, tilesStatus: 'error'};
 
+    case SALE_CATEGORIES_LOADED:
+      return {...current, categories: action.payload || []};
+
+    case SALE_CATEGORY_SELECTED:
+      return {...current, categoryId: action.categoryId || null};
+
     case NEW_ORDER_SAVE:
       return {...current, saving: true};
 
@@ -97,7 +107,9 @@ export default function reducer(current = initialState(), action) {
         lowStockBarcodes: current.lowStockBarcodes || [],
         lastOrder: action.payload || null,
         tiles: current.tiles || [],
-        tilesStatus: current.tilesStatus || 'idle'
+        tilesStatus: current.tilesStatus || 'idle',
+        categories: current.categories || [],
+        categoryId: current.categoryId || null
       };
 
     case NEW_ORDER_CLOSED:

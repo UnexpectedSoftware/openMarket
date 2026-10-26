@@ -29,6 +29,47 @@ async function openSell(window) {
   await window.setViewportSize({width: 1366, height: 768});
 }
 
+test('filters the product grid with a category chip', async () => {
+  const {app, window, userData} = await launchApp({
+    shop: {
+      categories: ['Shop', 'Other'],
+      products: [
+        {
+          name: 'Lentejas',
+          barcode: '8400000000516',
+          price: 2,
+          basePrice: 1,
+          stock: 20,
+          stockMin: 2,
+          category: 'Shop'
+        },
+        {
+          name: 'Agua',
+          barcode: '8400000000523',
+          price: 1,
+          basePrice: 1,
+          stock: 20,
+          stockMin: 2,
+          category: 'Other'
+        }
+      ]
+    }
+  });
+  try {
+    await openSell(window);
+    await expect(window.locator('.sell-tile-name', {hasText: /^Lentejas$/})).toBeVisible();
+    await expect(window.locator('.sell-tile-name', {hasText: /^Agua$/})).toBeVisible();
+    await window.getByRole('button', {name: 'Other', exact: true}).click();
+    await expect(window.locator('.sell-tile-name', {hasText: /^Agua$/})).toBeVisible();
+    await expect(window.locator('.sell-tile-name', {hasText: /^Lentejas$/})).toHaveCount(0);
+    await window.getByRole('button', {name: 'Todos', exact: true}).click();
+    await expect(window.locator('.sell-tile-name', {hasText: /^Lentejas$/})).toBeVisible();
+    await expect(window.locator('.sell-tile-name', {hasText: /^Agua$/})).toBeVisible();
+  } finally {
+    await closeApp(app, userData);
+  }
+});
+
 test('shows the product grid when Vender opens', async () => {
   const {app, window, userData} = await launchApp({
     shop: {
@@ -130,14 +171,14 @@ test('sells scanned, weighed, and free lines and blocks an invalid quantity', as
     await expect(orderRow(window, 'Leche').locator('.sell-line-subtotal')).toHaveText(euros(1));
     await expectOrderTotal(window, 22.38);
 
-    const rows = window.locator('.order-vat li');
-    await expect(rows).toHaveCount(2);
-    await expect(rows.nth(0)).toContainText('21 %');
-    await expect(rows.nth(0)).toContainText(euros(14.78));
-    await expect(rows.nth(0)).toContainText(euros(3.1));
-    await expect(rows.nth(1)).toContainText('10 %');
-    await expect(rows.nth(1)).toContainText(euros(4.09));
-    await expect(rows.nth(1)).toContainText(euros(0.41));
+    const rows = window.locator('.order-vat');
+    await expect(rows).toContainText('Base imponible');
+    await expect(rows).toContainText(euros(18.87));
+    await expect(rows).toContainText('IVA incluido (21 % · 10 %)');
+    await expect(rows).toContainText(euros(3.51));
+    await expect(window.locator('.sell-ticket-count')).toHaveText('4 líneas · 5 artículos');
+    await expect(orderRow(window, 'Arroz')).toContainText('/ ud');
+    await expect(orderRow(window, 'Ham')).toContainText('0,750 kg');
 
     await window.getByRole('button', {name: 'Cobrar'}).click();
     await confirmPayment(window);
@@ -182,6 +223,12 @@ test('screenshots the sell screen and the weighted dialog in every theme', async
     await openSell(window);
     await scanBarcode(window, '8400000000219');
     await expect(orderRow(window, 'Arroz')).toBeVisible();
+    await scanBarcode(window, '8400000000226');
+    const weighed = window.getByRole('dialog');
+    await expect(weighed.getByRole('heading', {name: 'Peso (kg)'})).toBeVisible();
+    await weighed.locator('input[name="quantity"]').fill('0,750');
+    await weighed.getByRole('button', {name: 'Añadir'}).click();
+    await expect(orderRow(window, 'Ham')).toContainText('0,750 kg');
 
     for (const theme of THEMES) {
       await window.evaluate(name => {

@@ -12,6 +12,8 @@ import {
   PAYMENT_FAILED,
   PAYMENT_PREVIEW_LOADED,
   REPRINT_PREVIEW_LOADED,
+  SALE_CATEGORIES_LOADED,
+  SALE_CATEGORY_SELECTED,
   SALE_TILES_FAILED,
   SALE_TILES_LOADED,
   SALE_TILES_REQUESTED
@@ -34,6 +36,28 @@ function view(current) {
 
 describe('reducers', () => {
   describe('newOrder', () => {
+    it('keeps the category chip across a sale', () => {
+      const picked = newOrderReducer(undefined, {type: SALE_CATEGORY_SELECTED, categoryId: 'dairy'});
+      const named = newOrderReducer(picked, {
+        type: SALE_CATEGORIES_LOADED,
+        payload: [{id: 'dairy', name: 'Lácteos'}]
+      });
+      expect(named.categoryId).to.equal('dairy');
+      expect(named.categories).to.deep.equal([{id: 'dairy', name: 'Lácteos'}]);
+      const selling = newOrderReducer(named, {
+        type: NEW_ORDER_PRODUCT_FETCHED,
+        payload: {product: {barcode: '1', name: 'Milk', price: 1}, quantity: 1}
+      });
+      expect(selling.categoryId).to.equal('dairy');
+      expect(selling.categories).to.deep.equal([{id: 'dairy', name: 'Lácteos'}]);
+      const saved = newOrderReducer(selling, {type: NEW_ORDER_SAVED, payload: {id: 'sale'}});
+      expect(saved.order.lines).to.deep.equal([]);
+      expect(saved.categoryId).to.equal('dairy');
+      expect(saved.categories).to.deep.equal([{id: 'dairy', name: 'Lácteos'}]);
+      const cleared = newOrderReducer(saved, {type: SALE_CATEGORY_SELECTED, categoryId: null});
+      expect(cleared.categoryId).to.equal(null);
+    });
+
     it('should handle initial state', () => {
       expect(view(newOrderReducer(undefined, {}))).to.deep.equal({
         totalCents: 0,

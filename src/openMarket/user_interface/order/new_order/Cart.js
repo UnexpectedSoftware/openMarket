@@ -8,13 +8,14 @@ import Money from '../../../domain/money/Money';
 import Quantity from '../../../domain/money/Quantity';
 import {formatMoney} from '../../i18n/money';
 import PluginSlot from '../../components/PluginSlot';
-import {lineAmount, lineIsValid, vatRows} from './model';
+import {lineAmount, lineIsValid, ticketFacts} from './model';
+import {lineCaption, ticketCountLabel, vatIncludedLabel, weightLabel} from './caption';
 import {lineQuedan} from '../../low_stock/label';
 import Keypad from './Keypad';
 import {nextKeypadQuantity} from './keypadQuantity';
 
 /**
- * One ticket line. Quantity stays a NumberField so the existing sale tests can read it.
+ * Ticket panel. The quantity input stays a NumberField so a sale test can read it.
  */
 export default class Cart extends Component {
 
@@ -22,6 +23,7 @@ export default class Cart extends Component {
     super(props);
     this.onCharge = this.onCharge.bind(this);
     this.onKey = this.onKey.bind(this);
+    this.onRemove = this.onRemove.bind(this);
   }
 
   onCharge() {
@@ -30,104 +32,60 @@ export default class Cart extends Component {
     }
   }
 
+  onRemove() {
+    const lines = linesOf(this.props.order);
+    const index = selectedIndex(this.props.selected, lines.length);
+    const line = lines[index];
+    if (!line || !this.props.onDelete) {
+      return;
+    }
+    this.props.onDelete(line.barcode, index);
+    if (this.props.onChanged) {
+      this.props.onChanged();
+    }
+  }
+
   render() {
-    const props = this.props;
-    const lines = (props.order && props.order.lines) || [];
-    const lowSet = props.lowStockBarcodes || [];
-    const invalid = lines.some(line => !lineIsValid(line));
-    const canCharge = lines.length > 0 && !invalid;
-    const rows = vatRows(lines);
+    const lines = linesOf(this.props.order);
+    const facts = ticketFacts(lines);
+    const total = this.props.order && this.props.order.total ? this.props.order.total : Money.ofCents(0);
     return (
       <section className="sell-cart" aria-label="Ticket">
+        <TicketHead
+          facts={facts}
+          canRemove={lines.length > 0}
+          onRemove={this.onRemove}
+        />
         <div className="sell-lines">
           {lines.length === 0 ? (
             <EmptyState icon="shopping-basket" title="El ticket está vacío" />
-          ) : lines.map((line, index) => this.renderLine(line, index, lowSet))}
+          ) : lines.map((line, index) => (
+            <TicketLine
+              key={(line.barcode || 'free') + '-' + index}
+              line={line}
+              index={index}
+              selected={this.props.selected}
+              lowSet={this.props.lowStockBarcodes || []}
+              onSelect={this.props.onSelect}
+              onQuantityChange={this.props.onQuantityChange}
+              onChanged={this.props.onChanged}
+              onEditWeighted={this.props.onEditWeighted}
+            />
+          ))}
         </div>
-        {props.keypad ? <Keypad onKey={this.onKey} /> : null}
-        <footer className="sell-footer">
-          <PluginSlot name="sell.cart.footer" />
-          <ul className="order-vat">
-            {rows.map(row => (
-              <li key={row.label}>
-                <span>{row.label}</span>
-                <span className="sell-money">{formatMoney(Money.ofCents(row.baseCents))}</span>
-                <span className="sell-money">{formatMoney(Money.ofCents(row.quotaCents))}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="order-total">
-            <span className="sell-total">{formatMoney(props.order && props.order.total ? props.order.total : Money.ofCents(0))}</span>
-            <Button type="button" size="lg" icon="check" disabled={!canCharge} onClick={this.onCharge}>
-              Cobrar (F12)
-            </Button>
-          </div>
-        </footer>
+        {this.props.keypad ? <Keypad onKey={this.onKey} /> : null}
+        <TicketFooter
+          facts={facts}
+          total={total}
+          canCharge={lines.length > 0 && lines.every(lineIsValid)}
+          onCharge={this.onCharge}
+        />
       </section>
     );
   }
 
-  renderLine(line, index, lowSet) {
-    const valid = lineIsValid(line);
-    const selected = this.props.selected === index;
-    const quedan = lineQuedan(line, lowSet);
-    const weighted = !!line.weighted;
-    const free = line.kind === 'FREE';
-    const classes = ['sell-line'];
-    if (!valid) {
-      classes.push('is-invalid');
-    }
-    if (selected) {
-      classes.push('is-selected');
-    }
-    return (
-      <div
-        className={classes.join(' ')}
-        key={(line.barcode || 'free') + '-' + index}
-        aria-invalid={valid ? undefined : 'true'}
-        onClick={() => this.props.onSelect && this.props.onSelect(index)}
-      >
-        <div className="sell-line-name">
-          <span>{line.name}</span>
-          {quedan && !free ? <Badge tone="warning">{quedan}</Badge> : null}
-          {valid ? null : <Badge tone="danger">Cantidad no válida</Badge>}
-        </div>
-        <span className="sell-money sell-line-price">{formatMoney(line.unitPrice)}</span>
-        <div className="sell-qty">
-          {!weighted && !free ? (
-            <IconButton icon="minus" label="Menos" onClick={() => this.step(line, -1)} />
-          ) : null}
-          <NumberField
-            id={'sell-qty-' + index}
-            name="quantity"
-            label="Cantidad"
-            decimals={weighted ? 3 : 0}
-            unit={weighted ? 'kg' : undefined}
-            value={quantityText(line)}
-            readOnly={weighted || free}
-            onFocus={weighted ? () => this.props.onEditWeighted && this.props.onEditWeighted(line) : undefined}
-            onChange={weighted || free ? undefined : value => this.props.onQuantityChange({
-              barcode: line.barcode,
-              quantityChanged: value
-            })}
-          />
-          {!weighted && !free ? (
-            <IconButton icon="plus" label="Más" onClick={() => this.step(line, 1)} />
-          ) : null}
-        </div>
-        <span className="sell-money sell-line-subtotal">{formatMoney(lineAmount(line))}</span>
-        <IconButton
-          icon="trash"
-          label="Quitar"
-          variant="danger"
-          onClick={() => this.props.onDelete && this.props.onDelete(line.barcode, index)}
-        />
-      </div>
-    );
-  }
-
   onKey(key) {
-    const lines = (this.props.order && this.props.order.lines) || [];
+    const lines = linesOf(this.props.order);
     const index = selectedIndex(this.props.selected, lines.length);
     const line = lines[index];
     if (!line || line.kind === 'FREE' || line.weighted || !this.props.onQuantityChange) {
@@ -142,17 +100,189 @@ export default class Cart extends Component {
     }
   }
 
-  step(line, delta) {
-    const next = line.quantity.plus(Quantity.from(delta));
-    const units = next.milli < 0 ? 0 : next.units;
-    if (this.props.onQuantityChange) {
-      this.props.onQuantityChange({barcode: line.barcode, quantityChanged: units});
-    }
-    if (this.props.onChanged) {
-      this.props.onChanged();
-    }
-  }
+}
 
+/**
+ * @param {{facts: object, canRemove: boolean, onRemove: Function}} props
+ */
+export function TicketHead(props) {
+  return (
+    <header className="sell-ticket-head">
+      <div>
+        <h2 className="sell-ticket-title">Ticket</h2>
+        <p className="sell-ticket-count">{ticketCountLabel(props.facts)}</p>
+      </div>
+      <div className="sell-ticket-tools">
+        <Button type="button" variant="secondary" disabled>Cliente</Button>
+        <IconButton
+          icon="trash"
+          label="Quitar"
+          variant="ghost"
+          disabled={!props.canRemove}
+          onClick={props.onRemove}
+        />
+      </div>
+    </header>
+  );
+}
+
+/**
+ * @param {{facts: object, total: Money, canCharge: boolean, onCharge: Function}} props
+ */
+export function TicketFooter(props) {
+  const totalText = formatMoney(props.total);
+  return (
+    <footer className="sell-footer">
+      <div className="order-vat">
+        <p className="sell-sum">
+          <span>Base imponible</span>
+          <span className="sell-money">{formatMoney(Money.ofCents(props.facts.baseCents))}</span>
+        </p>
+        <p className="sell-sum">
+          <span>{vatIncludedLabel(props.facts.rates)}</span>
+          <span className="sell-money">{formatMoney(Money.ofCents(props.facts.quotaCents))}</span>
+        </p>
+      </div>
+      <div className="order-total">
+        <span>Total</span>
+        <span className="sell-total">{totalText}</span>
+      </div>
+      <PluginSlot name="sell.cart.footer" />
+      <div className="sell-ticket-actions">
+        <Button type="button" variant="secondary" disabled>Aparcar</Button>
+        <Button type="button" variant="secondary" disabled>Descuento</Button>
+        <Button type="button" variant="secondary" disabled>Cajón</Button>
+      </div>
+      <Button type="button" className="sell-charge" size="lg" disabled={!props.canCharge} onClick={props.onCharge}>
+        {'Cobrar ' + totalText}
+        <span className="sell-kbd">F12</span>
+      </Button>
+    </footer>
+  );
+}
+
+/**
+ * @param {{line: object, index: number, selected?: number, lowSet?: string[], onSelect?: Function, onQuantityChange?: Function, onChanged?: Function, onEditWeighted?: Function}} props
+ */
+export function TicketLine(props) {
+  const line = props.line;
+  const valid = lineIsValid(line);
+  const quedan = lineQuedan(line, props.lowSet || []);
+  const weighted = !!line.weighted;
+  const free = line.kind === 'FREE';
+  return (
+    <div
+      className={lineClass(valid, props.selected === props.index)}
+      aria-invalid={valid ? undefined : 'true'}
+      onClick={() => props.onSelect && props.onSelect(props.index)}
+    >
+      <div className="sell-line-main">
+        <span className="sell-line-title">{line.name}</span>
+        <span className="sell-line-meta">{lineCaption(line)}</span>
+        {quedan && !free ? <Badge tone="warning">{quedan}</Badge> : null}
+        {valid ? null : <Badge tone="danger">Cantidad no válida</Badge>}
+      </div>
+      <div className="sell-line-qty">
+        {weighted ? (
+          <button type="button" className="sell-weight" onClick={() => editWeight(props.onEditWeighted, line)}>
+            <Badge tone="neutral">{weightLabel(line)}</Badge>
+          </button>
+        ) : null}
+        {stepperFor(line, props)}
+      </div>
+      <span className="sell-money sell-line-subtotal">{formatMoney(lineAmount(line))}</span>
+    </div>
+  );
+}
+
+/**
+ * @param {boolean} valid
+ * @param {boolean} selected
+ * @returns {string}
+ */
+function lineClass(valid, selected) {
+  const classes = ['sell-line'];
+  if (!valid) {
+    classes.push('is-invalid');
+  }
+  if (selected) {
+    classes.push('is-selected');
+  }
+  return classes.join(' ');
+}
+
+/**
+ * @param {object} line
+ * @param {object} props
+ */
+function stepperFor(line, props) {
+  const weighted = !!line.weighted;
+  const free = line.kind === 'FREE';
+  const field = (
+    <NumberField
+      id={'sell-qty-' + props.index}
+      name="quantity"
+      label="Cantidad"
+      decimals={weighted ? 3 : 0}
+      value={quantityText(line)}
+      readOnly={weighted || free}
+      onFocus={weighted ? () => editWeight(props.onEditWeighted, line) : undefined}
+      onChange={weighted || free ? undefined : value => changeQuantity(props, line, value)}
+    />
+  );
+  if (weighted || free) {
+    return <div className="sell-weight-field">{field}</div>;
+  }
+  return (
+    <div className="sell-stepper">
+      <IconButton icon="minus" label="Menos" onClick={() => step(props, line, -1)} />
+      {field}
+      <IconButton icon="plus" label="Más" onClick={() => step(props, line, 1)} />
+    </div>
+  );
+}
+
+/**
+ * @param {Function | undefined} onEditWeighted
+ * @param {object} line
+ */
+function editWeight(onEditWeighted, line) {
+  if (onEditWeighted) {
+    onEditWeighted(line);
+  }
+}
+
+/**
+ * @param {object} props
+ * @param {object} line
+ * @param {number | string} value
+ */
+function changeQuantity(props, line, value) {
+  if (props.onQuantityChange) {
+    props.onQuantityChange({barcode: line.barcode, quantityChanged: value});
+  }
+}
+
+/**
+ * @param {object} props
+ * @param {object} line
+ * @param {number} delta
+ */
+function step(props, line, delta) {
+  const next = line.quantity.plus(Quantity.from(delta));
+  const units = next.milli < 0 ? 0 : next.units;
+  changeQuantity(props, line, units);
+  if (props.onChanged) {
+    props.onChanged();
+  }
+}
+
+/**
+ * @param {object | null | undefined} order
+ * @returns {object[]}
+ */
+function linesOf(order) {
+  return (order && order.lines) || [];
 }
 
 /**

@@ -7,7 +7,7 @@ import {validateLine} from '../../../domain/order/lineValidity';
 /**
  * Cart draft. Lines hold the same value objects Order uses.
  * The total is cents. Formatting happens at render.
- * @returns {{order: {lines: object[], total: Money}, lowStockBarcodes: string[], lastOrder: object | null, tiles: object[], tilesStatus: string}}
+ * @returns {{order: {lines: object[], total: Money}, lowStockBarcodes: string[], lastOrder: object | null, tiles: object[], tilesStatus: string, categories: object[], categoryId: string | null}}
  */
 export const state = () => ({
   order: {
@@ -18,6 +18,8 @@ export const state = () => ({
   lastOrder: null,
   tiles: [],
   tilesStatus: 'idle',
+  categories: [],
+  categoryId: null,
   saving: false,
   previewHtml: '',
   reprintHtml: ''
@@ -413,6 +415,42 @@ function isLow(product) {
     return Number(product.stock) <= Number(product.stockMin);
   }
   return false;
+}
+
+/**
+ * Counts and VAT totals for the ticket footer. Money stays in cents.
+ * A weighed line and a free line each count as one article.
+ * @param {object[] | null | undefined} lines
+ * @returns {{lineCount: number, articleCount: number, baseCents: number, quotaCents: number, rates: string[]}}
+ */
+export function ticketFacts(lines) {
+  const source = lines || [];
+  const rows = vatRows(source);
+  return {
+    lineCount: source.length,
+    articleCount: source.reduce((sum, line) => sum + articleUnits(line), 0),
+    baseCents: rows.reduce((sum, row) => sum + row.baseCents, 0),
+    quotaCents: rows.reduce((sum, row) => sum + row.quotaCents, 0),
+    rates: rows.map(row => row.label)
+  };
+}
+
+/**
+ * @param {object | null | undefined} line
+ * @returns {number}
+ */
+function articleUnits(line) {
+  if (!line) {
+    return 0;
+  }
+  if (line.kind === 'FREE' || line.weighted) {
+    return 1;
+  }
+  const milli = line.quantity && line.quantity.milli;
+  if (!Number.isInteger(milli) || milli <= 0 || milli % 1000 !== 0) {
+    return 0;
+  }
+  return milli / 1000;
 }
 
 /**

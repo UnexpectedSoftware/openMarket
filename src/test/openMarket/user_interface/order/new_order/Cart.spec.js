@@ -23,6 +23,18 @@ describe('Cart', () => {
     }
   });
 
+  it('shows an empty ticket with the cobrar literals and disabled actions', () => {
+    ReactDOM.render(<Cart order={{lines: [], total: Money.ofCents(0)}} />, host);
+    expect(host.textContent).to.contain('El ticket está vacío');
+    expect(host.textContent).to.contain('0 líneas · 0 artículos');
+    expect(host.textContent).to.contain('Base imponible');
+    expect(host.textContent).to.contain('IVA incluido');
+    expect(host.textContent).to.not.contain('VERI');
+    expect(buttonNamed(host, 'Cobrar').disabled).to.equal(true);
+    expect(buttonNamed(host, 'Quitar').disabled).to.equal(true);
+    expect(buttonNamed(host, 'Aparcar').disabled).to.equal(true);
+  });
+
   it('highlights an invalid quantity and disables Cobrar', () => {
     ReactDOM.render(
       <Cart
@@ -106,6 +118,18 @@ describe('Cart', () => {
     expect(host.textContent).to.not.contain('Stock bajo');
     expect(host.textContent).to.contain('Ham');
     expect(host.textContent).to.contain('Bolsa');
+    expect(host.textContent).to.contain('/ ud');
+    expect(host.textContent).to.contain('kg ×');
+    expect(host.textContent).to.contain('0,350 kg');
+    expect(host.textContent).to.contain('3 líneas · 3 artículos');
+    expect(host.textContent).to.contain('Base imponible');
+    expect(host.textContent).to.contain('IVA incluido');
+    expect(host.textContent).to.not.contain('VERI');
+    expect(host.querySelector('.om-icon-button--danger')).to.equal(null);
+    expect(buttonNamed(host, 'Aparcar').disabled).to.equal(true);
+    expect(buttonNamed(host, 'Descuento').disabled).to.equal(true);
+    expect(buttonNamed(host, 'Cajón').disabled).to.equal(true);
+    expect(buttonNamed(host, 'Cliente').disabled).to.equal(true);
     const charge = buttonNamed(host, 'Cobrar');
     expect(charge.disabled).to.equal(false);
     charge.click();
