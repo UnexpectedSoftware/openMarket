@@ -7,11 +7,13 @@ import Button from '../../components/Button';
 import Dialog from '../../components/Dialog';
 import EmptyState from '../../components/EmptyState';
 import Skeleton from '../../components/Skeleton';
+import Badge from '../../components/Badge';
 import Money from '../../../domain/money/Money';
 import Quantity from '../../../domain/money/Quantity';
 import VatRate from '../../../domain/tax/VatRate';
 import {formatMoney} from '../../i18n/money';
 import {lineIsValid} from './model';
+import {quedanText} from '../../low_stock/label';
 import {isScannerBurst, applyShortcut} from './input';
 import Cart from './Cart';
 import PaymentSheet from './PaymentSheet';
@@ -547,6 +549,23 @@ class Container extends Component {
     );
   }
 
+  renderTile(tile) {
+    const quedan = quedanText(tile);
+    return (
+      <button
+        type="button"
+        className="sell-tile"
+        key={tile.barcode}
+        onClick={() => this.lookup(tile.barcode)}
+      >
+        {tile.imageUrl ? <img src={tile.imageUrl} alt="" /> : null}
+        <span className="sell-tile-name">{tile.name}</span>
+        <span className="sell-tile-price">{formatMoney(Money.ofCents(tile.priceCents))}</span>
+        {quedan ? <Badge tone="warning">{quedan}</Badge> : null}
+      </button>
+    );
+  }
+
   renderGrid(tiles, tilesStatus) {
     const list = tiles || [];
     return (
@@ -562,21 +581,7 @@ class Container extends Component {
         {tilesStatus !== 'error' && tilesStatus !== 'loading' && list.length === 0 ? (
           <EmptyState icon="barcode" title="No hay productos" />
         ) : null}
-        {list.map(tile => (
-          <button
-            type="button"
-            className="sell-tile"
-            key={tile.barcode}
-            onClick={() => this.lookup(tile.barcode)}
-          >
-            {tile.imageUrl ? <img src={tile.imageUrl} alt="" /> : null}
-            <span className="sell-tile-name">{tile.name}</span>
-            <span className="sell-tile-price">{formatMoney(Money.ofCents(tile.priceCents))}</span>
-            {tile.lowStock || (this.props.lowStockBarcodes || []).indexOf(tile.barcode) !== -1 ? (
-              <span>Stock bajo</span>
-            ) : null}
-          </button>
-        ))}
+        {list.map(tile => this.renderTile(tile))}
       </div>
     );
   }

@@ -9,6 +9,7 @@ import Quantity from '../../../domain/money/Quantity';
 import {formatMoney} from '../../i18n/money';
 import PluginSlot from '../../components/PluginSlot';
 import {lineAmount, lineIsValid, vatRows} from './model';
+import {lineQuedan} from '../../low_stock/label';
 
 /**
  * One ticket line. Quantity stays a NumberField so the existing sale tests can read it.
@@ -65,7 +66,7 @@ export default class Cart extends Component {
   renderLine(line, index, lowSet) {
     const valid = lineIsValid(line);
     const selected = this.props.selected === index;
-    const low = line.lowStock || lowSet.indexOf(line.barcode) !== -1;
+    const quedan = lineQuedan(line, lowSet);
     const weighted = !!line.weighted;
     const free = line.kind === 'FREE';
     const classes = ['sell-line'];
@@ -84,7 +85,7 @@ export default class Cart extends Component {
       >
         <div className="sell-line-name">
           <span>{line.name}</span>
-          {low && !free ? <Badge tone="warning">Stock bajo</Badge> : null}
+          {quedan && !free ? <Badge tone="warning">{quedan}</Badge> : null}
           {valid ? null : <Badge tone="danger">Cantidad no válida</Badge>}
         </div>
         <span className="sell-money sell-line-price">{formatMoney(line.unitPrice)}</span>

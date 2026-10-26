@@ -114,7 +114,8 @@ export default class CreateOrder {
             barcode: product.barcode,
             name: product.name,
             stock: product.stock,
-            stockMin: product.stockMin
+            stockMin: product.stockMin,
+            weighted: product.isWeighted === true
           }));
         });
       })

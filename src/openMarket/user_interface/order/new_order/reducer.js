@@ -14,7 +14,7 @@ import {
   PAYMENT_PREVIEW_LOADED,
   REPRINT_PREVIEW_LOADED
 } from './action';
-import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct} from './model';
+import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, applyLowStock} from './model';
 
 /**
  * Keeps the grid, the low-stock set, and the last ticket across a cart edit.
@@ -67,14 +67,8 @@ export default function reducer(current = initialState(), action) {
         index: action.index
       }));
 
-    case NEW_ORDER_NOTE_LOW_STOCK: {
-      const barcode = action.payload && action.payload.barcode;
-      const known = current.lowStockBarcodes || [];
-      if (!barcode || known.indexOf(barcode) !== -1) {
-        return current;
-      }
-      return {...current, lowStockBarcodes: known.concat(barcode)};
-    }
+    case NEW_ORDER_NOTE_LOW_STOCK:
+      return applyLowStock(current, action.payload);
 
     case SALE_TILES_REQUESTED:
       return {...current, tilesStatus: 'loading'};

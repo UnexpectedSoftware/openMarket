@@ -4,6 +4,7 @@ import Spinner from '../components/Spinner';
 import SalesWindowSelect from '../sales/SalesWindowSelect';
 import {DEFAULT_SALES_WINDOW} from '../../application/service/product/salesWindows';
 import MostSoldChart from './MostSoldChart';
+import LowStockLink from '../low_stock/LowStockLink';
 
 export default class MostSoldContainer extends Component {
 
@@ -30,6 +31,7 @@ export default class MostSoldContainer extends Component {
             <h2>Most sold</h2>
             <SalesWindowSelect value={mostSold.window} onChange={this.onWindow} />
           </div>
+          <LowStockLink count={this.props.lowStockCount} />
           {products.length > 0 ? (
             <MostSoldChart products={products} onOpen={this.onOpen} />
           ) : mostSold.loaded ? (

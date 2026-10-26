@@ -86,14 +86,18 @@ const RAIL_LINKS = {
   'List Products!': 'Productos'
 };
 
+function railPattern(label) {
+  return new RegExp('^' + label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b');
+}
+
 async function chooseMenu(window, _menu, linkName) {
   if (linkName === 'new Product!') {
-    await window.getByRole('link', {name: 'Productos', exact: true}).click();
+    await window.getByRole('link', {name: railPattern('Productos')}).click();
     await window.getByRole('link', {name: 'Nuevo producto', exact: true}).click();
     return;
   }
   const label = RAIL_LINKS[linkName] || linkName;
-  await window.getByRole('link', {name: label, exact: true}).click();
+  await window.getByRole('link', {name: railPattern(label)}).click();
 }
 
 async function fillProduct(window, product) {

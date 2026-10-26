@@ -53,6 +53,7 @@ describe('makeSaleTilesEpic', () => {
           vat: {kind: 'S1', percent: 10, cause: null},
           weighted: false,
           lowStock: true,
+          stock: 1,
           imageUrl: null
         }]);
         expect(actions[0].payload[0].marginPercent).to.equal(undefined);

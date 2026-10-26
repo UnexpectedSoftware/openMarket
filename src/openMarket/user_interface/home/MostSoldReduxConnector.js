@@ -6,7 +6,8 @@ import {listProductsDetail} from '../product/list_products/action';
 
 function mapStateToProps(state) {
   return {
-    mostSold: state.statistics.mostSold
+    mostSold: state.statistics.mostSold,
+    lowStockCount: state.lowStock ? state.lowStock.count : null
   };
 }
 

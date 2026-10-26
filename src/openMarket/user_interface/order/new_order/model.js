@@ -99,6 +99,7 @@ export const addProduct = ({lines, product, quantity, lowStockBarcodes, replace}
     nextQuantity = existing.quantity.plus(nextQuantity);
   }
   const weighted = weightedOf(product);
+  const onHand = finiteStock(product && product.stock);
   kept.push({
     kind: 'PRODUCT',
     barcode,
@@ -107,6 +108,7 @@ export const addProduct = ({lines, product, quantity, lowStockBarcodes, replace}
     quantity: nextQuantity,
     vatRate: rateOf(product && product.vatRate),
     weighted: weighted == null && existing ? existing.weighted : weighted,
+    stock: onHand != null ? onHand : finiteStock(existing && existing.stock),
     lowStock: isLow(product)
       || (lowStockBarcodes || []).indexOf(barcode) !== -1
       || !!(existing && existing.lowStock)
@@ -128,6 +130,7 @@ export const addFreeLine = ({lines, description, amount, vatRate}) => {
     quantity: Quantity.from(1),
     vatRate: rateOf(vatRate),
     weighted: false,
+    stock: null,
     lowStock: false
   });
   return pack(source);
@@ -182,8 +185,139 @@ export function asLine(line) {
     quantity,
     vatRate: rateOf(vatSource),
     weighted: line && typeof line.weighted === 'boolean' ? line.weighted : undefined,
+    stock: finiteStock(line && line.stock),
     lowStock: !!(line && line.lowStock)
   };
+}
+
+/**
+ * Remembers a product a sale left at or below its minimum and stamps the
+ * remaining stock onto the matching tile and cart line.
+ * A repeat of the same barcode and stock returns the same state.
+ * @param {object} current
+ * @param {{barcode?: string, stock?: number, weighted?: boolean} | null | undefined} note
+ * @returns {object}
+ */
+export function applyLowStock(current, note) {
+  const barcode = note && note.barcode ? String(note.barcode) : '';
+  if (!barcode) {
+    return current;
+  }
+  const stock = finiteStock(note.stock);
+  if (alreadyNoted(current, barcode, stock, note.weighted)) {
+    return current;
+  }
+  const known = current.lowStockBarcodes || [];
+  return {
+    ...current,
+    lowStockBarcodes: known.indexOf(barcode) === -1 ? known.concat(barcode) : known,
+    tiles: markTiles(current.tiles, barcode, stock, note.weighted),
+    order: markOrder(current.order, barcode, stock)
+  };
+}
+
+/**
+ * @param {object} current
+ * @param {string} barcode
+ * @param {number | null} stock
+ * @param {boolean | undefined} weighted
+ * @returns {boolean}
+ */
+function alreadyNoted(current, barcode, stock, weighted) {
+  const known = current.lowStockBarcodes || [];
+  if (known.indexOf(barcode) === -1) {
+    return false;
+  }
+  const tiles = current.tiles || [];
+  for (let index = 0; index < tiles.length; index += 1) {
+    const tile = tiles[index];
+    if (tile && tile.barcode === barcode && !sameTile(tile, stock, weighted)) {
+      return false;
+    }
+  }
+  const lines = (current.order && current.order.lines) || [];
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line && line.kind !== 'FREE' && line.barcode === barcode && !sameLow(line, stock)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * @param {object} item
+ * @param {number | null} stock
+ * @returns {boolean}
+ */
+function sameLow(item, stock) {
+  return !!item.lowStock && finiteStock(item.stock) === stock;
+}
+
+/**
+ * @param {object} tile
+ * @param {number | null} stock
+ * @param {boolean | undefined} weighted
+ * @returns {boolean}
+ */
+function sameTile(tile, stock, weighted) {
+  const nextWeighted = typeof weighted === 'boolean' ? weighted : !!tile.weighted;
+  return sameLow(tile, stock) && !!tile.weighted === nextWeighted;
+}
+
+/**
+ * @param {object[] | null | undefined} tiles
+ * @param {string} barcode
+ * @param {number | null} stock
+ * @param {boolean | undefined} weighted
+ * @returns {object[]}
+ */
+function markTiles(tiles, barcode, stock, weighted) {
+  const source = tiles || [];
+  let changed = false;
+  const next = source.map(tile => {
+    if (!tile || tile.barcode !== barcode || sameTile(tile, stock, weighted)) {
+      return tile;
+    }
+    changed = true;
+    const nextWeighted = typeof weighted === 'boolean' ? weighted : !!tile.weighted;
+    return {...tile, lowStock: true, stock, weighted: nextWeighted};
+  });
+  return changed ? next : source;
+}
+
+/**
+ * @param {object | null | undefined} order
+ * @param {string} barcode
+ * @param {number | null} stock
+ * @returns {object | null | undefined}
+ */
+function markOrder(order, barcode, stock) {
+  const lines = (order && order.lines) || [];
+  let changed = false;
+  const next = lines.map(line => {
+    if (!line || line.kind === 'FREE' || line.barcode !== barcode || sameLow(line, stock)) {
+      return line;
+    }
+    changed = true;
+    return {...line, lowStock: true, stock};
+  });
+  if (!changed || !order) {
+    return order;
+  }
+  return {...order, lines: next};
+}
+
+/**
+ * @param {*} value
+ * @returns {number | null}
+ */
+function finiteStock(value) {
+  if (value == null || value === '') {
+    return null;
+  }
+  const number = Number(value);
+  return Number.isFinite(number) ? number : null;
 }
 
 /**
