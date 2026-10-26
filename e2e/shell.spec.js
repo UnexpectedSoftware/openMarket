@@ -31,17 +31,22 @@ test('navigates from the rail with a click or a shortcut', async () => {
     const side = markBox.x - railBox.x;
     const sideRight = railBox.x + railBox.width - (markBox.x + markBox.width);
     expect(mainBox.y).toBeLessThanOrEqual(1);
-    expect(markBox.width).toBeGreaterThan(32);
-    expect(markBox.width).toBeLessThan(42);
-    expect(markBox.height).toBeGreaterThan(32);
-    expect(markBox.height).toBeLessThan(42);
+    expect(markBox.width).toBeGreaterThan(44);
+    expect(markBox.width).toBeLessThan(52);
+    expect(markBox.height).toBeGreaterThan(44);
+    expect(markBox.height).toBeLessThan(52);
     expect(side).toBeGreaterThan(16);
+    expect(side).toBeLessThan(26);
     expect(sideRight).toBeGreaterThan(16);
+    expect(sideRight).toBeLessThan(26);
     expect(markBox.y).toBeGreaterThan(8);
     expect(markBox.y).toBeLessThan(28);
     const fontSize = await mark.evaluate(element => parseFloat(getComputedStyle(element).fontSize));
-    expect(fontSize).toBeGreaterThanOrEqual(15);
-    expect(fontSize).toBeLessThanOrEqual(17);
+    const radius = await mark.evaluate(element => parseFloat(getComputedStyle(element).borderTopLeftRadius));
+    expect(fontSize).toBeGreaterThanOrEqual(17);
+    expect(fontSize).toBeLessThanOrEqual(21);
+    expect(radius).toBeGreaterThanOrEqual(7);
+    expect(radius).toBeLessThanOrEqual(11);
 
     for (const screen of SCREENS) {
       await window.getByRole('link', {name: screen.link, exact: true}).click();
