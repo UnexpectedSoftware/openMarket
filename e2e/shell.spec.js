@@ -26,10 +26,22 @@ test('navigates from the rail with a click or a shortcut', async () => {
     await expect(mark).toHaveText('OM');
     await expect(mark).toHaveAttribute('aria-label', 'OpenMarket');
     const markBox = await mark.boundingBox();
+    const railBox = await window.locator('.nav-rail').boundingBox();
     const mainBox = await window.locator('#main').boundingBox();
+    const side = markBox.x - railBox.x;
+    const sideRight = railBox.x + railBox.width - (markBox.x + markBox.width);
     expect(mainBox.y).toBeLessThanOrEqual(1);
-    expect(markBox.y).toBeLessThan(30);
-    expect(markBox.width).toBeGreaterThan(40);
+    expect(markBox.width).toBeGreaterThan(32);
+    expect(markBox.width).toBeLessThan(42);
+    expect(markBox.height).toBeGreaterThan(32);
+    expect(markBox.height).toBeLessThan(42);
+    expect(side).toBeGreaterThan(16);
+    expect(sideRight).toBeGreaterThan(16);
+    expect(markBox.y).toBeGreaterThan(8);
+    expect(markBox.y).toBeLessThan(28);
+    const fontSize = await mark.evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+    expect(fontSize).toBeGreaterThanOrEqual(15);
+    expect(fontSize).toBeLessThanOrEqual(17);
 
     for (const screen of SCREENS) {
       await window.getByRole('link', {name: screen.link, exact: true}).click();

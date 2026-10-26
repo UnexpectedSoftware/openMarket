@@ -26,7 +26,8 @@ const PREFIX = {
 const SHELL = {
   railWidth: '--om-rail-width',
   railItemHeight: '--om-rail-item-height',
-  headerHeight: '--om-header-height'
+  headerHeight: '--om-header-height',
+  railMarkSize: '--om-rail-mark-size'
 };
 
 const SKIP = new Set(['id', 'name', 'colorScheme', 'mood', 'suits']);
