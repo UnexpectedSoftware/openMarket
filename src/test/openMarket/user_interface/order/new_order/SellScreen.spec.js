@@ -105,6 +105,32 @@ describe('sell screen pieces', () => {
     expect(counted.querySelector('.sell-tile-photo')).to.not.equal(null);
   });
 
+  it('keeps the price last so a stock chip cannot push it down', () => {
+    ReactDOM.render(
+      <div>
+        {sellTile({
+          barcode: 'milk',
+          name: 'Leche entera de vaca del valle',
+          priceCents: 100,
+          lowStock: true,
+          stock: 1
+        }, null)}
+        {sellTile({barcode: 'rice', name: 'Arroz', priceCents: 200}, null)}
+      </div>,
+      host
+    );
+    const cards = host.querySelectorAll('.sell-tile-copy');
+    expect(cards.length).to.equal(2);
+    Array.prototype.forEach.call(cards, copy => {
+      const children = copy.children;
+      expect(children[0].className).to.contain('sell-tile-name');
+      expect(children[children.length - 1].className).to.contain('sell-tile-price');
+      expect(copy.querySelector('.sell-tile-price').nextElementSibling).to.equal(null);
+    });
+    expect(cards[0].textContent).to.contain('Quedan');
+    expect(cards[1].querySelector('.om-badge')).to.equal(null);
+  });
+
   it('puts the shop name on the top bar and the receipt in the reprint dialog', () => {
     ReactDOM.render(<SellTop subtitle="Sol · NIF B1" shopName="Sol" search={<span>buscar</span>} />, host);
     expect(host.querySelector('h1').textContent).to.equal('Vender');

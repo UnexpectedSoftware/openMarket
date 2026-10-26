@@ -191,8 +191,8 @@ export function sellTile(tile, onPick) {
       {tilePhoto(tile)}
       <span className="sell-tile-copy">
         <span className="sell-tile-name">{tile.name}</span>
-        {tilePrice(tile)}
         {quedan ? <Badge tone="warning">{quedan}</Badge> : null}
+        {tilePrice(tile)}
       </span>
     </button>
   );

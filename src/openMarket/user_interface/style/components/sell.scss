@@ -158,6 +158,7 @@
   align-items: stretch;
   justify-content: flex-start;
   gap: var(--om-space-0);
+  height: 100%;
   min-height: calc(var(--om-space-9) * 2);
   padding: var(--om-space-0);
   overflow: hidden;
@@ -195,6 +196,8 @@
 }
 
 .sell-tile-initials {
+  position: relative;
+  top: var(--om-space-6);
   color: var(--om-color-text-muted);
   font-size: var(--om-font-size-3xl);
   font-weight: var(--om-font-weight-bold);
@@ -229,35 +232,59 @@
   position: absolute;
   top: var(--om-space-2);
   right: var(--om-space-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   width: var(--om-space-7);
   height: var(--om-space-7);
+  padding: 0;
   background: var(--om-color-primary);
   color: var(--om-color-primary-contrast);
   border-radius: var(--om-radius-pill);
+  line-height: 0;
+  text-align: center;
+}
+
+.sell-tile-mark .fa {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  display: block;
+  margin: 0;
+  padding: 0;
   font-size: var(--om-font-size-sm);
+  line-height: 1;
+  text-align: center;
+  transform: translate(-50%, -50%);
+}
+
+.sell-tile-mark .fa::before {
+  display: block;
+  line-height: 1;
 }
 
 .sell-tile-copy {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   align-items: flex-start;
   gap: var(--om-space-2);
   padding: var(--om-space-3);
 }
 
-.sell-tile-name {
-  font-weight: var(--om-font-weight-bold);
+.sell-tile .sell-tile-name {
+  color: var(--om-color-text);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-md);
+  font-weight: var(--om-font-weight-regular);
+  line-height: var(--om-line-height-normal);
 }
 
-.sell-tile-price {
+.sell-tile .sell-tile-price {
+  margin-top: auto;
   color: var(--om-color-text);
   font-family: var(--om-font-numeric);
   font-feature-settings: var(--om-font-feature-numeric);
-  font-size: var(--om-font-size-lg);
+  font-size: var(--om-font-size-xl);
   font-weight: var(--om-font-weight-bold);
+  line-height: var(--om-line-height-tight);
 }
 
 .sell-tile-unit {
