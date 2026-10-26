@@ -14,6 +14,53 @@
   margin-bottom: var(--om-space-4);
 }
 
+.sell-search-lg .om-field-control {
+  min-height: var(--om-button-height-lg);
+  font-size: var(--om-font-size-xl);
+}
+
+.sell-layout-escaner {
+  flex-direction: column;
+}
+
+.sell-layout-escaner .sell-catalog {
+  flex: 0 0 auto;
+}
+
+.sell-layout-escaner .sell-free {
+  margin-bottom: var(--om-space-4);
+}
+
+.sell-layout-escaner .sell-cart {
+  flex: 1 1 auto;
+  width: auto;
+  position: static;
+  height: auto;
+  min-height: calc(var(--om-space-9) * 5);
+}
+
+.sell-layout-tactil .sell-grid {
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--om-tile-min-width) + var(--om-space-7)), 1fr));
+}
+
+.sell-layout-tactil .sell-tile {
+  min-height: calc(var(--om-space-9) * 3);
+  font-size: var(--om-font-size-lg);
+}
+
+.sell-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--om-space-2);
+  padding: var(--om-space-3);
+  border-top: var(--om-button-border-width) solid var(--om-color-border);
+}
+
+.sell-keypad .om-button {
+  width: 100%;
+  min-height: var(--om-button-height-lg);
+}
+
 .sell-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(var(--om-tile-min-width), 1fr));

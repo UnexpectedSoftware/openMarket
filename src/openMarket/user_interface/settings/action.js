@@ -33,9 +33,10 @@ export function settingsPageOpened() {
  * @param {object | null} [ticket]
  * @param {object | null} [printer]
  * @param {object | null} [language]
+ * @param {string} [layout]
  */
-export function settingsLoaded(profile, theme, ticket, printer, language) {
-  return {type: SETTINGS_LOADED, profile, theme, ticket, printer, language};
+export function settingsLoaded(profile, theme, ticket, printer, language, layout) {
+  return {type: SETTINGS_LOADED, profile, theme, ticket, printer, language, layout};
 }
 
 /** @param {string} message */
@@ -58,13 +59,14 @@ export function settingsSaveRequested() {
  * @param {object | null} [ticket]
  * @param {object | null} [printer]
  * @param {object | null} [language]
+ * @param {string | null} [layout]
  */
-export function settingsSaved(profile, theme, ticket, printer, language) {
-  return {type: SETTINGS_SAVED, profile, theme, ticket, printer, language};
+export function settingsSaved(profile, theme, ticket, printer, language, layout) {
+  return {type: SETTINGS_SAVED, profile, theme, ticket, printer, language, layout};
 }
 
 /**
- * @param {{message?: string, fieldErrors?: object, theme?: string}} failure
+ * @param {{message?: string, fieldErrors?: object, theme?: string, layout?: string}} failure
  */
 export function settingsSaveFailed(failure) {
   return {type: SETTINGS_SAVE_FAILED, failure};

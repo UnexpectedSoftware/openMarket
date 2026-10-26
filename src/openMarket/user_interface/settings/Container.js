@@ -4,6 +4,7 @@ import Card from '../components/Card';
 import {PageHeader} from '../components/PageHeader';
 import Skeleton from '../components/Skeleton';
 import LanguageForm from './LanguageForm';
+import LayoutPicker from './LayoutPicker';
 import PrinterForm from './PrinterForm';
 import ShopForm from './ShopForm';
 import ThemePicker from './ThemePicker';
@@ -56,9 +57,28 @@ export default class Container extends Component {
     this.props.settingsDraftChanged({theme});
   };
 
+  previewLayout = id => {
+    if (this.props.layoutPreviewRequested) {
+      this.props.layoutPreviewRequested(id);
+    }
+    this.props.settingsDraftChanged({layout: id});
+  };
+
+  discardLayout = layout => {
+    if (this.props.layoutPreviewDiscardRequested) {
+      this.props.layoutPreviewDiscardRequested(layout);
+    }
+    this.props.settingsDraftChanged({layout});
+  };
+
   render() {
     const page = this.props.settings || {};
-    const appearance = this.props.appearance || {theme: 'mercado', applied: 'mercado'};
+    const appearance = this.props.appearance || {
+      theme: 'mercado',
+      applied: 'mercado',
+      layout: 'mostrador',
+      appliedLayout: 'mostrador'
+    };
     return (
       <form className="container-fluid settings-page" onSubmit={this.save}>
         <PageHeader
@@ -107,6 +127,13 @@ export default class Container extends Component {
             applied={appearance.applied}
             onPreview={this.previewTheme}
             onDiscard={this.discardTheme}
+          />
+          <p className="settings-section-label" id="sell-layout-label">Disposición</p>
+          <LayoutPicker
+            layout={appearance.layout || 'mostrador'}
+            applied={appearance.appliedLayout || appearance.layout || 'mostrador'}
+            onPreview={this.previewLayout}
+            onDiscard={this.discardLayout}
           />
         </Card>
         <Card title="Idioma">

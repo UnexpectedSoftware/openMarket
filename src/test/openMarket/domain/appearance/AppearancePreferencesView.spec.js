@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import AppearancePreferences from '../../../../openMarket/domain/appearance/AppearancePreferences';
 import AppearancePreferencesQuery from '../../../../openMarket/domain/appearance/AppearancePreferencesQuery';
 import AppearancePreferencesView from '../../../../openMarket/domain/appearance/AppearancePreferencesView';
+import SellLayout from '../../../../openMarket/domain/appearance/SellLayout';
 import Theme from '../../../../openMarket/domain/appearance/Theme';
 
 describe('AppearancePreferencesQuery', () => {
@@ -26,12 +27,18 @@ describe('AppearancePreferencesView', () => {
       view.theme = 'ultramarinos';
     }).to.throw(TypeError);
     expect(view.theme).to.equal('mercado');
+    expect(view.layout).to.equal('mostrador');
+    expect(view.layout).to.not.be.instanceof(SellLayout);
     expect(new AppearancePreferencesView({theme: ''}).theme).to.equal('mercado');
     expect(new AppearancePreferencesView({theme: null}).theme).to.equal('mercado');
+    expect(new AppearancePreferencesView({layout: ''}).layout).to.equal('mostrador');
+    expect(new AppearancePreferencesView({layout: null}).layout).to.equal('mostrador');
   });
 
   it('keeps the stored id and does not reject an unknown one', () => {
     expect(new AppearancePreferencesView({theme: 'ultramarinos'}).theme).to.equal('ultramarinos');
     expect(new AppearancePreferencesView({theme: 'not-a-theme'}).theme).to.equal('not-a-theme');
+    expect(new AppearancePreferencesView({layout: 'escaner'}).layout).to.equal('escaner');
+    expect(new AppearancePreferencesView({layout: 'not-a-layout'}).layout).to.equal('not-a-layout');
   });
 });

@@ -44,11 +44,14 @@ export default class SqliteAppearancePreferencesRepository {
   save({preferences}) {
     return Rx.Observable.defer(() => {
       try {
-        this._database.prepare(SAVE_SQL).run(KEY, JSON.stringify({theme: preferences.theme.id}));
+        this._database.prepare(SAVE_SQL).run(KEY, JSON.stringify({
+          theme: preferences.theme.id,
+          layout: preferences.layout.id
+        }));
       } catch (error) {
         rethrow(error, {
           message: 'Could not save the appearance',
-          context: {operation: 'save', theme: preferences.theme.id}
+          context: {operation: 'save', theme: preferences.theme.id, layout: preferences.layout.id}
         });
       }
       return Rx.Observable.of(preferences);
@@ -59,16 +62,19 @@ export default class SqliteAppearancePreferencesRepository {
 
 /**
  * @param {string} text
- * @returns {string | null | undefined}
+ * @returns {{theme?: string, layout?: string}}
  */
-function themeIdOf(text) {
+function appearanceOf(text) {
   let data;
   try {
     data = JSON.parse(text);
   } catch (error) {
     rethrow(error, {message: 'Could not read the appearance', context: {operation: 'find'}});
   }
-  return data && data.theme;
+  if (!data || typeof data !== 'object') {
+    return {};
+  }
+  return data;
 }
 
 /**
@@ -76,7 +82,8 @@ function themeIdOf(text) {
  * @returns {AppearancePreferencesView}
  */
 function viewFromJson(text) {
-  return new AppearancePreferencesView({theme: themeIdOf(text)});
+  const data = appearanceOf(text);
+  return new AppearancePreferencesView({theme: data.theme, layout: data.layout});
 }
 
 /**
@@ -84,5 +91,6 @@ function viewFromJson(text) {
  * @returns {AppearancePreferences}
  */
 function aggregateFromJson(text) {
-  return new AppearancePreferences({theme: themeIdOf(text)});
+  const data = appearanceOf(text);
+  return new AppearancePreferences({theme: data.theme, layout: data.layout});
 }

@@ -11,7 +11,7 @@ import InvalidLanguageError from '../../../../openMarket/domain/shop/InvalidLang
 import PrinterBusyError from '../../../../openMarket/domain/error/PrinterBusyError';
 import InvalidTaxIdError from '../../../../openMarket/domain/shop/InvalidTaxIdError';
 import ShopProfileIncompleteError from '../../../../openMarket/domain/shop/ShopProfileIncompleteError';
-import {THEME_CHANGED, THEME_CHANGE_FAILED} from '../../../../openMarket/user_interface/appearance/action';
+import {LAYOUT_CHANGED, LAYOUT_CHANGE_FAILED, THEME_CHANGED, THEME_CHANGE_FAILED} from '../../../../openMarket/user_interface/appearance/action';
 import {
   SETTINGS_FAILED,
   SETTINGS_LOADED,
@@ -24,7 +24,7 @@ import {
 } from '../../../../openMarket/user_interface/settings/action';
 import {makeSettingsLoadEpic, makeSettingsSaveEpic, makeSettingsTestPrintEpic} from '../../../../openMarket/user_interface/settings/epicFactory';
 import {SETTINGS_TEST_PRINT_FAILED, SETTINGS_TEST_PRINT_REQUESTED, SETTINGS_TEST_PRINTED} from '../../../../openMarket/user_interface/settings/action';
-import {COPY_TOO_LONG, INTERFACE_TOO_LONG, LOAD_ERROR, NIF_INVALID, PRINT_ERROR, REQUIRED, SAVE_ERROR, THEME_SAVE_ERROR, draftChanged, shopLoaded, state} from '../../../../openMarket/user_interface/settings/model';
+import {COPY_TOO_LONG, INTERFACE_TOO_LONG, LAYOUT_SAVE_ERROR, LOAD_ERROR, NIF_INVALID, PRINT_ERROR, REQUIRED, SAVE_ERROR, THEME_SAVE_ERROR, draftChanged, shopLoaded, state} from '../../../../openMarket/user_interface/settings/model';
 import reducer from '../../../../openMarket/user_interface/settings/reducer';
 
 function view(extra) {
@@ -172,6 +172,66 @@ describe('settings epics', () => {
         expect(actions).to.have.length(3);
       });
     }, () => {});
+  });
+
+  it('saves a layout without calling the shop or the theme', done => {
+    let shops = 0;
+    let themes = 0;
+    let layout = null;
+    const current = reducer(draftChanged(page(), {layout: 'escaner'}), {type: SETTINGS_SAVE_REQUESTED});
+    const epic = makeSettingsSaveEpic({
+      updateShopProfile: {update: () => {
+        shops += 1;
+        return Rx.Observable.of(null);
+      }},
+      changeTheme: {changeTheme: () => {
+        themes += 1;
+        return Rx.Observable.of({theme: {id: 'mercado'}});
+      }},
+      changeLayout: {changeLayout: ({layout: id}) => {
+        layout = id;
+        return Rx.Observable.of({layout: {id}});
+      }},
+      getShopProfile: {getProfile: () => Rx.Observable.of(view())}
+    });
+    collect(epic, {type: SETTINGS_SAVE_REQUESTED}, storeOf(current), done, actions => {
+      expect(shops).to.equal(0);
+      expect(themes).to.equal(0);
+      expect(layout).to.equal('escaner');
+      expect(actions[0].type).to.equal(SETTINGS_SAVED);
+      expect(actions[0].layout).to.equal('escaner');
+      expect(actions[1].type).to.equal(LAYOUT_CHANGED);
+      expect(actions[1].layout).to.equal('escaner');
+      expect(actions.filter(action => action.title === 'Ajustes guardados')).to.have.length(1);
+      expect(actions.map(action => action.type)).to.not.include(THEME_CHANGED);
+      const stored = reducer(current, actions[0]);
+      expect(stored.draft.layout).to.equal('escaner');
+      expect(stored.persistedLayout).to.equal('escaner');
+      expect(stored.draft.theme).to.equal('mercado');
+    });
+  });
+
+  it('rolls the layout back when that save fails and does not change the theme', done => {
+    let themes = 0;
+    const current = reducer(draftChanged(page(), {layout: 'tactil'}), {type: SETTINGS_SAVE_REQUESTED});
+    const epic = makeSettingsSaveEpic({
+      updateShopProfile: {update: () => Rx.Observable.of(null)},
+      changeTheme: {changeTheme: () => {
+        themes += 1;
+        return Rx.Observable.of({theme: {id: 'mercado'}});
+      }},
+      changeLayout: {changeLayout: () => Rx.Observable.throw(new Error('disk'))},
+      getShopProfile: {getProfile: () => Rx.Observable.of(view())}
+    });
+    collect(epic, {type: SETTINGS_SAVE_REQUESTED}, storeOf(current), done, actions => {
+      expect(themes).to.equal(0);
+      expect(actions[0]).to.deep.equal({type: LAYOUT_CHANGE_FAILED, layout: 'mostrador'});
+      expect(actions[1].failure).to.deep.equal({message: LAYOUT_SAVE_ERROR, layout: 'mostrador'});
+      expect(actions.map(action => action.title)).to.not.include('Ajustes guardados');
+      const failed = reducer(current, actions[1]);
+      expect(failed.draft.layout).to.equal('mostrador');
+      expect(failed.saving).to.equal(false);
+    });
   });
 
   it('turns an invalid NIF into a field error and does not toast', done => {

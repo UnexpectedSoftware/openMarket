@@ -23,7 +23,9 @@ describe('ChangeTheme', () => {
     useCase.changeTheme({theme: 'mostrador-noche'}).subscribe(
       saved => {
         expect(saved.theme.id).to.equal('mostrador-noche');
+        expect(saved.layout.id).to.equal('mostrador');
         expect(preferences.stored().theme.id).to.equal('mostrador-noche');
+        expect(preferences.stored().layout.id).to.equal('mostrador');
         done();
       },
       error => done(error)

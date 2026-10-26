@@ -13,6 +13,7 @@ import Quantity from '../../../domain/money/Quantity';
 import VatRate from '../../../domain/tax/VatRate';
 import {formatMoney} from '../../i18n/money';
 import {lineIsValid} from './model';
+import SellLayout from '../../../domain/appearance/SellLayout';
 import {quedanText} from '../../low_stock/label';
 import {isScannerBurst, applyShortcut} from './input';
 import Cart from './Cart';
@@ -439,15 +440,17 @@ class Container extends Component {
 
   render() {
     const {order, issuer, tiles, tilesStatus, lowStockBarcodes} = this.props;
+    const layout = SellLayout.orDefault(this.props.layout);
+    const scanner = layout === 'escaner';
     const issuerName = issuer && (issuer.tradeName || issuer.legalName);
     const subtitle = issuer && issuer.nif ? issuerName + ' · NIF ' + issuer.nif : undefined;
     const amount = parseDecimal(this.state.freeAmount);
     const freeValid = String(this.state.freeDescription || '').trim() !== '' && amount != null && amount > 0;
     return (
-      <div className="sell">
+      <div className={'sell sell-layout-' + layout} data-layout={layout}>
         <div className="sell-catalog">
           <PageHeader title="Vender" subtitle={subtitle} />
-          <div className="sell-search">
+          <div className={scanner ? 'sell-search sell-search-lg' : 'sell-search'}>
             <TextField
               id="sell-search"
               name="barcode"
@@ -458,12 +461,17 @@ class Container extends Component {
               autoFocus
             />
           </div>
-          {this.renderGrid(tiles, tilesStatus)}
+          {scanner ? (
+            <Button type="button" variant="secondary" className="sell-free" onClick={this.openFree}>
+              Venta libre
+            </Button>
+          ) : this.renderGrid(tiles, tilesStatus)}
         </div>
         <Cart
           order={order}
           selected={this.state.selected}
           lowStockBarcodes={lowStockBarcodes}
+          keypad={layout === 'tactil'}
           onSelect={index => this.setState({selected: index})}
           onQuantityChange={this.props.newOrderProductQuantityChange}
           onChanged={this.focusSearch}

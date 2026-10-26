@@ -10,6 +10,8 @@ import {formatMoney} from '../../i18n/money';
 import PluginSlot from '../../components/PluginSlot';
 import {lineAmount, lineIsValid, vatRows} from './model';
 import {lineQuedan} from '../../low_stock/label';
+import Keypad from './Keypad';
+import {nextKeypadQuantity} from './keypadQuantity';
 
 /**
  * One ticket line. Quantity stays a NumberField so the existing sale tests can read it.
@@ -19,6 +21,7 @@ export default class Cart extends Component {
   constructor(props) {
     super(props);
     this.onCharge = this.onCharge.bind(this);
+    this.onKey = this.onKey.bind(this);
   }
 
   onCharge() {
@@ -41,6 +44,7 @@ export default class Cart extends Component {
             <EmptyState icon="shopping-basket" title="El ticket está vacío" />
           ) : lines.map((line, index) => this.renderLine(line, index, lowSet))}
         </div>
+        {props.keypad ? <Keypad onKey={this.onKey} /> : null}
         <footer className="sell-footer">
           <PluginSlot name="sell.cart.footer" />
           <ul className="order-vat">
@@ -122,6 +126,22 @@ export default class Cart extends Component {
     );
   }
 
+  onKey(key) {
+    const lines = (this.props.order && this.props.order.lines) || [];
+    const index = selectedIndex(this.props.selected, lines.length);
+    const line = lines[index];
+    if (!line || line.kind === 'FREE' || line.weighted || !this.props.onQuantityChange) {
+      return;
+    }
+    this.props.onQuantityChange({
+      barcode: line.barcode,
+      quantityChanged: nextKeypadQuantity(quantityText(line), key)
+    });
+    if (this.props.onChanged) {
+      this.props.onChanged();
+    }
+  }
+
   step(line, delta) {
     const next = line.quantity.plus(Quantity.from(delta));
     const units = next.milli < 0 ? 0 : next.units;
@@ -133,6 +153,21 @@ export default class Cart extends Component {
     }
   }
 
+}
+
+/**
+ * @param {number} selected
+ * @param {number} count
+ * @returns {number}
+ */
+function selectedIndex(selected, count) {
+  if (count === 0) {
+    return -1;
+  }
+  if (typeof selected === 'number' && selected >= 0 && selected < count) {
+    return selected;
+  }
+  return count - 1;
 }
 
 /**

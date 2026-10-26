@@ -11,7 +11,7 @@ import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/switchMap';
 import ErrorCode from '../../domain/error/ErrorCode';
 import {record} from '../../infrastructure/logging/ErrorLog';
-import {themeChanged, themeChangeFailed} from '../appearance/action';
+import {layoutChanged, layoutChangeFailed, themeChanged, themeChangeFailed} from '../appearance/action';
 import {toast} from '../components/toast';
 import {
   SETTINGS_PAGE_OPENED,
@@ -32,6 +32,7 @@ import {
   PRINT_ERROR,
   REQUIRED,
   SAVE_ERROR,
+  LAYOUT_SAVE_ERROR,
   THEME_SAVE_ERROR,
   copyFieldErrors,
   incompleteErrors,
@@ -63,7 +64,8 @@ export function makeSettingsLoadEpic(getShopProfile, getSellPreferences, getPrin
         readTheme(store),
         loaded.ticket,
         loaded.printer,
-        language
+        language,
+        readLayout(store)
       )))
       .catch(error => failedLoad(action, error)));
 }
@@ -76,6 +78,7 @@ export function makeSettingsLoadEpic(getShopProfile, getSellPreferences, getPrin
  * @param {{update: Function}} [deps.updatePrinterSettings]
  * @param {{update: Function}} [deps.updateLanguagePreferences]
  * @param {{changeTheme: Function}} deps.changeTheme
+ * @param {{changeLayout: Function}} [deps.changeLayout]
  * @param {{getProfile: Function}} deps.getShopProfile
  * @param {{get: Function}} [deps.getSellPreferences]
  * @param {{get: Function}} [deps.getPrinterSettings]
@@ -114,12 +117,13 @@ function readSection(action, useCase) {
  * @param {object | null} ticket
  * @param {object | null} printer
  * @param {object | null} language
+ * @param {string} [layout]
  */
-function loadedAction(action, profile, theme, ticket, printer, language) {
+function loadedAction(action, profile, theme, ticket, printer, language, layout) {
   if (action.type === SHOP_PROFILE_REQUESTED) {
     return shopProfileLoaded(profile);
   }
-  return settingsLoaded(profile, theme, ticket, printer, language);
+  return settingsLoaded(profile, theme, ticket, printer, language, layout);
 }
 
 /**
@@ -139,9 +143,26 @@ function failedLoad(action, error) {
  * @returns {string}
  */
 function readTheme(store) {
-  const root = store && store.getState ? store.getState() : {};
-  const appearance = root.appearance || {};
+  const appearance = appearanceOf(store);
   return appearance.theme || 'mercado';
+}
+
+/**
+ * @param {{getState: Function}} store
+ * @returns {string}
+ */
+function readLayout(store) {
+  const appearance = appearanceOf(store);
+  return appearance.layout || 'mostrador';
+}
+
+/**
+ * @param {{getState: Function}} store
+ * @returns {object}
+ */
+function appearanceOf(store) {
+  const root = store && store.getState ? store.getState() : {};
+  return root.appearance || {};
 }
 
 /**
@@ -166,7 +187,7 @@ function writeSettings(deps, page) {
     .flatMap(() => writeTicket(deps, plan))
     .flatMap(() => writePrinter(deps, plan))
     .flatMap(() => writeLanguage(deps, plan))
-    .flatMap(() => plan.theme ? writeTheme(deps, plan) : finish(deps, null))
+    .flatMap(() => writeAppearance(deps, plan))
     .catch(error => saveRejected(page, error));
 }
 
@@ -204,20 +225,48 @@ function writeLanguage(deps, plan) {
 }
 
 /**
- * @param {{changeTheme: {changeTheme: Function}, getShopProfile: {getProfile: Function}}} deps
+ * Layout is written before the theme. A layout failure stops the theme write.
+ * @param {{changeLayout?: {changeLayout: Function}, changeTheme: {changeTheme: Function}}} deps
  * @param {object} plan
  */
-function writeTheme(deps, plan) {
+function writeAppearance(deps, plan) {
+  if (!plan.layout) {
+    return afterLayout(deps, plan, null);
+  }
+  return deps.changeLayout.changeLayout({layout: plan.layoutId})
+    .flatMap(preferences => afterLayout(deps, plan, preferences.layout.id))
+    .catch(error => layoutFailed(plan, error));
+}
+
+/**
+ * @param {object} deps
+ * @param {object} plan
+ * @param {string | null} layoutId
+ */
+function afterLayout(deps, plan, layoutId) {
+  if (plan.theme) {
+    return writeTheme(deps, plan, layoutId);
+  }
+  return finish(deps, null, layoutId);
+}
+
+/**
+ * @param {{changeTheme: {changeTheme: Function}, getShopProfile: {getProfile: Function}}} deps
+ * @param {object} plan
+ * @param {string | null} layoutId
+ */
+function writeTheme(deps, plan, layoutId) {
   return deps.changeTheme.changeTheme({theme: plan.themeId})
-    .flatMap(preferences => finish(deps, preferences.theme.id))
-    .catch(error => themeFailed(plan, error));
+    .flatMap(preferences => finish(deps, preferences.theme.id, layoutId))
+    .catch(error => themeFailed(plan, error, layoutId));
 }
 
 /**
  * @param {{getShopProfile: {getProfile: Function}, getSellPreferences?: {get: Function}}} deps
  * @param {string | null} themeId
+ * @param {string | null} layoutId
  */
-function finish(deps, themeId) {
+function finish(deps, themeId, layoutId) {
   return deps.getShopProfile.getProfile()
     .flatMap(view => readOptional(deps.getSellPreferences).map(ticket => ({view, ticket})))
     .flatMap(loaded => readOptional(deps.getPrinterSettings).map(printer => ({...loaded, printer})))
@@ -227,9 +276,10 @@ function finish(deps, themeId) {
       themeId,
       loaded.ticket,
       loaded.printer,
-      loaded.language
+      loaded.language,
+      layoutId
     )))
-    .catch(error => reloadFailed(themeId, error));
+    .catch(error => reloadFailed(themeId, layoutId, error));
 }
 
 /**
@@ -248,10 +298,14 @@ function readOptional(useCase) {
  * @param {object | null} ticket
  * @param {object | null} printer
  * @param {object | null} language
+ * @param {string | null} layoutId
  * @returns {object[]}
  */
-function successActions(view, themeId, ticket, printer, language) {
-  const actions = [settingsSaved(view, themeId, ticket, printer, language)];
+function successActions(view, themeId, ticket, printer, language, layoutId) {
+  const actions = [settingsSaved(view, themeId, ticket, printer, language, layoutId)];
+  if (layoutId) {
+    actions.push(layoutChanged(layoutId));
+  }
   if (themeId) {
     actions.push(themeChanged(themeId));
   }
@@ -260,11 +314,16 @@ function successActions(view, themeId, ticket, printer, language) {
 }
 
 /**
+ * @param {string | null} themeId
+ * @param {string | null} layoutId
  * @param {*} error
  */
-function reloadFailed(themeId, error) {
+function reloadFailed(themeId, layoutId, error) {
   record(error);
   const actions = [settingsSaveFailed({message: SAVE_ERROR})];
+  if (layoutId) {
+    actions.unshift(layoutChanged(layoutId));
+  }
   if (themeId) {
     actions.unshift(themeChanged(themeId));
   }
@@ -314,13 +373,30 @@ function incompleteOrBoth(draft) {
 /**
  * @param {object} plan
  * @param {*} error
+ * @param {string | null} [layoutId] layout already stored on this click
  */
-function themeFailed(plan, error) {
+function themeFailed(plan, error, layoutId) {
   record(error);
   const theme = plan.previousTheme || 'mercado';
+  const failure = {message: THEME_SAVE_ERROR, theme};
+  const actions = [themeChangeFailed(theme), settingsSaveFailed(failure)];
+  if (layoutId) {
+    failure.layout = layoutId;
+    actions.unshift(layoutChanged(layoutId));
+  }
+  return Rx.Observable.of(...actions);
+}
+
+/**
+ * @param {object} plan
+ * @param {*} error
+ */
+function layoutFailed(plan, error) {
+  record(error);
+  const layout = plan.previousLayout || 'mostrador';
   return Rx.Observable.of(
-    themeChangeFailed(theme),
-    settingsSaveFailed({message: THEME_SAVE_ERROR, theme})
+    layoutChangeFailed(layout),
+    settingsSaveFailed({message: LAYOUT_SAVE_ERROR, layout})
   );
 }
 
