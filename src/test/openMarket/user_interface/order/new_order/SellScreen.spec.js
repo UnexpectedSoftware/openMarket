@@ -9,7 +9,8 @@ import {
   SellTop,
   gridNotice,
   reprintBody,
-  sellTile
+  sellTile,
+  tileInitials
 } from '../../../../../openMarket/user_interface/order/new_order/SellScreen';
 
 describe('sell screen pieces', () => {
@@ -71,6 +72,37 @@ describe('sell screen pieces', () => {
     const tile = sellTile({barcode: '9', name: 'Foto', priceCents: 100, imageUrl: 'pic.png'}, null);
     ReactDOM.render(<div>{tile}</div>, host);
     expect(host.querySelector('img').getAttribute('src')).to.equal('pic.png');
+    expect(host.querySelector('.sell-tile-initials')).to.equal(null);
+    expect(host.querySelector('.sell-tile-photo')).to.not.equal(null);
+  });
+
+  it('shows initials on every card and peso marks on a weighed card', () => {
+    expect(tileInitials('Queso manchego')).to.equal('QM');
+    expect(tileInitials('Pan de pueblo')).to.equal('PP');
+    expect(tileInitials('Lentejas')).to.equal('LE');
+    expect(tileInitials('')).to.equal('');
+
+    ReactDOM.render(
+      <div>
+        {sellTile({barcode: 'ham', name: 'Queso manchego', priceCents: 1850, weighted: true}, null)}
+        {sellTile({barcode: 'rice', name: 'Lentejas', priceCents: 200, weighted: false}, null)}
+      </div>,
+      host
+    );
+    const cards = host.querySelectorAll('.sell-tile');
+    const weighed = cards[0];
+    const counted = cards[1];
+    expect(weighed.querySelector('.sell-tile-initials').textContent).to.equal('QM');
+    expect(weighed.querySelector('.sell-tile-peso').textContent).to.contain('peso');
+    expect(weighed.querySelector('.sell-tile-peso .fa-balance-scale')).to.not.equal(null);
+    expect(weighed.querySelector('.sell-tile-mark .fa-balance-scale')).to.not.equal(null);
+    expect(weighed.querySelector('.sell-tile-unit').textContent).to.equal('/kg');
+    expect(weighed.querySelector('.sell-tile-price').textContent).to.contain('18,50');
+    expect(counted.querySelector('.sell-tile-initials').textContent).to.equal('LE');
+    expect(counted.querySelector('.sell-tile-peso')).to.equal(null);
+    expect(counted.querySelector('.sell-tile-mark')).to.equal(null);
+    expect(counted.textContent).to.not.contain('/kg');
+    expect(counted.querySelector('.sell-tile-photo')).to.not.equal(null);
   });
 
   it('puts the shop name on the top bar and the receipt in the reprint dialog', () => {

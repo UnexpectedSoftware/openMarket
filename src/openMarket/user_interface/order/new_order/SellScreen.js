@@ -154,8 +154,29 @@ export function gridNotice(status, count) {
   return null;
 }
 
+const SMALL_WORD = {de: true, del: true, la: true, el: true, los: true, las: true, y: true, a: true};
+
 /**
- * @param {{barcode: string, name: string, priceCents: number, imageUrl?: string | null}} tile
+ * Two letters for the photo placeholder: the first of each of the first two
+ * words, or the first two letters of a single word. Short Spanish particles drop out.
+ * @param {string | null | undefined} name
+ * @returns {string}
+ */
+export function tileInitials(name) {
+  const words = String(name || '').trim().split(/\s+/).filter(Boolean);
+  const kept = words.filter(word => !SMALL_WORD[word.toLowerCase()]);
+  const source = kept.length ? kept : words;
+  if (!source.length) {
+    return '';
+  }
+  if (source.length === 1) {
+    return source[0].slice(0, 2).toUpperCase();
+  }
+  return (source[0].charAt(0) + source[1].charAt(0)).toUpperCase();
+}
+
+/**
+ * @param {{barcode: string, name: string, priceCents: number, weighted?: boolean, imageUrl?: string | null}} tile
  * @param {Function | undefined} onPick
  */
 export function sellTile(tile, onPick) {
@@ -167,11 +188,77 @@ export function sellTile(tile, onPick) {
       key={tile.barcode}
       onClick={() => pickTile(onPick, tile.barcode)}
     >
-      {tile.imageUrl ? <img src={tile.imageUrl} alt="" /> : null}
-      <span className="sell-tile-name">{tile.name}</span>
-      <span className="sell-tile-price">{formatMoney(Money.ofCents(tile.priceCents || 0))}</span>
-      {quedan ? <Badge tone="warning">{quedan}</Badge> : null}
+      {tilePhoto(tile)}
+      <span className="sell-tile-copy">
+        <span className="sell-tile-name">{tile.name}</span>
+        {tilePrice(tile)}
+        {quedan ? <Badge tone="warning">{quedan}</Badge> : null}
+      </span>
     </button>
+  );
+}
+
+/**
+ * @param {{name?: string, weighted?: boolean, imageUrl?: string | null}} tile
+ */
+function tilePhoto(tile) {
+  return (
+    <span className="sell-tile-photo">
+      {tileFace(tile)}
+      {pesoPill(tile)}
+      {weightMark(tile)}
+    </span>
+  );
+}
+
+/**
+ * @param {{name?: string, imageUrl?: string | null}} tile
+ */
+function tileFace(tile) {
+  if (tile.imageUrl) {
+    return <img src={tile.imageUrl} alt="" />;
+  }
+  return <span className="sell-tile-initials" aria-hidden="true">{tileInitials(tile.name)}</span>;
+}
+
+/**
+ * @param {{weighted?: boolean}} tile
+ */
+function pesoPill(tile) {
+  if (!tile.weighted) {
+    return null;
+  }
+  return (
+    <span className="sell-tile-peso">
+      <i className="fa fa-balance-scale" aria-hidden="true" />
+      peso
+    </span>
+  );
+}
+
+/**
+ * @param {{weighted?: boolean}} tile
+ */
+function weightMark(tile) {
+  if (!tile.weighted) {
+    return null;
+  }
+  return (
+    <span className="sell-tile-mark" aria-hidden="true">
+      <i className="fa fa-balance-scale" />
+    </span>
+  );
+}
+
+/**
+ * @param {{priceCents?: number, weighted?: boolean}} tile
+ */
+function tilePrice(tile) {
+  return (
+    <span className="sell-tile-price">
+      {formatMoney(Money.ofCents(tile.priceCents || 0))}
+      {tile.weighted ? <span className="sell-tile-unit">/kg</span> : null}
+    </span>
   );
 }
 

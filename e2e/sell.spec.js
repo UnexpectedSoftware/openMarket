@@ -291,6 +291,10 @@ test('screenshots the sell screen and the weighted dialog in every theme', async
   fs.mkdirSync(after, {recursive: true});
   try {
     await openSell(window);
+    await expect(window.locator('.sell-tile', {hasText: 'Ham'}).locator('.sell-tile-peso')).toContainText('peso');
+    await expect(window.locator('.sell-tile', {hasText: 'Ham'}).locator('.sell-tile-unit')).toHaveText('/kg');
+    await expect(window.locator('.sell-tile', {hasText: 'Arroz'}).locator('.sell-tile-initials')).toHaveText('AR');
+    await expect(window.locator('.sell-tile', {hasText: 'Ham'}).locator('.sell-tile-initials')).toHaveText('HA');
     await scanBarcode(window, '8400000000219');
     await expect(orderRow(window, 'Arroz')).toBeVisible();
     await scanBarcode(window, '8400000000226');

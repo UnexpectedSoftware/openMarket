@@ -155,41 +155,117 @@
 .sell-tile {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--om-space-2);
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: var(--om-space-0);
   min-height: calc(var(--om-space-9) * 2);
-  padding: var(--om-space-3);
+  padding: var(--om-space-0);
+  overflow: hidden;
   text-align: left;
   background: var(--om-color-surface);
   color: var(--om-color-text);
-  border: var(--om-button-border-width) solid var(--om-color-border);
-  border-radius: var(--om-radius-md);
+  border: var(--om-button-border-width) solid var(--om-color-primary);
+  border-radius: var(--om-radius-lg);
   cursor: pointer;
 }
 
 .sell-tile:hover,
 .sell-tile:focus {
-  border-color: var(--om-color-primary);
+  border-color: var(--om-color-primary-hover);
 }
 
 .sell-tile-free {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--om-space-2);
+  padding: var(--om-space-3);
   background: var(--om-color-primary-soft);
+  border-color: var(--om-color-border);
+}
+
+.sell-tile-photo {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: var(--om-tile-image-height);
+  overflow: hidden;
+  background: var(--om-color-surface-alt);
+}
+
+.sell-tile-initials {
+  color: var(--om-color-text-muted);
+  font-size: var(--om-font-size-3xl);
+  font-weight: var(--om-font-weight-bold);
+  line-height: var(--om-line-height-tight);
+}
+
+.sell-tile-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.sell-tile-peso {
+  position: absolute;
+  top: var(--om-space-2);
+  left: var(--om-space-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--om-space-1);
+  height: var(--om-space-6);
+  padding: 0 var(--om-space-2);
+  background: var(--om-color-surface);
+  color: var(--om-color-text-muted);
+  border: var(--om-button-border-width) solid var(--om-color-border);
+  border-radius: var(--om-radius-pill);
+  font-size: var(--om-font-size-xs);
+  font-weight: var(--om-font-weight-medium);
+  line-height: var(--om-line-height-tight);
+}
+
+.sell-tile-mark {
+  position: absolute;
+  top: var(--om-space-2);
+  right: var(--om-space-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--om-space-7);
+  height: var(--om-space-7);
+  background: var(--om-color-primary);
+  color: var(--om-color-primary-contrast);
+  border-radius: var(--om-radius-pill);
+  font-size: var(--om-font-size-sm);
+}
+
+.sell-tile-copy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--om-space-2);
+  padding: var(--om-space-3);
 }
 
 .sell-tile-name {
-  font-weight: 600;
+  font-weight: var(--om-font-weight-bold);
 }
 
 .sell-tile-price {
+  color: var(--om-color-text);
   font-family: var(--om-font-numeric);
   font-feature-settings: var(--om-font-feature-numeric);
+  font-size: var(--om-font-size-lg);
+  font-weight: var(--om-font-weight-bold);
 }
 
-.sell-tile img {
-  width: 100%;
-  height: var(--om-space-9);
-  object-fit: contain;
+.sell-tile-unit {
+  margin-left: var(--om-space-1);
+  color: var(--om-color-text-muted);
+  font-family: var(--om-font-sans);
+  font-size: var(--om-font-size-sm);
+  font-weight: var(--om-font-weight-medium);
 }
 
 .sell-cart {
