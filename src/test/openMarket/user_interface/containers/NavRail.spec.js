@@ -97,6 +97,20 @@ describe('NavRail', () => {
     });
     expect(html).to.contain('Takings');
     expect(html).to.contain('aria-label="Principal"');
+    expect(html.indexOf('nav-rail-mark')).to.be.below(html.indexOf('href="#/create_order"'));
+    expect(html).to.contain('aria-label="OpenMarket"');
+    expect(html).to.contain('>OM<');
+  });
+
+  it('shows the shop initials at the top of the rail', () => {
+    const html = renderToStaticMarkup(
+      <RouterHarness router={routerFor('/create_order')}>
+        <NavRail shopName="Ultramarinos Pérez" initials="UP" />
+      </RouterHarness>
+    );
+    expect(html).to.contain('aria-label="Ultramarinos Pérez"');
+    expect(html).to.contain('>UP<');
+    expect(html).to.not.contain('>OM<');
   });
 
   it('shows the low-stock count on Productos and Informes', () => {

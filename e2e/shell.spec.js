@@ -19,6 +19,34 @@ test('navigates from the rail with a click or a shortcut', async () => {
   const {app, window, userData} = await launchApp();
   try {
     await window.setViewportSize({width: 1366, height: 768});
+    await expect(window.locator('.header')).toHaveCount(0);
+    await expect(window.locator('.app-version')).toHaveCount(0);
+    await expect(window.getByRole('heading', {name: 'OpenMarket', exact: true})).toHaveCount(0);
+    const mark = window.locator('.nav-rail-mark');
+    await expect(mark).toHaveText('OM');
+    await expect(mark).toHaveAttribute('aria-label', 'OpenMarket');
+    const markBox = await mark.boundingBox();
+    const railBox = await window.locator('.nav-rail').boundingBox();
+    const mainBox = await window.locator('#main').boundingBox();
+    const side = markBox.x - railBox.x;
+    const sideRight = railBox.x + railBox.width - (markBox.x + markBox.width);
+    expect(mainBox.y).toBeLessThanOrEqual(1);
+    expect(markBox.width).toBeGreaterThan(44);
+    expect(markBox.width).toBeLessThan(52);
+    expect(markBox.height).toBeGreaterThan(44);
+    expect(markBox.height).toBeLessThan(52);
+    expect(side).toBeGreaterThan(16);
+    expect(side).toBeLessThan(26);
+    expect(sideRight).toBeGreaterThan(16);
+    expect(sideRight).toBeLessThan(26);
+    expect(markBox.y).toBeGreaterThan(8);
+    expect(markBox.y).toBeLessThan(28);
+    const fontSize = await mark.evaluate(element => parseFloat(getComputedStyle(element).fontSize));
+    const radius = await mark.evaluate(element => parseFloat(getComputedStyle(element).borderTopLeftRadius));
+    expect(fontSize).toBeGreaterThanOrEqual(17);
+    expect(fontSize).toBeLessThanOrEqual(21);
+    expect(radius).toBeGreaterThanOrEqual(7);
+    expect(radius).toBeLessThanOrEqual(11);
 
     for (const screen of SCREENS) {
       await window.getByRole('link', {name: screen.link, exact: true}).click();
@@ -43,9 +71,17 @@ test('navigates from the rail with a click or a shortcut', async () => {
     await window.keyboard.press('Escape');
     await expect(window.getByRole('heading', {name: 'Nuevo producto', exact: true})).toHaveCount(0);
 
-    await window.locator('.header').click({position: {x: 700, y: 20}});
+    const skip = window.getByRole('link', {name: 'Saltar al contenido'});
+    const hiddenBox = await skip.boundingBox();
+    expect(hiddenBox == null || hiddenBox.width < 5).toBe(true);
+    await window.evaluate(() => {
+      document.body.tabIndex = -1;
+      document.body.focus();
+    });
     await window.keyboard.press('Tab');
-    await expect(window.getByRole('link', {name: 'Saltar al contenido'})).toBeFocused();
+    await expect(skip).toBeFocused();
+    const shownBox = await skip.boundingBox();
+    expect(shownBox.width).toBeGreaterThan(40);
     await window.keyboard.press('Tab');
     const vender = window.getByRole('link', {name: 'Vender', exact: true});
     await expect(vender).toBeFocused();

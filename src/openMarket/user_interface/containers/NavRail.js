@@ -1,6 +1,7 @@
 import React, {Component} from 'react';
 import {Link, withRouter} from 'react-router';
 import Badge from '../components/Badge';
+import {shopMark} from './shopMark';
 
 const LOW_STOCK_ROUTES = {
   '/list_products': true,
@@ -119,8 +120,14 @@ class NavRail extends Component {
   render() {
     const primary = NAV_ITEMS.filter(item => !item.end);
     const end = NAV_ITEMS.filter(item => item.end);
+    const mark = shopMark(null);
+    const initials = this.props.initials || mark.initials;
+    const shopName = this.props.shopName || mark.name;
     return (
       <nav className="nav-rail" aria-label="Principal">
+        <div className="nav-rail-mark" role="img" aria-label={shopName}>
+          {initials}
+        </div>
         <ul className="nav-rail-list">
           {primary.map(item => this.renderItem(item))}
           {end.map(item => this.renderItem(item))}

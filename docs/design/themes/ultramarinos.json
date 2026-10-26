@@ -121,6 +121,7 @@
   "shell": {
     "railWidth": "88px",
     "railItemHeight": "64px",
-    "headerHeight": "56px"
+    "headerHeight": "56px",
+    "railMarkSize": "48px"
   }
 }

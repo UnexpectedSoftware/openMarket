@@ -45,7 +45,7 @@ body {
 h1 {
   margin: 0;
   padding: 0;
-  color: var(--om-color-primary-contrast);
+  color: var(--om-color-text);
   background-color: transparent;
   font-family: var(--om-font-sans);
   font-size: var(--om-font-size-xl);
@@ -72,45 +72,6 @@ h3 {
 
   .button {
 	margin-top: -$sp-base/2;
-  }
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: var(--om-space-4);
-  height: var(--om-header-height);
-  padding: 0 var(--om-space-4);
-  background-color: var(--om-color-primary);
-  color: var(--om-color-primary-contrast);
-  box-shadow: var(--om-shadow-sm);
-
-  h1 {
-    color: inherit;
-    font-size: var(--om-font-size-lg);
-  }
-
-  .header-aside {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--om-space-4);
-    margin-left: auto;
-  }
-
-  .app-version {
-    font-family: var(--om-font-sans);
-    font-size: var(--om-font-size-sm);
-    font-weight: var(--om-font-weight-medium);
-  }
-
-  .fetch-progress {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--om-space-2);
-    font-family: var(--om-font-sans);
-    font-size: var(--om-font-size-sm);
-    font-weight: var(--om-font-weight-medium);
   }
 }
 
