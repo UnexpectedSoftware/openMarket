@@ -147,9 +147,254 @@ function contrastRatio(front, back) {
     g: fg.g * fg.a + bg.g * (1 - fg.a),
     b: fg.b * fg.a + bg.b * (1 - fg.a)
   };
-  const lighter = Math.max(luminance(blended), luminance(bg));
-  const darker = Math.min(luminance(blended), luminance(bg));
+  return ratioOf(blended, bg);
+}
+
+/**
+ * @param {{r: number, g: number, b: number}} front
+ * @param {{r: number, g: number, b: number}} back
+ * @returns {number}
+ */
+function ratioOf(front, back) {
+  const lighter = Math.max(luminance(front), luminance(back));
+  const darker = Math.min(luminance(front), luminance(back));
   return (lighter + 0.05) / (darker + 0.05);
+}
+
+const TEXT_ROLES = ['text', 'textMuted', 'primary', 'primaryHover', 'accent', 'success', 'warning', 'danger'];
+const SURFACES = ['background', 'surface', 'surfaceAlt'];
+const FILL_PAIRS = [
+  ['primaryContrast', 'primary'],
+  ['primaryContrast', 'primaryHover'],
+  ['accentContrast', 'accent']
+];
+const SOFT_PAIRS = [
+  ['primary', 'primarySoft'],
+  ['success', 'successSoft'],
+  ['danger', 'dangerSoft'],
+  ['text', 'primarySoft'],
+  ['text', 'successSoft'],
+  ['text', 'dangerSoft']
+];
+const UI_ROLES = ['borderStrong', 'focus'];
+const APP_THEMES = path.join(
+  __dirname,
+  '../../../../openMarket/user_interface/style/settings/themes.scss'
+);
+
+/**
+ * @param {string} front
+ * @param {string} back
+ * @returns {{r: number, g: number, b: number, a: number}}
+ */
+function composite(front, back) {
+  const fg = parseColor(front);
+  const bg = parseColor(back);
+  if (fg.a >= 1) {
+    return fg;
+  }
+  return {
+    r: fg.r * fg.a + bg.r * (1 - fg.a),
+    g: fg.g * fg.a + bg.g * (1 - fg.a),
+    b: fg.b * fg.a + bg.b * (1 - fg.a),
+    a: 1
+  };
+}
+
+/**
+ * @param {string} token
+ * @returns {string}
+ */
+function camel(token) {
+  return token.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+/**
+ * @param {object} theme
+ * @param {string} value
+ * @returns {string}
+ */
+function resolvePaint(theme, value) {
+  const reference = /^var\((--om-[\w-]+)\)$/.exec(value == null ? '' : value);
+  if (!reference) {
+    return value;
+  }
+  const name = reference[1];
+  if (name.startsWith('--om-color-')) {
+    return theme.color[camel(name.slice('--om-color-'.length))];
+  }
+  if (name.startsWith('--om-gradient-')) {
+    return theme.gradient[camel(name.slice('--om-gradient-'.length))];
+  }
+  return value;
+}
+
+/**
+ * Replaces var(--om-*) references inside a paint value.
+ * @param {object} theme
+ * @param {string} value
+ * @returns {string}
+ */
+function expandVars(theme, value) {
+  return String(value).replace(/var\((--om-[\w-]+)\)/g, (match, name) => {
+    const resolved = resolvePaint(theme, 'var(' + name + ')');
+    return resolved == null ? match : String(resolved);
+  });
+}
+
+/**
+ * Solid stops of a fill. A gradient also contributes its midpoint.
+ * @param {string} paint
+ * @returns {string[]}
+ */
+function paintStops(paint) {
+  const stops = String(paint).match(/#[0-9A-Fa-f]{6}/g) || [];
+  if (!String(paint).includes('gradient') || stops.length < 2) {
+    return [paint];
+  }
+  const start = parseColor(stops[0]);
+  const end = parseColor(stops[1]);
+  const mid = [start.r, start.g, start.b].map((channel, index) => {
+    const other = [end.r, end.g, end.b][index];
+    return Math.round((channel + other) / 2).toString(16).padStart(2, '0');
+  });
+  return stops.concat('#' + mid.join(''));
+}
+
+/**
+ * @param {object} theme
+ * @param {string} paint
+ * @returns {string[]}
+ */
+function backdrops(theme, paint) {
+  if (paint === 'transparent') {
+    return SURFACES.map(name => theme.color[name]);
+  }
+  return [paint];
+}
+
+/**
+ * @param {number} ratio
+ * @param {number} required
+ * @param {string} label
+ */
+function expectAtLeast(ratio, required, label) {
+  expect(ratio, label).to.be.at.least(required);
+}
+
+/**
+ * @param {object} theme
+ */
+function expectTextPairs(theme) {
+  TEXT_ROLES.forEach(role => {
+    SURFACES.forEach(surface => {
+      expectAtLeast(
+        contrastRatio(theme.color[role], theme.color[surface]),
+        4.5,
+        `${role} on ${surface}`
+      );
+    });
+  });
+  FILL_PAIRS.forEach(pair => {
+    expectAtLeast(
+      contrastRatio(theme.color[pair[0]], theme.color[pair[1]]),
+      4.5,
+      `${pair[0]} on ${pair[1]}`
+    );
+  });
+}
+
+/**
+ * @param {object} theme
+ */
+function expectSoftPairs(theme) {
+  SOFT_PAIRS.forEach(pair => {
+    SURFACES.forEach(surface => {
+      const background = composite(theme.color[pair[1]], theme.color[surface]);
+      const foreground = parseColor(theme.color[pair[0]]);
+      expectAtLeast(
+        ratioOf(foreground, background),
+        4.5,
+        `${pair[0]} on ${pair[1]} over ${surface}`
+      );
+    });
+  });
+}
+
+/**
+ * @param {object} theme
+ */
+function expectUiPairs(theme) {
+  UI_ROLES.forEach(role => {
+    SURFACES.forEach(surface => {
+      expectAtLeast(
+        contrastRatio(theme.color[role], theme.color[surface]),
+        3,
+        `${role} on ${surface}`
+      );
+    });
+  });
+  expectAtLeast(contrastRatio(theme.chart.barBorder, theme.color.surface), 3, 'chart border on surface');
+}
+
+/**
+ * @param {object} theme
+ */
+function expectButtonPairs(theme) {
+  const button = theme.button;
+  expectAtLeast(
+    contrastRatio(resolvePaint(theme, button.dangerFg), theme.color.danger),
+    4.5,
+    'danger button text'
+  );
+  const ghost = resolvePaint(theme, button.ghostFg);
+  SURFACES.forEach(surface => {
+    expectAtLeast(contrastRatio(ghost, theme.color[surface]), 4.5, `ghost text on ${surface}`);
+  });
+  const secondaryFg = resolvePaint(theme, button.secondaryFg);
+  const secondaryBg = resolvePaint(theme, button.secondaryBg);
+  backdrops(theme, secondaryBg).forEach(background => {
+    expectAtLeast(contrastRatio(secondaryFg, background), 4.5, `secondary text on ${background}`);
+  });
+  const primaryFg = resolvePaint(theme, button.primaryFg);
+  paintStops(expandVars(theme, resolvePaint(theme, button.primaryBg))).forEach(stop => {
+    expectAtLeast(contrastRatio(primaryFg, stop), 4.5, `primary text on ${stop}`);
+  });
+  const border = resolvePaint(theme, button.secondaryBorder);
+  backdrops(theme, secondaryBg).forEach(background => {
+    expectAtLeast(contrastRatio(border, background), 3, `secondary border on ${background}`);
+  });
+}
+
+/**
+ * @param {{scheme: string, tokens: Map<string, string>}} css
+ * @param {object} theme
+ * @param {string} label
+ */
+function expectSameTokens(css, theme, label) {
+  expect(css.scheme, label).to.equal(theme.colorScheme);
+  const expected = expectedTokens(theme);
+  expected.forEach((value, name) => {
+    expect(css.tokens.get(name), `${label} ${name}`).to.equal(value);
+  });
+  css.tokens.forEach((value, name) => {
+    expect(expected.has(name), `${label} extra token ${name}`).to.equal(true);
+  });
+}
+
+/**
+ * @param {string} id
+ * @returns {{label: string, css: {scheme: string, tokens: Map<string, string>}}[]}
+ */
+function themeSources(id) {
+  return [
+    {label: `${id}.css`, file: path.join(themesDir, `${id}.css`)},
+    {label: 'all-themes.css', file: path.join(themesDir, 'all-themes.css')},
+    {label: 'themes.scss', file: APP_THEMES}
+  ].map(source => ({
+    label: source.label,
+    css: parseCss(fs.readFileSync(source.file, 'utf8'), id)
+  }));
 }
 
 describe('theme contrast', () => {
@@ -157,17 +402,11 @@ describe('theme contrast', () => {
 
   IDS.forEach(id => {
     const theme = JSON.parse(fs.readFileSync(path.join(themesDir, `${id}.json`), 'utf8'));
-    const css = parseCss(fs.readFileSync(path.join(themesDir, `${id}.css`), 'utf8'), id);
+    const sources = themeSources(id);
+    const css = sources[0].css;
 
     it(`${id} CSS matches the JSON tokens`, () => {
-      expect(css.scheme).to.equal(theme.colorScheme);
-      const expected = expectedTokens(theme);
-      expected.forEach((value, name) => {
-        expect(css.tokens.get(name), name).to.equal(value);
-      });
-      css.tokens.forEach((value, name) => {
-        expect(expected.has(name), `extra token ${name}`).to.equal(true);
-      });
+      sources.forEach(source => expectSameTokens(source.css, theme, source.label));
     });
 
     it(`${id} meets the WCAG pairs in contrast.json`, () => {
@@ -184,6 +423,13 @@ describe('theme contrast', () => {
         expect(ratio, `${pair.fg} on ${pair.bg}`).to.be.at.least(pair.required);
         expect(Number(ratio.toFixed(2)), `${pair.fg} on ${pair.bg}`).to.equal(pair.ratio);
       });
+    });
+
+    it(`${id} text is at least 4.5:1 and UI boundaries at least 3:1`, () => {
+      expectTextPairs(theme);
+      expectSoftPairs(theme);
+      expectUiPairs(theme);
+      expectButtonPairs(theme);
     });
   });
 });

@@ -75,7 +75,7 @@
     {
       "fg": "success",
       "bg": "surface",
-      "ratio": 5.42,
+      "ratio": 6.66,
       "AA": true,
       "AAA": false,
       "required": 4.5
@@ -303,7 +303,7 @@
     {
       "fg": "success",
       "bg": "surface",
-      "ratio": 5.6,
+      "ratio": 6.84,
       "AA": true,
       "AAA": false,
       "required": 4.5
@@ -335,7 +335,7 @@
     {
       "fg": "borderStrong",
       "bg": "surface",
-      "ratio": 3.48,
+      "ratio": 3.72,
       "AA": true,
       "AAA": false,
       "required": 3
@@ -385,15 +385,15 @@
     {
       "fg": "primaryContrast",
       "bg": "primary",
-      "ratio": 6.7,
+      "ratio": 8.52,
       "AA": true,
-      "AAA": false,
+      "AAA": true,
       "required": 4.5
     },
     {
       "fg": "primary",
       "bg": "surface",
-      "ratio": 4.95,
+      "ratio": 6.3,
       "AA": true,
       "AAA": false,
       "required": 4.5
@@ -433,7 +433,7 @@
     {
       "fg": "danger",
       "bg": "surface",
-      "ratio": 4.87,
+      "ratio": 6.35,
       "AA": true,
       "AAA": false,
       "required": 4.5
@@ -449,7 +449,7 @@
     {
       "fg": "borderStrong",
       "bg": "surface",
-      "ratio": 3.47,
+      "ratio": 3.82,
       "AA": true,
       "AAA": false,
       "required": 3

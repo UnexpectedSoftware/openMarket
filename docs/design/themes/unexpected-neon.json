@@ -10,25 +10,25 @@
     "surfaceAlt": "#333333",
     "text": "#FFFFFF",
     "textMuted": "#BDBDCB",
-    "primary": "#FF00FF",
-    "primaryHover": "#FF4DFF",
+    "primary": "#FF64FF",
+    "primaryHover": "#FF8CFF",
     "primaryContrast": "#000000",
     "accent": "#00FFFF",
     "accentContrast": "#000000",
     "success": "#39FF88",
     "warning": "#FFE45C",
-    "danger": "#FF4D7A",
+    "danger": "#FF7D90",
     "border": "#444444",
     "focus": "#00FFFF",
     "overlay": "rgba(0,0,0,0.7)",
-    "borderStrong": "#777777",
-    "primarySoft": "rgba(255,0,255,0.16)",
+    "borderStrong": "#7E7E7E",
+    "primarySoft": "rgba(255,100,255,0.08)",
     "successSoft": "rgba(57,255,136,0.16)",
-    "dangerSoft": "rgba(255,77,122,0.16)"
+    "dangerSoft": "rgba(255,125,144,0.08)"
   },
   "gradient": {
-    "primary": "linear-gradient(45deg, #FF00FF, #00FFFF)",
-    "header": "linear-gradient(45deg, #FF00FF, #00FFFF)"
+    "primary": "linear-gradient(45deg, #FF64FF, #00FFFF)",
+    "header": "linear-gradient(45deg, #FF64FF, #00FFFF)"
   },
   "font": {
     "sans": "\"JetBrains Mono\", \"Space Mono\", \"Courier New\", Courier, monospace",
@@ -83,7 +83,7 @@
   "shadow": {
     "sm": "0 0 0 1px #444444",
     "md": "0 0 12px rgba(0,255,255,0.25)",
-    "lg": "0 0 32px rgba(255,0,255,0.35)",
+    "lg": "0 0 32px rgba(255,100,255,0.35)",
     "focus": "0 0 0 2px #00FFFF, 0 0 12px #00FFFF"
   },
   "button": {
@@ -114,9 +114,9 @@
     "radius": "4px"
   },
   "chart": {
-    "bar": "rgba(255,0,255,0.35)",
-    "barBorder": "#FF00FF",
-    "barHover": "rgba(255,0,255,0.55)"
+    "bar": "rgba(255,100,255,0.35)",
+    "barBorder": "#FF64FF",
+    "barHover": "rgba(255,100,255,0.55)"
   },
   "shell": {
     "railWidth": "88px",

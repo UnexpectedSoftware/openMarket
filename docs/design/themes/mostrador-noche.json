@@ -99,7 +99,7 @@
     "primaryFg": "var(--om-color-primary-contrast)",
     "secondaryBg": "var(--om-color-surface-alt)",
     "secondaryFg": "var(--om-color-text)",
-    "secondaryBorder": "var(--om-color-border)",
+    "secondaryBorder": "var(--om-color-border-strong)",
     "ghostFg": "var(--om-color-accent)",
     "dangerBg": "var(--om-color-danger)",
     "dangerFg": "#14110A"

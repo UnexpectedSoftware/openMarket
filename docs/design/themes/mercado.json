@@ -15,16 +15,16 @@
     "primaryContrast": "#FFFFFF",
     "accent": "#0F7B6C",
     "accentContrast": "#FFFFFF",
-    "success": "#157A3A",
+    "success": "#156A3A",
     "warning": "#9A5B00",
     "danger": "#C0262D",
     "border": "#D6DCE4",
     "focus": "#1D58D0",
     "overlay": "rgba(20,26,35,0.48)",
     "borderStrong": "#878A8F",
-    "primarySoft": "rgba(29,88,208,0.16)",
-    "successSoft": "rgba(21,122,58,0.16)",
-    "dangerSoft": "rgba(192,38,45,0.16)"
+    "primarySoft": "rgba(29,88,208,0.12)",
+    "successSoft": "rgba(21,106,58,0.16)",
+    "dangerSoft": "rgba(192,38,45,0.08)"
   },
   "gradient": {
     "primary": "linear-gradient(var(--om-color-primary), var(--om-color-primary))",
@@ -99,7 +99,7 @@
     "primaryFg": "var(--om-color-primary-contrast)",
     "secondaryBg": "var(--om-color-surface)",
     "secondaryFg": "var(--om-color-text)",
-    "secondaryBorder": "var(--om-color-border)",
+    "secondaryBorder": "var(--om-color-border-strong)",
     "ghostFg": "var(--om-color-primary)",
     "dangerBg": "var(--om-color-danger)",
     "dangerFg": "#FFFFFF"
