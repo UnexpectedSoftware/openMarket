@@ -22,6 +22,7 @@ test('sell screen exposes a labelled barcode field, a named button and a focus o
   });
   try {
     await window.setViewportSize({width: 1366, height: 768});
+    await window.getByRole('link', {name: 'Vender', exact: true}).click();
     await expect(window.getByRole('heading', {name: 'Vender'})).toBeVisible();
 
     const search = window.getByLabel('Buscar o escanear');
