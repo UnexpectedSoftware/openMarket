@@ -19,27 +19,6 @@
   background: var(--om-color-background);
 }
 
-.skip-link:focus {
-  position: fixed;
-  top: var(--om-space-2);
-  left: var(--om-space-2);
-  z-index: 30;
-  width: auto;
-  height: auto;
-  margin: 0;
-  padding: var(--om-space-2) var(--om-space-3);
-  overflow: visible;
-  clip: auto;
-  white-space: normal;
-  color: var(--om-color-text);
-  background: var(--om-color-surface);
-  border-radius: var(--om-radius-md);
-  box-shadow: var(--om-shadow-md);
-  font-family: var(--om-font-sans);
-  font-size: var(--om-font-size-sm);
-  font-weight: var(--om-font-weight-medium);
-}
-
 .nav-rail-mark {
   display: flex;
   align-items: center;

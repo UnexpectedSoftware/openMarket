@@ -7,7 +7,7 @@ import {Provider} from 'react-redux';
 import {Router, Route, IndexRoute, createMemoryHistory} from 'react-router';
 import {routerMiddleware, syncHistoryWithStore} from 'react-router-redux';
 import {rootReducer} from '../../../../openMarket/user_interface/reducers';
-import App, {mapStateToProps, JobProgress} from '../../../../openMarket/user_interface/containers/App';
+import App, {mapStateToProps, JobProgress, clearLaunchFocus, isTextControl} from '../../../../openMarket/user_interface/containers/App';
 import {state} from '../../../../openMarket/user_interface/settings/model';
 import {SHOP_PROFILE_REQUESTED} from '../../../../openMarket/user_interface/settings/action';
 import {LOW_STOCK_COUNT_REQUESTED} from '../../../../openMarket/user_interface/low_stock/action';
@@ -93,11 +93,8 @@ describe('app shell', () => {
     expect(host.querySelector('h1')).to.equal(null);
     expect(host.textContent).to.not.contain('OpenMarket');
     expect(host.querySelector('.app-progress')).to.equal(null);
-
-    const skip = host.querySelector('.skip-link');
-    expect(skip.getAttribute('href')).to.equal('#main');
-    expect(skip.textContent).to.equal('Saltar al contenido');
-    expect(skip.className).to.contain('om-visually-hidden');
+    expect(host.querySelector('.skip-link')).to.equal(null);
+    expect(host.textContent).to.not.contain('Saltar al contenido');
     expect(host.querySelector('#main .shell-child').textContent).to.equal('Pantalla');
     expect(seen).to.include(SHOP_PROFILE_REQUESTED);
     expect(seen).to.include(LOW_STOCK_COUNT_REQUESTED);
@@ -144,5 +141,44 @@ describe('app shell', () => {
     const idle = mount(<JobProgress />);
     expect(idle.node.querySelector('.app-progress')).to.equal(null);
     idle.unmount();
+  });
+
+  it('clears a launch focus on a link and keeps a text field', () => {
+    renderShell();
+    expect(document.documentElement.classList.contains('om-suppress-focus')).to.equal(true);
+    expect(isTextControl(null)).to.equal(false);
+    expect(clearLaunchFocus(document)).to.equal(false);
+
+    const link = host.querySelector('a');
+    link.focus();
+    expect(document.activeElement).to.equal(document.body);
+    expect(clearLaunchFocus(document)).to.equal(false);
+
+    const input = document.createElement('input');
+    host.appendChild(input);
+    input.focus();
+    expect(isTextControl(input)).to.equal(true);
+    expect(isTextControl(document.createElement('textarea'))).to.equal(true);
+    expect(isTextControl(document.createElement('select'))).to.equal(true);
+    expect(isTextControl(link)).to.equal(false);
+    expect(document.activeElement).to.equal(input);
+    expect(clearLaunchFocus(document)).to.equal(false);
+
+    document.dispatchEvent(new window.MouseEvent('pointerdown', {bubbles: true}));
+    expect(document.documentElement.classList.contains('om-suppress-focus')).to.equal(false);
+    link.focus();
+    expect(document.activeElement).to.equal(link);
+  });
+
+  it('lets a key end launch focus suppression', () => {
+    renderShell();
+    expect(document.documentElement.classList.contains('om-suppress-focus')).to.equal(true);
+    document.dispatchEvent(new window.KeyboardEvent('keydown', {key: 'Tab', bubbles: true}));
+    expect(document.documentElement.classList.contains('om-suppress-focus')).to.equal(false);
+    const button = document.createElement('button');
+    host.appendChild(button);
+    button.focus();
+    expect(clearLaunchFocus(document)).to.equal(true);
+    expect(document.activeElement).to.equal(document.body);
   });
 });
