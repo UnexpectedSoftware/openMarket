@@ -10,15 +10,51 @@ import Notifications from 'react-notification-system-redux';
 import Spinner from '../components/Spinner';
 import {notificationStyle} from '../components/toast';
 
+const TEXT_CONTROL = /^(?:INPUT|TEXTAREA|SELECT)$/;
+
+/**
+ * The sell search is a text control and may keep the focus it takes on open.
+ * @param {Element | null} element
+ * @returns {boolean}
+ */
+export function isTextControl(element) {
+  return !!(element && element.tagName && TEXT_CONTROL.test(element.tagName));
+}
+
+/**
+ * A focus that arrives before a click or a key is the window opening.
+ * Text fields keep it. A link or button is cleared so it does not show a ring.
+ * @param {Document} doc
+ * @returns {boolean}
+ */
+export function clearLaunchFocus(doc) {
+  const active = doc.activeElement;
+  if (!active || active === doc.body || active === doc.documentElement) {
+    return false;
+  }
+  if (isTextControl(active)) {
+    return false;
+  }
+  active.blur();
+  return true;
+}
+
 class App extends Component {
   constructor(props) {
     super(props);
     this.onKeyDown = this.onKeyDown.bind(this);
-    this.skipToContent = this.skipToContent.bind(this);
+    this.releaseLaunchFocus = this.releaseLaunchFocus.bind(this);
+    this.onLaunchFocusIn = this.onLaunchFocusIn.bind(this);
   }
 
   componentDidMount() {
     document.addEventListener('keydown', this.onKeyDown);
+    document.documentElement.classList.add('om-suppress-focus');
+    document.addEventListener('pointerdown', this.releaseLaunchFocus, true);
+    document.addEventListener('mousedown', this.releaseLaunchFocus, true);
+    document.addEventListener('keydown', this.releaseLaunchFocus, true);
+    document.addEventListener('focusin', this.onLaunchFocusIn, true);
+    clearLaunchFocus(document);
     const version = process.env.OPENMARKET_VERSION;
     if (version) {
       document.title = `OpenMarket ${version}`;
@@ -33,6 +69,7 @@ class App extends Component {
 
   componentWillUnmount() {
     document.removeEventListener('keydown', this.onKeyDown);
+    this.releaseLaunchFocus();
   }
 
   onKeyDown(event) {
@@ -41,28 +78,32 @@ class App extends Component {
     });
   }
 
-  skipToContent(event) {
-    event.preventDefault();
-    const main = document.getElementById('main');
-    if (main) {
-      main.focus();
-    }
+  /**
+   * The first click or key is the user, so focus rings work from then on.
+   */
+  releaseLaunchFocus() {
+    document.documentElement.classList.remove('om-suppress-focus');
+    document.removeEventListener('pointerdown', this.releaseLaunchFocus, true);
+    document.removeEventListener('mousedown', this.releaseLaunchFocus, true);
+    document.removeEventListener('keydown', this.releaseLaunchFocus, true);
+    document.removeEventListener('focusin', this.onLaunchFocusIn, true);
+  }
+
+  onLaunchFocusIn() {
+    clearLaunchFocus(document);
   }
 
   render() {
     const {notifications, children, shopName, initials} = this.props;
     return (
       <div className="app-shell">
-        <a className="skip-link om-visually-hidden" href="#main" onClick={this.skipToContent}>
-          Saltar al contenido
-        </a>
         <div className="app-body">
           <NavRail
             lowStockCount={this.props.lowStockCount}
             shopName={shopName}
             initials={initials}
           />
-          <main id="main" className="app-main" tabIndex="-1">
+          <main id="main" className="app-main">
             <JobProgress imageFetch={this.props.imageFetch} catalogPrint={this.props.catalogPrint} />
             {children}
           </main>

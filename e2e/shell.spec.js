@@ -19,6 +19,14 @@ test('navigates from the rail with a click or a shortcut', async () => {
   const {app, window, userData} = await launchApp();
   try {
     await window.setViewportSize({width: 1366, height: 768});
+    await expect(window.getByRole('link', {name: 'Saltar al contenido'})).toHaveCount(0);
+    await expect.poll(async () => window.evaluate(() => {
+      const active = document.activeElement;
+      if (!active || active === document.body || active === document.documentElement) {
+        return 'none';
+      }
+      return getComputedStyle(active).outlineStyle;
+    })).toBe('none');
     await expect(window.locator('.header')).toHaveCount(0);
     await expect(window.locator('.app-version')).toHaveCount(0);
     await expect(window.getByRole('heading', {name: 'OpenMarket', exact: true})).toHaveCount(0);
@@ -51,6 +59,9 @@ test('navigates from the rail with a click or a shortcut', async () => {
     for (const screen of SCREENS) {
       await window.getByRole('link', {name: screen.link, exact: true}).click();
       await expect(window.getByRole('heading', {name: screen.heading})).toBeVisible();
+      if (screen.link === 'Vender') {
+        await expect(window.getByLabel('Buscar o escanear')).toBeFocused();
+      }
       await expect(window.getByRole('link', {name: screen.link, exact: true})).toHaveAttribute('aria-current', 'page');
       await window.screenshot({path: path.join('test-results', `shell-${screen.shot}.png`)});
     }
@@ -71,17 +82,11 @@ test('navigates from the rail with a click or a shortcut', async () => {
     await window.keyboard.press('Escape');
     await expect(window.getByRole('heading', {name: 'Nuevo producto', exact: true})).toHaveCount(0);
 
-    const skip = window.getByRole('link', {name: 'Saltar al contenido'});
-    const hiddenBox = await skip.boundingBox();
-    expect(hiddenBox == null || hiddenBox.width < 5).toBe(true);
+    await expect(window.getByRole('link', {name: 'Saltar al contenido'})).toHaveCount(0);
     await window.evaluate(() => {
       document.body.tabIndex = -1;
       document.body.focus();
     });
-    await window.keyboard.press('Tab');
-    await expect(skip).toBeFocused();
-    const shownBox = await skip.boundingBox();
-    expect(shownBox.width).toBeGreaterThan(40);
     await window.keyboard.press('Tab');
     const vender = window.getByRole('link', {name: 'Vender', exact: true});
     await expect(vender).toBeFocused();
