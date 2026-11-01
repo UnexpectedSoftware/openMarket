@@ -47,6 +47,9 @@ export function coreBlocks(payload) {
       vatLabel(row) + '  base ' + formatEuroCents(row.baseCents) + '  cuota ' + formatEuroCents(row.quotaCents)
     ));
   });
+  paymentLines(payload.payment).forEach(line => {
+    blocks.push(text(line));
+  });
   return blocks.map(block => receiptBlock(block));
 }
 
@@ -87,9 +90,30 @@ function addressLines(issuer) {
 }
 
 /**
- * @param {{kind?: string, percent?: number, cause?: string | null}} row
- * @returns {string}
+ * Cash names the notes and the change. Card is the method alone.
+ * @param {{method?: string, tenderedCents?: number, changeCents?: number} | null | undefined} payment
+ * @returns {string[]}
  */
+function paymentLines(payment) {
+  if (!payment) {
+    return [];
+  }
+  if (payment.method === 'card') {
+    return ['Tarjeta'];
+  }
+  if (payment.method !== 'cash') {
+    return [];
+  }
+  const lines = ['Efectivo'];
+  if (Number.isInteger(payment.tenderedCents)) {
+    lines.push('Entregado ' + formatEuroCents(payment.tenderedCents));
+  }
+  if (Number.isInteger(payment.changeCents)) {
+    lines.push('Cambio ' + formatEuroCents(payment.changeCents));
+  }
+  return lines;
+}
+
 function vatLabel(row) {
   if (row.kind === 'E') {
     return 'Exento ' + row.cause;

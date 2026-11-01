@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import TextField from '../../components/TextField';
 import {parseDecimal} from '../../components/NumberField';
 import Quantity from '../../../domain/money/Quantity';
+import Payment from '../../../domain/payment/Payment';
 import VatRate from '../../../domain/tax/VatRate';
 import {lineIsValid} from './model';
 import {isScannerBurst, applyShortcut} from './input';
@@ -194,11 +195,7 @@ class Container extends Component {
       tendered: '',
       previewOpen: true
     });
-    if (this.props.paymentPreviewRequested) {
-      this.props.paymentPreviewRequested({
-        lines: this.props.order.lines
-      });
-    }
+    this.requestPreview('cash', '');
   }
 
   closePayment() {
@@ -207,10 +204,22 @@ class Container extends Component {
 
   onPayMethod(payMethod) {
     this.setState({payMethod});
+    this.requestPreview(payMethod, this.state.tendered);
   }
 
   onTendered(tendered) {
     this.setState({tendered});
+    this.requestPreview(this.state.payMethod, tendered);
+  }
+
+  requestPreview(method, tendered) {
+    if (!this.props.paymentPreviewRequested) {
+      return;
+    }
+    this.props.paymentPreviewRequested({
+      lines: this.props.order.lines,
+      payment: quotedPayment(this.props.order && this.props.order.total, method, tendered)
+    });
   }
 
   togglePreview() {
@@ -513,6 +522,34 @@ class Container extends Component {
     );
   }
 
+}
+
+/**
+ * The payment the preview should show. Null while cash has no usable tender.
+ * @param {*} total
+ * @param {string} method
+ * @param {string | number | null | undefined} tendered
+ * @returns {{method: string, tenderedCents: number, changeCents: number} | null}
+ */
+function quotedPayment(total, method, tendered) {
+  if (!total) {
+    return null;
+  }
+  try {
+    const payment = method === 'card'
+      ? Payment.card({total})
+      : (tendered === '' || tendered == null ? null : Payment.cash({total, tendered}));
+    if (!payment) {
+      return null;
+    }
+    return {
+      method: payment.method,
+      tenderedCents: payment.tenderedCents,
+      changeCents: payment.changeCents
+    };
+  } catch (error) {
+    return null;
+  }
 }
 
 function emptyBurst() {

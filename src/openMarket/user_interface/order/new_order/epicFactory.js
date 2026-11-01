@@ -87,7 +87,8 @@ export const makeWeightedDialogEpic = resetForm => action$ =>
 export const makePaymentPreviewEpic = buildReceipt => action$ =>
   action$.ofType(newOrderActions.PAYMENT_PREVIEW_REQUESTED)
     .switchMap(action => buildReceipt.preview({
-      lines: action.payload && action.payload.lines
+      lines: action.payload && action.payload.lines,
+      payment: action.payload && action.payload.payment
     })
       .map(receipt => newOrderActions.paymentPreviewLoaded(receipt.html))
       .catch(() => Rx.Observable.of(newOrderActions.paymentPreviewLoaded(''))));

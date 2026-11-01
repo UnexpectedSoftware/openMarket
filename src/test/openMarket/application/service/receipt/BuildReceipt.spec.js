@@ -257,4 +257,41 @@ describe('BuildReceipt', () => {
         done();
       }, done);
   });
+
+  it('prints the order payment on the ticket and keeps it off the invoice payload', done => {
+    const {slots, seen} = slotsWithMarkers();
+    const receiptCase = new BuildReceipt({
+      invoiceRepository: {findByOrderId: () => Rx.Observable.of(invoice())},
+      receiptSlots: slots,
+      orderRepository: {
+        find: () => Rx.Observable.of({
+          payment: {method: 'cash', tenderedCents: 500, changeCents: 310}
+        })
+      }
+    });
+    receiptCase.build({orderId: 'order-1'}).subscribe(receipt => {
+      const lines = receipt.blocks.map(block => block.text);
+      expect(lines).to.include('Efectivo');
+      expect(lines.join('\n')).to.include('Entregado ' + formatEuroCents(500));
+      expect(lines.join('\n')).to.include('Cambio ' + formatEuroCents(310));
+      expect(seen.fiscal.payment).to.equal(undefined);
+      done();
+    }, done);
+  });
+
+  it('shows the payment the sheet is about to charge', done => {
+    const receiptCase = new BuildReceipt({
+      invoiceRepository: {findByOrderId: () => Rx.Observable.empty()},
+      receiptSlots: new ReceiptSlots()
+    });
+    receiptCase.preview({
+      lines: [{name: 'Leche', quantity: 1, price: 1}],
+      payment: {method: 'card', tenderedCents: 100, changeCents: 0}
+    }).subscribe(receipt => {
+      const lines = receipt.blocks.map(block => block.text);
+      expect(lines).to.include('Tarjeta');
+      expect(lines.join('\n')).to.not.include('Entregado');
+      done();
+    }, done);
+  });
 });

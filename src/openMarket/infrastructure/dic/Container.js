@@ -153,6 +153,7 @@ class Container {
       receiptSlots: this.getInstance({key: 'receiptSlots'}),
       sellPreferencesRepository: this.getInstance({key: 'sellPreferencesRepository'}),
       shopProfileRepository: this.getInstance({key: 'shopProfileRepository'}),
+      orderRepository: this.getInstance({key: 'orderRepository'}),
       recordError: record,
       htmlReceiptRenderer: this.getInstance({key: 'htmlReceiptRenderer'}),
       clock: this.getInstance({key: 'systemClock'})

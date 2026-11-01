@@ -14,6 +14,7 @@ import ShopProfileQuery from '../../../domain/shop/ShopProfileQuery';
 import VatRate from '../../../domain/tax/VatRate';
 import VatBreakdown from '../../../domain/tax/VatBreakdown';
 /** @typedef {import('../../../domain/invoice/InvoiceRepository').default} InvoiceRepository */
+/** @typedef {import('../../../domain/order/OrderRepository').default} OrderRepository */
 /** @typedef {import('../../../domain/shop/SellPreferencesRepository').default} SellPreferencesRepository */
 /** @typedef {import('../../../domain/shop/ShopProfileRepository').default} ShopProfileRepository */
 /** @typedef {import('../../../infrastructure/receipt/ReceiptSlots').default} ReceiptSlots */
@@ -51,6 +52,7 @@ export default class BuildReceipt {
    * @param {ReceiptSlots} deps.receiptSlots
    * @param {SellPreferencesRepository} [deps.sellPreferencesRepository]
    * @param {ShopProfileRepository} [deps.shopProfileRepository]
+   * @param {OrderRepository} [deps.orderRepository]
    * @param {(error: unknown) => void} [deps.recordError]
    * @param {{render: (receipt: {blocks?: object[]}) => string}} [deps.htmlReceiptRenderer]
    * @param {{zonedNow: () => {date?: string, local?: string}}} [deps.clock]
@@ -60,6 +62,7 @@ export default class BuildReceipt {
     receiptSlots,
     sellPreferencesRepository,
     shopProfileRepository,
+    orderRepository,
     recordError,
     htmlReceiptRenderer,
     clock
@@ -68,6 +71,7 @@ export default class BuildReceipt {
     this._receiptSlots = receiptSlots;
     this._sellPreferencesRepository = sellPreferencesRepository || null;
     this._shopProfileRepository = shopProfileRepository || null;
+    this._orderRepository = orderRepository || null;
     this._recordError = typeof recordError === 'function' ? recordError : () => {};
     this._html = htmlReceiptRenderer || null;
     this._clock = clock || null;
@@ -81,25 +85,27 @@ export default class BuildReceipt {
     return this._preferences().flatMap(preferences =>
       this._invoiceRepository.findByOrderId({orderId: orderId == null ? '' : String(orderId)})
         .defaultIfEmpty(null)
-        .flatMap(invoice => this._profile().map(profile => {
-          const payload = invoice ? issuedPayload(invoice) : null;
-          return this._document(withPhone(payload, profile), payload, preferences);
-        })));
+        .flatMap(invoice => this._profile().flatMap(profile =>
+          this._payment(orderId).map(payment => {
+            const payload = invoice ? issuedPayload(invoice) : null;
+            return this._document(withPayment(withPhone(payload, profile), payment), payload, preferences);
+          }))));
   }
 
   /**
    * A ticket for a cart that is not saved yet. Plugin slots receive no invoice.
    * The shop block comes from the profile repository. A passed issuer is ignored.
-   * @param {{lines?: PreviewLine[]}} query
+   * @param {{lines?: PreviewLine[], payment?: {method?: string, tenderedCents?: number, changeCents?: number} | null}} query
    * @returns {Observable<{blocks: object[], html: string}>}
    */
-  preview({lines}) {
+  preview({lines, payment}) {
     return this._preferences().flatMap(preferences =>
       this._profile().map(profile =>
         this._document(previewPayload({
           lines,
           issuer: shopIssuer(profile),
-          when: this._now()
+          when: this._now(),
+          payment
         }), null, preferences)));
   }
 
@@ -140,6 +146,20 @@ export default class BuildReceipt {
       return null;
     }
     return this._clock.zonedNow();
+  }
+
+  /**
+   * Payment stored on the order. It is not part of the invoice payload.
+   * @param {string} orderId
+   * @returns {Observable<object | null>}
+   */
+  _payment(orderId) {
+    if (!this._orderRepository || orderId == null || orderId === '') {
+      return Observable.of(null);
+    }
+    return this._orderRepository.find({id: String(orderId)})
+      .map(detail => paymentOf(detail))
+      .defaultIfEmpty(null);
   }
 
   /** @returns {Observable<object | null>} */
@@ -185,6 +205,35 @@ function shopIssuer(profile) {
 }
 
 /**
+ * @param {object | null | undefined} detail
+ * @returns {{method: string, tenderedCents: number | null, changeCents: number | null} | null}
+ */
+function paymentOf(detail) {
+  const payment = detail && detail.payment;
+  if (!payment || !payment.method) {
+    return null;
+  }
+  return {
+    method: payment.method,
+    tenderedCents: payment.tenderedCents,
+    changeCents: payment.changeCents
+  };
+}
+
+/**
+ * Payment stays off the invoice payload the fiscal slot receives.
+ * @param {object | null} payload
+ * @param {{method: string, tenderedCents: number | null, changeCents: number | null} | null} payment
+ * @returns {object | null}
+ */
+function withPayment(payload, payment) {
+  if (!payload || !payment) {
+    return payload;
+  }
+  return {...payload, payment};
+}
+
+/**
  * Phone for a saved ticket. The stored invoice payload is left unchanged.
  * @param {object | null} payload
  * @param {object | null | undefined} profile
@@ -220,10 +269,10 @@ function copyBlock(text) {
 
 /**
  * Shop blocks for the open cart. This is not an InvoiceIssued payload.
- * @param {{lines?: PreviewLine[], issuer?: PreviewIssuer | null, when?: {date?: string, local?: string} | null}} query
+ * @param {{lines?: PreviewLine[], issuer?: PreviewIssuer | null, when?: {date?: string, local?: string} | null, payment?: object | null}} query
  * @returns {object}
  */
-function previewPayload({lines, issuer, when}) {
+function previewPayload({lines, issuer, when, payment}) {
   const priced = (lines || []).map(line => ({
     name: line && line.name != null ? String(line.name) : '',
     quantity: line && line.quantity,
@@ -261,7 +310,8 @@ function previewPayload({lines, issuer, when}) {
       quotaCents: row.quota.cents,
       grossCents: row.gross.cents
     })),
-    totalCents: total.cents
+    totalCents: total.cents,
+    payment: payment || null
   };
 }
 

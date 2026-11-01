@@ -92,6 +92,23 @@ describe('coreBlocks', () => {
     expect(lines.filter(line => line === 'Paris')).to.deep.equal([]);
   });
 
+  it('prints cash notes and the card method alone', () => {
+    const cash = texts({
+      totalCents: 1000,
+      payment: {method: 'cash', tenderedCents: 2000, changeCents: 1000}
+    });
+    expect(cash).to.include('Efectivo');
+    expect(cash.join('\n')).to.include('Entregado ' + formatEuroCents(2000));
+    expect(cash.join('\n')).to.include('Cambio ' + formatEuroCents(1000));
+    const card = texts({
+      totalCents: 1000,
+      payment: {method: 'card', tenderedCents: 1000, changeCents: 0}
+    });
+    expect(card).to.include('Tarjeta');
+    expect(card.join('\n')).to.not.include('Entregado');
+    expect(card.join('\n')).to.not.include('Cambio');
+  });
+
   it('returns nothing for an empty payload', () => {
     expect(coreBlocks(null)).to.deep.equal([]);
     expect(coreBlocks(undefined)).to.deep.equal([]);
