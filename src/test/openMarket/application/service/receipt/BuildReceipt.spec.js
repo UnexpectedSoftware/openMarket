@@ -10,6 +10,7 @@ import Order from '../../../../../openMarket/domain/order/Order';
 import Money from '../../../../../openMarket/domain/money/Money';
 import Quantity from '../../../../../openMarket/domain/money/Quantity';
 import VatRate from '../../../../../openMarket/domain/tax/VatRate';
+import {formatEuroCents} from '../../../../../openMarket/domain/money/formatEs';
 
 function invoice() {
   const order = Order.restore({
@@ -99,9 +100,14 @@ describe('BuildReceipt', () => {
       expect(receipt.blocks[receipt.blocks.length - 1].text).to.equal('VERI*FACTU');
       expect(receipt.blocks.map(block => block.text).filter(Boolean)).to.include('2026/000001');
       expect(receipt.blocks.map(block => block.text).filter(Boolean)).to.include('NIF B12345674');
-      expect(receipt.blocks.map(block => block.text).join('\n')).to.include('4 %  base 1.83  cuota 0.07');
-      expect(receipt.blocks.map(block => block.text).join('\n')).to.include('Total: 1.90 €');
-      expect(receipt.blocks.map(block => block.text).join('\n')).to.include('Leche  2 x 0.95 = 1.90');
+      const ticket = receipt.blocks.map(block => block.text).join('\n');
+      expect(ticket).to.include('FACTURA SIMPLIFICADA');
+      expect(ticket).to.include('15/10/2026 22:41');
+      expect(ticket).to.not.include('Date ');
+      expect(ticket).to.include('4 %  base ' + formatEuroCents(183) + '  cuota ' + formatEuroCents(7));
+      expect(ticket).to.include('TOTAL ' + formatEuroCents(190));
+      expect(ticket).to.not.include('Total:');
+      expect(ticket).to.include('Leche  2 x ' + formatEuroCents(95) + ' = ' + formatEuroCents(190));
       done();
     }, done);
   });
@@ -177,8 +183,26 @@ describe('BuildReceipt', () => {
         expect(texts.indexOf('Hasta pronto')).to.be.below(texts.length - 1);
         expect(JSON.stringify(seen.fiscal)).to.not.include('Gracias');
         expect(seen.fiscal).to.equal(null);
+        expect(texts.join('\n')).to.not.include('Date ');
         done();
       }, done);
+  });
+
+  it('stamps a preview with the shop clock', done => {
+    const receiptCase = new BuildReceipt({
+      invoiceRepository: {findByOrderId: () => Rx.Observable.empty()},
+      receiptSlots: new ReceiptSlots(),
+      clock: {
+        zonedNow: () => ({date: '2026-11-01', local: '2026-11-01T23:17:00+01:00'})
+      }
+    });
+    receiptCase.preview({lines: [{name: 'Leche', quantity: 1, price: 1}]}).subscribe(receipt => {
+      const texts = receipt.blocks.map(block => block.text);
+      expect(texts).to.include('FACTURA SIMPLIFICADA');
+      expect(texts).to.include('01/11/2026 23:17');
+      expect(texts.join('\n')).to.not.include('Date ');
+      done();
+    }, done);
   });
 
   it('drops a plugin renderer that throws and still builds the ticket', done => {

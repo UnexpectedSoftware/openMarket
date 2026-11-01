@@ -50,13 +50,15 @@ export default class BuildReceipt {
    * @param {SellPreferencesRepository} [deps.sellPreferencesRepository]
    * @param {(error: unknown) => void} [deps.recordError]
    * @param {{render: (receipt: {blocks?: object[]}) => string}} [deps.htmlReceiptRenderer]
+   * @param {{zonedNow: () => {date?: string, local?: string}}} [deps.clock]
    */
-  constructor({invoiceRepository, receiptSlots, sellPreferencesRepository, recordError, htmlReceiptRenderer}) {
+  constructor({invoiceRepository, receiptSlots, sellPreferencesRepository, recordError, htmlReceiptRenderer, clock}) {
     this._invoiceRepository = invoiceRepository;
     this._receiptSlots = receiptSlots;
     this._sellPreferencesRepository = sellPreferencesRepository || null;
     this._recordError = typeof recordError === 'function' ? recordError : () => {};
     this._html = htmlReceiptRenderer || null;
+    this._clock = clock || null;
   }
 
   /**
@@ -80,7 +82,7 @@ export default class BuildReceipt {
    */
   preview({lines, issuer}) {
     return this._preferences().map(preferences =>
-      this._document(previewPayload({lines, issuer}), null, preferences));
+      this._document(previewPayload({lines, issuer, when: this._now()}), null, preferences));
   }
 
   /**
@@ -111,6 +113,17 @@ export default class BuildReceipt {
     return {blocks, html};
   }
 
+  /**
+   * Shop-local now, for a preview that is not an invoice yet.
+   * @returns {{date?: string, local?: string} | null}
+   */
+  _now() {
+    if (!this._clock || typeof this._clock.zonedNow !== 'function') {
+      return null;
+    }
+    return this._clock.zonedNow();
+  }
+
   /** @returns {Observable<SellPreferencesView>} */
   _preferences() {
     if (!this._sellPreferencesRepository) {
@@ -136,10 +149,10 @@ function copyBlock(text) {
 
 /**
  * Shop blocks for the open cart. This is not an InvoiceIssued payload.
- * @param {{lines?: PreviewLine[], issuer?: PreviewIssuer | null}} query
+ * @param {{lines?: PreviewLine[], issuer?: PreviewIssuer | null, when?: {date?: string, local?: string} | null}} query
  * @returns {object}
  */
-function previewPayload({lines, issuer}) {
+function previewPayload({lines, issuer, when}) {
   const priced = (lines || []).map(line => ({
     name: line && line.name != null ? String(line.name) : '',
     quantity: line && line.quantity,
@@ -159,8 +172,8 @@ function previewPayload({lines, issuer}) {
       nif: issuer.nif || null
     } : null,
     invoiceNumber: null,
-    issueDate: '',
-    issuedAt: '',
+    issueDate: when && when.date ? when.date : '',
+    issuedAt: when && when.local ? when.local : '',
     lines: priced.map(line => ({
       name: line.name,
       quantityMilli: quantityMilli(line.quantity),

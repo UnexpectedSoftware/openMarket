@@ -1,10 +1,6 @@
 import Money from '../../domain/money/Money';
 import Quantity from '../../domain/money/Quantity';
-
-const euros = new Intl.NumberFormat('es-ES', {
-  style: 'currency',
-  currency: 'EUR'
-});
+import {formatEuroCents} from '../../domain/money/formatEs';
 
 /**
  * Formats euros for Spain. Accepts a Money value or a euro amount.
@@ -12,11 +8,17 @@ const euros = new Intl.NumberFormat('es-ES', {
  * @returns {string}
  */
 export function formatMoney(amount) {
+  if (amount instanceof Money) {
+    return formatEuroCents(amount.cents);
+  }
+  if (amount != null && typeof amount === 'object' && Number.isInteger(amount.cents)) {
+    return formatEuroCents(amount.cents);
+  }
   const value = euroNumber(amount);
   if (!Number.isFinite(value)) {
     return '';
   }
-  return euros.format(value);
+  return formatEuroCents(Math.round(value * 100));
 }
 
 /**

@@ -82,7 +82,8 @@ test('prints a plugin QR before the shop header', async () => {
     const calls = fs.readFileSync(logFile, 'utf8').trim().split('\n').map(line => JSON.parse(line));
     const legend = calls.findIndex(call => call.name === 'println' && call.args[0] === 'QR tributario:');
     const qr = calls.findIndex(call => call.name === 'printQR');
-    const date = calls.findIndex(call => call.name === 'println' && String(call.args[0]).indexOf('Date ') === 0);
+    const date = calls.findIndex(call =>
+      call.name === 'println' && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(String(call.args[0])));
     expect(legend).toBeGreaterThan(-1);
     expect(qr).toBeGreaterThan(legend);
     expect(date).toBeGreaterThan(qr);
