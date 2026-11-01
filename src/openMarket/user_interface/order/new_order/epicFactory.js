@@ -1,7 +1,7 @@
 import * as newOrderActions from "./action";
 import * as weightedDialogActions from "../weighted_dialog/action";
 import * as Rx from "rxjs";
-import {HIDE_PRINTER_DIALOG} from "../printer_dialog/action";
+import {SETTINGS_SAVED} from "../../settings/action";
 import ProductWithLowStock from "../../../domain/event/ProductWithLowStock";
 import ProductEnabledAgain from "../../../domain/event/ProductEnabledAgain";
 import ProductStatus from "../../../domain/product/ProductStatus";
@@ -34,7 +34,7 @@ export const makeNewOrderProductFetchEpic = findProductUseCase => enableProductU
       .mergeMap(nextAction => Rx.Observable.of(resetForm('new_order'), nextAction))
     );
 
-export const makeNewOrderSaveEpic = (orderCreateUseCase, getSellPreferences) => resetForm => (action$, store) =>
+export const makeNewOrderSaveEpic = orderCreateUseCase => resetForm => action$ =>
   action$
     .filter(action => action.type === newOrderActions.NEW_ORDER_SAVE)
     .flatMap(action =>
@@ -42,10 +42,8 @@ export const makeNewOrderSaveEpic = (orderCreateUseCase, getSellPreferences) => 
         lines: commandLines(action.order && action.order.lines),
         payment: action.payment
       })
-        .flatMap(savedOrder => sellPreferences(getSellPreferences)
-          .map(preferences => ({savedOrder, preferences})))
-        .mergeMap(({savedOrder, preferences}) => Rx.Observable.from(
-          savedActions({savedOrder, preferences, resetForm, store})
+        .mergeMap(savedOrder => Rx.Observable.from(
+          savedActions({savedOrder, print: action.print === true, resetForm})
         ))
         .catch(err => {
           record(err);
@@ -70,13 +68,6 @@ function printReceipt(buildReceipt, printReceiptUseCase, order) {
   return buildReceipt.build({orderId: order && order.id})
     .flatMap(receipt => printReceiptUseCase.print({receipt}));
 }
-
-export const makePrinterDialogEpic = buildReceipt => printReceiptUseCase => action$ =>
-  action$.filter(action => action.type === HIDE_PRINTER_DIALOG)
-    .filter(action => true === action.payload.print)
-    .flatMap(action => printReceipt(buildReceipt, printReceiptUseCase, action.payload.order)
-      .map(() => newOrderActions.printOrderFinished())
-      .catch(err => Rx.Observable.of(printFailed(err))));
 
 export const makePrintButtonClickedEpic = buildReceipt => printReceiptUseCase => action$ =>
   action$.filter(action => action.type === newOrderActions.PRINT_ORDER_BUTTON_CLICKED)
@@ -146,6 +137,15 @@ export const makeSaleCategoriesEpic = listCategories => action$ =>
       .catch(() => Rx.Observable.of(newOrderActions.saleCategoriesFailed())))
 
 /**
+ * The sell screen reads print mode on open and again after settings are saved.
+ * @param {{get: Function} | null | undefined} getSellPreferences
+ */
+export const makeSellPreferencesEpic = getSellPreferences => action$ =>
+  action$.filter(action =>
+    action.type === newOrderActions.SELL_PREFERENCES_REQUESTED || action.type === SETTINGS_SAVED
+  ).switchMap(() => readSellPreferences(getSellPreferences))
+
+/**
  * @param {{text?: string, categoryId?: string | null, limit?: number} | null | undefined} payload
  * @param {{getState?: Function} | null | undefined} store
  * @returns {ProductsQuery}
@@ -212,64 +212,35 @@ function tileOf(view) {
 }
 
 /**
- * The sell view's print mode. A missing use case asks before printing.
+ * The till's stored print choice. A missing read asks.
  * @param {{get: Function} | null | undefined} useCase
- * @returns {Rx.Observable<{printMode: string}>}
+ * @returns {Rx.Observable<object>}
  */
-function sellPreferences(useCase) {
+function readSellPreferences(useCase) {
   if (!useCase || typeof useCase.get !== 'function') {
-    return Rx.Observable.of({printMode: 'ask'});
+    return Rx.Observable.of(newOrderActions.sellPreferencesLoaded(null));
   }
-  return useCase.get().map(preferences => ({
-    printMode: printModeOf(preferences)
-  })).defaultIfEmpty({printMode: 'ask'});
+  return useCase.get()
+    .map(view => newOrderActions.sellPreferencesLoaded(view))
+    .defaultIfEmpty(newOrderActions.sellPreferencesLoaded(null))
+    .catch(() => Rx.Observable.of(newOrderActions.sellPreferencesLoaded(null)));
 }
 
 /**
- * @param {{printMode?: string} | null | undefined} preferences
- * @returns {'always' | 'ask' | 'never'}
- */
-function printModeOf(preferences) {
-  const mode = preferences && preferences.printMode;
-  if (mode === 'always' || mode === 'never' || mode === 'ask') {
-    return mode;
-  }
-  return 'ask';
-}
-
-/**
- * Paid sales print, ask, or stay quiet. An unpaid sale never prints and never offers the action.
- * @param {{savedOrder: {id: string, payment?: {method?: string, changeCents?: number}}, preferences: {printMode?: string}, resetForm: Function, store?: {dispatch: Function}}} params
+ * A paid sale prints only when checkout said so. An unpaid sale never prints.
+ * @param {{savedOrder: {id: string, payment?: {method?: string, changeCents?: number}}, print?: boolean, resetForm: Function}} params
  * @returns {object[]}
  */
-export function savedActions({savedOrder, preferences, resetForm, store}) {
+export function savedActions({savedOrder, print, resetForm}) {
   const paid = !!(savedOrder && savedOrder.payment);
-  const mode = paid ? printModeOf(preferences) : null;
   const notice = toast.success('Order saved!', savedMessage(savedOrder), {
-    uid: `order-saved-${savedOrder.id}`,
-    autoDismiss: mode === 'ask' ? 0 : undefined,
-    action: mode === 'ask' ? printAction(savedOrder, store) : undefined
+    uid: `order-saved-${savedOrder.id}`
   });
   const actions = [notice, resetForm('new_order'), newOrderActions.newOrderSaved(savedOrder)];
-  if (mode === 'always') {
+  if (paid && print === true) {
     actions.push(newOrderActions.printOrderButtonClicked(savedOrder));
   }
   return actions;
-}
-
-/**
- * @param {{id: string}} savedOrder
- * @param {{dispatch: Function}} [store]
- */
-function printAction(savedOrder, store) {
-  return {
-    label: 'Imprimir ticket',
-    callback: () => {
-      if (store && store.dispatch) {
-        store.dispatch(newOrderActions.printOrderButtonClicked(savedOrder));
-      }
-    }
-  };
 }
 
 /**

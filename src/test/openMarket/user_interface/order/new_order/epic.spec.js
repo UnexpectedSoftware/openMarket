@@ -369,95 +369,75 @@ describe('Order Epics', () => {
   });
 
   describe('savedActions', () => {
-    function sale(mode, payment) {
-      const dispatched = [];
+    function sale(print, payment) {
       const actions = savedActions({
         savedOrder: {
           id: '42',
           payment: payment === undefined ? {method: 'card', changeCents: 0} : payment
         },
-        preferences: mode == null ? null : {printMode: mode},
-        resetForm: () => ({type: 'RESET'}),
-        store: {dispatch: action => dispatched.push(action)}
+        print,
+        resetForm: () => ({type: 'RESET'})
       });
-      return {actions, dispatched, notice: actions[0]};
+      return {actions, notice: actions[0]};
     }
 
     function prints(actions) {
       return actions.filter(action => action.type === PRINT_ORDER_BUTTON_CLICKED);
     }
 
-    it('prints a paid always sale and leaves the toast without an action', () => {
-      const {actions, notice} = sale('always');
+    it('prints a paid sale when checkout asked to print', () => {
+      const {actions, notice} = sale(true);
       expect(prints(actions)).to.have.length(1);
       expect(prints(actions)[0].payload.id).to.equal('42');
       expect(notice.action).to.equal(undefined);
       expect(notice.autoDismiss).to.equal(2.5);
       expect(notice.title).to.equal('Order saved!');
+      expect(notice.message).to.equal('Pagado con tarjeta');
     });
 
-    it('asks on a paid sale and does not print until the action is used', () => {
-      const {actions, notice, dispatched} = sale('ask');
-      expect(prints(actions)).to.deep.equal([]);
-      expect(notice.autoDismiss).to.equal(0);
-      expect(notice.action.label).to.equal('Imprimir ticket');
-      notice.action.callback();
-      expect(dispatched).to.have.length(1);
-      expect(dispatched[0].type).to.equal(PRINT_ORDER_BUTTON_CLICKED);
-      const missing = sale(null);
-      expect(missing.notice.action.label).to.equal('Imprimir ticket');
+    it('does not print when checkout skips the ticket', () => {
+      const skipped = sale(false);
+      expect(prints(skipped.actions)).to.deep.equal([]);
+      expect(skipped.notice.action).to.equal(undefined);
+      expect(skipped.notice.autoDismiss).to.equal(2.5);
+      const missing = sale(undefined);
       expect(prints(missing.actions)).to.deep.equal([]);
+      expect(missing.notice.action).to.equal(undefined);
     });
 
-    it('does not print a paid never sale and does not keep the toast', () => {
-      const {actions, notice} = sale('never');
-      expect(prints(actions)).to.deep.equal([]);
-      expect(notice.action).to.equal(undefined);
-      expect(notice.autoDismiss).to.not.equal(0);
-      expect(notice.autoDismiss).to.equal(2.5);
+    it('names the cash change and does not print an unpaid sale', () => {
+      const cash = sale(true, {method: 'cash', changeCents: 50});
+      expect(cash.notice.message).to.contain('Cambio');
+      expect(prints(cash.actions)).to.have.length(1);
+      const unpaid = sale(true, null);
+      expect(prints(unpaid.actions)).to.deep.equal([]);
+      expect(unpaid.notice.action).to.equal(undefined);
+      expect(unpaid.notice.autoDismiss).to.equal(2.5);
+      expect(unpaid.notice.message).to.equal('Order is saved in database');
     });
 
-    it('does not print an unpaid sale in any mode', () => {
-      ['always', 'ask', 'never'].forEach(mode => {
-        const {actions, notice} = sale(mode, null);
-        expect(prints(actions)).to.deep.equal([]);
-        expect(notice.action).to.equal(undefined);
-        expect(notice.autoDismiss).to.not.equal(0);
-      });
-    });
-
-    it('asks when the preferences use case is missing and prints when it says always', done => {
+    it('prints only the save that carries print true', done => {
       const order = {id: '42', payment: {method: 'card', changeCents: 0}};
       const reset = () => ({type: 'RESET'});
       const create = {createOrder: () => Rx.Observable.of(order)};
-      const action = {type: NEW_ORDER_SAVE, order: {lines: [{barcode: '1'}]}, payment: order.payment};
-      makeNewOrderSaveEpic(create)(reset)(Rx.Observable.of(action))
+      const quiet = {
+        type: NEW_ORDER_SAVE,
+        order: {lines: [{barcode: '1'}]},
+        payment: order.payment,
+        print: false
+      };
+      makeNewOrderSaveEpic(create)(reset)(Rx.Observable.of(quiet))
         .toArray()
         .subscribe(actions => {
-          expect(actions[0].action.label).to.equal('Imprimir ticket');
+          expect(actions[0].action).to.equal(undefined);
+          expect(actions[0].autoDismiss).to.equal(2.5);
           expect(prints(actions)).to.deep.equal([]);
-          const always = {get: () => Rx.Observable.of({printMode: 'always'})};
-          makeNewOrderSaveEpic(create, always)(reset)(Rx.Observable.of(action))
+          makeNewOrderSaveEpic(create)(reset)(Rx.Observable.of({...quiet, print: true}))
             .toArray()
             .subscribe(printed => {
               expect(printed[0].action).to.equal(undefined);
               expect(prints(printed)).to.have.length(1);
-              const quiet = {get: () => Rx.Observable.of({printMode: 'never'})};
-              makeNewOrderSaveEpic(create, quiet)(reset)(Rx.Observable.of(action))
-                .toArray()
-                .subscribe(silent => {
-                  expect(silent[0].action).to.equal(undefined);
-                  expect(silent[0].autoDismiss).to.equal(2.5);
-                  expect(prints(silent)).to.deep.equal([]);
-                  const empty = {get: () => Rx.Observable.empty()};
-                  makeNewOrderSaveEpic(create, empty)(reset)(Rx.Observable.of(action))
-                    .toArray()
-                    .subscribe(asked => {
-                      expect(asked[0].action.label).to.equal('Imprimir ticket');
-                      expect(prints(asked)).to.deep.equal([]);
-                      done();
-                    }, done);
-                }, done);
+              done();
             }, done);
         }, done);
     });

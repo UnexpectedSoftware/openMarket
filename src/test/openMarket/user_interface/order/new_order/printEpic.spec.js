@@ -1,10 +1,8 @@
 import {expect} from 'chai';
 import * as Rx from 'rxjs';
 import {
-  makePrintButtonClickedEpic,
-  makePrinterDialogEpic
+  makePrintButtonClickedEpic
 } from '../../../../../openMarket/user_interface/order/new_order/epicFactory';
-import {HIDE_PRINTER_DIALOG} from '../../../../../openMarket/user_interface/order/printer_dialog/action';
 import {
   PRINT_ORDER_BUTTON_CLICKED,
   PRINT_ORDER_FINISHED
@@ -12,14 +10,14 @@ import {
 
 describe('Order print epics', () => {
   it('finishes when the ticket is accepted', (done) => {
-    const epic = makePrinterDialogEpic({
+    const epic = makePrintButtonClickedEpic({
       build: () => Rx.Observable.of({blocks: []})
     })({
       print: () => Rx.Observable.of(true)
     });
     epic(Rx.Observable.of({
-      type: HIDE_PRINTER_DIALOG,
-      payload: {print: true, order: {id: '1'}}
+      type: PRINT_ORDER_BUTTON_CLICKED,
+      payload: {id: '1'}
     })).toArray().subscribe((actions) => {
       expect(actions).to.deep.equal([{type: PRINT_ORDER_FINISHED}]);
       done();

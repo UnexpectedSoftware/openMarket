@@ -47,13 +47,24 @@ export default class PaymentSheet extends Component {
     }
   }
 
-  confirm() {
+  /**
+   * Enter charges with a ticket unless the till is set to never print.
+   * @returns {boolean}
+   */
+  printsByDefault() {
+    return this.props.printMode !== 'never';
+  }
+
+  /**
+   * @param {boolean} print
+   */
+  confirm(print) {
     const payment = this.quoted();
     if (!payment || this.props.saving) {
       return;
     }
     if (this.props.onConfirm) {
-      this.props.onConfirm(payment);
+      this.props.onConfirm(payment, print === true);
     }
   }
 
@@ -66,7 +77,43 @@ export default class PaymentSheet extends Component {
       return;
     }
     event.preventDefault();
-    this.confirm();
+    this.confirm(this.printsByDefault());
+  }
+
+  /**
+   * @param {Payment | null} payment
+   * @returns {*}
+   */
+  footerActions(payment) {
+    const disabled = !payment || !!this.props.saving;
+    const mode = this.props.printMode === 'always' || this.props.printMode === 'never'
+      ? this.props.printMode
+      : 'ask';
+    const primary = (
+      <Button
+        key="charge"
+        type="button"
+        disabled={disabled}
+        onClick={() => this.confirm(mode !== 'never')}
+      >
+        {mode === 'never' ? 'Cobrar' : 'Cobrar e imprimir'}
+      </Button>
+    );
+    if (mode !== 'ask') {
+      return primary;
+    }
+    return [
+      <Button
+        key="quiet"
+        type="button"
+        variant="secondary"
+        disabled={disabled}
+        onClick={() => this.confirm(false)}
+      >
+        Sin ticket
+      </Button>,
+      primary
+    ];
   }
 
   render() {
@@ -84,11 +131,7 @@ export default class PaymentSheet extends Component {
         className="payment-dialog"
         onClose={props.onClose}
         initialFocusRef={this.tenderedRef}
-        actions={(
-          <Button type="button" disabled={!payment || !!props.saving} onClick={this.confirm}>
-            Confirmar (Enter)
-          </Button>
-        )}
+        actions={this.footerActions(payment)}
       >
         <div className="payment-sheet" onKeyDown={this.onKeyDown}>
           <div className="payment-methods" role="group" aria-label="Forma de pago">

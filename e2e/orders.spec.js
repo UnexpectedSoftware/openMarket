@@ -309,7 +309,7 @@ test('lists the newest sale first and screenshots every theme', async () => {
   }
 });
 
-test('offers the ticket from the saved toast and dismisses it without printing', async () => {
+test('asks whether to print before charging and can skip the ticket', async () => {
   const {app, window, userData} = await launchApp({
     shop: {
       categories: ['Dairy'],
@@ -329,10 +329,15 @@ test('offers the ticket from the saved toast and dismisses it without printing',
   try {
     await openNewOrder(window);
     await scanBarcode(window, '8400000000097');
-    await saveOrder(window);
+    await window.getByRole('button', {name: 'Cobrar'}).click();
+    const sheet = window.getByRole('dialog');
     await expect(window.getByRole('heading', {name: '¿Imprimir ticket?'})).toHaveCount(0);
-    await expect(window.getByRole('button', {name: 'Imprimir ticket'})).toBeVisible();
-    await dismissTicket(window);
+    await expect(sheet.getByRole('button', {name: 'Sin ticket', exact: true})).toBeVisible();
+    await expect(sheet.getByRole('button', {name: 'Cobrar e imprimir', exact: true})).toBeVisible();
+    await sheet.getByRole('button', {name: 'Exacto', exact: true}).click();
+    await sheet.getByRole('button', {name: 'Sin ticket', exact: true}).click();
+    await expect(window.getByRole('heading', {name: 'Cobrar'})).toHaveCount(0);
+    await expect(window.getByText('Order saved!')).toBeVisible();
     await expect(window.getByRole('button', {name: 'Imprimir ticket'})).toHaveCount(0);
     expect(pageErrors).toEqual([]);
   } finally {

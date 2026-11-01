@@ -17,6 +17,8 @@ export const SALE_TILES_FAILED = 'SALE_TILES_FAILED';
 export const SALE_CATEGORIES_REQUESTED = 'SALE_CATEGORIES_REQUESTED';
 export const SALE_CATEGORIES_LOADED = 'SALE_CATEGORIES_LOADED';
 export const SALE_CATEGORIES_FAILED = 'SALE_CATEGORIES_FAILED';
+export const SELL_PREFERENCES_REQUESTED = 'SELL_PREFERENCES_REQUESTED';
+export const SELL_PREFERENCES_LOADED = 'SELL_PREFERENCES_LOADED';
 export const SALE_CATEGORY_SELECTED = 'SALE_CATEGORY_SELECTED';
 export const NEW_ORDER_ERRORS_FOUND = 'NEW_ORDER_ERRORS_FOUND';
 export const NEW_ORDER_CLOSED = 'NEW_ORDER_CLOSED';
@@ -31,7 +33,12 @@ export const REPRINT_PREVIEW_LOADED = 'REPRINT_PREVIEW_LOADED';
 
 
 export const newOrderSaved = payload => ({ type: NEW_ORDER_SAVED, payload });
-export const newOrderSave = (order, payment) => ({ type: NEW_ORDER_SAVE, order, payment});
+export const newOrderSave = (order, payment, print) => ({
+  type: NEW_ORDER_SAVE,
+  order,
+  payment,
+  print: print === true
+});
 
 export const newOrderProductFetched = payload => ({ type: NEW_ORDER_PRODUCT_FETCHED,payload});
 export const newOrderProductFetch = barcode => ({ type: NEW_ORDER_PRODUCT_FETCH,barcode});
@@ -49,6 +56,8 @@ export const saleTilesFailed = () => ({ type: SALE_TILES_FAILED });
 export const saleCategoriesRequested = () => ({ type: SALE_CATEGORIES_REQUESTED });
 export const saleCategoriesLoaded = payload => ({ type: SALE_CATEGORIES_LOADED, payload });
 export const saleCategoriesFailed = () => ({ type: SALE_CATEGORIES_FAILED });
+export const sellPreferencesRequested = () => ({ type: SELL_PREFERENCES_REQUESTED });
+export const sellPreferencesLoaded = payload => ({ type: SELL_PREFERENCES_LOADED, payload });
 export const saleCategorySelected = categoryId => ({ type: SALE_CATEGORY_SELECTED, categoryId });
 export const newOrderClosed = () => ({ type: NEW_ORDER_CLOSED});
 export const printOrderButtonClicked = payload => ({ type: PRINT_ORDER_BUTTON_CLICKED, payload});

@@ -153,7 +153,7 @@ async function expectOrderTotal(window, amount) {
   await expect(window.locator('.order-total')).toContainText(euros(amount));
 }
 
-async function confirmPayment(window, {method = 'cash', tendered} = {}) {
+async function confirmPayment(window, {method = 'cash', tendered, print} = {}) {
   const sheet = window.getByRole('dialog');
   await expect(sheet.getByRole('heading', {name: 'Cobrar'})).toBeVisible();
   if (method === 'card') {
@@ -163,15 +163,31 @@ async function confirmPayment(window, {method = 'cash', tendered} = {}) {
   } else {
     await sheet.getByRole('button', {name: 'Exacto', exact: true}).click();
   }
-  await sheet.getByRole('button', {name: 'Confirmar'}).click();
+  if (print === true) {
+    await sheet.getByRole('button', {name: 'Cobrar e imprimir', exact: true}).click();
+  } else {
+    const quiet = sheet.getByRole('button', {name: 'Sin ticket', exact: true});
+    if (await quiet.count()) {
+      await quiet.click();
+    } else {
+      const charge = sheet.getByRole('button', {name: 'Cobrar e imprimir', exact: true});
+      if (await charge.count()) {
+        await charge.click();
+      } else {
+        await sheet.getByRole('button', {name: 'Cobrar', exact: true}).click();
+      }
+    }
+  }
   await expect(window.getByRole('heading', {name: 'Cobrar'})).toHaveCount(0);
 }
 
 async function dismissTicket(window) {
-  const print = window.getByRole('button', {name: 'Imprimir ticket'});
-  await expect(print).toBeVisible();
-  await window.locator('.notification').filter({hasText: 'Imprimir ticket'}).locator('.notification-dismiss').click();
-  await expect(print).toHaveCount(0);
+  const note = window.locator('.notification').filter({hasText: 'Order saved!'});
+  if (await note.count()) {
+    await note.locator('.notification-dismiss').click();
+    await expect(note).toHaveCount(0);
+  }
+  await expect(window.getByRole('button', {name: 'Imprimir ticket'})).toHaveCount(0);
 }
 
 module.exports = {

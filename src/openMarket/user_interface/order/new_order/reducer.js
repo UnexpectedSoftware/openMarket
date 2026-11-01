@@ -12,12 +12,13 @@ import {
   SALE_TILES_FAILED,
   SALE_CATEGORIES_LOADED,
   SALE_CATEGORY_SELECTED,
+  SELL_PREFERENCES_LOADED,
   NEW_ORDER_SAVE,
   PAYMENT_FAILED,
   PAYMENT_PREVIEW_LOADED,
   REPRINT_PREVIEW_LOADED
 } from './action';
-import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, clearLines, applyLowStock} from './model';
+import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, clearLines, applyLowStock, sellPreferencesState} from './model';
 
 /**
  * Keeps the grid, the low-stock set, and the last ticket across a cart edit.
@@ -35,7 +36,8 @@ function keep(current, next) {
     previewHtml: current.previewHtml || '',
     reprintHtml: current.reprintHtml || '',
     categories: current.categories || [],
-    categoryId: current.categoryId || null
+    categoryId: current.categoryId || null,
+    sellPreferences: current.sellPreferences || sellPreferencesState(null)
   };
 }
 
@@ -111,6 +113,9 @@ export default function reducer(current = initialState(), action) {
     case SALE_CATEGORY_SELECTED:
       return {...current, categoryId: action.categoryId || null};
 
+    case SELL_PREFERENCES_LOADED:
+      return {...current, sellPreferences: sellPreferencesState(action.payload)};
+
     case NEW_ORDER_SAVE:
       return {...current, saving: true};
 
@@ -131,11 +136,15 @@ export default function reducer(current = initialState(), action) {
         tiles: current.tiles || [],
         tilesStatus: current.tilesStatus || 'idle',
         categories: current.categories || [],
-        categoryId: current.categoryId || null
+        categoryId: current.categoryId || null,
+        sellPreferences: current.sellPreferences || sellPreferencesState(null)
       };
 
     case NEW_ORDER_CLOSED:
-      return initialState();
+      return {
+        ...initialState(),
+        sellPreferences: current.sellPreferences || sellPreferencesState(null)
+      };
 
     default:
       return current;

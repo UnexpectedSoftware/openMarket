@@ -17,7 +17,8 @@ import {
   SALE_CATEGORY_SELECTED,
   SALE_TILES_FAILED,
   SALE_TILES_LOADED,
-  SALE_TILES_REQUESTED
+  SALE_TILES_REQUESTED,
+  SELL_PREFERENCES_LOADED
 } from '../../../../../openMarket/user_interface/order/new_order/action';
 import {LOCATION_CHANGE} from 'react-router-redux';
 
@@ -274,6 +275,33 @@ describe('reducers', () => {
       expect(cleared.order.lines).to.deep.equal([]);
       expect(cleared.order.total.cents).to.equal(0);
       expect(cleared.categoryId).to.equal('dairy');
+    });
+
+    it('keeps the till print choice across a sale', () => {
+      const loaded = newOrderReducer(undefined, {
+        type: SELL_PREFERENCES_LOADED,
+        payload: {printMode: 'never', headerText: 'Hola', footerText: 'Gracias', paperWidthMm: 58}
+      });
+      expect(loaded.sellPreferences).to.deep.equal({
+        printMode: 'never',
+        headerText: 'Hola',
+        footerText: 'Gracias',
+        paperWidthMm: 58
+      });
+      const asked = newOrderReducer(loaded, {type: SELL_PREFERENCES_LOADED, payload: {printMode: 'later'}});
+      expect(asked.sellPreferences.printMode).to.equal('ask');
+      expect(asked.sellPreferences.paperWidthMm).to.equal(80);
+      const selling = newOrderReducer(loaded, {
+        type: NEW_ORDER_PRODUCT_FETCHED,
+        payload: {product: {barcode: '0001', name: 'Ninja', price: 1}, quantity: 1}
+      });
+      expect(selling.sellPreferences.printMode).to.equal('never');
+      const saved = newOrderReducer(selling, {type: NEW_ORDER_SAVED, payload: {id: 'sale'}});
+      expect(saved.order.lines).to.deep.equal([]);
+      expect(saved.sellPreferences.headerText).to.equal('Hola');
+      const closed = newOrderReducer(saved, {type: NEW_ORDER_CLOSED});
+      expect(closed.sellPreferences.footerText).to.equal('Gracias');
+      expect(closed.sellPreferences.paperWidthMm).to.equal(58);
     });
   });
 

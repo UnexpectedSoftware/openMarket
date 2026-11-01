@@ -7,7 +7,6 @@ import {
   makeNewOrderProductFetchEpic,
   makeNewOrderSaveEpic,
   makePrintButtonClickedEpic,
-  makePrinterDialogEpic,
   makePaymentPreviewEpic,
   makeReprintPreviewEpic,
   makeWeightedDialogEpic,
@@ -15,7 +14,8 @@ import {
   makeProductEnabledAgainEpic,
   makeProductNotFoundEpic,
   makeSaleTilesEpic,
-  makeSaleCategoriesEpic
+  makeSaleCategoriesEpic,
+  makeSellPreferencesEpic
 } from "./epicFactory";
 
 /* TODO Maybe make a DIC for user_interface layer */
@@ -30,19 +30,19 @@ const listCategories = OpenMarket.get('categories_list_all_use_case');
 const getSellPreferences = OpenMarket.get('sell_get_preferences_use_case');
 
 const orderProductFetchEpic = makeNewOrderProductFetchEpic(findProductUseCase)(enableProductUseCase)(reset);
-const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase, getSellPreferences)(reset);
+const orderSaveEpic = makeNewOrderSaveEpic(orderCreateUseCase)(reset);
 const lowStockWarningEpic = makeLowStockWarningEpic(domainEventBus);
 const productEnabledAgainEpic = makeProductEnabledAgainEpic(domainEventBus);
-const printerDialogEpic = makePrinterDialogEpic(buildReceipt)(printReceipt);
 const printButtonClickedEpic = makePrintButtonClickedEpic(buildReceipt)(printReceipt);
+const sellPreferencesEpic = makeSellPreferencesEpic(getSellPreferences);
 const weightedDialogEpic  = makeWeightedDialogEpic(reset)
 
 export default (action$, store) =>
   Rx.Observable.merge(
     orderProductFetchEpic(action$),
     orderSaveEpic(action$, store),
-    printerDialogEpic(action$),
     printButtonClickedEpic(action$),
+    sellPreferencesEpic(action$),
     makePaymentPreviewEpic(buildReceipt)(action$),
     makeReprintPreviewEpic(buildReceipt)(action$),
     weightedDialogEpic(action$),

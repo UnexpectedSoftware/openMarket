@@ -17,6 +17,7 @@ function mapStateToProps(state) {
     lowStockBarcodes: state.newOrder.lowStockBarcodes,
     lastOrder: state.newOrder.lastOrder,
     saving: state.newOrder.saving,
+    sellPreferences: state.newOrder.sellPreferences,
     previewHtml: state.newOrder.previewHtml,
     reprintHtml: state.newOrder.reprintHtml,
     layout: SellLayout.orDefault(state.appearance && state.appearance.appliedLayout)

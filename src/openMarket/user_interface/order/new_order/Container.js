@@ -77,6 +77,9 @@ class Container extends Component {
     if (this.props.saleCategoriesRequested) {
       this.props.saleCategoriesRequested();
     }
+    if (this.props.sellPreferencesRequested) {
+      this.props.sellPreferencesRequested();
+    }
     this.focusSearch();
   }
 
@@ -215,14 +218,14 @@ class Container extends Component {
     this.setState({previewOpen: !this.state.previewOpen});
   }
 
-  confirmPayment(payment) {
+  confirmPayment(payment, print) {
     if (!payment || this.props.saving) {
       return;
     }
     this.props.newOrderSave(this.props.order, {
       method: payment.method,
       tenderedCents: payment.tenderedCents
-    });
+    }, print === true);
   }
 
   openReprint() {

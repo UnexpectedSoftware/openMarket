@@ -5,9 +5,24 @@ import VatBreakdown from '../../../domain/tax/VatBreakdown';
 import {validateLine} from '../../../domain/order/lineValidity';
 
 /**
+ * Till print choice for the open sale. A missing read asks.
+ * @param {{printMode?: string, headerText?: string, footerText?: string, paperWidthMm?: number} | null | undefined} view
+ * @returns {{printMode: 'always' | 'ask' | 'never', headerText: string, footerText: string, paperWidthMm: 58 | 80}}
+ */
+export function sellPreferencesState(view) {
+  const mode = view && view.printMode;
+  return {
+    printMode: mode === 'always' || mode === 'never' ? mode : 'ask',
+    headerText: view && typeof view.headerText === 'string' ? view.headerText : '',
+    footerText: view && typeof view.footerText === 'string' ? view.footerText : '',
+    paperWidthMm: view && view.paperWidthMm === 58 ? 58 : 80
+  };
+}
+
+/**
  * Cart draft. Lines hold the same value objects Order uses.
  * The total is cents. Formatting happens at render.
- * @returns {{order: {lines: object[], total: Money}, lowStockBarcodes: string[], lastOrder: object | null, tiles: object[], tilesStatus: string, categories: object[], categoryId: string | null}}
+ * @returns {{order: {lines: object[], total: Money}, lowStockBarcodes: string[], lastOrder: object | null, tiles: object[], tilesStatus: string, categories: object[], categoryId: string | null, sellPreferences: {printMode: string, headerText: string, footerText: string, paperWidthMm: number}}}
  */
 export const state = () => ({
   order: {
@@ -20,6 +35,7 @@ export const state = () => ({
   tilesStatus: 'idle',
   categories: [],
   categoryId: null,
+  sellPreferences: sellPreferencesState(null),
   saving: false,
   previewHtml: '',
   reprintHtml: ''

@@ -18,7 +18,6 @@ import CategoryChips from './CategoryChips';
 import SellClock from './SellClock';
 import {placeSearch} from './sellView';
 import WeightedDialog from '../weighted_dialog/ReduxConnector';
-import PrinterDialog from '../printer_dialog/ReduxConnector';
 import NewProductDialog from '../new_product_dialog/ReduxConnector';
 
 /**
@@ -62,7 +61,6 @@ export default function SellScreen(props) {
       </div>
       <SellDialogs {...props} />
       <WeightedDialog />
-      <PrinterDialog />
       <NewProductDialog />
     </div>
   );
@@ -361,6 +359,7 @@ function paymentDialog(props, view) {
       method={view.payMethod}
       tendered={view.tendered}
       saving={view.saving}
+      printMode={view.printMode}
       previewHtml={view.previewHtml}
       previewOpen={view.previewOpen}
       onMethod={props.onPayMethod}

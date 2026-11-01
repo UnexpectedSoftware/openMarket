@@ -401,7 +401,7 @@ test('pays cash with change, shows the ticket preview, and pays by card', async 
       await window.screenshot({path: path.join(root, 'test-results', `payment-${theme}.png`)});
     }
 
-    await sheet.getByRole('button', {name: 'Confirmar'}).click();
+    await sheet.getByRole('button', {name: 'Sin ticket', exact: true}).click();
     await expect(window.getByText('Order saved!')).toBeVisible();
     await expect(window.getByText(euros(2.62))).toBeVisible();
     await expect.poll(() => latestPayment(userData)).toEqual({
