@@ -15,6 +15,12 @@ export function coreBlocks(payload) {
   if (title) {
     blocks.push(text(title, {align: 'center', bold: true, size: 'large'}));
   }
+  addressLines(payload.issuer).forEach(line => {
+    blocks.push(text(line, {align: 'center'}));
+  });
+  if (payload.issuer && payload.issuer.phone) {
+    blocks.push(text('Tel. ' + payload.issuer.phone, {align: 'center'}));
+  }
   if (payload.issuer && payload.issuer.nif) {
     blocks.push(text('NIF ' + payload.issuer.nif, {align: 'center'}));
   }
@@ -51,6 +57,33 @@ export function coreBlocks(payload) {
  */
 function text(value, style) {
   return {type: 'text', text: value, ...(style || {})};
+}
+
+/**
+ * Street, postal code and city, then a province or country that adds a place.
+ * @param {{address?: {street?: string, postalCode?: string, city?: string, province?: string, country?: string}} | null | undefined} issuer
+ * @returns {string[]}
+ */
+function addressLines(issuer) {
+  const address = issuer && issuer.address;
+  if (!address) {
+    return [];
+  }
+  const lines = [];
+  if (address.street) {
+    lines.push(String(address.street));
+  }
+  const city = [address.postalCode, address.city].filter(part => part).join(' ');
+  if (city) {
+    lines.push(city);
+  }
+  if (address.province && address.province !== address.city) {
+    lines.push(String(address.province));
+  }
+  if (address.country && address.country !== 'ES') {
+    lines.push(String(address.country));
+  }
+  return lines;
 }
 
 /**

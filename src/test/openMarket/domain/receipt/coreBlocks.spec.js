@@ -11,7 +11,15 @@ describe('coreBlocks', () => {
     issuer: {
       tradeName: 'Ultramarinos Pérez',
       legalName: 'Ultramarinos Pérez SL',
-      nif: 'B12345674'
+      nif: 'B12345674',
+      phone: '600111222',
+      address: {
+        street: 'Mayor 1',
+        postalCode: '28013',
+        city: 'Madrid',
+        province: 'Madrid',
+        country: 'ES'
+      }
     },
     invoiceNumber: '2026/000042',
     issueDate: '2026-11-01',
@@ -33,6 +41,11 @@ describe('coreBlocks', () => {
   it('prints a Spanish simplified invoice', () => {
     const lines = texts(payload);
     expect(lines[0]).to.equal('Ultramarinos Pérez');
+    expect(lines).to.include('Mayor 1');
+    expect(lines).to.include('28013 Madrid');
+    expect(lines.filter(line => line === 'Madrid')).to.deep.equal([]);
+    expect(lines).to.not.include('ES');
+    expect(lines).to.include('Tel. 600111222');
     expect(lines).to.include('NIF B12345674');
     expect(lines).to.include('FACTURA SIMPLIFICADA');
     expect(lines).to.include('2026/000042');
@@ -62,6 +75,21 @@ describe('coreBlocks', () => {
     expect(lines.join('\n')).to.not.include('NIF');
     expect(lines.join('\n')).to.not.match(/\d{2}\/\d{2}\/\d{4}/);
     expect(lines).to.include('TOTAL ' + formatEuroCents(0));
+  });
+
+  it('prints a foreign country and skips a blank street', () => {
+    const lines = texts({
+      issuer: {
+        tradeName: 'Sol',
+        phone: '1',
+        address: {street: '', postalCode: '75001', city: 'Paris', province: 'Paris', country: 'FR'}
+      },
+      totalCents: 0
+    });
+    expect(lines).to.include('75001 Paris');
+    expect(lines).to.include('FR');
+    expect(lines).to.include('Tel. 1');
+    expect(lines.filter(line => line === 'Paris')).to.deep.equal([]);
   });
 
   it('returns nothing for an empty payload', () => {

@@ -196,8 +196,7 @@ class Container extends Component {
     });
     if (this.props.paymentPreviewRequested) {
       this.props.paymentPreviewRequested({
-        lines: this.props.order.lines,
-        issuer: this.props.issuer
+        lines: this.props.order.lines
       });
     }
   }

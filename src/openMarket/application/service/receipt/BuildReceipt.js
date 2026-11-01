@@ -10,10 +10,12 @@ import Money from '../../../domain/money/Money';
 import Quantity from '../../../domain/money/Quantity';
 import SellPreferencesQuery from '../../../domain/shop/SellPreferencesQuery';
 import SellPreferencesView from '../../../domain/shop/SellPreferencesView';
+import ShopProfileQuery from '../../../domain/shop/ShopProfileQuery';
 import VatRate from '../../../domain/tax/VatRate';
 import VatBreakdown from '../../../domain/tax/VatBreakdown';
 /** @typedef {import('../../../domain/invoice/InvoiceRepository').default} InvoiceRepository */
 /** @typedef {import('../../../domain/shop/SellPreferencesRepository').default} SellPreferencesRepository */
+/** @typedef {import('../../../domain/shop/ShopProfileRepository').default} ShopProfileRepository */
 /** @typedef {import('../../../infrastructure/receipt/ReceiptSlots').default} ReceiptSlots */
 
 /**
@@ -48,14 +50,24 @@ export default class BuildReceipt {
    * @param {InvoiceRepository} deps.invoiceRepository
    * @param {ReceiptSlots} deps.receiptSlots
    * @param {SellPreferencesRepository} [deps.sellPreferencesRepository]
+   * @param {ShopProfileRepository} [deps.shopProfileRepository]
    * @param {(error: unknown) => void} [deps.recordError]
    * @param {{render: (receipt: {blocks?: object[]}) => string}} [deps.htmlReceiptRenderer]
    * @param {{zonedNow: () => {date?: string, local?: string}}} [deps.clock]
    */
-  constructor({invoiceRepository, receiptSlots, sellPreferencesRepository, recordError, htmlReceiptRenderer, clock}) {
+  constructor({
+    invoiceRepository,
+    receiptSlots,
+    sellPreferencesRepository,
+    shopProfileRepository,
+    recordError,
+    htmlReceiptRenderer,
+    clock
+  }) {
     this._invoiceRepository = invoiceRepository;
     this._receiptSlots = receiptSlots;
     this._sellPreferencesRepository = sellPreferencesRepository || null;
+    this._shopProfileRepository = shopProfileRepository || null;
     this._recordError = typeof recordError === 'function' ? recordError : () => {};
     this._html = htmlReceiptRenderer || null;
     this._clock = clock || null;
@@ -69,20 +81,26 @@ export default class BuildReceipt {
     return this._preferences().flatMap(preferences =>
       this._invoiceRepository.findByOrderId({orderId: orderId == null ? '' : String(orderId)})
         .defaultIfEmpty(null)
-        .map(invoice => {
+        .flatMap(invoice => this._profile().map(profile => {
           const payload = invoice ? issuedPayload(invoice) : null;
-          return this._document(payload, undefined, preferences);
-        }));
+          return this._document(withPhone(payload, profile), payload, preferences);
+        })));
   }
 
   /**
    * A ticket for a cart that is not saved yet. Plugin slots receive no invoice.
-   * @param {{lines?: PreviewLine[], issuer?: PreviewIssuer | null}} query
+   * The shop block comes from the profile repository. A passed issuer is ignored.
+   * @param {{lines?: PreviewLine[]}} query
    * @returns {Observable<{blocks: object[], html: string}>}
    */
-  preview({lines, issuer}) {
-    return this._preferences().map(preferences =>
-      this._document(previewPayload({lines, issuer, when: this._now()}), null, preferences));
+  preview({lines}) {
+    return this._preferences().flatMap(preferences =>
+      this._profile().map(profile =>
+        this._document(previewPayload({
+          lines,
+          issuer: shopIssuer(profile),
+          when: this._now()
+        }), null, preferences)));
   }
 
   /**
@@ -124,6 +142,14 @@ export default class BuildReceipt {
     return this._clock.zonedNow();
   }
 
+  /** @returns {Observable<object | null>} */
+  _profile() {
+    if (!this._shopProfileRepository) {
+      return Observable.of(null);
+    }
+    return this._shopProfileRepository.find(new ShopProfileQuery()).defaultIfEmpty(null);
+  }
+
   /** @returns {Observable<SellPreferencesView>} */
   _preferences() {
     if (!this._sellPreferencesRepository) {
@@ -132,6 +158,51 @@ export default class BuildReceipt {
     return this._sellPreferencesRepository.find(new SellPreferencesQuery());
   }
 
+}
+
+/**
+ * The open shop, including the phone the invoice snapshot does not store.
+ * @param {object | null | undefined} profile
+ * @returns {object | null}
+ */
+function shopIssuer(profile) {
+  if (!profile) {
+    return null;
+  }
+  return {
+    tradeName: profile.tradeName || null,
+    legalName: profile.legalName || null,
+    nif: profile.nif || null,
+    phone: profile.phone || null,
+    address: {
+      street: profile.street || '',
+      postalCode: profile.postalCode || '',
+      city: profile.city || '',
+      province: profile.province || '',
+      country: profile.country || ''
+    }
+  };
+}
+
+/**
+ * Phone for a saved ticket. The stored invoice payload is left unchanged.
+ * @param {object | null} payload
+ * @param {object | null | undefined} profile
+ * @returns {object | null}
+ */
+function withPhone(payload, profile) {
+  const phone = profile && profile.phone ? String(profile.phone).trim() : '';
+  if (!payload || phone === '') {
+    return payload;
+  }
+  const issuer = payload.issuer ? {...payload.issuer, phone} : {
+    tradeName: null,
+    legalName: null,
+    nif: null,
+    phone,
+    address: null
+  };
+  return {...payload, issuer};
 }
 
 /**
@@ -166,10 +237,12 @@ function previewPayload({lines, issuer, when}) {
   })));
   const total = priced.reduce((sum, line) => sum.plus(line.amount), Money.ofCents(0));
   return {
-    issuer: issuer && (issuer.tradeName || issuer.legalName || issuer.nif) ? {
+    issuer: issuer ? {
       tradeName: issuer.tradeName || null,
       legalName: issuer.legalName || null,
-      nif: issuer.nif || null
+      nif: issuer.nif || null,
+      phone: issuer.phone || null,
+      address: issuer.address || null
     } : null,
     invoiceNumber: null,
     issueDate: when && when.date ? when.date : '',

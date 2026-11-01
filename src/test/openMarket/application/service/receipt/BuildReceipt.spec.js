@@ -47,7 +47,15 @@ function preferences(fields) {
   };
 }
 
-function useCase(slots, recordError, sellPreferencesRepository) {
+function shop(profile) {
+  return {
+    find() {
+      return Rx.Observable.of(profile);
+    }
+  };
+}
+
+function useCase(slots, recordError, sellPreferencesRepository, shopProfileRepository) {
   return new BuildReceipt({
     invoiceRepository: {
       findByOrderId() {
@@ -56,7 +64,8 @@ function useCase(slots, recordError, sellPreferencesRepository) {
     },
     receiptSlots: slots,
     recordError,
-    sellPreferencesRepository
+    sellPreferencesRepository,
+    shopProfileRepository
   });
 }
 
@@ -102,6 +111,8 @@ describe('BuildReceipt', () => {
       expect(receipt.blocks.map(block => block.text).filter(Boolean)).to.include('NIF B12345674');
       const ticket = receipt.blocks.map(block => block.text).join('\n');
       expect(ticket).to.include('FACTURA SIMPLIFICADA');
+      expect(ticket).to.include('Mayor 1');
+      expect(ticket).to.include('28013 Madrid');
       expect(ticket).to.include('15/10/2026 22:41');
       expect(ticket).to.not.include('Date ');
       expect(ticket).to.include('4 %  base ' + formatEuroCents(183) + '  cuota ' + formatEuroCents(7));
@@ -168,16 +179,29 @@ describe('BuildReceipt', () => {
 
   it('puts the same copy around a preview and keeps it off the slot payload', done => {
     const {slots, seen} = slotsWithMarkers();
-    useCase(slots, null, preferences({headerText: 'Gracias', footerText: 'Hasta pronto'}))
+    useCase(slots, null, preferences({headerText: 'Gracias', footerText: 'Hasta pronto'}), shop({
+      tradeName: 'Ultramarinos Pérez',
+      legalName: 'SL',
+      nif: 'B12345674',
+      street: 'Mayor 1',
+      postalCode: '28013',
+      city: 'Madrid',
+      province: 'Madrid',
+      country: 'ES',
+      phone: '600111222'
+    }))
       .preview({
         lines: [{name: 'Leche', quantity: 1, price: 1}],
-        issuer: {tradeName: 'Ultramarinos Pérez', legalName: 'SL', nif: 'B12345674'}
+        issuer: {tradeName: 'Ignored'}
       })
       .subscribe(receipt => {
         const texts = receipt.blocks.map(block => block.text);
         expect(texts[0]).to.equal('FISCAL');
         expect(texts[1]).to.equal('Gracias');
         expect(texts).to.include('Ultramarinos Pérez');
+        expect(texts).to.include('Mayor 1');
+        expect(texts).to.include('Tel. 600111222');
+        expect(texts).to.not.include('Ignored');
         expect(texts[texts.indexOf('Hasta pronto')]).to.equal('Hasta pronto');
         expect(texts[texts.length - 1]).to.equal('FOOTER-SLOT');
         expect(texts.indexOf('Hasta pronto')).to.be.below(texts.length - 1);
@@ -221,5 +245,16 @@ describe('BuildReceipt', () => {
       expect(receipt.blocks.map(block => block.text).join('\n')).to.include('2026/000001');
       done();
     }, done);
+  });
+
+  it('prints the current phone on a saved ticket without storing it on the invoice', done => {
+    const {slots, seen} = slotsWithMarkers();
+    useCase(slots, null, null, shop({phone: '600111222'})).build({orderId: 'order-1'})
+      .subscribe(receipt => {
+        expect(receipt.blocks.map(block => block.text)).to.include('Tel. 600111222');
+        expect(JSON.stringify(seen.fiscal)).to.not.include('600111222');
+        expect(seen.fiscal.issuer.phone).to.equal(undefined);
+        done();
+      }, done);
   });
 });
