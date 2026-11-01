@@ -38,7 +38,8 @@ export default class SqlInvoiceMapper {
           percent: row.vat_percent,
           kind: row.vat_kind,
           cause: row.vat_cause
-        }
+        },
+        weighted: row.weighted == null ? undefined : Number(row.weighted) === 1
       })),
       breakdown: vatRows && vatRows.length > 0 ? vatRows.map(row => ({
         rate: {kind: row.kind, percent: row.percent, cause: row.cause},

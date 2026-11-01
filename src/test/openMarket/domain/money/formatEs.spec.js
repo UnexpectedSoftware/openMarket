@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import Money from '../../../../openMarket/domain/money/Money';
 import {
   formatEuroCents,
+  formatKgMilli,
   formatQuantityMilli,
   formatTicketWhen
 } from '../../../../openMarket/domain/money/formatEs';
@@ -27,6 +28,14 @@ describe('Spanish ticket formatting', () => {
     expect(formatQuantityMilli(-350)).to.equal('-0,35');
     expect(formatQuantityMilli(-2000)).to.equal('-2');
     expect(formatQuantityMilli(1.2)).to.equal('0');
+  });
+
+  it('formats a weighed quantity as kilograms with three decimals', () => {
+    expect(formatKgMilli(350)).to.equal('0,350');
+    expect(formatKgMilli(1000)).to.equal('1,000');
+    expect(formatKgMilli(2000)).to.equal('2,000');
+    expect(formatKgMilli(-350)).to.equal('-0,350');
+    expect(formatKgMilli(null)).to.equal('0,000');
   });
 
   it('formats the shop date and the issue time', () => {

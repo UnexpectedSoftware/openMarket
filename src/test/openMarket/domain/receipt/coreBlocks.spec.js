@@ -28,7 +28,8 @@ describe('coreBlocks', () => {
       name: 'Jamón ibérico de bellota',
       quantityMilli: 350,
       unitPriceCents: 1850,
-      amountCents: 648
+      amountCents: 648,
+      weighted: true
     }],
     totalCents: 648,
     vatBreakdown: [
@@ -52,7 +53,9 @@ describe('coreBlocks', () => {
     expect(lines).to.include('01/11/2026 23:17');
     expect(lines.join('\n')).to.not.include('Date ');
     expect(lines.join('\n')).to.not.include('Total:');
-    expect(lines.join('\n')).to.include('Jamón ibérico de be  0,35 x ' + formatEuroCents(1850));
+    expect(lines.join('\n')).to.include(
+      'Jamón ibérico de be  0,350 kg x ' + formatEuroCents(1850) + '/kg'
+    );
     expect(lines.join('\n')).to.not.include('Jamón ibérico de bel');
     expect(lines).to.include('TOTAL ' + formatEuroCents(648));
     expect(lines).to.include('10 %  base ' + formatEuroCents(589) + '  cuota ' + formatEuroCents(59));

@@ -33,6 +33,19 @@ export function formatQuantityMilli(milli) {
 }
 
 /**
+ * Weight in kilograms with three decimals, `0,350`.
+ * @param {number} milli
+ * @returns {string}
+ */
+export function formatKgMilli(milli) {
+  const value = Number.isInteger(milli) ? milli : 0;
+  const negative = value < 0;
+  const abs = Math.abs(value);
+  const body = Math.trunc(abs / 1000) + ',' + String(abs % 1000).padStart(3, '0');
+  return negative ? '-' + body : body;
+}
+
+/**
  * Shop date and time, `dd/mm/yyyy hh:mm`. Empty when neither part is present.
  * @param {string | null | undefined} issueDate `YYYY-MM-DD`
  * @param {string | null | undefined} issuedAt Offset timestamp or `hh:mm:ss`

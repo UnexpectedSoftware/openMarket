@@ -294,4 +294,19 @@ describe('BuildReceipt', () => {
       done();
     }, done);
   });
+
+  it('prints a weighed cart line in kilograms', done => {
+    const receiptCase = new BuildReceipt({
+      invoiceRepository: {findByOrderId: () => Rx.Observable.empty()},
+      receiptSlots: new ReceiptSlots()
+    });
+    receiptCase.preview({
+      lines: [{name: 'Jamón', quantity: 0.35, price: 18.5, weighted: true}]
+    }).subscribe(receipt => {
+      expect(receipt.blocks.map(block => block.text).join('\n')).to.include(
+        '0,350 kg x ' + formatEuroCents(1850) + '/kg'
+      );
+      done();
+    }, done);
+  });
 });

@@ -86,9 +86,13 @@ export default class BuildReceipt {
       this._invoiceRepository.findByOrderId({orderId: orderId == null ? '' : String(orderId)})
         .defaultIfEmpty(null)
         .flatMap(invoice => this._profile().flatMap(profile =>
-          this._payment(orderId).map(payment => {
+          this._sale(orderId).map(detail => {
             const payload = invoice ? issuedPayload(invoice) : null;
-            return this._document(withPayment(withPhone(payload, profile), payment), payload, preferences);
+            const receipt = withLineWeight(
+              withPayment(withPhone(payload, profile), paymentOf(detail)),
+              detail
+            );
+            return this._document(receipt, payload, preferences);
           }))));
   }
 
@@ -153,13 +157,11 @@ export default class BuildReceipt {
    * @param {string} orderId
    * @returns {Observable<object | null>}
    */
-  _payment(orderId) {
+  _sale(orderId) {
     if (!this._orderRepository || orderId == null || orderId === '') {
       return Observable.of(null);
     }
-    return this._orderRepository.find({id: String(orderId)})
-      .map(detail => paymentOf(detail))
-      .defaultIfEmpty(null);
+    return this._orderRepository.find({id: String(orderId)}).defaultIfEmpty(null);
   }
 
   /** @returns {Observable<object | null>} */
@@ -226,6 +228,29 @@ function paymentOf(detail) {
  * @param {{method: string, tenderedCents: number | null, changeCents: number | null} | null} payment
  * @returns {object | null}
  */
+/**
+ * The detail line remembers weight for rows saved before the invoice column.
+ * @param {object | null} payload
+ * @param {{lines?: Array<{weighted?: boolean}>} | null | undefined} detail
+ * @returns {object | null}
+ */
+function withLineWeight(payload, detail) {
+  const stored = detail && detail.lines;
+  if (!payload || !stored) {
+    return payload;
+  }
+  return {
+    ...payload,
+    lines: (payload.lines || []).map((line, index) => {
+      const row = stored[index];
+      if (!row || typeof row.weighted !== 'boolean') {
+        return line;
+      }
+      return {...line, weighted: row.weighted};
+    })
+  };
+}
+
 function withPayment(payload, payment) {
   if (!payload || !payment) {
     return payload;
@@ -278,7 +303,8 @@ function previewPayload({lines, issuer, when, payment}) {
     quantity: line && line.quantity,
     unitPrice: line && (line.unitPrice != null ? line.unitPrice : line.price),
     amount: lineAmount(line),
-    vatRate: line && line.vatRate != null ? VatRate.from(line.vatRate) : VatRate.standard()
+    vatRate: line && line.vatRate != null ? VatRate.from(line.vatRate) : VatRate.standard(),
+    weighted: !!(line && line.weighted)
   }));
   const breakdown = VatBreakdown.fromLines(priced.map(line => ({
     amount: line.amount,
@@ -299,6 +325,7 @@ function previewPayload({lines, issuer, when, payment}) {
     lines: priced.map(line => ({
       name: line.name,
       quantityMilli: quantityMilli(line.quantity),
+      weighted: !!(line && line.weighted),
       unitPriceCents: moneyCents(line.unitPrice),
       amountCents: line.amount.cents
     })),

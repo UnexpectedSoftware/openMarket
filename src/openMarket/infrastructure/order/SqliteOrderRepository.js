@@ -51,7 +51,7 @@ const FIND_DETAIL_LINES_SQL =
   'SELECT l.barcode AS barcode, l.name AS name, l.price AS price, l.quantity AS quantity, l.amount AS amount, ' +
   'l.price_cents AS price_cents, l.quantity_milli AS quantity_milli, l.amount_cents AS amount_cents, ' +
   'l.vat_percent AS vat_percent, l.vat_kind AS vat_kind, l.vat_cause AS vat_cause, l.kind AS kind, ' +
-  'p.weighted AS weighted ' +
+  'l.weighted AS line_weighted, p.weighted AS weighted ' +
   'FROM invoice_line l LEFT JOIN product p ON p.barcode = l.barcode ' +
   'WHERE l.invoice_id = ? ORDER BY l.position ASC';
 
@@ -502,7 +502,7 @@ function toDetailLine(row) {
     name: row.name == null ? '' : String(row.name),
     unitPriceCents: moneyFromColumns(row.price_cents, row.price).cents,
     quantityMilli: quantity.milli,
-    weighted: isWeighted(kind, quantity.milli, row.weighted),
+    weighted: isWeighted(kind, quantity.milli, row.weighted, row.line_weighted),
     amountCents: moneyFromColumns(row.amount_cents, row.amount).cents,
     vat: Object.freeze(vatOf(row))
   };
@@ -510,18 +510,22 @@ function toDetailLine(row) {
 }
 
 /**
- * A free line is never weighed. Otherwise the product flag wins, then a fraction.
- * invoice_line does not store the flag.
+ * A free line is never weighed. A stored invoice flag wins.
+ * Older rows fall back to the product flag, then to a fraction.
  * @param {string} kind
  * @param {number} milli
- * @param {number | null | undefined} flag
+ * @param {number | null | undefined} productFlag
+ * @param {number | null | undefined} stored
  * @returns {boolean}
  */
-function isWeighted(kind, milli, flag) {
+function isWeighted(kind, milli, productFlag, stored) {
   if (kind === 'FREE') {
     return false;
   }
-  if (Number(flag) === 1) {
+  if (stored === 0 || stored === 1) {
+    return stored === 1;
+  }
+  if (Number(productFlag) === 1) {
     return true;
   }
   return milli % 1000 !== 0;

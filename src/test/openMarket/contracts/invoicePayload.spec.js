@@ -33,7 +33,8 @@ function sampleInvoice() {
         name: 'Jamón (kg)',
         price: Money.ofCents(1850),
         quantity: Quantity.ofMilli(350),
-        vatRate: VatRate.of({kind: 'S1', percent: 10})
+        vatRate: VatRate.of({kind: 'S1', percent: 10}),
+        weighted: true
       }
     ]
   });

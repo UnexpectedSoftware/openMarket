@@ -29,6 +29,7 @@ import {lineKind} from '../order/lineValidity';
  * @property {Quantity} quantity
  * @property {Money} amount
  * @property {VatRate | {kind?: string, percent?: number, cause?: string | null}} vatRate
+ * @property {boolean} [weighted]
  */
 
 /**
@@ -192,7 +193,8 @@ export default class Invoice {
       price: line.price,
       quantity: line.quantity,
       amount: line.amount,
-      vatRate: line.vatRate
+      vatRate: line.vatRate,
+      weighted: line.weighted === true
     }));
   }
 
@@ -267,7 +269,8 @@ function issuedLines(lines) {
     price: Money.from(line.price),
     quantity: Quantity.from(line.quantity),
     amount: Money.from(line.amount),
-    vatRate: line.vatRate == null ? VatRate.standard() : VatRate.from(line.vatRate)
+    vatRate: line.vatRate == null ? VatRate.standard() : VatRate.from(line.vatRate),
+    weighted: line.weighted === true
   }));
 }
 
@@ -293,7 +296,8 @@ function storedLines(lines, id) {
         price: Money.from(line.price == null ? 0 : line.price),
         quantity: Quantity.from(line.quantity == null ? 0 : line.quantity),
         amount: Money.from(line.amount),
-        vatRate: line.vatRate == null ? VatRate.standard() : VatRate.from(line.vatRate)
+        vatRate: line.vatRate == null ? VatRate.standard() : VatRate.from(line.vatRate),
+        weighted: line.weighted === true
       };
     } catch (error) {
       throw new InvalidInvoiceError({field: 'amount', id});

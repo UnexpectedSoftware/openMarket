@@ -1,5 +1,5 @@
 import {receiptBlock} from './ReceiptBlock';
-import {formatEuroCents, formatQuantityMilli, formatTicketWhen} from '../money/formatEs';
+import {formatEuroCents, formatKgMilli, formatQuantityMilli, formatTicketWhen} from '../money/formatEs';
 
 /**
  * The shop's own ticket, built from the version 1 invoice payload.
@@ -34,11 +34,7 @@ export function coreBlocks(payload) {
   }
   blocks.push({type: 'line'});
   (payload.lines || []).forEach(line => {
-    const name = String(line.name || '').slice(0, 19);
-    blocks.push(text(
-      name + '  ' + formatQuantityMilli(line.quantityMilli) + ' x ' +
-      formatEuroCents(line.unitPriceCents) + ' = ' + formatEuroCents(line.amountCents)
-    ));
+    blocks.push(text(lineText(line)));
   });
   blocks.push(text('TOTAL ' + formatEuroCents(payload.totalCents), {align: 'right', bold: true}));
   blocks.push({type: 'line'});
@@ -58,6 +54,20 @@ export function coreBlocks(payload) {
  * @param {{align?: string, bold?: boolean, size?: string}} [style]
  * @returns {object}
  */
+/**
+ * @param {{name?: string, quantityMilli?: number, unitPriceCents?: number, amountCents?: number, weighted?: boolean}} line
+ * @returns {string}
+ */
+function lineText(line) {
+  const name = String(line.name || '').slice(0, 19);
+  const weighed = line.weighted === true;
+  const quantity = weighed
+    ? formatKgMilli(line.quantityMilli) + ' kg'
+    : formatQuantityMilli(line.quantityMilli);
+  const price = formatEuroCents(line.unitPriceCents) + (weighed ? '/kg' : '');
+  return name + '  ' + quantity + ' x ' + price + ' = ' + formatEuroCents(line.amountCents);
+}
+
 function text(value, style) {
   return {type: 'text', text: value, ...(style || {})};
 }
