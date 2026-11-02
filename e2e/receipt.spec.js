@@ -187,6 +187,7 @@ test('saves print mode, header, and paper width', async () => {
     const asked = session.window.getByRole('dialog');
     await expect(asked.getByRole('button', {name: 'Sin ticket', exact: true})).toBeVisible();
     await expect(asked.getByRole('button', {name: 'Cobrar e imprimir', exact: true})).toBeVisible();
+    await asked.getByRole('button', {name: /Exacto/}).click();
     await asked.getByRole('button', {name: 'Sin ticket', exact: true}).click();
     await expect(session.window.getByRole('button', {name: 'Imprimir ticket'})).toHaveCount(0);
     expect(fs.readFileSync(logFile, 'utf8')).toBe(afterAlways);

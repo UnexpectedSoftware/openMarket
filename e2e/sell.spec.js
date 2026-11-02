@@ -389,7 +389,7 @@ test('pays cash with change, shows the ticket preview, and pays by card', async 
     await expect(sheet.locator('.om-receipt')).toContainText('Ham');
     await expect(sheet.locator('.om-receipt')).toContainText('Venta libre');
     await sheet.getByRole('button', {name: euros(20)}).click();
-    await expect(sheet.getByText(euros(2.62))).toBeVisible();
+    await expect(sheet.locator('.checkout-tile-change').getByText(euros(2.62))).toBeVisible();
     await expect(window.locator('.notification')).toHaveCount(0);
 
     for (const theme of THEMES) {
