@@ -334,7 +334,7 @@ test('asks whether to print before charging and can skip the ticket', async () =
     await expect(window.getByRole('heading', {name: '¿Imprimir ticket?'})).toHaveCount(0);
     await expect(sheet.getByRole('button', {name: 'Sin ticket', exact: true})).toBeVisible();
     await expect(sheet.getByRole('button', {name: 'Cobrar e imprimir', exact: true})).toBeVisible();
-    await sheet.getByRole('button', {name: 'Exacto', exact: true}).click();
+    await sheet.getByRole('button', {name: /Exacto/}).click();
     await sheet.getByRole('button', {name: 'Sin ticket', exact: true}).click();
     await expect(window.getByRole('heading', {name: 'Cobrar'})).toHaveCount(0);
     await expect(window.getByText('Order saved!')).toBeVisible();

@@ -161,7 +161,7 @@ async function confirmPayment(window, {method = 'cash', tendered, print} = {}) {
   } else if (tendered != null) {
     await sheet.locator('#payment-tendered').fill(String(tendered));
   } else {
-    await sheet.getByRole('button', {name: 'Exacto', exact: true}).click();
+    await sheet.getByRole('button', {name: /Exacto/}).click();
   }
   if (print === true) {
     await sheet.getByRole('button', {name: 'Cobrar e imprimir', exact: true}).click();

@@ -5,6 +5,41 @@ import VatBreakdown from '../../../domain/tax/VatBreakdown';
 import {validateLine} from '../../../domain/order/lineValidity';
 
 /**
+ * @param {object} current
+ * @returns {object}
+ */
+export function openCheckout(current) {
+  return {...current, paymentOpen: true, payMethod: 'cash', tenderedCents: 0};
+}
+
+/**
+ * @param {object} current
+ * @returns {object}
+ */
+export function closeCheckout(current) {
+  return {...current, paymentOpen: false, tenderedCents: 0};
+}
+
+/**
+ * @param {object} current
+ * @param {string} method
+ * @returns {object}
+ */
+export function setPayMethod(current, method) {
+  return {...current, payMethod: method === 'card' ? 'card' : 'cash'};
+}
+
+/**
+ * @param {object} current
+ * @param {number} cents
+ * @returns {object}
+ */
+export function setTenderCents(current, cents) {
+  const value = Number.isInteger(cents) && cents > 0 ? cents : 0;
+  return {...current, tenderedCents: value};
+}
+
+/**
  * Till print choice for the open sale. A missing read asks.
  * @param {{printMode?: string, headerText?: string, footerText?: string, paperWidthMm?: number} | null | undefined} view
  * @returns {{printMode: 'always' | 'ask' | 'never', headerText: string, footerText: string, paperWidthMm: 58 | 80}}
@@ -37,6 +72,10 @@ export const state = () => ({
   categoryId: null,
   sellPreferences: sellPreferencesState(null),
   nextInvoiceNumber: '',
+  paymentOpen: false,
+  payMethod: 'cash',
+  tenderedCents: 0,
+  reprintOpen: false,
   saving: false,
   previewHtml: '',
   reprintHtml: ''

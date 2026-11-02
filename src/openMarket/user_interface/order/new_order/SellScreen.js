@@ -357,15 +357,13 @@ function paymentDialog(props, view) {
       open={view.paymentOpen}
       total={view.order && view.order.total}
       method={view.payMethod}
-      tendered={view.tendered}
+      tenderedCents={view.tenderedCents}
       saving={view.saving}
       printMode={view.printMode}
       nextInvoiceNumber={view.nextInvoiceNumber}
       previewHtml={view.previewHtml}
-      previewOpen={view.previewOpen}
       onMethod={props.onPayMethod}
       onTendered={props.onTendered}
-      onTogglePreview={props.onTogglePreview}
       onConfirm={props.onConfirmPayment}
       onClose={props.onClosePayment}
     />

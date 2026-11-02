@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import TextField from '../../components/TextField';
 import {parseDecimal} from '../../components/NumberField';
 import Quantity from '../../../domain/money/Quantity';
+import Money from '../../../domain/money/Money';
 import Payment from '../../../domain/payment/Payment';
 import VatRate from '../../../domain/tax/VatRate';
 import {lineIsValid} from './model';
@@ -20,11 +21,6 @@ class Container extends Component {
       selected: -1,
       freeOpen: false,
       helpOpen: false,
-      paymentOpen: false,
-      payMethod: 'cash',
-      tendered: '',
-      previewOpen: true,
-      reprintOpen: false,
       freeDescription: 'Venta libre',
       freeAmount: '',
       freeVat: VatRate.standard().code()
@@ -42,7 +38,6 @@ class Container extends Component {
     this.confirmPayment = this.confirmPayment.bind(this);
     this.onPayMethod = this.onPayMethod.bind(this);
     this.onTendered = this.onTendered.bind(this);
-    this.togglePreview = this.togglePreview.bind(this);
     this.openReprint = this.openReprint.bind(this);
     this.closeReprint = this.closeReprint.bind(this);
     this.printLast = this.printLast.bind(this);
@@ -90,11 +85,8 @@ class Container extends Component {
     if (before > 0 && after === 0 && this.props.saleTilesRequested) {
       this.props.saleTilesRequested({text: this.state.search || '', limit: TILE_LIMIT});
     }
-    if (before > 0 && after === 0 && this.state.paymentOpen) {
-      this.setState({paymentOpen: false, tendered: ''});
-    }
-    if (this.state.paymentOpen && previous.nextInvoiceNumber !== this.props.nextInvoiceNumber) {
-      this.requestPreview(this.state.payMethod, this.state.tendered);
+    if (this.props.paymentOpen && previous.nextInvoiceNumber !== this.props.nextInvoiceNumber) {
+      this.requestPreview(this.props.payMethod, this.props.tenderedCents);
     }
     if (after !== before) {
       const selected = after === 0 ? -1 : after - 1;
@@ -192,30 +184,34 @@ class Container extends Component {
     if (!this.canCharge()) {
       return;
     }
-    this.setState({
-      paymentOpen: true,
-      payMethod: 'cash',
-      tendered: '',
-      previewOpen: true
-    });
-    this.requestPreview('cash', '');
+    if (this.props.checkoutOpened) {
+      this.props.checkoutOpened();
+    }
+    this.requestPreview('cash', 0);
     if (this.props.nextInvoiceRequested) {
       this.props.nextInvoiceRequested();
     }
   }
 
   closePayment() {
-    this.setState({paymentOpen: false}, this.focusSearch);
+    if (this.props.checkoutClosed) {
+      this.props.checkoutClosed();
+    }
+    this.focusSearch();
   }
 
   onPayMethod(payMethod) {
-    this.setState({payMethod});
-    this.requestPreview(payMethod, this.state.tendered);
+    if (this.props.checkoutMethodChanged) {
+      this.props.checkoutMethodChanged(payMethod);
+    }
+    this.requestPreview(payMethod, this.props.tenderedCents);
   }
 
-  onTendered(tendered) {
-    this.setState({tendered});
-    this.requestPreview(this.state.payMethod, tendered);
+  onTendered(cents) {
+    if (this.props.checkoutTenderChanged) {
+      this.props.checkoutTenderChanged(cents);
+    }
+    this.requestPreview(this.props.payMethod, cents);
   }
 
   requestPreview(method, tendered) {
@@ -227,10 +223,6 @@ class Container extends Component {
       payment: quotedPayment(this.props.order && this.props.order.total, method, tendered),
       invoiceNumber: this.props.nextInvoiceNumber || ''
     });
-  }
-
-  togglePreview() {
-    this.setState({previewOpen: !this.state.previewOpen});
   }
 
   confirmPayment(payment, print) {
@@ -248,19 +240,27 @@ class Container extends Component {
     if (!order || !order.id) {
       return;
     }
-    this.setState({reprintOpen: true});
+    if (this.props.reprintOpened) {
+      this.props.reprintOpened();
+    }
     if (this.props.reprintPreviewRequested) {
       this.props.reprintPreviewRequested({orderId: order.id});
     }
   }
 
   closeReprint() {
-    this.setState({reprintOpen: false}, this.focusSearch);
+    if (this.props.reprintClosed) {
+      this.props.reprintClosed();
+    }
+    this.focusSearch();
   }
 
   printLast() {
     const order = this.props.lastOrder;
-    this.setState({reprintOpen: false}, this.focusSearch);
+    if (this.props.reprintClosed) {
+      this.props.reprintClosed();
+    }
+    this.focusSearch();
     if (order && this.props.printOrderButtonClicked) {
       this.props.printOrderButtonClicked(order);
     }
@@ -499,7 +499,6 @@ class Container extends Component {
         onCloseHelp={this.closeHelp}
         onPayMethod={this.onPayMethod}
         onTendered={this.onTendered}
-        onTogglePreview={this.togglePreview}
         onConfirmPayment={this.confirmPayment}
         onClosePayment={this.closePayment}
         onCloseReprint={this.closeReprint}
@@ -538,14 +537,14 @@ class Container extends Component {
  * @param {string | number | null | undefined} tendered
  * @returns {{method: string, tenderedCents: number, changeCents: number} | null}
  */
-function quotedPayment(total, method, tendered) {
+function quotedPayment(total, method, tenderedCents) {
   if (!total) {
     return null;
   }
   try {
     const payment = method === 'card'
       ? Payment.card({total})
-      : (tendered === '' || tendered == null ? null : Payment.cash({total, tendered}));
+      : (!tenderedCents ? null : Payment.cash({total, tendered: Money.ofCents(tenderedCents)}));
     if (!payment) {
       return null;
     }

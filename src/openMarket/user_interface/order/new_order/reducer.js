@@ -14,12 +14,18 @@ import {
   SALE_CATEGORY_SELECTED,
   SELL_PREFERENCES_LOADED,
   NEXT_INVOICE_LOADED,
+  CHECKOUT_OPENED,
+  CHECKOUT_CLOSED,
+  CHECKOUT_METHOD_CHANGED,
+  CHECKOUT_TENDER_CHANGED,
+  REPRINT_OPENED,
+  REPRINT_CLOSED,
   NEW_ORDER_SAVE,
   PAYMENT_FAILED,
   PAYMENT_PREVIEW_LOADED,
   REPRINT_PREVIEW_LOADED
 } from './action';
-import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, clearLines, applyLowStock, sellPreferencesState} from './model';
+import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, clearLines, applyLowStock, sellPreferencesState, openCheckout, closeCheckout, setPayMethod, setTenderCents} from './model';
 
 /**
  * Keeps the grid, the low-stock set, and the last ticket across a cart edit.
@@ -39,7 +45,11 @@ function keep(current, next) {
     categories: current.categories || [],
     categoryId: current.categoryId || null,
     sellPreferences: current.sellPreferences || sellPreferencesState(null),
-    nextInvoiceNumber: current.nextInvoiceNumber || ''
+    nextInvoiceNumber: current.nextInvoiceNumber || '',
+    paymentOpen: !!current.paymentOpen,
+    payMethod: current.payMethod || 'cash',
+    tenderedCents: current.tenderedCents || 0,
+    reprintOpen: !!current.reprintOpen
   };
 }
 
@@ -120,6 +130,24 @@ export default function reducer(current = initialState(), action) {
 
     case NEXT_INVOICE_LOADED:
       return {...current, nextInvoiceNumber: action.payload ? String(action.payload) : ''};
+
+    case CHECKOUT_OPENED:
+      return openCheckout(current);
+
+    case CHECKOUT_CLOSED:
+      return closeCheckout(current);
+
+    case CHECKOUT_METHOD_CHANGED:
+      return setPayMethod(current, action.method);
+
+    case CHECKOUT_TENDER_CHANGED:
+      return setTenderCents(current, action.cents);
+
+    case REPRINT_OPENED:
+      return {...current, reprintOpen: true};
+
+    case REPRINT_CLOSED:
+      return {...current, reprintOpen: false};
 
     case NEW_ORDER_SAVE:
       return {...current, saving: true};
