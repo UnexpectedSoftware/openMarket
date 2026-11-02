@@ -255,7 +255,7 @@ export default class Invoice {
 
 /**
  * Copies the order lines. Amounts stay the ones the order already rounded.
- * @param {Array<{kind?: 'PRODUCT' | 'FREE', barcode: string, name: string, price: Money, quantity: Quantity, amount: Money, vatRate?: VatRate | object}>} lines
+ * @param {Array<{kind?: 'PRODUCT' | 'FREE', barcode: string, name: string, price: Money, quantity: Quantity, amount: Money, vatRate?: VatRate | object, weighted?: boolean}>} lines
  * @returns {InvoiceLine[]}
  */
 function issuedLines(lines) {

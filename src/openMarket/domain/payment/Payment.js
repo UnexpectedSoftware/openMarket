@@ -112,11 +112,11 @@ export default class Payment {
     if (method === 'cash' && tenderedCents < changeCents) {
       throw new InvalidPaymentError({method, tenderedCents, changeCents});
     }
-    return new Payment({method, tenderedCents, changeCents});
+    return new Payment({method: /** @type {'cash' | 'card' | 'bizum'} */ (method), tenderedCents, changeCents});
   }
 
   /**
-   * @param {{method: string, tenderedCents: number, changeCents: number, parts?: Array<{method: string, amountCents: number}> | null}} props
+   * @param {{method: 'cash' | 'card' | 'bizum' | 'mixed', tenderedCents: number, changeCents: number, parts?: Array<{method: string, amountCents: number}> | null}} props
    */
   constructor({method, tenderedCents, changeCents, parts}) {
     /** @private */
@@ -150,7 +150,7 @@ export default class Payment {
   }
 
   /**
-   * @param {{total: Money | number | string, tendered?: Money | number | string, method: string}} params
+   * @param {{total: Money | number | string, tendered?: Money | number | string, method: 'card' | 'bizum'}} params
    * @returns {Payment}
    */
   static exact({total, tendered, method}) {

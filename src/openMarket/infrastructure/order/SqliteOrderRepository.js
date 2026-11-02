@@ -308,7 +308,7 @@ function invoiceNumber(row) {
 
 /**
  * @param {string | null | undefined} method
- * @returns {'cash'|'card'|null}
+ * @returns {'cash'|'card'|'bizum'|'mixed'|null}
  */
 function paymentMethod(method) {
   if (method === 'cash' || method === 'card' || method === 'bizum' || method === 'mixed') {
@@ -345,6 +345,7 @@ function detailId(query) {
  * @property {string | null} [payment_method]
  * @property {number | string | null} [tendered_cents]
  * @property {number | string | null} [change_cents]
+ * @property {string | null} [payment_parts]
  * @property {string | null} [invoice_id]
  * @property {string | null} [invoice_number]
  * @property {string | null} [invoice_type]
@@ -368,6 +369,7 @@ function detailId(query) {
  * @property {string | null} [vat_cause]
  * @property {string | null} [kind]
  * @property {number | null} [weighted]
+ * @property {number | null} [line_weighted]
  */
 
 /**
@@ -409,7 +411,7 @@ function orderDetailFrom(database, row) {
 
 /**
  * @param {DetailRow} row
- * @param {{method: 'cash'|'card', tenderedCents: number | null, changeCents: number | null} | null} payment
+ * @param {import('../../domain/order/OrderDetail').DetailPayment | null} payment
  * @param {string} createdAt
  * @returns {OrderDetail}
  */
@@ -430,7 +432,7 @@ function missingInvoiceDetail(row, payment, createdAt) {
 /**
  * @param {*} database
  * @param {DetailRow} row
- * @param {{method: 'cash'|'card', tenderedCents: number | null, changeCents: number | null} | null} payment
+ * @param {import('../../domain/order/OrderDetail').DetailPayment | null} payment
  * @param {string} createdAt
  * @returns {OrderDetail}
  */
@@ -461,7 +463,7 @@ function orderIdOf(row) {
 
 /**
  * @param {DetailRow} row
- * @returns {{method: 'cash'|'card', tenderedCents: number | null, changeCents: number | null} | null}
+ * @returns {import('../../domain/order/OrderDetail').DetailPayment | null}
  */
 function paymentOf(row) {
   const method = paymentMethod(row.payment_method);

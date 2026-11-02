@@ -83,7 +83,7 @@ function aggregateFromJson(text) {
 
 /**
  * @param {string} text
- * @returns {{printMode: string, headerText: string, footerText: string, paperWidthMm: number}}
+ * @returns {{printMode: string, headerText: string, footerText: string, paperWidthMm: number, templateId: 'classic-80' | 'classic-58'}}
  */
 function fieldsFromJson(text) {
   const data = parsed(text);
@@ -115,6 +115,7 @@ function templateFrom(data) {
  * @property {string} [headerText]
  * @property {string} [footerText]
  * @property {number} [paperWidthMm]
+ * @property {string} [templateId]
  */
 
 /**

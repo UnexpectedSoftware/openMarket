@@ -19,6 +19,7 @@ export default class SellPreferences {
    * @param {string} [props.headerText]
    * @param {string} [props.footerText]
    * @param {number} [props.paperWidthMm]
+   * @param {string} [props.templateId]
    */
   constructor({printMode, headerText, footerText, paperWidthMm, templateId} = {}) {
     const template = chooseTemplate(templateId, paperWidthMm);

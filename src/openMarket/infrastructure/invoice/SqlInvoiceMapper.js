@@ -10,7 +10,7 @@ import {lineKind} from '../../domain/order/lineValidity';
 export default class SqlInvoiceMapper {
 
   /**
-   * @param {{rows: Array<{id: string, series: string, number: number, issued_at: string, issue_date?: string | null, type?: string | null, issuer_json?: string | null, corrects_invoice_id?: string | null, order_id: string | null, status: string, cancelled_at: string | null, total: number, total_cents?: number | null, barcode: string, name: string, price: number, quantity: number, amount: number, price_cents?: number | null, quantity_milli?: number | null, amount_cents?: number | null, vat_percent?: number | null, vat_kind?: string | null, vat_cause?: string | null, kind?: string | null}>, vatRows?: Array<{kind: string, percent: number, cause: string | null, base_cents: number, quota_cents: number, gross_cents: number}>}} params
+   * @param {{rows: Array<{id: string, series: string, number: number, issued_at: string, issue_date?: string | null, type?: string | null, issuer_json?: string | null, corrects_invoice_id?: string | null, order_id: string | null, status: string, cancelled_at: string | null, total: number, total_cents?: number | null, barcode: string, name: string, price: number, quantity: number, amount: number, price_cents?: number | null, quantity_milli?: number | null, amount_cents?: number | null, vat_percent?: number | null, vat_kind?: string | null, vat_cause?: string | null, kind?: string | null, weighted?: number | null}>, vatRows?: Array<{kind: string, percent: number, cause: string | null, base_cents: number, quota_cents: number, gross_cents: number}>}} params
    * @returns {Invoice}
    */
   toDomain({rows, vatRows}) {

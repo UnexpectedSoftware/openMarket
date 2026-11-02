@@ -101,7 +101,7 @@ function addressLines(issuer) {
 
 /**
  * Cash names the notes and the change. Card is the method alone.
- * @param {{method?: string, tenderedCents?: number, changeCents?: number} | null | undefined} payment
+ * @param {{method?: string, tenderedCents?: number, changeCents?: number, parts?: Array<{method?: string, amountCents?: number}>} | null | undefined} payment
  * @returns {string[]}
  */
 function paymentLines(payment) {

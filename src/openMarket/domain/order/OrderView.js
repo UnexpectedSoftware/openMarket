@@ -6,7 +6,7 @@
 export default class OrderView {
 
   /**
-   * @param {{orderId: string, invoiceNumber: string, createdAt: string, itemCount: number, paymentMethod: 'cash'|'card'|null, totalCents: number, cancelled: boolean}} props
+   * @param {{orderId: string, invoiceNumber: string, createdAt: string, itemCount: number, paymentMethod: 'cash'|'card'|'bizum'|'mixed'|null, totalCents: number, cancelled: boolean}} props
    */
   constructor({orderId, invoiceNumber, createdAt, itemCount, paymentMethod, totalCents, cancelled}) {
     this.orderId = orderId;

@@ -12,6 +12,7 @@ export default class SellPreferencesView {
    * @param {string} [props.headerText]
    * @param {string} [props.footerText]
    * @param {number} [props.paperWidthMm]
+   * @param {string} [props.templateId]
    */
   constructor({printMode = 'ask', headerText = '', footerText = '', paperWidthMm = 80, templateId} = {}) {
     const narrow = templateId === 'classic-58' || (templateId == null && paperWidthMm === 58);

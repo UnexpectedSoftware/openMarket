@@ -144,7 +144,7 @@ export default class Order {
   /**
    * Records how this order is paid. The change is checked against the total
    * with the same {@link Payment} the till uses.
-   * @param {Payment | {method?: string, tendered?: Money | number | string, tenderedCents?: number}} payment
+   * @param {Payment | {method?: string, tendered?: Money | number | string, tenderedCents?: number, parts?: Array<{method: string, amountCents: number}> | null}} payment
    * @returns {Order}
    */
   recordPayment(payment) {

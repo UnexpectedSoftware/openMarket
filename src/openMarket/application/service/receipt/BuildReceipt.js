@@ -29,6 +29,7 @@ import VatBreakdown from '../../../domain/tax/VatBreakdown';
  * @property {*} [amount]
  * @property {*} [vatRate]
  * @property {string} [kind]
+ * @property {boolean} [weighted]
  */
 
 /**
@@ -37,6 +38,8 @@ import VatBreakdown from '../../../domain/tax/VatBreakdown';
  * @property {string | null} [tradeName]
  * @property {string | null} [legalName]
  * @property {string | null} [nif]
+ * @property {string | null} [phone]
+ * @property {{street?: string, postalCode?: string, city?: string, province?: string, country?: string} | null} [address]
  */
 
 /**
@@ -99,7 +102,7 @@ export default class BuildReceipt {
   /**
    * A ticket for a cart that is not saved yet. Plugin slots receive no invoice.
    * The shop block comes from the profile repository. A passed issuer is ignored.
-   * @param {{lines?: PreviewLine[], payment?: {method?: string, tenderedCents?: number, changeCents?: number} | null}} query
+   * @param {{lines?: PreviewLine[], payment?: {method?: string, tenderedCents?: number, changeCents?: number, parts?: object[] | null} | null, invoiceNumber?: string | null}} query
    * @returns {Observable<{blocks: object[], html: string}>}
    */
   preview({lines, payment, invoiceNumber}) {
@@ -185,8 +188,8 @@ export default class BuildReceipt {
 
 /**
  * The open shop, including the phone the invoice snapshot does not store.
- * @param {object | null | undefined} profile
- * @returns {object | null}
+ * @param {{tradeName?: string | null, legalName?: string | null, nif?: string | null, phone?: string | null, street?: string, postalCode?: string, city?: string, province?: string, country?: string} | null | undefined} profile
+ * @returns {PreviewIssuer | null}
  */
 function shopIssuer(profile) {
   if (!profile) {
@@ -208,7 +211,7 @@ function shopIssuer(profile) {
 }
 
 /**
- * @param {object | null | undefined} detail
+ * @param {{payment?: {method?: string, tenderedCents?: number | null, changeCents?: number | null, parts?: object[] | null}} | null | undefined} detail
  * @returns {{method: string, tenderedCents: number | null, changeCents: number | null} | null}
  */
 function paymentOf(detail) {
@@ -231,7 +234,7 @@ function paymentOf(detail) {
  */
 /**
  * The detail line remembers weight for rows saved before the invoice column.
- * @param {object | null} payload
+ * @param {{lines?: object[]} | null} payload
  * @param {{lines?: Array<{weighted?: boolean}>} | null | undefined} detail
  * @returns {object | null}
  */
@@ -261,8 +264,8 @@ function withPayment(payload, payment) {
 
 /**
  * Phone for a saved ticket. The stored invoice payload is left unchanged.
- * @param {object | null} payload
- * @param {object | null | undefined} profile
+ * @param {{issuer?: PreviewIssuer | null} | null} payload
+ * @param {{phone?: string | null} | null | undefined} profile
  * @returns {object | null}
  */
 function withPhone(payload, profile) {
@@ -295,7 +298,7 @@ function copyBlock(text) {
 
 /**
  * Shop blocks for the open cart. This is not an InvoiceIssued payload.
- * @param {{lines?: PreviewLine[], issuer?: PreviewIssuer | null, when?: {date?: string, local?: string} | null, payment?: object | null}} query
+ * @param {{lines?: PreviewLine[], issuer?: PreviewIssuer | null, when?: {date?: string, local?: string} | null, payment?: object | null, invoiceNumber?: string | null}} query
  * @returns {object}
  */
 function previewPayload({lines, issuer, when, payment, invoiceNumber}) {

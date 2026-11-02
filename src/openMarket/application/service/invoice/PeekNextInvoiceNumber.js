@@ -1,4 +1,5 @@
 import 'rxjs/add/operator/map';
+/** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 /** @typedef {import('../../../domain/invoice/InvoiceSequence').default} InvoiceSequence */
 /** @typedef {import('../../../domain/Clock').default} Clock */
 
