@@ -9,7 +9,7 @@ import {validateLine} from '../../../domain/order/lineValidity';
  * @returns {object}
  */
 export function openCheckout(current) {
-  return {...current, paymentOpen: true, payMethod: 'cash', tenderedCents: 0};
+  return {...current, paymentOpen: true, payMethod: 'cash', tenderedCents: 0, mixedFirst: 'cash', mixedSecond: 'card'};
 }
 
 /**
@@ -26,7 +26,29 @@ export function closeCheckout(current) {
  * @returns {object}
  */
 export function setPayMethod(current, method) {
-  return {...current, payMethod: method === 'card' ? 'card' : 'cash'};
+  const allowed = method === 'card' || method === 'bizum' || method === 'mixed';
+  return {
+    ...current,
+    payMethod: allowed ? method : 'cash',
+    mixedFirst: current.mixedFirst || 'cash',
+    mixedSecond: current.mixedSecond || 'card'
+  };
+}
+
+/**
+ * @param {object} current
+ * @param {'first'|'second'} slot
+ * @param {string} method
+ * @returns {object}
+ */
+export function setMixedPart(current, slot, method) {
+  const part = method === 'card' || method === 'bizum' ? method : 'cash';
+  const first = slot === 'second' ? (current.mixedFirst || 'cash') : part;
+  let second = slot === 'second' ? part : (current.mixedSecond || 'card');
+  if (second === first) {
+    second = first === 'cash' ? 'card' : 'cash';
+  }
+  return {...current, mixedFirst: first, mixedSecond: second};
 }
 
 /**
@@ -75,6 +97,8 @@ export const state = () => ({
   paymentOpen: false,
   payMethod: 'cash',
   tenderedCents: 0,
+  mixedFirst: 'cash',
+  mixedSecond: 'card',
   reprintOpen: false,
   saving: false,
   previewHtml: '',

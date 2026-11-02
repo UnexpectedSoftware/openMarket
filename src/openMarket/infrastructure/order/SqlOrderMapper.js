@@ -31,7 +31,8 @@ export default class SqlOrderMapper {
         payment: Payment.restore({
           method: firstRow.payment_method,
           tenderedCents: firstRow.tendered_cents,
-          changeCents: firstRow.change_cents
+          changeCents: firstRow.change_cents,
+          parts: firstRow.payment_parts
         })
       }))
   }

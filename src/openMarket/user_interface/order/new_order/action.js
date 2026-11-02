@@ -24,6 +24,7 @@ export const NEXT_INVOICE_LOADED = 'NEXT_INVOICE_LOADED';
 export const CHECKOUT_OPENED = 'CHECKOUT_OPENED';
 export const CHECKOUT_CLOSED = 'CHECKOUT_CLOSED';
 export const CHECKOUT_METHOD_CHANGED = 'CHECKOUT_METHOD_CHANGED';
+export const CHECKOUT_PART_CHANGED = 'CHECKOUT_PART_CHANGED';
 export const CHECKOUT_TENDER_CHANGED = 'CHECKOUT_TENDER_CHANGED';
 export const REPRINT_OPENED = 'REPRINT_OPENED';
 export const REPRINT_CLOSED = 'REPRINT_CLOSED';
@@ -71,6 +72,7 @@ export const nextInvoiceLoaded = payload => ({ type: NEXT_INVOICE_LOADED, payloa
 export const checkoutOpened = () => ({ type: CHECKOUT_OPENED });
 export const checkoutClosed = () => ({ type: CHECKOUT_CLOSED });
 export const checkoutMethodChanged = method => ({ type: CHECKOUT_METHOD_CHANGED, method });
+export const checkoutPartChanged = (slot, method) => ({ type: CHECKOUT_PART_CHANGED, slot, method });
 export const checkoutTenderChanged = cents => ({ type: CHECKOUT_TENDER_CHANGED, cents });
 export const reprintOpened = () => ({ type: REPRINT_OPENED });
 export const reprintClosed = () => ({ type: REPRINT_CLOSED });

@@ -37,6 +37,7 @@ class Container extends Component {
     this.closePayment = this.closePayment.bind(this);
     this.confirmPayment = this.confirmPayment.bind(this);
     this.onPayMethod = this.onPayMethod.bind(this);
+    this.onPart = this.onPart.bind(this);
     this.onTendered = this.onTendered.bind(this);
     this.openReprint = this.openReprint.bind(this);
     this.closeReprint = this.closeReprint.bind(this);
@@ -207,6 +208,13 @@ class Container extends Component {
     this.requestPreview(payMethod, this.props.tenderedCents);
   }
 
+  onPart(slot, method) {
+    if (this.props.checkoutPartChanged) {
+      this.props.checkoutPartChanged(slot, method);
+    }
+    this.requestPreview(this.props.payMethod, this.props.tenderedCents);
+  }
+
   onTendered(cents) {
     if (this.props.checkoutTenderChanged) {
       this.props.checkoutTenderChanged(cents);
@@ -220,7 +228,13 @@ class Container extends Component {
     }
     this.props.paymentPreviewRequested({
       lines: this.props.order.lines,
-      payment: quotedPayment(this.props.order && this.props.order.total, method, tendered),
+      payment: quotedPayment(
+        this.props.order && this.props.order.total,
+        method,
+        tendered,
+        this.props.mixedFirst,
+        this.props.mixedSecond
+      ),
       invoiceNumber: this.props.nextInvoiceNumber || ''
     });
   }
@@ -231,7 +245,8 @@ class Container extends Component {
     }
     this.props.newOrderSave(this.props.order, {
       method: payment.method,
-      tenderedCents: payment.tenderedCents
+      tenderedCents: payment.tenderedCents,
+      parts: payment.parts || null
     }, print === true);
   }
 
@@ -498,6 +513,7 @@ class Container extends Component {
         onFreeVat={this.onFreeVat}
         onCloseHelp={this.closeHelp}
         onPayMethod={this.onPayMethod}
+        onPart={this.onPart}
         onTendered={this.onTendered}
         onConfirmPayment={this.confirmPayment}
         onClosePayment={this.closePayment}
@@ -537,21 +553,38 @@ class Container extends Component {
  * @param {string | number | null | undefined} tendered
  * @returns {{method: string, tenderedCents: number, changeCents: number} | null}
  */
-function quotedPayment(total, method, tenderedCents) {
+function quotedPayment(total, method, tenderedCents, mixedFirst, mixedSecond) {
   if (!total) {
     return null;
   }
   try {
-    const payment = method === 'card'
-      ? Payment.card({total})
-      : (!tenderedCents ? null : Payment.cash({total, tendered: Money.ofCents(tenderedCents)}));
+    let payment = null;
+    if (method === 'card') {
+      payment = Payment.card({total});
+    } else if (method === 'bizum') {
+      payment = Payment.bizum({total});
+    } else if (method === 'mixed') {
+      if (!tenderedCents || tenderedCents >= total.cents) {
+        return null;
+      }
+      payment = Payment.mixed({
+        total,
+        parts: [
+          {method: mixedFirst || 'cash', amountCents: tenderedCents},
+          {method: mixedSecond || 'card', amountCents: total.cents - tenderedCents}
+        ]
+      });
+    } else if (tenderedCents) {
+      payment = Payment.cash({total, tendered: Money.ofCents(tenderedCents)});
+    }
     if (!payment) {
       return null;
     }
     return {
       method: payment.method,
       tenderedCents: payment.tenderedCents,
-      changeCents: payment.changeCents
+      changeCents: payment.changeCents,
+      parts: payment.parts
     };
   } catch (error) {
     return null;

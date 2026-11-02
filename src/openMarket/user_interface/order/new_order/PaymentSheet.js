@@ -40,9 +40,24 @@ export default class PaymentSheet extends Component {
       if (this.props.method === 'card') {
         return Payment.card({total});
       }
+      if (this.props.method === 'bizum') {
+        return Payment.bizum({total});
+      }
       const cents = this.props.tenderedCents;
       if (!Number.isInteger(cents) || cents <= 0) {
         return null;
+      }
+      if (this.props.method === 'mixed') {
+        if (cents >= total.cents) {
+          return null;
+        }
+        return Payment.mixed({
+          total,
+          parts: [
+            {method: this.props.mixedFirst || 'cash', amountCents: cents},
+            {method: this.props.mixedSecond || 'card', amountCents: total.cents - cents}
+          ]
+        });
       }
       return Payment.cash({total, tendered: Money.ofCents(cents)});
     } catch (error) {
@@ -87,7 +102,7 @@ export default class PaymentSheet extends Component {
    * @param {string} key
    */
   onKey(key) {
-    if (this.props.method === 'card' || !this.props.onTendered) {
+    if (this.props.method === 'card' || this.props.method === 'bizum' || !this.props.onTendered) {
       return;
     }
     this.props.onTendered(nextTenderCents(this.props.tenderedCents, key));
@@ -132,11 +147,12 @@ export default class PaymentSheet extends Component {
   render() {
     const props = this.props;
     const total = this.total();
-    const card = props.method === 'card';
+    const exact = props.method === 'card' || props.method === 'bizum';
+    const mixed = props.method === 'mixed';
     const payment = this.quoted();
     const notes = suggestedTenders(total);
-    const given = card ? total : Money.ofCents(props.tenderedCents || 0);
-    const short = !card && props.tenderedCents > 0 && !payment;
+    const given = exact ? total : Money.ofCents(props.tenderedCents || 0);
+    const short = !exact && props.tenderedCents > 0 && !payment;
     const change = payment ? Money.ofCents(payment.changeCents) : Money.ofCents(0);
     const title = props.nextInvoiceNumber ? 'Cobrar ticket nº ' + props.nextInvoiceNumber : 'Cobrar';
     return (
@@ -159,24 +175,33 @@ export default class PaymentSheet extends Component {
               <Tile label="Cambio" amount={short ? null : change} change short={short} />
             </div>
             <div className="payment-methods" role="group" aria-label="Forma de pago">
-              <Button
-                type="button"
-                variant={card ? 'secondary' : 'primary'}
-                pressed={!card}
-                onClick={() => props.onMethod && props.onMethod('cash')}
-              >
-                Efectivo
-              </Button>
-              <Button
-                type="button"
-                variant={card ? 'primary' : 'secondary'}
-                pressed={card}
-                onClick={() => props.onMethod && props.onMethod('card')}
-              >
-                Tarjeta
-              </Button>
+              {['cash', 'card', 'bizum', 'mixed'].map(method => (
+                <Button
+                  key={method}
+                  type="button"
+                  variant={props.method === method ? 'primary' : 'secondary'}
+                  pressed={props.method === method}
+                  onClick={() => props.onMethod && props.onMethod(method)}
+                >
+                  {methodLabel(method)}
+                </Button>
+              ))}
             </div>
-            {card ? null : (
+            {mixed ? (
+              <div className="checkout-mixed">
+                <PartSelect
+                  label="Primera parte"
+                  value={props.mixedFirst || 'cash'}
+                  onChange={method => props.onPart && props.onPart('first', method)}
+                />
+                <PartSelect
+                  label="Resto"
+                  value={props.mixedSecond || 'card'}
+                  onChange={method => props.onPart && props.onPart('second', method)}
+                />
+              </div>
+            ) : null}
+            {exact ? null : (
               <div className="checkout-entry">
                 <div className="checkout-keypad" role="group" aria-label="Importe entregado">
                   {KEYS.map(key => (
@@ -222,6 +247,39 @@ export default class PaymentSheet extends Component {
     );
   }
 
+}
+
+/**
+ * @param {string} method
+ * @returns {string}
+ */
+function methodLabel(method) {
+  if (method === 'card') {
+    return 'Tarjeta';
+  }
+  if (method === 'bizum') {
+    return 'Bizum';
+  }
+  if (method === 'mixed') {
+    return 'Mixto';
+  }
+  return 'Efectivo';
+}
+
+/**
+ * @param {{label: string, value: string, onChange: function(string): void}} props
+ */
+function PartSelect(props) {
+  return (
+    <label className="checkout-part">
+      <span>{props.label}</span>
+      <select value={props.value} onChange={event => props.onChange(event.target.value)}>
+        <option value="cash">Efectivo</option>
+        <option value="card">Tarjeta</option>
+        <option value="bizum">Bizum</option>
+      </select>
+    </label>
+  );
 }
 
 /**

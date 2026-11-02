@@ -25,7 +25,9 @@ describe('order list format', () => {
     expect(paymentLabel('cash')).to.equal('Efectivo');
     expect(paymentLabel('card')).to.equal('Tarjeta');
     expect(paymentLabel(null)).to.equal('');
-    expect(paymentLabel('bizum')).to.equal('');
+    expect(paymentLabel('bizum')).to.equal('Bizum');
+    expect(paymentLabel('mixed')).to.equal('Mixto');
+    expect(paymentLabel('cheque')).to.equal('');
   });
 
   it('labels the item count', () => {
@@ -57,7 +59,14 @@ describe('order list format', () => {
     expect(paymentLine({method: 'cash', tenderedCents: 1.5, changeCents: 0})).to.equal('Efectivo');
     expect(paymentLine(null)).to.equal('');
     expect(paymentLine(undefined)).to.equal('');
-    expect(paymentLine({method: 'bizum'})).to.equal('');
+    expect(paymentLine({method: 'bizum'})).to.equal('Bizum');
+    expect(paymentLine({
+      method: 'mixed',
+      parts: [{method: 'cash', amountCents: 1000}, {method: 'card', amountCents: 313}]
+    })).to.equal(
+      'Mixto (Efectivo ' + formatMoney(Money.ofCents(1000)) + ', Tarjeta ' + formatMoney(Money.ofCents(313)) + ')'
+    );
+    expect(paymentLine({method: 'cheque'})).to.equal('');
   });
 
   it('formats the detail date, a weighed price, and a VAT label', () => {

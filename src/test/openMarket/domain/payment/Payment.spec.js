@@ -40,8 +40,36 @@ describe('Payment', () => {
       .with.property('code', ErrorCode.PAYMENT_INVALID);
   });
 
+  it('charges Bizum the exact total', () => {
+    const payment = Payment.bizum({total});
+    expect(payment.method).to.equal('bizum');
+    expect(payment.changeCents).to.equal(0);
+    expect(payment.parts).to.equal(null);
+  });
+
+  it('splits a payment into two exact parts', () => {
+    const payment = Payment.mixed({
+      total,
+      parts: [
+        {method: 'cash', amountCents: 1000},
+        {method: 'card', amountCents: 313}
+      ]
+    });
+    expect(payment.method).to.equal('mixed');
+    expect(payment.changeCents).to.equal(0);
+    expect(payment.parts).to.deep.equal([
+      {method: 'cash', amountCents: 1000},
+      {method: 'card', amountCents: 313}
+    ]);
+    expect(() => Payment.mixed({total, parts: [{method: 'cash', amountCents: 1313}]})).to.throw(InvalidPaymentError);
+    expect(() => Payment.mixed({
+      total,
+      parts: [{method: 'cash', amountCents: 1000}, {method: 'cash', amountCents: 313}]
+    })).to.throw(InvalidPaymentError);
+  });
+
   it('rejects an unknown method', () => {
-    expect(() => Payment.settle({total, method: 'bizum', tendered: total}))
+    expect(() => Payment.settle({total, method: 'cheque', tendered: total}))
       .to.throw(InvalidPaymentError);
   });
 

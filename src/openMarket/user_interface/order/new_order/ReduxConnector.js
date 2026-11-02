@@ -22,6 +22,8 @@ function mapStateToProps(state) {
     paymentOpen: !!state.newOrder.paymentOpen,
     payMethod: state.newOrder.payMethod || 'cash',
     tenderedCents: state.newOrder.tenderedCents || 0,
+    mixedFirst: state.newOrder.mixedFirst || 'cash',
+    mixedSecond: state.newOrder.mixedSecond || 'card',
     reprintOpen: !!state.newOrder.reprintOpen,
     previewHtml: state.newOrder.previewHtml,
     reprintHtml: state.newOrder.reprintHtml,

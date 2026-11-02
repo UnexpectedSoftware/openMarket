@@ -273,6 +273,12 @@ function savedMessage(order) {
   if (payment.method === 'card') {
     return 'Pagado con tarjeta';
   }
+  if (payment.method === 'bizum') {
+    return 'Pagado con Bizum';
+  }
+  if (payment.method === 'mixed') {
+    return 'Pagado mixto';
+  }
   return 'Cambio ' + formatMoney(Money.ofCents(payment.changeCents || 0));
 }
 

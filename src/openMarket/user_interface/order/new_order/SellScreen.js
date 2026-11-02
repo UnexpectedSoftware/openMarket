@@ -358,6 +358,9 @@ function paymentDialog(props, view) {
       total={view.order && view.order.total}
       method={view.payMethod}
       tenderedCents={view.tenderedCents}
+      mixedFirst={view.mixedFirst}
+      mixedSecond={view.mixedSecond}
+      onPart={props.onPart}
       saving={view.saving}
       printMode={view.printMode}
       nextInvoiceNumber={view.nextInvoiceNumber}

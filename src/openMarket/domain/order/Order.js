@@ -156,7 +156,8 @@ export default class Order {
     this._payment = Payment.settle({
       total: this._total,
       method: payment && payment.method,
-      tendered
+      tendered,
+      parts: payment && payment.parts
     });
     return this;
   }

@@ -17,6 +17,7 @@ import {
   CHECKOUT_OPENED,
   CHECKOUT_CLOSED,
   CHECKOUT_METHOD_CHANGED,
+  CHECKOUT_PART_CHANGED,
   CHECKOUT_TENDER_CHANGED,
   REPRINT_OPENED,
   REPRINT_CLOSED,
@@ -25,7 +26,7 @@ import {
   PAYMENT_PREVIEW_LOADED,
   REPRINT_PREVIEW_LOADED
 } from './action';
-import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, clearLines, applyLowStock, sellPreferencesState, openCheckout, closeCheckout, setPayMethod, setTenderCents} from './model';
+import {state as initialState, addProduct, addFreeLine, updateQuantity, removeProduct, clearLines, applyLowStock, sellPreferencesState, openCheckout, closeCheckout, setPayMethod, setMixedPart, setTenderCents} from './model';
 
 /**
  * Keeps the grid, the low-stock set, and the last ticket across a cart edit.
@@ -49,6 +50,8 @@ function keep(current, next) {
     paymentOpen: !!current.paymentOpen,
     payMethod: current.payMethod || 'cash',
     tenderedCents: current.tenderedCents || 0,
+    mixedFirst: current.mixedFirst || 'cash',
+    mixedSecond: current.mixedSecond || 'card',
     reprintOpen: !!current.reprintOpen
   };
 }
@@ -139,6 +142,9 @@ export default function reducer(current = initialState(), action) {
 
     case CHECKOUT_METHOD_CHANGED:
       return setPayMethod(current, action.method);
+
+    case CHECKOUT_PART_CHANGED:
+      return setMixedPart(current, action.slot, action.method);
 
     case CHECKOUT_TENDER_CHANGED:
       return setTenderCents(current, action.cents);

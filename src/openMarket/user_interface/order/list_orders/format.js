@@ -28,6 +28,12 @@ export function paymentLabel(method) {
   if (method === 'card') {
     return 'Tarjeta';
   }
+  if (method === 'bizum') {
+    return 'Bizum';
+  }
+  if (method === 'mixed') {
+    return 'Mixto';
+  }
   return '';
 }
 
@@ -77,6 +83,12 @@ export function paymentLine(payment) {
     return '';
   }
   const label = paymentLabel(payment.method);
+  if (payment.method === 'mixed' && Array.isArray(payment.parts)) {
+    const parts = payment.parts.map(part =>
+      paymentLabel(part.method) + ' ' + formatMoney(Money.ofCents(part.amountCents))
+    ).join(', ');
+    return parts ? label + ' (' + parts + ')' : label;
+  }
   if (payment.method !== 'cash' || !hasNotes(payment)) {
     return label;
   }

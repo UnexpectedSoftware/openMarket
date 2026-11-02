@@ -92,6 +92,8 @@ export function sellView(props, state) {
     reprintOpen: !!source.reprintOpen,
     payMethod: source.payMethod || 'cash',
     tenderedCents: source.tenderedCents || 0,
+    mixedFirst: source.mixedFirst || 'cash',
+    mixedSecond: source.mixedSecond || 'card',
     freeDescription: local.freeDescription,
     freeAmount: local.freeAmount,
     freeVat: local.freeVat

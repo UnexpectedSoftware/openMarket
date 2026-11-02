@@ -111,6 +111,14 @@ function paymentLines(payment) {
   if (payment.method === 'card') {
     return ['Tarjeta'];
   }
+  if (payment.method === 'bizum') {
+    return ['Bizum'];
+  }
+  if (payment.method === 'mixed' && Array.isArray(payment.parts)) {
+    return ['Mixto'].concat(payment.parts.map(part =>
+      partLabel(part.method) + ' ' + formatEuroCents(part.amountCents)
+    ));
+  }
   if (payment.method !== 'cash') {
     return [];
   }
@@ -122,6 +130,20 @@ function paymentLines(payment) {
     lines.push('Cambio ' + formatEuroCents(payment.changeCents));
   }
   return lines;
+}
+
+/**
+ * @param {string | null | undefined} method
+ * @returns {string}
+ */
+function partLabel(method) {
+  if (method === 'card') {
+    return 'Tarjeta';
+  }
+  if (method === 'bizum') {
+    return 'Bizum';
+  }
+  return 'Efectivo';
 }
 
 function vatLabel(row) {

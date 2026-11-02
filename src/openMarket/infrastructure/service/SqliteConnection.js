@@ -340,6 +340,7 @@ function migrateOrderPayment(database) {
   ensureColumn(database, '"order"', 'payment_method', 'TEXT');
   ensureColumn(database, '"order"', 'tendered_cents', 'INTEGER');
   ensureColumn(database, '"order"', 'change_cents', 'INTEGER');
+  ensureColumn(database, '"order"', 'payment_parts', 'TEXT');
   const applied = database.prepare('SELECT name FROM schema_migration WHERE name = ?').get(ORDER_PAYMENT_MIGRATION);
   if (applied) {
     return;

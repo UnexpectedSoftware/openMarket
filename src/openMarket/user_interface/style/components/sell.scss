@@ -633,6 +633,28 @@
   gap: var(--om-space-2);
 }
 
+.checkout-mixed {
+  display: flex;
+  gap: var(--om-space-3);
+}
+
+.checkout-part {
+  display: flex;
+  flex-direction: column;
+  gap: var(--om-space-1);
+  color: var(--om-color-text);
+  font-size: var(--om-font-size-sm);
+}
+
+.checkout-part select {
+  min-height: var(--om-control-height);
+  padding: 0 var(--om-space-3);
+  color: var(--om-color-text);
+  background: var(--om-color-surface);
+  border: 1px solid var(--om-color-border-strong);
+  border-radius: var(--om-control-radius);
+}
+
 .checkout-notes-label {
   width: 100%;
   margin: 0;
