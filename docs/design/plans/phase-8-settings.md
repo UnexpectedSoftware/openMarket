@@ -163,7 +163,7 @@ Reshape `settings/` onto the `new_order` file set. One slice, the existing key `
 
 - Unit: `model.js` (load copies the view into the draft, a draft edit leaves `issuer` alone, a blank NIF with invoicing on does not start a save, a clean Guardar does not start a save, a shop failure leaves the draft). Reducer delegates. Save epic: shop fields include `phone` and `email`; a theme-only change does not call `update`; `InvalidTaxIdError` becomes the NIF field error and not a success toast.
 - Component: `ShopForm` ties each label to its input. `ThemePicker` marks the applied theme `aria-checked`.
-- e2e: the cases in item 7. Screenshots at 1366×768 of the page in Mercado, Mostrador Noche, Ultramarinos, and Unexpected Neon into `docs/design/after/settings-<theme>.png`.
+- e2e: the cases in item 7. `e2e/screenshots.spec.js` writes the page at 1366×768 in Mercado, Mostrador Noche, Ultramarinos, and Unexpected Neon into `docs/design/after/settings-<theme>.png`.
 
 **8b closes:** nothing. Refs #89, #88, #79.
 

@@ -126,7 +126,7 @@ Reshape `list_products/` onto the `new_order` file set. One slice, `state.listPr
 
 - Unit: `statusLabel`; `model.js` page math ("Mostrando 21–40 de 50", last page, empty); reducer; `makeProductsListEpic` (switchMap cancels the previous filter, failure → `PRODUCTS_FAILED`, the criteria is a `ProductsQuery`).
 - Component: `ProductTable` renders margin, "Activo", the weighted stock text, and the empty node it is given.
-- e2e: fresh user data → Productos shows "Crear producto" (#71). Create two products, the table shows margin 50 for a 2 € / 1 € product and status "Activo". Search "zzz" shows the no-match empty state and "Quitar filtros", and clearing it brings the rows back. Sort and the Dairy category filter still narrow the table. Disable still flips the badge to "Inactivo" and the sell-screen scan still re-enables. Screenshots at 1366×768 of the table in Mercado, Mostrador Noche, Ultramarinos, and Unexpected Neon into `docs/design/after/products-<theme>.png`.
+- e2e: fresh user data → Productos shows "Crear producto" (#71). Create two products, the table shows margin 50 for a 2 € / 1 € product and status "Activo". Search "zzz" shows the no-match empty state and "Quitar filtros", and clearing it brings the rows back. Sort and the Dairy category filter still narrow the table. Disable still flips the badge to "Inactivo" and the sell-screen scan still re-enables. `e2e/screenshots.spec.js` writes the table at 1366×768 in Mercado, Mostrador Noche, Ultramarinos, and Unexpected Neon into `docs/design/after/products-<theme>.png`.
 
 **6b closes:** #71. Refs #98, #85, #88.
 
@@ -149,7 +149,7 @@ Reshape `list_products/` onto the `new_order` file set. One slice, `state.listPr
 
 - itest `findDetail`: VAT, cents, category name, weighted, description; unknown barcode completes empty; the object is not a `Product`.
 - Unit: draft reducer (edit locks the barcode, margin follows the cents, validation failures do not save); save epic maps a typed error to `PRODUCTS_SAVE_FAILED`; archive epic calls disable and does not call `enableForSale`.
-- e2e: Editar opens the drawer (heading "Editar producto"), barcode readonly, change name and price and IVA, Guardar, the row updates, reopen shows `S1:10`. The Activo control shows the word "Activo" (#85). Desactivar-from-the-row is gone; archiving from the drawer sets "Inactivo", and the sell-screen scan still re-enables and adds 1. Create from "Nuevo producto" validates an empty Guardar ("Obligatorio" on the name) and then saves. Screenshots of the drawer in the four themes into `docs/design/after/products-drawer-<theme>.png` at 1366×768.
+- e2e: Editar opens the drawer (heading "Editar producto"), barcode readonly, change name and price and IVA, Guardar, the row updates, reopen shows `S1:10`. The Activo control shows the word "Activo" (#85). Desactivar-from-the-row is gone; archiving from the drawer sets "Inactivo", and the sell-screen scan still re-enables and adds 1. Create from "Nuevo producto" validates an empty Guardar ("Obligatorio" on the name) and then saves. `e2e/screenshots.spec.js` writes the drawer in the four themes into `docs/design/after/products-drawer-<theme>.png` at 1366×768.
 
 **6c closes:** #98, #85. Refs #88.
 

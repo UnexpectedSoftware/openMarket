@@ -1,9 +1,5 @@
-const fs = require('fs');
-const path = require('path');
 const {test, expect} = require('@playwright/test');
-const {root, assertDist, launchApp, closeApp, scanBarcode, confirmPayment, dismissTicket} = require('./launch');
-
-const THEMES = ['mercado', 'mostrador-noche', 'ultramarinos', 'unexpected-neon'];
+const {assertDist, launchApp, closeApp, scanBarcode, confirmPayment, dismissTicket} = require('./launch');
 
 test.beforeAll(() => {
   assertDist();
@@ -24,8 +20,6 @@ test('sells down to the minimum and updates the tile badge and the nav count', a
       }]
     }
   });
-  const after = path.join(root, 'docs/design/after');
-  fs.mkdirSync(after, {recursive: true});
   try {
     await window.setViewportSize({width: 1366, height: 768});
     await window.getByRole('link', {name: 'Vender', exact: true}).click();
@@ -51,24 +45,9 @@ test('sells down to the minimum and updates the tile badge and the nav count', a
     await scanBarcode(window, '8400000000318');
     await expect(window.locator('.sell-line', {hasText: 'Milk'}).getByText('Quedan 1', {exact: true})).toBeVisible();
 
-    for (const theme of THEMES) {
-      await window.evaluate(name => {
-        document.documentElement.dataset.theme = name;
-      }, theme);
-      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
-      await window.screenshot({path: path.join(after, `low-stock-sell-${theme}.png`)});
-    }
-
     await window.getByRole('link', {name: /^Informes\b/}).click();
     await expect(window.getByRole('heading', {name: 'Most sold'})).toBeVisible();
     await expect(window.getByRole('link', {name: 'Stock bajo 1'})).toBeVisible();
-    for (const theme of THEMES) {
-      await window.evaluate(name => {
-        document.documentElement.dataset.theme = name;
-      }, theme);
-      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
-      await window.screenshot({path: path.join(after, `low-stock-informes-${theme}.png`)});
-    }
   } finally {
     await closeApp(app, userData);
   }

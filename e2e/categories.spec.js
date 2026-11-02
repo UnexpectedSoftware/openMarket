@@ -15,8 +15,6 @@ const {
   dismissTicket
 } = require('./launch');
 
-const THEMES = ['mercado', 'mostrador-noche', 'ultramarinos', 'unexpected-neon'];
-
 function fact(card, label) {
   return card.locator('.category-card-facts div', {
     hasText: new RegExp(`^${label}`)
@@ -301,56 +299,6 @@ test('links a category card to its products', async () => {
     await expect(window).not.toHaveURL(/[?&]category=/);
     await expect(productRow(window, 'Milk')).toBeVisible();
     await expect(productRow(window, 'Bread')).toBeVisible();
-  } finally {
-    await closeApp(app, userData);
-  }
-});
-
-test('screenshots the grid and the edit dialog in the four themes', async () => {
-  const {app, window, userData} = await launchApp({
-    shop: {
-      categories: [
-        {name: 'Lácteos', image: true},
-        {name: 'Fruta'},
-        {name: 'Panadería'},
-        'Limpieza'
-      ],
-      products: [{
-        name: 'Leche',
-        barcode: '8400000001018',
-        price: 2,
-        basePrice: 1.5,
-        stock: 4,
-        stockMin: 1,
-        category: 'Lácteos'
-      }]
-    }
-  });
-  const after = path.join(root, 'docs/design/after');
-  fs.mkdirSync(after, {recursive: true});
-  try {
-    await window.setViewportSize({width: 1366, height: 768});
-    await openCategories(window);
-    await expect(cardNamed(window, 'Lácteos')).toBeVisible();
-    await expect(fact(cardNamed(window, 'Lácteos'), 'Productos')).toHaveText('1');
-
-    for (const theme of THEMES) {
-      await window.evaluate(name => {
-        document.documentElement.dataset.theme = name;
-      }, theme);
-      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
-      await window.screenshot({path: path.join(after, `categories-${theme}.png`)});
-    }
-
-    await cardNamed(window, 'Lácteos').getByRole('button', {name: 'Editar'}).click();
-    await expect(window.getByRole('heading', {name: 'Editar categoría'})).toBeVisible();
-    for (const theme of THEMES) {
-      await window.evaluate(name => {
-        document.documentElement.dataset.theme = name;
-      }, theme);
-      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
-      await window.screenshot({path: path.join(after, `categories-dialog-${theme}.png`)});
-    }
   } finally {
     await closeApp(app, userData);
   }

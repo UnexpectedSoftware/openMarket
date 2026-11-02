@@ -92,7 +92,7 @@ The footer is always visible, which fixes OM-12 (#75). react-table and the blank
   - scanner burst detector (pure function `isScannerBurst(timestamps)`)
   - shortcut map reducer
 - Component (existing test setup): Cart invalid-line rendering and disabled Cobrar.
-- Playwright e2e `e2e/sell.spec.*`: scan two barcodes, then a weighted item (enter 0,750 kg), Venta libre 3,50 € at 10 %, a quantity change via stepper, an invalid quantity (highlighted, Cobrar disabled), fix it and save. Assert the total and VAT rows. Screenshots of the sell screen and weighted dialog in all four themes into `docs/design/after/`.
+- Playwright e2e `e2e/sell.spec.*`: scan two barcodes, then a weighted item (enter 0,750 kg), Venta libre 3,50 € at 10 %, a quantity change via stepper, an invalid quantity (highlighted, Cobrar disabled), fix it and save. Assert the total and VAT rows. `e2e/screenshots.spec.js` writes the sell screen and weighted dialog in all four themes into `docs/design/after/`.
 - The existing e2e and the `noHexColors` lint stay green.
 
 **4a closes:** #108, #75. Also closes #86 and #109 *if* invalid-line + weighted are done as above. It refs #84, #79, #87, #66, #88 and #107.
@@ -122,7 +122,7 @@ The footer is always visible, which fixes OM-12 (#75). react-table and the blank
 **4b tests**
 - Unit: Payment invariants, CreateOrder with payment (cash change, card, insufficient tender rejected), migration idempotency, HtmlReceiptRenderer.
 - Domain: `suggestedTenders`, and change parity between the sheet and `CreateOrder`.
-- e2e: a full sale with a weighted item + Venta libre, paid cash with tendered 20 €, change shown, ticket preview visible, order saved with the payment. Card payment path. Screenshots of the payment sheet in the four themes.
+- e2e: a full sale with a weighted item + Venta libre, paid cash with tendered 20 €, change shown, ticket preview visible, order saved with the payment. Card payment path. `e2e/screenshots.spec.js` writes the payment sheet in the four themes into `docs/design/after/`.
 
 **4b closes:** #107, #76. Also closes #106 if the HTML preview lands. It refs #105.
 

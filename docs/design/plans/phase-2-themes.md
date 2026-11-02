@@ -72,7 +72,7 @@ Issues: OM-32 #95 (design tokens), #114 Mercado, #115 Mostrador Noche, #116 Ultr
 ## Tests
 - Unit: `Theme.spec.js`, `AppearancePreferences.spec.js`, `ChangeTheme.spec.js` (ports faked), contract test for the adapter, contrast and colour-lint specs, a reducer/epic test that `THEME_CHANGED` sets `dataset.theme`.
 - Integration: `src/itest/AppearanceSpec.js` — save/find on the `setting` table; missing row → Mercado.
-- Playwright `e2e/themes.spec.js`: for each theme, select it on Settings, save, restart the app (`launch.js` with the same user data) and assert `document.documentElement.dataset.theme` before first paint (check in the first `domcontentloaded`), then screenshot Vender, Pedidos, Productos, Categorías, Informes, Ajustes to `test-results/theme-<id>-<screen>.png` (artifacts, no pixel diff yet). Assert body background colour changes between Mercado and Mostrador Noche.
+- Playwright `e2e/themes.spec.js`: for each theme, select it on Settings, save, restart the app (`launch.js` with the same user data) and assert `document.documentElement.dataset.theme` before first paint (check in the first `domcontentloaded`), then open Vender and assert the heading. Assert body background colour changes between Mercado and Mostrador Noche. `e2e/screenshots.spec.js` writes the four-theme screen shots into `docs/design/after/`.
 - Keep `shell`, `orders`, `products`, `categories`, `plugins`, `receipt`, `settings` specs green.
 
 ## React 15 constraints
