@@ -384,6 +384,7 @@ describe('settings epics', () => {
         printMode: 'never',
         headerText: 'Hola',
         footerText: '',
+        templateId: 'classic-58',
         paperWidthMm: 58
       });
       expect(actions[0].ticket).to.equal(ticket);
@@ -424,6 +425,7 @@ describe('settings epics', () => {
         printMode: 'always',
         headerText: 'Gracias',
         footerText: '',
+        templateId: 'classic-80',
         paperWidthMm: 80
       });
       expect(actions[0].type).to.equal(SETTINGS_SAVED);

@@ -72,7 +72,8 @@ export function sellPreferencesState(view) {
     printMode: mode === 'always' || mode === 'never' ? mode : 'ask',
     headerText: view && typeof view.headerText === 'string' ? view.headerText : '',
     footerText: view && typeof view.footerText === 'string' ? view.footerText : '',
-    paperWidthMm: view && view.paperWidthMm === 58 ? 58 : 80
+    templateId: view && (view.templateId === 'classic-58' || view.paperWidthMm === 58) ? 'classic-58' : 'classic-80',
+    paperWidthMm: view && (view.templateId === 'classic-58' || view.paperWidthMm === 58) ? 58 : 80
   };
 }
 

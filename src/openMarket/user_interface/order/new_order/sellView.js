@@ -83,6 +83,7 @@ export function sellView(props, state) {
     lowStockBarcodes: source.lowStockBarcodes,
     saving: source.saving,
     printMode: sellPreferencesState(source.sellPreferences).printMode,
+    templateId: sellPreferencesState(source.sellPreferences).templateId,
     nextInvoiceNumber: source.nextInvoiceNumber || '',
     previewHtml: source.previewHtml,
     reprintHtml: source.reprintHtml,

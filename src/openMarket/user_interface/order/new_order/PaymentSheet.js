@@ -235,7 +235,9 @@ export default class PaymentSheet extends Component {
             <PluginSlot name="sell.payment.after" />
           </div>
           <aside className="checkout-preview">
-            <p className="checkout-preview-title">Vista previa del ticket</p>
+            <p className="checkout-preview-title">
+              {'Vista previa del ticket · plantilla "' + templateName(props.templateId) + '"'}
+            </p>
             {props.previewHtml ? (
               <div className="om-receipt-preview" dangerouslySetInnerHTML={{__html: props.previewHtml}} />
             ) : (
@@ -253,6 +255,14 @@ export default class PaymentSheet extends Component {
  * @param {string} method
  * @returns {string}
  */
+/**
+ * @param {string | null | undefined} templateId
+ * @returns {string}
+ */
+function templateName(templateId) {
+  return templateId === 'classic-58' ? '58 mm clásica' : '80 mm clásica';
+}
+
 function methodLabel(method) {
   if (method === 'card') {
     return 'Tarjeta';

@@ -34,7 +34,7 @@ export function coreBlocks(payload) {
   }
   blocks.push({type: 'line'});
   (payload.lines || []).forEach(line => {
-    blocks.push(text(lineText(line)));
+    blocks.push(text(lineText(line, payload.paperWidthMm)));
   });
   blocks.push(text('TOTAL ' + formatEuroCents(payload.totalCents), {align: 'right', bold: true}));
   blocks.push({type: 'line'});
@@ -58,8 +58,8 @@ export function coreBlocks(payload) {
  * @param {{name?: string, quantityMilli?: number, unitPriceCents?: number, amountCents?: number, weighted?: boolean}} line
  * @returns {string}
  */
-function lineText(line) {
-  const name = String(line.name || '').slice(0, 19);
+function lineText(line, paperWidthMm) {
+  const name = String(line.name || '').slice(0, paperWidthMm === 80 ? 32 : 19);
   const weighed = line.weighted === true;
   const quantity = weighed
     ? formatKgMilli(line.quantityMilli) + ' kg'

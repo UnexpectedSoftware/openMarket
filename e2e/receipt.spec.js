@@ -141,7 +141,7 @@ test('saves print mode, header, and paper width', async () => {
     await expect(session.window.getByRole('heading', {name: 'Ticket'})).toBeVisible();
     await session.window.getByRole('combobox', {name: 'Al imprimir'}).selectOption({label: 'Siempre'});
     await session.window.getByRole('textbox', {name: 'Cabecera'}).fill('Gracias');
-    await session.window.getByRole('combobox', {name: 'Ancho del papel'}).selectOption({label: '58 mm'});
+    await session.window.getByRole('combobox', {name: 'Plantilla'}).selectOption({label: '58 mm clásica'});
     await session.window.getByRole('button', {name: 'Guardar', exact: true}).click();
     await expect(session.window.getByText('Ajustes guardados').first()).toBeVisible();
     await expect(session.window.getByText('Ajustes guardados')).toHaveCount(0);
@@ -198,7 +198,7 @@ test('saves print mode, header, and paper width', async () => {
   try {
     await second.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
     await expect(second.window.getByRole('combobox', {name: 'Al imprimir'})).toHaveValue('ask');
-    await expect(second.window.getByRole('combobox', {name: 'Ancho del papel'})).toHaveValue('58');
+    await expect(second.window.getByRole('combobox', {name: 'Plantilla'})).toHaveValue('classic-58');
     await expect(second.window.getByRole('textbox', {name: 'Cabecera'})).toHaveValue('Gracias');
   } finally {
     await closeApp(second.app, userData);

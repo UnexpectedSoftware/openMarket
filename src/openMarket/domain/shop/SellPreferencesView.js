@@ -13,11 +13,13 @@ export default class SellPreferencesView {
    * @param {string} [props.footerText]
    * @param {number} [props.paperWidthMm]
    */
-  constructor({printMode = 'ask', headerText = '', footerText = '', paperWidthMm = 80} = {}) {
+  constructor({printMode = 'ask', headerText = '', footerText = '', paperWidthMm = 80, templateId} = {}) {
+    const narrow = templateId === 'classic-58' || (templateId == null && paperWidthMm === 58);
     this.printMode = printMode;
     this.headerText = headerText;
     this.footerText = footerText;
-    this.paperWidthMm = paperWidthMm;
+    this.templateId = narrow ? 'classic-58' : 'classic-80';
+    this.paperWidthMm = narrow ? 58 : 80;
     Object.freeze(this);
   }
 

@@ -8,9 +8,9 @@ const PRINT_MODES = [
   {value: 'never', label: 'Nunca'}
 ];
 
-const PAPER_WIDTHS = [
-  {value: '58', label: '58 mm'},
-  {value: '80', label: '80 mm'}
+const TEMPLATES = [
+  {value: 'classic-80', label: '80 mm clásica'},
+  {value: 'classic-58', label: '58 mm clásica'}
 ];
 
 /**
@@ -19,7 +19,9 @@ const PAPER_WIDTHS = [
 export default function TicketForm(props) {
   const values = props.values || {};
   const fieldErrors = props.fieldErrors || {};
-  const width = values.paperWidthMm == null ? '80' : String(values.paperWidthMm);
+  const template = values.templateId === 'classic-58' || values.paperWidthMm === 58
+    ? 'classic-58'
+    : 'classic-80';
   return (
     <div className="settings-fields">
       <Select
@@ -31,12 +33,12 @@ export default function TicketForm(props) {
         onChange={event => props.onChange('printMode', event.target.value)}
       />
       <Select
-        id="ticket-paper-width"
-        name="paperWidthMm"
-        label="Ancho del papel"
-        value={width}
-        options={PAPER_WIDTHS}
-        onChange={event => props.onChange('paperWidthMm', Number(event.target.value))}
+        id="ticket-template"
+        name="templateId"
+        label="Plantilla"
+        value={template}
+        options={TEMPLATES}
+        onChange={event => props.onChange('templateId', event.target.value)}
       />
       <div className="settings-span">
         <TextField

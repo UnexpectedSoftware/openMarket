@@ -364,6 +364,7 @@ function paymentDialog(props, view) {
       saving={view.saving}
       printMode={view.printMode}
       nextInvoiceNumber={view.nextInvoiceNumber}
+      templateId={view.templateId}
       previewHtml={view.previewHtml}
       onMethod={props.onPayMethod}
       onTendered={props.onTendered}

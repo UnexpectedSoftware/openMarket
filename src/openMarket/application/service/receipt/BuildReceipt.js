@@ -135,7 +135,7 @@ export default class BuildReceipt {
     });
     const blocks = fiscal
       .concat(copyBlock(copy.headerText))
-      .concat(coreBlocks(payload))
+      .concat(coreBlocks(payload ? {...payload, paperWidthMm: copy.paperWidthMm} : payload))
       .concat(copyBlock(copy.footerText))
       .concat(footer);
     const html = this._html ? this._html.render({blocks}) : '';

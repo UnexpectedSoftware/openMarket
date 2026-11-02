@@ -287,6 +287,7 @@ describe('reducers', () => {
         printMode: 'never',
         headerText: 'Hola',
         footerText: 'Gracias',
+        templateId: 'classic-58',
         paperWidthMm: 58
       });
       const asked = newOrderReducer(loaded, {type: SELL_PREFERENCES_LOADED, payload: {printMode: 'later'}});
