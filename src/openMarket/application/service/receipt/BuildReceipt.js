@@ -102,14 +102,15 @@ export default class BuildReceipt {
    * @param {{lines?: PreviewLine[], payment?: {method?: string, tenderedCents?: number, changeCents?: number} | null}} query
    * @returns {Observable<{blocks: object[], html: string}>}
    */
-  preview({lines, payment}) {
+  preview({lines, payment, invoiceNumber}) {
     return this._preferences().flatMap(preferences =>
       this._profile().map(profile =>
         this._document(previewPayload({
           lines,
           issuer: shopIssuer(profile),
           when: this._now(),
-          payment
+          payment,
+          invoiceNumber
         }), null, preferences)));
   }
 
@@ -297,7 +298,7 @@ function copyBlock(text) {
  * @param {{lines?: PreviewLine[], issuer?: PreviewIssuer | null, when?: {date?: string, local?: string} | null, payment?: object | null}} query
  * @returns {object}
  */
-function previewPayload({lines, issuer, when, payment}) {
+function previewPayload({lines, issuer, when, payment, invoiceNumber}) {
   const priced = (lines || []).map(line => ({
     name: line && line.name != null ? String(line.name) : '',
     quantity: line && line.quantity,
@@ -319,7 +320,7 @@ function previewPayload({lines, issuer, when, payment}) {
       phone: issuer.phone || null,
       address: issuer.address || null
     } : null,
-    invoiceNumber: null,
+    invoiceNumber: invoiceNumber ? String(invoiceNumber) : null,
     issueDate: when && when.date ? when.date : '',
     issuedAt: when && when.local ? when.local : '',
     lines: priced.map(line => ({

@@ -19,6 +19,8 @@ export const SALE_CATEGORIES_LOADED = 'SALE_CATEGORIES_LOADED';
 export const SALE_CATEGORIES_FAILED = 'SALE_CATEGORIES_FAILED';
 export const SELL_PREFERENCES_REQUESTED = 'SELL_PREFERENCES_REQUESTED';
 export const SELL_PREFERENCES_LOADED = 'SELL_PREFERENCES_LOADED';
+export const NEXT_INVOICE_REQUESTED = 'NEXT_INVOICE_REQUESTED';
+export const NEXT_INVOICE_LOADED = 'NEXT_INVOICE_LOADED';
 export const SALE_CATEGORY_SELECTED = 'SALE_CATEGORY_SELECTED';
 export const NEW_ORDER_ERRORS_FOUND = 'NEW_ORDER_ERRORS_FOUND';
 export const NEW_ORDER_CLOSED = 'NEW_ORDER_CLOSED';
@@ -58,6 +60,8 @@ export const saleCategoriesLoaded = payload => ({ type: SALE_CATEGORIES_LOADED, 
 export const saleCategoriesFailed = () => ({ type: SALE_CATEGORIES_FAILED });
 export const sellPreferencesRequested = () => ({ type: SELL_PREFERENCES_REQUESTED });
 export const sellPreferencesLoaded = payload => ({ type: SELL_PREFERENCES_LOADED, payload });
+export const nextInvoiceRequested = () => ({ type: NEXT_INVOICE_REQUESTED });
+export const nextInvoiceLoaded = payload => ({ type: NEXT_INVOICE_LOADED, payload });
 export const saleCategorySelected = categoryId => ({ type: SALE_CATEGORY_SELECTED, categoryId });
 export const newOrderClosed = () => ({ type: NEW_ORDER_CLOSED});
 export const printOrderButtonClicked = payload => ({ type: PRINT_ORDER_BUTTON_CLICKED, payload});

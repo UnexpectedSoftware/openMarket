@@ -18,7 +18,8 @@ import {
   SALE_TILES_FAILED,
   SALE_TILES_LOADED,
   SALE_TILES_REQUESTED,
-  SELL_PREFERENCES_LOADED
+  SELL_PREFERENCES_LOADED,
+  NEXT_INVOICE_LOADED
 } from '../../../../../openMarket/user_interface/order/new_order/action';
 import {LOCATION_CHANGE} from 'react-router-redux';
 
@@ -296,8 +297,11 @@ describe('reducers', () => {
         payload: {product: {barcode: '0001', name: 'Ninja', price: 1}, quantity: 1}
       });
       expect(selling.sellPreferences.printMode).to.equal('never');
-      const saved = newOrderReducer(selling, {type: NEW_ORDER_SAVED, payload: {id: 'sale'}});
+      const numbered = newOrderReducer(selling, {type: NEXT_INVOICE_LOADED, payload: '2026/000042'});
+      expect(numbered.nextInvoiceNumber).to.equal('2026/000042');
+      const saved = newOrderReducer(numbered, {type: NEW_ORDER_SAVED, payload: {id: 'sale'}});
       expect(saved.order.lines).to.deep.equal([]);
+      expect(saved.nextInvoiceNumber).to.equal('');
       expect(saved.sellPreferences.headerText).to.equal('Hola');
       const closed = newOrderReducer(saved, {type: NEW_ORDER_CLOSED});
       expect(closed.sellPreferences.footerText).to.equal('Gracias');

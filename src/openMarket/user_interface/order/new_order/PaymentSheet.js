@@ -127,7 +127,7 @@ export default class PaymentSheet extends Component {
     return (
       <Dialog
         open={!!props.open}
-        title="Cobrar"
+        title={props.nextInvoiceNumber ? 'Cobrar ticket nº ' + props.nextInvoiceNumber : 'Cobrar'}
         className="payment-dialog"
         onClose={props.onClose}
         initialFocusRef={this.tenderedRef}

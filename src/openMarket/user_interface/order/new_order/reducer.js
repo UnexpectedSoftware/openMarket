@@ -13,6 +13,7 @@ import {
   SALE_CATEGORIES_LOADED,
   SALE_CATEGORY_SELECTED,
   SELL_PREFERENCES_LOADED,
+  NEXT_INVOICE_LOADED,
   NEW_ORDER_SAVE,
   PAYMENT_FAILED,
   PAYMENT_PREVIEW_LOADED,
@@ -37,7 +38,8 @@ function keep(current, next) {
     reprintHtml: current.reprintHtml || '',
     categories: current.categories || [],
     categoryId: current.categoryId || null,
-    sellPreferences: current.sellPreferences || sellPreferencesState(null)
+    sellPreferences: current.sellPreferences || sellPreferencesState(null),
+    nextInvoiceNumber: current.nextInvoiceNumber || ''
   };
 }
 
@@ -116,6 +118,9 @@ export default function reducer(current = initialState(), action) {
     case SELL_PREFERENCES_LOADED:
       return {...current, sellPreferences: sellPreferencesState(action.payload)};
 
+    case NEXT_INVOICE_LOADED:
+      return {...current, nextInvoiceNumber: action.payload ? String(action.payload) : ''};
+
     case NEW_ORDER_SAVE:
       return {...current, saving: true};
 
@@ -137,7 +142,8 @@ export default function reducer(current = initialState(), action) {
         tilesStatus: current.tilesStatus || 'idle',
         categories: current.categories || [],
         categoryId: current.categoryId || null,
-        sellPreferences: current.sellPreferences || sellPreferencesState(null)
+        sellPreferences: current.sellPreferences || sellPreferencesState(null),
+        nextInvoiceNumber: ''
       };
 
     case NEW_ORDER_CLOSED:

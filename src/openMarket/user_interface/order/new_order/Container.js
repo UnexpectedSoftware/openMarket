@@ -93,6 +93,9 @@ class Container extends Component {
     if (before > 0 && after === 0 && this.state.paymentOpen) {
       this.setState({paymentOpen: false, tendered: ''});
     }
+    if (this.state.paymentOpen && previous.nextInvoiceNumber !== this.props.nextInvoiceNumber) {
+      this.requestPreview(this.state.payMethod, this.state.tendered);
+    }
     if (after !== before) {
       const selected = after === 0 ? -1 : after - 1;
       if (after > before && this.state.selected !== selected) {
@@ -196,6 +199,9 @@ class Container extends Component {
       previewOpen: true
     });
     this.requestPreview('cash', '');
+    if (this.props.nextInvoiceRequested) {
+      this.props.nextInvoiceRequested();
+    }
   }
 
   closePayment() {
@@ -218,7 +224,8 @@ class Container extends Component {
     }
     this.props.paymentPreviewRequested({
       lines: this.props.order.lines,
-      payment: quotedPayment(this.props.order && this.props.order.total, method, tendered)
+      payment: quotedPayment(this.props.order && this.props.order.total, method, tendered),
+      invoiceNumber: this.props.nextInvoiceNumber || ''
     });
   }
 

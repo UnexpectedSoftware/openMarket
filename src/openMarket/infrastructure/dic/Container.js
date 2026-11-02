@@ -24,6 +24,7 @@ import EnableProduct from "../../application/service/product/EnableProduct";
 import FindProduct from "../../application/service/product/FindProduct";
 import CreateOrder from "../../application/service/order/CreateOrder";
 import CancelInvoice from "../../application/service/invoice/CancelInvoice";
+import PeekNextInvoiceNumber from "../../application/service/invoice/PeekNextInvoiceNumber";
 import ListAllOrders from "../../application/service/order/ListAllOrders";
 import OrdersStatistics from "../../application/service/order/OrdersStatistics";
 import OrderFactoryImpl from "../order/OrderFactoryImpl";
@@ -551,6 +552,13 @@ class Container {
     return new SqliteInvoiceRepository({
       connection: this.getInstance({key: 'sqliteConnection'}),
       invoiceMapper: this.getInstance({key: 'invoiceMapper'})
+    });
+  }
+
+  _peekNextInvoiceNumber() {
+    return new PeekNextInvoiceNumber({
+      invoiceSequence: this.getInstance({key: 'invoiceSequence'}),
+      clock: this.getInstance({key: 'systemClock'})
     });
   }
 

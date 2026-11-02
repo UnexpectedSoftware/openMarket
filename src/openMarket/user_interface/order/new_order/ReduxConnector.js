@@ -18,6 +18,7 @@ function mapStateToProps(state) {
     lastOrder: state.newOrder.lastOrder,
     saving: state.newOrder.saving,
     sellPreferences: state.newOrder.sellPreferences,
+    nextInvoiceNumber: state.newOrder.nextInvoiceNumber || '',
     previewHtml: state.newOrder.previewHtml,
     reprintHtml: state.newOrder.reprintHtml,
     layout: SellLayout.orDefault(state.appearance && state.appearance.appliedLayout)

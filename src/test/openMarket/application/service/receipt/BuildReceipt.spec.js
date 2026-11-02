@@ -286,9 +286,11 @@ describe('BuildReceipt', () => {
     });
     receiptCase.preview({
       lines: [{name: 'Leche', quantity: 1, price: 1}],
-      payment: {method: 'card', tenderedCents: 100, changeCents: 0}
+      payment: {method: 'card', tenderedCents: 100, changeCents: 0},
+      invoiceNumber: '2026/000042'
     }).subscribe(receipt => {
       const lines = receipt.blocks.map(block => block.text);
+      expect(lines).to.include('2026/000042');
       expect(lines).to.include('Tarjeta');
       expect(lines.join('\n')).to.not.include('Entregado');
       done();

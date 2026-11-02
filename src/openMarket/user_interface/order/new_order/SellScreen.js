@@ -360,6 +360,7 @@ function paymentDialog(props, view) {
       tendered={view.tendered}
       saving={view.saving}
       printMode={view.printMode}
+      nextInvoiceNumber={view.nextInvoiceNumber}
       previewHtml={view.previewHtml}
       previewOpen={view.previewOpen}
       onMethod={props.onPayMethod}

@@ -88,7 +88,8 @@ export const makePaymentPreviewEpic = buildReceipt => action$ =>
   action$.ofType(newOrderActions.PAYMENT_PREVIEW_REQUESTED)
     .switchMap(action => buildReceipt.preview({
       lines: action.payload && action.payload.lines,
-      payment: action.payload && action.payload.payment
+      payment: action.payload && action.payload.payment,
+      invoiceNumber: action.payload && action.payload.invoiceNumber
     })
       .map(receipt => newOrderActions.paymentPreviewLoaded(receipt.html))
       .catch(() => Rx.Observable.of(newOrderActions.paymentPreviewLoaded(''))));
@@ -137,9 +138,12 @@ export const makeSaleCategoriesEpic = listCategories => action$ =>
       .catch(() => Rx.Observable.of(newOrderActions.saleCategoriesFailed())))
 
 /**
- * The sell screen reads print mode on open and again after settings are saved.
- * @param {{get: Function} | null | undefined} getSellPreferences
+ * @param {{peek: Function} | null | undefined} peekNextInvoice
  */
+export const makeNextInvoiceEpic = peekNextInvoice => action$ =>
+  action$.filter(action => action.type === newOrderActions.NEXT_INVOICE_REQUESTED)
+    .switchMap(() => readNextInvoice(peekNextInvoice))
+
 export const makeSellPreferencesEpic = getSellPreferences => action$ =>
   action$.filter(action =>
     action.type === newOrderActions.SELL_PREFERENCES_REQUESTED || action.type === SETTINGS_SAVED
@@ -216,6 +220,20 @@ function tileOf(view) {
  * @param {{get: Function} | null | undefined} useCase
  * @returns {Rx.Observable<object>}
  */
+/**
+ * @param {{peek: Function} | null | undefined} useCase
+ * @returns {Rx.Observable<object>}
+ */
+function readNextInvoice(useCase) {
+  if (!useCase || typeof useCase.peek !== 'function') {
+    return Rx.Observable.of(newOrderActions.nextInvoiceLoaded(''));
+  }
+  return useCase.peek()
+    .map(number => newOrderActions.nextInvoiceLoaded(number))
+    .defaultIfEmpty(newOrderActions.nextInvoiceLoaded(''))
+    .catch(() => Rx.Observable.of(newOrderActions.nextInvoiceLoaded('')));
+}
+
 function readSellPreferences(useCase) {
   if (!useCase || typeof useCase.get !== 'function') {
     return Rx.Observable.of(newOrderActions.sellPreferencesLoaded(null));

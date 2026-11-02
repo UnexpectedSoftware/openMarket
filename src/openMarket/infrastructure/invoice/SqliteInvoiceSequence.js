@@ -9,6 +9,7 @@ import {rethrow} from '../logging/ErrorLog';
 const NEXT_SQL = 'INSERT INTO invoice_sequence (series, last_number) VALUES (?, 1) ' +
   'ON CONFLICT(series) DO UPDATE SET last_number = last_number + 1 ' +
   'RETURNING last_number';
+const PEEK_SQL = 'SELECT last_number FROM invoice_sequence WHERE series = ?';
 
 /**
  * Next number for one series.
@@ -24,6 +25,7 @@ export default class SqliteInvoiceSequence {
   constructor({connection}) {
     this._database = connection.database;
     this._next = this._database.prepare(NEXT_SQL);
+    this._peek = this._database.prepare(PEEK_SQL);
   }
 
   /**
@@ -46,6 +48,26 @@ export default class SqliteInvoiceSequence {
         rethrow(error, {
           message: 'Could not allocate an invoice number',
           context: {series: key, operation: 'next'}
+        });
+      }
+    });
+  }
+
+  /**
+   * @param {{series: string}} params
+   * @returns {Observable<InvoiceNumber>}
+   */
+  peek({series}) {
+    return Rx.Observable.defer(() => {
+      const key = series == null ? '' : String(series).trim();
+      try {
+        const row = this._peek.get(key);
+        const last = row && row.last_number != null ? Number(row.last_number) : 0;
+        return Rx.Observable.of(new InvoiceNumber({series: key, number: last + 1}));
+      } catch (error) {
+        rethrow(error, {
+          message: 'Could not read the next invoice number',
+          context: {series: key, operation: 'peek'}
         });
       }
     });

@@ -36,6 +36,7 @@ export const state = () => ({
   categories: [],
   categoryId: null,
   sellPreferences: sellPreferencesState(null),
+  nextInvoiceNumber: '',
   saving: false,
   previewHtml: '',
   reprintHtml: ''
