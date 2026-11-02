@@ -76,6 +76,13 @@ describe('Payment', () => {
   it('restores a stored cash payment and ignores a missing one', () => {
     const payment = Payment.restore({method: 'cash', tenderedCents: 2000, changeCents: 687});
     expect(payment.changeCents).to.equal(687);
+    const mixed = Payment.restore({
+      method: 'mixed',
+      tenderedCents: 1313,
+      changeCents: 0,
+      parts: '[{"method":"cash","amountCents":1000},{"method":"bizum","amountCents":313}]'
+    });
+    expect(mixed.parts[1].method).to.equal('bizum');
     expect(Payment.restore({method: null, tenderedCents: null, changeCents: null})).to.equal(null);
     expect(() => Payment.restore({method: 'cash', tenderedCents: 100, changeCents: 250}))
       .to.throw(InvalidPaymentError);

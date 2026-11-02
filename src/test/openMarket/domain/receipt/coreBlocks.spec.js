@@ -110,6 +110,16 @@ describe('coreBlocks', () => {
     expect(card).to.include('Tarjeta');
     expect(card.join('\n')).to.not.include('Entregado');
     expect(card.join('\n')).to.not.include('Cambio');
+    const split = texts({
+      totalCents: 1313,
+      payment: {
+        method: 'mixed',
+        parts: [{method: 'cash', amountCents: 1000}, {method: 'bizum', amountCents: 313}]
+      }
+    });
+    expect(split).to.include('Mixto');
+    expect(split.join('\n')).to.include('Bizum ' + formatEuroCents(313));
+    expect(texts({totalCents: 100, payment: {method: 'bizum'}})).to.include('Bizum');
   });
 
   it('returns nothing for an empty payload', () => {
