@@ -55,7 +55,8 @@ describe('listOrders reducer', () => {
       total: 1,
       append: false
     });
-    const replaced = listOrdersReducer(loaded, {
+    const chosen = {...loaded, selectedOrderId: 'a'};
+    const replaced = listOrdersReducer(chosen, {
       type: ORDERS_RANGE_SELECTED,
       key: 'yesterday',
       from: '2026-10-20 00:00:00',
@@ -69,7 +70,7 @@ describe('listOrders reducer', () => {
     expect(replaced.selectedOrderId).to.equal(null);
     expect(replaced.rangeKey).to.equal('yesterday');
 
-    const appended = listOrdersReducer(loaded, {
+    const appended = listOrdersReducer(chosen, {
       type: ORDERS_RANGE_SELECTED,
       key: 'today',
       from: loaded.from,
@@ -85,13 +86,13 @@ describe('listOrders reducer', () => {
     expect(appended.selectedOrderId).to.equal('a');
   });
 
-  it('selects the first row, keeps a selection that is still present, and appends', () => {
+  it('leaves the list unselected on load, keeps a selection that is still present, and appends', () => {
     const first = listOrdersReducer(undefined, {
       type: ORDERS_LOADED,
       items: [row('a', 100), row('b', 200)],
       total: 4
     });
-    expect(first.selectedOrderId).to.equal('a');
+    expect(first.selectedOrderId).to.equal(null);
     expect(first.loading).to.equal(false);
     expect(first.total).to.equal(4);
 
@@ -103,7 +104,15 @@ describe('listOrders reducer', () => {
     });
     expect(kept.selectedOrderId).to.equal('b');
 
-    const more = listOrdersReducer(first, {
+    const missing = listOrdersReducer({...first, selectedOrderId: 'gone'}, {
+      type: ORDERS_LOADED,
+      items: [row('a', 100)],
+      total: 1
+    });
+    expect(missing.selectedOrderId).to.equal(null);
+
+    const chosen = {...first, selectedOrderId: 'a'};
+    const more = listOrdersReducer(chosen, {
       type: ORDERS_LOADED,
       items: [row('c', 300)],
       total: 4,
@@ -112,7 +121,7 @@ describe('listOrders reducer', () => {
     expect(more.items.map(item => item.orderId)).to.deep.equal(['a', 'b', 'c']);
     expect(more.selectedOrderId).to.equal('a');
 
-    const empty = listOrdersReducer(first, {type: ORDERS_LOADED, items: [], total: 0});
+    const empty = listOrdersReducer(chosen, {type: ORDERS_LOADED, items: [], total: 0});
     expect(empty.selectedOrderId).to.equal(null);
   });
 
@@ -138,11 +147,12 @@ describe('listOrders reducer', () => {
   });
 
   it('moves the keyboard selection and clamps at the ends', () => {
-    const current = listOrdersReducer(undefined, {
+    const loaded = listOrdersReducer(undefined, {
       type: ORDERS_LOADED,
       items: [row('a', 1), row('b', 2), row('c', 3)],
       total: 3
     });
+    const current = {...loaded, selectedOrderId: 'a'};
     const down = listOrdersReducer(current, {type: ORDERS_SELECTION_MOVED, delta: 1});
     expect(down.selectedOrderId).to.equal('b');
     const end = listOrdersReducer(down, {type: ORDERS_SELECTION_MOVED, delta: 5});
