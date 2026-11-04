@@ -52,7 +52,7 @@ describe('OrderDetail pane', () => {
     expect(heading.textContent).to.contain('21/10/2026');
     expect(heading.textContent).to.contain('Anulada');
     expect(view.node.textContent).to.contain('Factura simplificada');
-    expect(view.node.textContent).to.contain('0,350 kg');
+    expect(view.node.textContent).to.contain('0,35 kg');
     expect(view.node.textContent).to.contain('Ham');
     expect(view.node.textContent).to.contain('Bolsa');
     expect(view.node.querySelector('.orders-detail-aside')).to.not.equal(null);

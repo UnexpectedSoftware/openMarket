@@ -74,12 +74,12 @@ describe('order list format', () => {
     expect(orderWhen('2026-10-21 09:05:00')).to.equal('21/10/2026 09:05');
     expect(orderWhen(null)).to.equal('');
     expect(orderWhen('nope')).to.equal('');
-    expect(formatKg(350)).to.equal('0,350');
+    expect(formatKg(350)).to.equal('0,35');
     expect(formatKg(1000)).to.equal('1');
-    expect(formatKg(1500)).to.equal('1,500');
+    expect(formatKg(1500)).to.equal('1,5');
     expect(formatKg(null)).to.equal('0');
     expect(weightedPrice({quantityMilli: 350, unitPriceCents: 1850}))
-      .to.equal('0,350 kg × ' + formatMoney(Money.ofCents(1850)) + '/kg');
+      .to.equal('0,35 kg × ' + formatMoney(Money.ofCents(1850)) + '/kg');
     expect(weightedPrice({quantityMilli: 1000, unitPriceCents: 699}))
       .to.equal('1 kg × ' + formatMoney(Money.ofCents(699)) + '/kg');
     expect(vatLabel({kind: 'S1', percent: 21, cause: null})).to.equal('21 %');

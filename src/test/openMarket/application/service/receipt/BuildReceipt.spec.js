@@ -306,7 +306,7 @@ describe('BuildReceipt', () => {
       lines: [{name: 'Jamón', quantity: 0.35, price: 18.5, weighted: true}]
     }).subscribe(receipt => {
       expect(receipt.blocks.map(block => block.text).join('\n')).to.include(
-        '0,350 kg x ' + formatEuroCents(1850) + '/kg'
+        '0,35 kg x ' + formatEuroCents(1850) + '/kg'
       );
       done();
     }, done);

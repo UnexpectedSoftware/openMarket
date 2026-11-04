@@ -16,34 +16,24 @@ export function formatEuroCents(cents) {
 }
 
 /**
- * A milli-unit quantity with a Spanish comma. Whole units drop the fraction.
- * @param {number} milli
- * @returns {string}
- */
-export function formatQuantityMilli(milli) {
-  const value = Number.isInteger(milli) ? milli : 0;
-  const negative = value < 0;
-  const abs = Math.abs(value);
-  const whole = Math.trunc(abs / 1000);
-  const frac = abs % 1000;
-  const body = frac === 0
-    ? String(whole)
-    : whole + ',' + String(frac).padStart(3, '0').replace(/0+$/, '');
-  return negative ? '-' + body : body;
-}
-
-/**
- * Weight in kilograms with three decimals, `0,350`.
+ * Kilograms from milli-units with a Spanish comma, up to three decimals and no
+ * trailing zeros: 2800 -> `2,8`, 350 -> `0,35`, 1000 -> `1`. A non-integer is zero.
  * @param {number} milli
  * @returns {string}
  */
 export function formatKgMilli(milli) {
   const value = Number.isInteger(milli) ? milli : 0;
-  const negative = value < 0;
   const abs = Math.abs(value);
-  const body = Math.trunc(abs / 1000) + ',' + String(abs % 1000).padStart(3, '0');
-  return negative ? '-' + body : body;
+  const frac = abs % 1000;
+  const whole = String(Math.trunc(abs / 1000));
+  const body = frac === 0 ? whole : whole + ',' + String(frac).padStart(3, '0').replace(/0+$/, '');
+  return value < 0 ? '-' + body : body;
 }
+
+/**
+ * A milli-unit quantity with a Spanish comma, formatted like kilograms.
+ */
+export const formatQuantityMilli = formatKgMilli;
 
 /**
  * Shop date and time, `dd/mm/yyyy hh:mm`. Empty when neither part is present.

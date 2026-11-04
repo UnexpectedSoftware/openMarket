@@ -30,12 +30,17 @@ describe('Spanish ticket formatting', () => {
     expect(formatQuantityMilli(1.2)).to.equal('0');
   });
 
-  it('formats a weighed quantity as kilograms with three decimals', () => {
-    expect(formatKgMilli(350)).to.equal('0,350');
-    expect(formatKgMilli(1000)).to.equal('1,000');
-    expect(formatKgMilli(2000)).to.equal('2,000');
-    expect(formatKgMilli(-350)).to.equal('-0,350');
-    expect(formatKgMilli(null)).to.equal('0,000');
+  it('formats kilograms with up to three decimals and no trailing zeros', () => {
+    expect(formatKgMilli(2800)).to.equal('2,8');
+    expect(formatKgMilli(350)).to.equal('0,35');
+    expect(formatKgMilli(1000)).to.equal('1');
+    expect(formatKgMilli(1234)).to.equal('1,234');
+    expect(formatKgMilli(5)).to.equal('0,005');
+    expect(formatKgMilli(2000)).to.equal('2');
+    expect(formatKgMilli(-350)).to.equal('-0,35');
+    expect(formatKgMilli(-2800)).to.equal('-2,8');
+    expect(formatKgMilli(null)).to.equal('0');
+    expect(formatKgMilli(1.5)).to.equal('0');
   });
 
   it('formats the shop date and the issue time', () => {

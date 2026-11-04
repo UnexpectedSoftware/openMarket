@@ -54,7 +54,7 @@ describe('coreBlocks', () => {
     expect(lines.join('\n')).to.not.include('Date ');
     expect(lines.join('\n')).to.not.include('Total:');
     expect(lines.join('\n')).to.include(
-      'Jamón ibérico de be  0,350 kg x ' + formatEuroCents(1850) + '/kg'
+      'Jamón ibérico de be  0,35 kg x ' + formatEuroCents(1850) + '/kg'
     );
     expect(lines.join('\n')).to.not.include('Jamón ibérico de bel');
     expect(lines).to.include('TOTAL ' + formatEuroCents(648));
