@@ -59,3 +59,50 @@ Money uses the Spanish format (`2.339,60 €`).
 - **Báscula:** *Leer báscula* only appears when a scale is configured. There is no scale integration yet, so this is a future plugin slot.
 - **Validation:** no error before input. *Añadir* stays disabled until the weight is > 0. The error message only appears after a rejected submit attempt.
 - **Footer:** right-aligned *Cancelar (Esc)* and primary *Añadir (Enter)*.
+
+## 5. Cobrar: a responsive payment dialog
+
+**Problem.** `PaymentSheet` has no size limits. In a wide window it stretches almost full width: the keypad is flat, the quick amounts float in empty space and Cobrar ends up far away. In a window about 700 px wide it overflows horizontally, the keys stack, the amounts overlap "€" and the ticket preview is clipped.
+
+| Wide (1280×800) | Compact (720×900) |
+|---|---|
+| ![](mockups/A-payment-responsive-wide.webp) | ![](mockups/A-payment-responsive-compact.webp) |
+
+The mockup source (`mockups/src/A-payment-responsive-*.html`) is a single responsive layout: the same CSS produces both renders.
+
+### CSS constraints
+
+```css
+.payment-overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; padding: 16px; }
+.payment-dialog {
+  width: clamp(640px, 92vw, 960px);
+  max-width: calc(100vw - 32px);   /* wins over the 640 min: never overflows horizontally */
+  max-height: 90vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;   /* form | ticket preview */
+  overflow: hidden;
+}
+.payment-form, .payment-preview { overflow: auto; min-width: 0; }   /* internal scroll only */
+.payment-amounts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--om-space-2); }
+.payment-amount-value { font-size: clamp(20px, 3.2vw, 30px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.payment-keypad-wrap { display: grid; grid-template-columns: minmax(0, 1fr) 160px; gap: 10px; }  /* keypad | quick amounts */
+.payment-keypad { display: grid; grid-template-columns: repeat(3, minmax(52px, 1fr)); grid-auto-rows: 52px; gap: 8px; }  /* fixed 3×4 */
+.payment-quick { display: grid; grid-auto-rows: 44px; gap: 8px; }  /* stacked vertically */
+.payment-footer { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.payment-preview-toggle { display: none; }
+
+@media (max-width: 900px) {
+  .payment-dialog { grid-template-columns: minmax(0, 1fr); }
+  .payment-preview { display: none; }          /* opens as a popover/sheet from the toggle */
+  .payment-preview-toggle { display: inline-flex; }  /* "Ver ticket" */
+  .payment-keypad-wrap { grid-template-columns: minmax(0, 1fr) 130px; }
+}
+```
+
+### Footer by "Al imprimir" setting (existing rule, right-aligned)
+
+| Setting | Buttons |
+|---|---|
+| Preguntar | *Sin ticket* · **Cobrar e imprimir (Enter)** |
+| Siempre | **Cobrar e imprimir (Enter)** |
+| Nunca | **Cobrar (Enter)** |
