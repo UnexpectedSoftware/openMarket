@@ -42,3 +42,20 @@ Money uses the Spanish format (`2.339,60 €`).
 | **(c) Auto-save per field** ![](mockups/A-settings-autosave.webp) | No button at all. Instant feedback through a "Guardado ✓ · Deshacer" toast. Good for themes and layout. | Risky for fiscal data (NIF, razón social) and printer settings, where a half-typed value would get saved. Needs inline validation and a debounce. |
 
 **Recommendation: (a)**, which matches the Informes secondary nav. Visual-only settings (Apariencia, Idioma) can apply instantly, as in (c), and fiscal and printer fields go through the explicit dirty bar.
+
+## 4. Vender: the weighed-product "Peso (kg)" dialog
+
+**Problem.** The current `order/weighted_dialog` is almost full-width. Its "Cantidad" input is huge and shows a red *Required* error before the user types anything. The keypad stretches across the dialog, and *Añadir* sits bottom-left.
+
+**Proposal.** A compact dialog about 420 px wide that follows the payment modal (A-payment):
+
+| Empty | Weight entered |
+|---|---|
+| ![](mockups/A-sell-weight-dialog.webp) | ![](mockups/A-sell-weight-dialog-entered.webp) |
+
+- **Header:** product thumbnail, name and price per kg, with a close ✕.
+- **Display:** the weight is large and right-aligned, with the unit (`0,000 kg`). The live line total sits under it (`= 6,48 €` for 0,350 kg × 18,50 €/kg).
+- **Input:** quick chips for 100 g, 250 g, 500 g and 1 kg, plus a compact 3×4 keypad with a comma and ⌫. The physical keyboard works too.
+- **Báscula:** *Leer báscula* only appears when a scale is configured. There is no scale integration yet, so this is a future plugin slot.
+- **Validation:** no error before input. *Añadir* stays disabled until the weight is > 0. The error message only appears after a rejected submit attempt.
+- **Footer:** right-aligned *Cancelar (Esc)* and primary *Añadir (Enter)*.
