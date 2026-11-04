@@ -566,7 +566,7 @@
 }
 
 .payment-dialog {
-  max-width: none;
+  max-width: calc(100vw - (var(--om-rail-width) * 2) - var(--om-space-6));
 }
 
 .payment-dialog .om-dialog-body {

@@ -11,7 +11,7 @@ import {nextTenderCents} from './tenderCents';
 const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'back'];
 
 /**
- * Full-screen checkout. Tendered cents come from the keypad.
+ * Checkout dialog. Tendered cents come from the keypad.
  */
 export default class PaymentSheet extends Component {
 
@@ -159,7 +159,6 @@ export default class PaymentSheet extends Component {
       <Dialog
         open={!!props.open}
         title={title}
-        placement="fullscreen"
         className="payment-dialog"
         closeLabel="Volver"
         closeIcon="arrow-left"
