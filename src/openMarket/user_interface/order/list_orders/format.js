@@ -1,12 +1,7 @@
 import Money from '../../../domain/money/Money';
-import Quantity from '../../../domain/money/Quantity';
+import {formatKgMilli} from '../../../domain/money/formatEs';
 import {formatMoney} from '../../i18n/money';
 
-const wholeKg = new Intl.NumberFormat('es-ES', {maximumFractionDigits: 0});
-const partialKg = new Intl.NumberFormat('es-ES', {
-  minimumFractionDigits: 3,
-  maximumFractionDigits: 3
-});
 
 /**
  * @param {string | null | undefined} createdAt
@@ -27,6 +22,12 @@ export function paymentLabel(method) {
   }
   if (method === 'card') {
     return 'Tarjeta';
+  }
+  if (method === 'bizum') {
+    return 'Bizum';
+  }
+  if (method === 'mixed') {
+    return 'Mixto';
   }
   return '';
 }
@@ -77,6 +78,12 @@ export function paymentLine(payment) {
     return '';
   }
   const label = paymentLabel(payment.method);
+  if (payment.method === 'mixed' && Array.isArray(payment.parts)) {
+    const parts = payment.parts.map(part =>
+      paymentLabel(part.method) + ' ' + formatMoney(Money.ofCents(part.amountCents))
+    ).join(', ');
+    return parts ? label + ' (' + parts + ')' : label;
+  }
   if (payment.method !== 'cash' || !hasNotes(payment)) {
     return label;
   }
@@ -92,18 +99,11 @@ function hasNotes(payment) {
   return Number.isInteger(payment.tenderedCents) && Number.isInteger(payment.changeCents);
 }
 
-/**
- * @param {number | null | undefined} milli
- * @returns {string}
- */
-export function formatKg(milli) {
-  const quantity = Number.isInteger(milli) ? Quantity.ofMilli(milli) : Quantity.ofMilli(0);
-  const format = quantity.milli % 1000 === 0 ? wholeKg : partialKg;
-  return format.format(quantity.units);
-}
+/** Kilograms from milli-units, `0,35`. */
+export const formatKg = formatKgMilli;
 
 /**
- * A partial kilo keeps three decimals (`0,350 kg × 18,50 €/kg`). A whole kilo does not (`1 kg × 6,99 €/kg`).
+ * Kilograms drop trailing zeros (`0,35 kg × 18,50 €/kg`, `1 kg × 6,99 €/kg`).
  * @param {{quantityMilli: number, unitPriceCents: number}} line
  * @returns {string}
  */

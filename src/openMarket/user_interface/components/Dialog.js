@@ -21,7 +21,9 @@ let nextTitleId = 1;
  * @property {*} [actions] Footer actions, usually Buttons.
  * @property {{current: HTMLElement}} [initialFocusRef] Object whose `current` is focused on open.
  * @property {'dialog'|'alertdialog'} [role]
- * @property {'drawer'} [placement] Right-hand sheet. Same focus trap, no portal.
+ * @property {'drawer'|'fullscreen'} [placement] Drawer or a full-window sheet. Same focus trap, no portal.
+ * @property {string} [closeLabel]
+ * @property {string} [closeIcon] Font Awesome name without the `fa-` prefix.
  * @property {string} [className]
  */
 
@@ -149,10 +151,16 @@ export default class Dialog extends Component {
     }
     const role = this.props.role || 'dialog';
     const drawer = this.props.placement === 'drawer';
-    const overlayClass = drawer ? 'om-dialog-overlay om-dialog-overlay--drawer' : 'om-dialog-overlay';
+    const fullscreen = this.props.placement === 'fullscreen';
+    const overlayClass = drawer
+      ? 'om-dialog-overlay om-dialog-overlay--drawer'
+      : (fullscreen ? 'om-dialog-overlay om-dialog-overlay--fullscreen' : 'om-dialog-overlay');
     const panelClass = ['om-dialog'];
     if (drawer) {
       panelClass.push('om-dialog--drawer');
+    }
+    if (fullscreen) {
+      panelClass.push('om-dialog--fullscreen');
     }
     if (this.props.className) {
       panelClass.push(this.props.className);
@@ -169,7 +177,11 @@ export default class Dialog extends Component {
         >
           <div className="om-dialog-header">
             <h2 className="om-dialog-title" id={this.titleId}>{this.props.title}</h2>
-            <IconButton icon="times" label="Close" onClick={this.props.onClose} />
+            <IconButton
+              icon={this.props.closeIcon || 'times'}
+              label={this.props.closeLabel || 'Close'}
+              onClick={this.props.onClose}
+            />
           </div>
           <div className="om-dialog-body">{this.props.children}</div>
           {this.props.actions ? <div className="om-dialog-actions">{this.props.actions}</div> : null}

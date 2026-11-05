@@ -17,6 +17,17 @@ export const SALE_TILES_FAILED = 'SALE_TILES_FAILED';
 export const SALE_CATEGORIES_REQUESTED = 'SALE_CATEGORIES_REQUESTED';
 export const SALE_CATEGORIES_LOADED = 'SALE_CATEGORIES_LOADED';
 export const SALE_CATEGORIES_FAILED = 'SALE_CATEGORIES_FAILED';
+export const SELL_PREFERENCES_REQUESTED = 'SELL_PREFERENCES_REQUESTED';
+export const SELL_PREFERENCES_LOADED = 'SELL_PREFERENCES_LOADED';
+export const NEXT_INVOICE_REQUESTED = 'NEXT_INVOICE_REQUESTED';
+export const NEXT_INVOICE_LOADED = 'NEXT_INVOICE_LOADED';
+export const CHECKOUT_OPENED = 'CHECKOUT_OPENED';
+export const CHECKOUT_CLOSED = 'CHECKOUT_CLOSED';
+export const CHECKOUT_METHOD_CHANGED = 'CHECKOUT_METHOD_CHANGED';
+export const CHECKOUT_PART_CHANGED = 'CHECKOUT_PART_CHANGED';
+export const CHECKOUT_TENDER_CHANGED = 'CHECKOUT_TENDER_CHANGED';
+export const REPRINT_OPENED = 'REPRINT_OPENED';
+export const REPRINT_CLOSED = 'REPRINT_CLOSED';
 export const SALE_CATEGORY_SELECTED = 'SALE_CATEGORY_SELECTED';
 export const NEW_ORDER_ERRORS_FOUND = 'NEW_ORDER_ERRORS_FOUND';
 export const NEW_ORDER_CLOSED = 'NEW_ORDER_CLOSED';
@@ -31,7 +42,12 @@ export const REPRINT_PREVIEW_LOADED = 'REPRINT_PREVIEW_LOADED';
 
 
 export const newOrderSaved = payload => ({ type: NEW_ORDER_SAVED, payload });
-export const newOrderSave = (order, payment) => ({ type: NEW_ORDER_SAVE, order, payment});
+export const newOrderSave = (order, payment, print) => ({
+  type: NEW_ORDER_SAVE,
+  order,
+  payment,
+  print: print === true
+});
 
 export const newOrderProductFetched = payload => ({ type: NEW_ORDER_PRODUCT_FETCHED,payload});
 export const newOrderProductFetch = barcode => ({ type: NEW_ORDER_PRODUCT_FETCH,barcode});
@@ -49,6 +65,17 @@ export const saleTilesFailed = () => ({ type: SALE_TILES_FAILED });
 export const saleCategoriesRequested = () => ({ type: SALE_CATEGORIES_REQUESTED });
 export const saleCategoriesLoaded = payload => ({ type: SALE_CATEGORIES_LOADED, payload });
 export const saleCategoriesFailed = () => ({ type: SALE_CATEGORIES_FAILED });
+export const sellPreferencesRequested = () => ({ type: SELL_PREFERENCES_REQUESTED });
+export const sellPreferencesLoaded = payload => ({ type: SELL_PREFERENCES_LOADED, payload });
+export const nextInvoiceRequested = () => ({ type: NEXT_INVOICE_REQUESTED });
+export const nextInvoiceLoaded = payload => ({ type: NEXT_INVOICE_LOADED, payload });
+export const checkoutOpened = () => ({ type: CHECKOUT_OPENED });
+export const checkoutClosed = () => ({ type: CHECKOUT_CLOSED });
+export const checkoutMethodChanged = method => ({ type: CHECKOUT_METHOD_CHANGED, method });
+export const checkoutPartChanged = (slot, method) => ({ type: CHECKOUT_PART_CHANGED, slot, method });
+export const checkoutTenderChanged = cents => ({ type: CHECKOUT_TENDER_CHANGED, cents });
+export const reprintOpened = () => ({ type: REPRINT_OPENED });
+export const reprintClosed = () => ({ type: REPRINT_CLOSED });
 export const saleCategorySelected = categoryId => ({ type: SALE_CATEGORY_SELECTED, categoryId });
 export const newOrderClosed = () => ({ type: NEW_ORDER_CLOSED});
 export const printOrderButtonClicked = payload => ({ type: PRINT_ORDER_BUTTON_CLICKED, payload});

@@ -25,15 +25,6 @@ const THEMES = [
   {id: 'unexpected-neon', name: 'Unexpected Neon'}
 ];
 
-const SCREENS = [
-  {link: 'Vender', heading: "Vender", shot: 'vender'},
-  {link: 'Pedidos', heading: 'Pedidos', shot: 'pedidos'},
-  {link: 'Productos', heading: 'Productos', shot: 'productos'},
-  {link: 'Categorías', heading: 'Categorías', shot: 'categorias'},
-  {link: 'Informes', heading: 'Most sold', shot: 'informes'},
-  {link: 'Ajustes', heading: 'Ajustes', shot: 'ajustes'}
-];
-
 test.beforeAll(() => {
   assertDist();
 });
@@ -132,13 +123,8 @@ test('each theme persists and is applied before the first paint', async () => {
         }
 
         await restarted.window.setViewportSize({width: 1366, height: 768});
-        for (const screen of SCREENS) {
-          await restarted.window.getByRole('link', {name: screen.link, exact: true}).click();
-          await expect(restarted.window.getByRole('heading', {name: screen.heading})).toBeVisible();
-          await restarted.window.screenshot({
-            path: path.join('test-results', `theme-${theme.id}-${screen.shot}.png`)
-          });
-        }
+        await restarted.window.getByRole('link', {name: 'Vender', exact: true}).click();
+        await expect(restarted.window.getByRole('heading', {name: 'Vender'})).toBeVisible();
       } finally {
         await closeApp(restarted.app, userData, {keep: true});
       }

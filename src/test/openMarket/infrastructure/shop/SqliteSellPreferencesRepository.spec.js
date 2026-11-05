@@ -87,7 +87,8 @@ describe('SqliteSellPreferencesRepository', () => {
           printMode: 'always',
           headerText: 'Gracias',
           footerText: '',
-          paperWidthMm: 80
+          paperWidthMm: 80,
+          templateId: 'classic-80'
         });
         expect(json).to.not.have.property('autoPrint');
         done();

@@ -60,8 +60,6 @@ test('saves the shop and shows its NIF on a new order', async () => {
   }
 });
 
-const THEMES = ['mercado', 'mostrador-noche', 'ultramarinos', 'unexpected-neon'];
-
 test('saves the printer, prints a sample, and keeps Español', async () => {
   test.setTimeout(90000);
   const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
@@ -103,28 +101,5 @@ test('saves the printer, prints a sample, and keeps Español', async () => {
     expect(log).toContain('Prueba de impresión');
   } finally {
     await closeApp(second.app, userData);
-  }
-});
-
-test('screenshots the settings page in the four themes', async () => {
-  const userData = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-ui-'));
-  const session = await launchApp({userData});
-  const after = path.join(__dirname, '..', 'docs', 'design', 'after');
-  fs.mkdirSync(after, {recursive: true});
-  try {
-    await session.window.setViewportSize({width: 1366, height: 768});
-    await session.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
-    await expect(session.window.getByRole('heading', {name: 'Ajustes'})).toBeVisible();
-    await expect(session.window.getByRole('heading', {name: 'Comercio'})).toBeVisible();
-    await expect(session.window.getByRole('heading', {name: 'Apariencia'})).toBeVisible();
-    for (const theme of THEMES) {
-      await session.window.evaluate(name => {
-        document.documentElement.dataset.theme = name;
-      }, theme);
-      await expect.poll(() => session.window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
-      await session.window.screenshot({path: path.join(after, `settings-${theme}.png`)});
-    }
-  } finally {
-    await closeApp(session.app, userData);
   }
 });

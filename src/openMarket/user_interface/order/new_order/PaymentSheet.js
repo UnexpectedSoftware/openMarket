@@ -1,28 +1,30 @@
 import React, {Component} from 'react';
 import Dialog from '../../components/Dialog';
 import Button from '../../components/Button';
-import NumberField from '../../components/NumberField';
 import PluginSlot from '../../components/PluginSlot';
 import Money from '../../../domain/money/Money';
 import Payment from '../../../domain/payment/Payment';
 import suggestedTenders from '../../../domain/payment/suggestedTenders';
 import {formatMoney} from '../../i18n/money';
+import {nextTenderCents} from './tenderCents';
+
+const KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '00', '0', 'back'];
 
 /**
- * Cobrar. The change uses Payment, the same check CreateOrder saves.
+ * Checkout dialog. Tendered cents come from the keypad.
  */
 export default class PaymentSheet extends Component {
 
   constructor(props) {
     super(props);
-    this.tenderedRef = {current: null};
+    this.panelRef = {current: null};
     this.onKeyDown = this.onKeyDown.bind(this);
-    this.setTenderedNode = this.setTenderedNode.bind(this);
+    this.setPanel = this.setPanel.bind(this);
     this.confirm = this.confirm.bind(this);
   }
 
-  setTenderedNode(node) {
-    this.tenderedRef.current = node;
+  setPanel(node) {
+    this.panelRef.current = node;
   }
 
   total() {
@@ -38,22 +40,49 @@ export default class PaymentSheet extends Component {
       if (this.props.method === 'card') {
         return Payment.card({total});
       }
-      if (this.props.tendered === '' || this.props.tendered == null) {
+      if (this.props.method === 'bizum') {
+        return Payment.bizum({total});
+      }
+      const cents = this.props.tenderedCents;
+      if (!Number.isInteger(cents) || cents <= 0) {
         return null;
       }
-      return Payment.cash({total, tendered: this.props.tendered});
+      if (this.props.method === 'mixed') {
+        if (cents >= total.cents) {
+          return null;
+        }
+        return Payment.mixed({
+          total,
+          parts: [
+            {method: this.props.mixedFirst || 'cash', amountCents: cents},
+            {method: this.props.mixedSecond || 'card', amountCents: total.cents - cents}
+          ]
+        });
+      }
+      return Payment.cash({total, tendered: Money.ofCents(cents)});
     } catch (error) {
       return null;
     }
   }
 
-  confirm() {
+  /**
+   * Enter charges with a ticket unless the till is set to never print.
+   * @returns {boolean}
+   */
+  printsByDefault() {
+    return this.props.printMode !== 'never';
+  }
+
+  /**
+   * @param {boolean} print
+   */
+  confirm(print) {
     const payment = this.quoted();
     if (!payment || this.props.saving) {
       return;
     }
     if (this.props.onConfirm) {
-      this.props.onConfirm(payment);
+      this.props.onConfirm(payment, print === true);
     }
   }
 
@@ -66,102 +95,217 @@ export default class PaymentSheet extends Component {
       return;
     }
     event.preventDefault();
-    this.confirm();
+    this.confirm(this.printsByDefault());
+  }
+
+  /**
+   * @param {string} key
+   */
+  onKey(key) {
+    if (this.props.method === 'card' || this.props.method === 'bizum' || !this.props.onTendered) {
+      return;
+    }
+    this.props.onTendered(nextTenderCents(this.props.tenderedCents, key));
+  }
+
+  /**
+   * @param {Payment | null} payment
+   * @returns {*}
+   */
+  footerActions(payment) {
+    const disabled = !payment || !!this.props.saving;
+    const mode = this.props.printMode === 'always' || this.props.printMode === 'never'
+      ? this.props.printMode
+      : 'ask';
+    const primary = (
+      <Button
+        key="charge"
+        type="button"
+        disabled={disabled}
+        onClick={() => this.confirm(mode !== 'never')}
+      >
+        {mode === 'never' ? 'Cobrar' : 'Cobrar e imprimir'}
+      </Button>
+    );
+    if (mode !== 'ask') {
+      return primary;
+    }
+    return [
+      <Button
+        key="quiet"
+        type="button"
+        variant="secondary"
+        disabled={disabled}
+        onClick={() => this.confirm(false)}
+      >
+        Sin ticket
+      </Button>,
+      primary
+    ];
   }
 
   render() {
     const props = this.props;
     const total = this.total();
-    const card = props.method === 'card';
+    const exact = props.method === 'card' || props.method === 'bizum';
+    const mixed = props.method === 'mixed';
     const payment = this.quoted();
     const notes = suggestedTenders(total);
-    const short = !card && props.tendered !== '' && props.tendered != null && !payment;
-    const previewOpen = props.previewOpen !== false;
+    const given = exact ? total : Money.ofCents(props.tenderedCents || 0);
+    const short = !exact && props.tenderedCents > 0 && !payment;
+    const change = payment ? Money.ofCents(payment.changeCents) : Money.ofCents(0);
+    const title = props.nextInvoiceNumber ? 'Cobrar ticket nº ' + props.nextInvoiceNumber : 'Cobrar';
     return (
       <Dialog
         open={!!props.open}
-        title="Cobrar"
+        title={title}
         className="payment-dialog"
+        closeLabel="Volver"
+        closeIcon="arrow-left"
         onClose={props.onClose}
-        initialFocusRef={this.tenderedRef}
-        actions={(
-          <Button type="button" disabled={!payment || !!props.saving} onClick={this.confirm}>
-            Confirmar (Enter)
-          </Button>
-        )}
+        initialFocusRef={this.panelRef}
+        actions={this.footerActions(payment)}
       >
-        <div className="payment-sheet" onKeyDown={this.onKeyDown}>
-          <div className="payment-methods" role="group" aria-label="Forma de pago">
-            <Button
-              type="button"
-              variant={card ? 'secondary' : 'primary'}
-              onClick={() => props.onMethod && props.onMethod('cash')}
-            >
-              Efectivo
-            </Button>
-            <Button
-              type="button"
-              variant={card ? 'primary' : 'secondary'}
-              onClick={() => props.onMethod && props.onMethod('card')}
-            >
-              Tarjeta
-            </Button>
-          </div>
-          <p className="payment-total">
-            <span>Total</span>
-            <span className="sell-total">{formatMoney(total)}</span>
-          </p>
-          <NumberField
-            id="payment-tendered"
-            label="Entregado"
-            unit="€"
-            decimals={2}
-            value={card ? total.toEuros() : props.tendered}
-            readOnly={card}
-            onChange={card ? undefined : props.onTendered}
-            inputRef={this.setTenderedNode}
-          />
-          {card || !notes.length ? null : (
-            <div className="payment-notes">
-              <Button type="button" variant="secondary" onClick={() => props.onTendered && props.onTendered(notes[0].toEuros())}>
-                Exacto
-              </Button>
-              {notes.slice(1).map(note => (
+        <div className="checkout" tabIndex="-1" ref={this.setPanel} onKeyDown={this.onKeyDown}>
+          <div className="checkout-main">
+            <div className="checkout-tiles">
+              <Tile label="Total a cobrar" amount={total} />
+              <Tile label="Entregado" amount={given} outlined />
+              <Tile label="Cambio" amount={short ? null : change} change short={short} />
+            </div>
+            <div className="payment-methods" role="group" aria-label="Forma de pago">
+              {['cash', 'card', 'bizum', 'mixed'].map(method => (
                 <Button
+                  key={method}
                   type="button"
-                  variant="secondary"
-                  key={note.cents}
-                  onClick={() => props.onTendered && props.onTendered(note.toEuros())}
+                  variant={props.method === method ? 'primary' : 'secondary'}
+                  pressed={props.method === method}
+                  onClick={() => props.onMethod && props.onMethod(method)}
                 >
-                  {formatMoney(note)}
+                  {methodLabel(method)}
                 </Button>
               ))}
             </div>
-          )}
-          <p className={short ? 'payment-change is-short' : 'payment-change'}>
-            <span>Cambio</span>
-            <span className="sell-total">{payment ? formatMoney(Money.ofCents(payment.changeCents)) : ''}</span>
-          </p>
-          {short ? <p className="payment-short">Entregado insuficiente</p> : null}
-          <PluginSlot name="sell.payment.after" />
-          <Button
-            type="button"
-            variant="ghost"
-            expanded={previewOpen}
-            onClick={props.onTogglePreview}
-          >
-            Vista previa del ticket
-          </Button>
-          {previewOpen ? (
-            props.previewHtml ? (
+            {mixed ? (
+              <div className="checkout-mixed">
+                <PartSelect
+                  label="Primera parte"
+                  value={props.mixedFirst || 'cash'}
+                  onChange={method => props.onPart && props.onPart('first', method)}
+                />
+                <PartSelect
+                  label="Resto"
+                  value={props.mixedSecond || 'card'}
+                  onChange={method => props.onPart && props.onPart('second', method)}
+                />
+              </div>
+            ) : null}
+            {exact ? null : (
+              <div className="checkout-entry">
+                <div className="checkout-keypad" role="group" aria-label="Importe entregado">
+                  {KEYS.map(key => (
+                    <Button
+                      key={key}
+                      type="button"
+                      variant="secondary"
+                      label={key === 'back' ? 'Borrar' : undefined}
+                      onClick={() => this.onKey(key)}
+                    >
+                      {key === 'back' ? '⌫' : key}
+                    </Button>
+                  ))}
+                </div>
+                <div className="payment-notes">
+                  <p className="checkout-notes-label">Importe rápido</p>
+                  {notes.map((note, index) => (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      key={note.cents}
+                      onClick={() => props.onTendered && props.onTendered(note.cents)}
+                    >
+                      {index === 0 ? 'Exacto ' + formatMoney(note) : formatMoney(note)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+            {short ? <p className="payment-short">Entregado insuficiente</p> : null}
+            <PluginSlot name="sell.payment.after" />
+          </div>
+          <aside className="checkout-preview">
+            <p className="checkout-preview-title">
+              {'Vista previa del ticket · plantilla "' + templateName(props.templateId) + '"'}
+            </p>
+            {props.previewHtml ? (
               <div className="om-receipt-preview" dangerouslySetInnerHTML={{__html: props.previewHtml}} />
             ) : (
               <p className="payment-preview-wait">Preparando el ticket…</p>
-            )
-          ) : null}
+            )}
+          </aside>
         </div>
       </Dialog>
     );
   }
 
+}
+
+/**
+ * @param {string} method
+ * @returns {string}
+ */
+/**
+ * @param {string | null | undefined} templateId
+ * @returns {string}
+ */
+function templateName(templateId) {
+  return templateId === 'classic-58' ? '58 mm clásica' : '80 mm clásica';
+}
+
+function methodLabel(method) {
+  if (method === 'card') {
+    return 'Tarjeta';
+  }
+  if (method === 'bizum') {
+    return 'Bizum';
+  }
+  if (method === 'mixed') {
+    return 'Mixto';
+  }
+  return 'Efectivo';
+}
+
+/**
+ * @param {{label: string, value: string, onChange: function(string): void}} props
+ */
+function PartSelect(props) {
+  return (
+    <label className="checkout-part">
+      <span>{props.label}</span>
+      <select value={props.value} onChange={event => props.onChange(event.target.value)}>
+        <option value="cash">Efectivo</option>
+        <option value="card">Tarjeta</option>
+        <option value="bizum">Bizum</option>
+      </select>
+    </label>
+  );
+}
+
+/**
+ * @param {{label: string, amount: Money | null, outlined?: boolean, change?: boolean, short?: boolean}} props
+ */
+function Tile(props) {
+  const classes = ['checkout-tile'];
+  if (props.outlined) {
+    classes.push('checkout-tile-given');
+  }
+  if (props.change) {
+    classes.push(props.short ? 'checkout-tile-change is-short' : 'checkout-tile-change');
+  }
+  return (
+    <div className={classes.join(' ')}>
+      <span>{props.label}</span>
+      <span className="sell-total">{props.amount ? formatMoney(props.amount) : ''}</span>
+    </div>
+  );
 }

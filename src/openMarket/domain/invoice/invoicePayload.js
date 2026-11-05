@@ -32,6 +32,7 @@ export function issuedPayload(invoice) {
       name: line.name,
       unitPriceCents: line.price.cents,
       quantityMilli: line.quantity.milli,
+      weighted: line.weighted === true,
       amountCents: line.amount.cents,
       vat: {
         kind: line.vatRate.kind,

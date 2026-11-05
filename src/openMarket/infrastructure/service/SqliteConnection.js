@@ -142,6 +142,7 @@ CREATE TABLE IF NOT EXISTS invoice_line (
   vat_kind TEXT NOT NULL DEFAULT 'S1',
   vat_cause TEXT,
   kind TEXT NOT NULL DEFAULT 'PRODUCT',
+  weighted INTEGER,
   PRIMARY KEY (invoice_id, position)
 );
 CREATE TABLE IF NOT EXISTS invoice_vat (
@@ -339,6 +340,7 @@ function migrateOrderPayment(database) {
   ensureColumn(database, '"order"', 'payment_method', 'TEXT');
   ensureColumn(database, '"order"', 'tendered_cents', 'INTEGER');
   ensureColumn(database, '"order"', 'change_cents', 'INTEGER');
+  ensureColumn(database, '"order"', 'payment_parts', 'TEXT');
   const applied = database.prepare('SELECT name FROM schema_migration WHERE name = ?').get(ORDER_PAYMENT_MIGRATION);
   if (applied) {
     return;
@@ -358,6 +360,7 @@ function migrateOrderPayment(database) {
 function migrateOrderLineKind(database) {
   ensureColumn(database, 'line', 'kind', "TEXT NOT NULL DEFAULT 'PRODUCT'");
   ensureColumn(database, 'invoice_line', 'kind', "TEXT NOT NULL DEFAULT 'PRODUCT'");
+  ensureColumn(database, 'invoice_line', 'weighted', 'INTEGER');
   const applied = database.prepare('SELECT name FROM schema_migration WHERE name = ?').get(ORDER_LINE_KIND_MIGRATION);
   if (applied) {
     return;

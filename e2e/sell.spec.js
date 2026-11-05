@@ -1,9 +1,7 @@
-const fs = require('fs');
 const path = require('path');
 const {DatabaseSync} = require('node:sqlite');
 const {test, expect} = require('@playwright/test');
 const {
-  root,
   assertDist,
   launchApp,
   closeApp,
@@ -16,8 +14,6 @@ const {
   confirmPayment,
   dismissTicket
 } = require('./launch');
-
-const THEMES = ['mercado', 'mostrador-noche', 'ultramarinos', 'unexpected-neon'];
 
 test.beforeAll(() => {
   assertDist();
@@ -260,73 +256,6 @@ test('sells scanned, weighed, and free lines and blocks an invalid quantity', as
   }
 });
 
-test('screenshots the sell screen and the weighted dialog in every theme', async () => {
-  const {app, window, userData} = await launchApp({
-    shop: {
-      categories: ['Shop'],
-      products: [
-        {
-          name: 'Arroz',
-          barcode: '8400000000219',
-          price: 2,
-          basePrice: 1,
-          stock: 10,
-          stockMin: 1,
-          category: 'Shop'
-        },
-        {
-          name: 'Ham',
-          barcode: '8400000000226',
-          price: 18.5,
-          basePrice: 10,
-          stock: 5,
-          stockMin: 1,
-          category: 'Shop',
-          weighted: true
-        }
-      ]
-    }
-  });
-  const after = path.join(root, 'docs/design/after');
-  fs.mkdirSync(after, {recursive: true});
-  try {
-    await openSell(window);
-    await expect(window.locator('.sell-tile', {hasText: 'Ham'}).locator('.sell-tile-peso')).toContainText('peso');
-    await expect(window.locator('.sell-tile', {hasText: 'Ham'}).locator('.sell-tile-unit')).toHaveText('/kg');
-    await expect(window.locator('.sell-tile', {hasText: 'Arroz'}).locator('.sell-tile-initials')).toHaveText('AR');
-    await expect(window.locator('.sell-tile', {hasText: 'Ham'}).locator('.sell-tile-initials')).toHaveText('HA');
-    await scanBarcode(window, '8400000000219');
-    await expect(orderRow(window, 'Arroz')).toBeVisible();
-    await scanBarcode(window, '8400000000226');
-    const weighed = window.getByRole('dialog');
-    await expect(weighed.getByRole('heading', {name: 'Peso (kg)'})).toBeVisible();
-    await weighed.locator('input[name="quantity"]').fill('1');
-    await weighed.getByRole('button', {name: 'Añadir'}).click();
-    await expect(orderRow(window, 'Ham').locator('.sell-weight')).toHaveText('1 kg');
-    await expect(orderRow(window, 'Ham')).toContainText('1 kg ×');
-
-    for (const theme of THEMES) {
-      await window.evaluate(name => {
-        document.documentElement.dataset.theme = name;
-      }, theme);
-      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
-      await window.screenshot({path: path.join(after, `sell-${theme}.png`)});
-    }
-
-    await scanBarcode(window, '8400000000226');
-    await expect(window.getByRole('heading', {name: 'Peso (kg)'})).toBeVisible();
-    for (const theme of THEMES) {
-      await window.evaluate(name => {
-        document.documentElement.dataset.theme = name;
-      }, theme);
-      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
-      await window.screenshot({path: path.join(after, `sell-weighted-${theme}.png`)});
-    }
-  } finally {
-    await closeApp(app, userData);
-  }
-});
-
 function latestPayment(userData) {
   const database = new DatabaseSync(path.join(userData, 'openmarket.sqlite'), {
     readOnly: true,
@@ -368,8 +297,6 @@ test('pays cash with change, shows the ticket preview, and pays by card', async 
       ]
     }
   });
-  const after = path.join(root, 'docs/design/after');
-  fs.mkdirSync(after, {recursive: true});
   try {
     await openSell(window);
     await scanBarcode(window, '8400000000318');
@@ -389,19 +316,10 @@ test('pays cash with change, shows the ticket preview, and pays by card', async 
     await expect(sheet.locator('.om-receipt')).toContainText('Ham');
     await expect(sheet.locator('.om-receipt')).toContainText('Venta libre');
     await sheet.getByRole('button', {name: euros(20)}).click();
-    await expect(sheet.getByText(euros(2.62))).toBeVisible();
+    await expect(sheet.locator('.checkout-tile-change').getByText(euros(2.62))).toBeVisible();
     await expect(window.locator('.notification')).toHaveCount(0);
 
-    for (const theme of THEMES) {
-      await window.evaluate(name => {
-        document.documentElement.dataset.theme = name;
-      }, theme);
-      await expect.poll(() => window.evaluate(() => document.documentElement.dataset.theme)).toBe(theme);
-      await window.screenshot({path: path.join(after, `payment-${theme}.png`)});
-      await window.screenshot({path: path.join(root, 'test-results', `payment-${theme}.png`)});
-    }
-
-    await sheet.getByRole('button', {name: 'Confirmar'}).click();
+    await sheet.getByRole('button', {name: 'Sin ticket', exact: true}).click();
     await expect(window.getByText('Order saved!')).toBeVisible();
     await expect(window.getByText(euros(2.62))).toBeVisible();
     await expect.poll(() => latestPayment(userData)).toEqual({

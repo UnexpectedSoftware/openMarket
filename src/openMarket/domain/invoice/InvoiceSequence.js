@@ -18,4 +18,13 @@ export default class InvoiceSequence {
     throw new Error('InvoiceSequence#next must be implemented');
   }
 
+  /**
+   * The number the next sale would get. Does not allocate it.
+   * @param {{series: string}} params
+   * @returns {Observable<InvoiceNumber>}
+   */
+  peek({series}) {
+    throw new Error('InvoiceSequence#peek must be implemented');
+  }
+
 }

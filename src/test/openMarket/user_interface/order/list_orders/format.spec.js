@@ -25,7 +25,9 @@ describe('order list format', () => {
     expect(paymentLabel('cash')).to.equal('Efectivo');
     expect(paymentLabel('card')).to.equal('Tarjeta');
     expect(paymentLabel(null)).to.equal('');
-    expect(paymentLabel('bizum')).to.equal('');
+    expect(paymentLabel('bizum')).to.equal('Bizum');
+    expect(paymentLabel('mixed')).to.equal('Mixto');
+    expect(paymentLabel('cheque')).to.equal('');
   });
 
   it('labels the item count', () => {
@@ -57,7 +59,14 @@ describe('order list format', () => {
     expect(paymentLine({method: 'cash', tenderedCents: 1.5, changeCents: 0})).to.equal('Efectivo');
     expect(paymentLine(null)).to.equal('');
     expect(paymentLine(undefined)).to.equal('');
-    expect(paymentLine({method: 'bizum'})).to.equal('');
+    expect(paymentLine({method: 'bizum'})).to.equal('Bizum');
+    expect(paymentLine({
+      method: 'mixed',
+      parts: [{method: 'cash', amountCents: 1000}, {method: 'card', amountCents: 313}]
+    })).to.equal(
+      'Mixto (Efectivo ' + formatMoney(Money.ofCents(1000)) + ', Tarjeta ' + formatMoney(Money.ofCents(313)) + ')'
+    );
+    expect(paymentLine({method: 'cheque'})).to.equal('');
   });
 
   it('formats the detail date, a weighed price, and a VAT label', () => {
@@ -65,12 +74,12 @@ describe('order list format', () => {
     expect(orderWhen('2026-10-21 09:05:00')).to.equal('21/10/2026 09:05');
     expect(orderWhen(null)).to.equal('');
     expect(orderWhen('nope')).to.equal('');
-    expect(formatKg(350)).to.equal('0,350');
+    expect(formatKg(350)).to.equal('0,35');
     expect(formatKg(1000)).to.equal('1');
-    expect(formatKg(1500)).to.equal('1,500');
+    expect(formatKg(1500)).to.equal('1,5');
     expect(formatKg(null)).to.equal('0');
     expect(weightedPrice({quantityMilli: 350, unitPriceCents: 1850}))
-      .to.equal('0,350 kg × ' + formatMoney(Money.ofCents(1850)) + '/kg');
+      .to.equal('0,35 kg × ' + formatMoney(Money.ofCents(1850)) + '/kg');
     expect(weightedPrice({quantityMilli: 1000, unitPriceCents: 699}))
       .to.equal('1 kg × ' + formatMoney(Money.ofCents(699)) + '/kg');
     expect(vatLabel({kind: 'S1', percent: 21, cause: null})).to.equal('21 %');

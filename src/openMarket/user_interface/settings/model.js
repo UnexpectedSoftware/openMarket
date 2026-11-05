@@ -18,7 +18,7 @@ const SHOP_KEYS = [
   'nif', 'legalName', 'tradeName', 'street', 'postalCode', 'city',
   'province', 'country', 'phone', 'email'
 ];
-const TICKET_KEYS = ['printMode', 'headerText', 'footerText', 'paperWidthMm'];
+const TICKET_KEYS = ['printMode', 'headerText', 'footerText', 'paperWidthMm', 'templateId'];
 const PRINTER_KEYS = ['printerType', 'printerInterface', 'printerCharacterSet'];
 const LANGUAGE_KEYS = ['locale'];
 const DRAFT_KEYS = SHOP_KEYS.concat(
@@ -460,11 +460,15 @@ function shopFields(profile) {
  */
 function ticketFields(source) {
   const value = source || {};
+  const templateId = value.templateId === 'classic-58' || Number(value.paperWidthMm) === 58
+    ? 'classic-58'
+    : 'classic-80';
   return {
     printMode: modeOf(value.printMode),
     headerText: textOrEmpty(value.headerText),
     footerText: textOrEmpty(value.footerText),
-    paperWidthMm: Number(value.paperWidthMm) === 58 ? 58 : 80
+    templateId,
+    paperWidthMm: templateId === 'classic-58' ? 58 : 80
   };
 }
 
@@ -706,6 +710,7 @@ function ticketCommand(draft) {
     printMode: fields.printMode,
     headerText: trimmed(fields.headerText),
     footerText: trimmed(fields.footerText),
+    templateId: fields.templateId,
     paperWidthMm: fields.paperWidthMm
   };
 }

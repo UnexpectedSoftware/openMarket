@@ -14,7 +14,7 @@ const DISPLAY_CREATED_AT = "strftime('%d/%m/%Y %H:%M:%S', created_at)";
 const DISPLAY_DAY = "strftime('%d/%m/%Y', created_at)";
 
 const FIND_BY_ID_SQL = 'SELECT o.id, ' + DISPLAY_CREATED_AT + ' as created_at, o.total, o.total_cents, ' +
-  'o.payment_method as payment_method, o.tendered_cents as tendered_cents, o.change_cents as change_cents, ' +
+  'o.payment_method as payment_method, o.tendered_cents as tendered_cents, o.change_cents as change_cents, o.payment_parts as payment_parts, ' +
   'l.barcode as line_barcode, l.name as line_name, l.price as line_price, l.quantity as line_quantity, ' +
   'l.price_cents as line_price_cents, l.quantity_milli as line_quantity_milli, l.amount_cents as line_amount_cents, ' +
   'l.vat_percent as line_vat_percent, l.vat_kind as line_vat_kind, l.vat_cause as line_vat_cause, ' +
@@ -42,7 +42,7 @@ const MISSING_INVOICE = '—';
 
 const FIND_DETAIL_SQL =
   'SELECT o.id AS order_id, o.created_at AS created_at, o.total AS total, o.total_cents AS total_cents, ' +
-  'o.payment_method AS payment_method, o.tendered_cents AS tendered_cents, o.change_cents AS change_cents, ' +
+  'o.payment_method AS payment_method, o.tendered_cents AS tendered_cents, o.change_cents AS change_cents, o.payment_parts AS payment_parts, ' +
   'i.id AS invoice_id, i.invoice_number AS invoice_number, i.type AS invoice_type, i.status AS invoice_status, ' +
   'i.total AS invoice_total, i.total_cents AS invoice_total_cents ' +
   'FROM "order" o LEFT JOIN invoice i ON i.order_id = o.id WHERE o.id = ?';
@@ -51,7 +51,7 @@ const FIND_DETAIL_LINES_SQL =
   'SELECT l.barcode AS barcode, l.name AS name, l.price AS price, l.quantity AS quantity, l.amount AS amount, ' +
   'l.price_cents AS price_cents, l.quantity_milli AS quantity_milli, l.amount_cents AS amount_cents, ' +
   'l.vat_percent AS vat_percent, l.vat_kind AS vat_kind, l.vat_cause AS vat_cause, l.kind AS kind, ' +
-  'p.weighted AS weighted ' +
+  'l.weighted AS line_weighted, p.weighted AS weighted ' +
   'FROM invoice_line l LEFT JOIN product p ON p.barcode = l.barcode ' +
   'WHERE l.invoice_id = ? ORDER BY l.position ASC';
 
@@ -65,8 +65,8 @@ const TOTAL_AMOUNT_BY_DAYS_SQL = 'SELECT total, total_cents, ' + DISPLAY_DAY + '
   'WHERE created_at BETWEEN ? AND ? ORDER BY created_at ASC';
 
 const INSERT_ORDER_SQL = 'INSERT INTO "order" ' +
-  '(id, created_at, total, total_cents, payment_method, tendered_cents, change_cents) ' +
-  'VALUES (?, ?, ?, ?, ?, ?, ?)';
+  '(id, created_at, total, total_cents, payment_method, tendered_cents, change_cents, payment_parts) ' +
+  'VALUES (?, ?, ?, ?, ?, ?, ?, ?)';
 
 const INSERT_LINE_SQL = 'INSERT INTO line ' +
   '(order_id, barcode, name, price, quantity, price_cents, quantity_milli, amount_cents, vat_percent, vat_kind, vat_cause, kind) ' +
@@ -170,7 +170,8 @@ export default class SqliteOrderRepository {
         centsOf(order.total),
         payment ? payment.method : null,
         payment ? payment.tenderedCents : null,
-        payment ? payment.changeCents : null
+        payment ? payment.changeCents : null,
+        payment && payment.parts ? JSON.stringify(payment.parts) : null
       );
       const insertLine = this._database.prepare(INSERT_LINE_SQL);
       order.lines.forEach(line => {
@@ -307,10 +308,10 @@ function invoiceNumber(row) {
 
 /**
  * @param {string | null | undefined} method
- * @returns {'cash'|'card'|null}
+ * @returns {'cash'|'card'|'bizum'|'mixed'|null}
  */
 function paymentMethod(method) {
-  if (method === 'cash' || method === 'card') {
+  if (method === 'cash' || method === 'card' || method === 'bizum' || method === 'mixed') {
     return method;
   }
   return null;
@@ -344,6 +345,7 @@ function detailId(query) {
  * @property {string | null} [payment_method]
  * @property {number | string | null} [tendered_cents]
  * @property {number | string | null} [change_cents]
+ * @property {string | null} [payment_parts]
  * @property {string | null} [invoice_id]
  * @property {string | null} [invoice_number]
  * @property {string | null} [invoice_type]
@@ -367,6 +369,7 @@ function detailId(query) {
  * @property {string | null} [vat_cause]
  * @property {string | null} [kind]
  * @property {number | null} [weighted]
+ * @property {number | null} [line_weighted]
  */
 
 /**
@@ -408,7 +411,7 @@ function orderDetailFrom(database, row) {
 
 /**
  * @param {DetailRow} row
- * @param {{method: 'cash'|'card', tenderedCents: number | null, changeCents: number | null} | null} payment
+ * @param {import('../../domain/order/OrderDetail').DetailPayment | null} payment
  * @param {string} createdAt
  * @returns {OrderDetail}
  */
@@ -429,7 +432,7 @@ function missingInvoiceDetail(row, payment, createdAt) {
 /**
  * @param {*} database
  * @param {DetailRow} row
- * @param {{method: 'cash'|'card', tenderedCents: number | null, changeCents: number | null} | null} payment
+ * @param {import('../../domain/order/OrderDetail').DetailPayment | null} payment
  * @param {string} createdAt
  * @returns {OrderDetail}
  */
@@ -460,18 +463,39 @@ function orderIdOf(row) {
 
 /**
  * @param {DetailRow} row
- * @returns {{method: 'cash'|'card', tenderedCents: number | null, changeCents: number | null} | null}
+ * @returns {import('../../domain/order/OrderDetail').DetailPayment | null}
  */
 function paymentOf(row) {
   const method = paymentMethod(row.payment_method);
   if (!method) {
     return null;
   }
-  return Object.freeze({
+  const payment = {
     method,
     tenderedCents: integerOrNull(row.tendered_cents),
     changeCents: integerOrNull(row.change_cents)
-  });
+  };
+  const parts = partsOf(row.payment_parts);
+  if (parts) {
+    payment.parts = parts;
+  }
+  return Object.freeze(payment);
+}
+
+/**
+ * @param {string | null | undefined} raw
+ * @returns {Array<{method: string, amountCents: number}> | null}
+ */
+function partsOf(raw) {
+  if (raw == null || raw === '') {
+    return null;
+  }
+  try {
+    const parsed = JSON.parse(String(raw));
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (error) {
+    return null;
+  }
 }
 
 /**
@@ -502,7 +526,7 @@ function toDetailLine(row) {
     name: row.name == null ? '' : String(row.name),
     unitPriceCents: moneyFromColumns(row.price_cents, row.price).cents,
     quantityMilli: quantity.milli,
-    weighted: isWeighted(kind, quantity.milli, row.weighted),
+    weighted: isWeighted(kind, quantity.milli, row.weighted, row.line_weighted),
     amountCents: moneyFromColumns(row.amount_cents, row.amount).cents,
     vat: Object.freeze(vatOf(row))
   };
@@ -510,18 +534,22 @@ function toDetailLine(row) {
 }
 
 /**
- * A free line is never weighed. Otherwise the product flag wins, then a fraction.
- * invoice_line does not store the flag.
+ * A free line is never weighed. A stored invoice flag wins.
+ * Older rows fall back to the product flag, then to a fraction.
  * @param {string} kind
  * @param {number} milli
- * @param {number | null | undefined} flag
+ * @param {number | null | undefined} productFlag
+ * @param {number | null | undefined} stored
  * @returns {boolean}
  */
-function isWeighted(kind, milli, flag) {
+function isWeighted(kind, milli, productFlag, stored) {
   if (kind === 'FREE') {
     return false;
   }
-  if (Number(flag) === 1) {
+  if (stored === 0 || stored === 1) {
+    return stored === 1;
+  }
+  if (Number(productFlag) === 1) {
     return true;
   }
   return milli % 1000 !== 0;

@@ -19,8 +19,10 @@ export default class SellPreferences {
    * @param {string} [props.headerText]
    * @param {string} [props.footerText]
    * @param {number} [props.paperWidthMm]
+   * @param {string} [props.templateId]
    */
-  constructor({printMode, headerText, footerText, paperWidthMm} = {}) {
+  constructor({printMode, headerText, footerText, paperWidthMm, templateId} = {}) {
+    const template = chooseTemplate(templateId, paperWidthMm);
     /** @private */
     this._printMode = printMode === undefined ? 'ask' : requiredMode(printMode);
     /** @private */
@@ -28,7 +30,9 @@ export default class SellPreferences {
     /** @private */
     this._footerText = requiredCopy(footerText, 'footerText');
     /** @private */
-    this._paperWidthMm = paperWidthMm === undefined ? 80 : requiredWidth(paperWidthMm);
+    this._templateId = template.id;
+    /** @private */
+    this._paperWidthMm = template.width;
   }
 
   /** @returns {'always' | 'ask' | 'never'} */
@@ -46,6 +50,11 @@ export default class SellPreferences {
     return this._footerText;
   }
 
+  /** @returns {'classic-80' | 'classic-58'} */
+  get templateId() {
+    return this._templateId;
+  }
+
   /** @returns {58 | 80} */
   get paperWidthMm() {
     return this._paperWidthMm;
@@ -60,7 +69,8 @@ export default class SellPreferences {
       printMode,
       headerText: this._headerText,
       footerText: this._footerText,
-      paperWidthMm: this._paperWidthMm
+      paperWidthMm: this._paperWidthMm,
+      templateId: this._templateId
     });
   }
 
@@ -73,7 +83,8 @@ export default class SellPreferences {
       printMode: this._printMode,
       headerText,
       footerText,
-      paperWidthMm: this._paperWidthMm
+      paperWidthMm: this._paperWidthMm,
+      templateId: this._templateId
     });
   }
 
@@ -117,12 +128,26 @@ function requiredCopy(value, field) {
 }
 
 /**
- * @param {number} paperWidthMm
- * @returns {58 | 80}
+ * A template selects the paper. A legacy width selects the matching template.
+ * @param {string | null | undefined} templateId
+ * @param {number | undefined} paperWidthMm
+ * @returns {{id: 'classic-80' | 'classic-58', width: 58 | 80}}
  */
-function requiredWidth(paperWidthMm) {
-  if (paperWidthMm === 58 || paperWidthMm === 80) {
-    return paperWidthMm;
+function chooseTemplate(templateId, paperWidthMm) {
+  if (templateId === 'classic-58') {
+    return {id: 'classic-58', width: 58};
+  }
+  if (templateId === 'classic-80') {
+    return {id: 'classic-80', width: 80};
+  }
+  if (templateId != null && templateId !== '') {
+    throw new InvalidSellPreferencesError({field: 'templateId', value: templateId});
+  }
+  if (paperWidthMm === undefined || paperWidthMm === 80) {
+    return {id: 'classic-80', width: 80};
+  }
+  if (paperWidthMm === 58) {
+    return {id: 'classic-58', width: 58};
   }
   throw new InvalidSellPreferencesError({field: 'paperWidthMm', value: paperWidthMm});
 }

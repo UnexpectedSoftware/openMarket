@@ -28,6 +28,7 @@
       "name": "Leche",
       "unitPriceCents": 95,
       "quantityMilli": 2000,
+      "weighted": false,
       "amountCents": 190,
       "vat": {"kind": "S1", "percent": 4, "cause": null}
     },
@@ -37,6 +38,7 @@
       "name": "Jamón (kg)",
       "unitPriceCents": 1850,
       "quantityMilli": 350,
+      "weighted": true,
       "amountCents": 648,
       "vat": {"kind": "S1", "percent": 10, "cause": null}
     }

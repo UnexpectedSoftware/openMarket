@@ -76,14 +76,14 @@ test('prints a plugin QR before the shop header', async () => {
     await openNewOrder(second.window);
     await scanBarcode(second.window, '8400000000011');
     await second.window.locator('button', {hasText: 'Cobrar'}).click();
-    await confirmPayment(second.window);
-    await second.window.getByRole('button', {name: 'Imprimir ticket'}).click();
+    await confirmPayment(second.window, {print: true});
     const logFile = path.join(userData, 'printer-log.jsonl');
     await expect.poll(() => fs.existsSync(logFile)).toBe(true);
     const calls = fs.readFileSync(logFile, 'utf8').trim().split('\n').map(line => JSON.parse(line));
     const legend = calls.findIndex(call => call.name === 'println' && call.args[0] === 'QR tributario:');
     const qr = calls.findIndex(call => call.name === 'printQR');
-    const date = calls.findIndex(call => call.name === 'println' && String(call.args[0]).indexOf('Date ') === 0);
+    const date = calls.findIndex(call =>
+      call.name === 'println' && /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/.test(String(call.args[0])));
     expect(legend).toBeGreaterThan(-1);
     expect(qr).toBeGreaterThan(legend);
     expect(date).toBeGreaterThan(qr);
@@ -102,8 +102,7 @@ test('changing the theme does not change the receipt blocks', async () => {
       await openNewOrder(session.window);
       await scanBarcode(session.window, '8400000000011');
       await session.window.locator('button', {hasText: 'Cobrar'}).click();
-      await confirmPayment(session.window);
-      await session.window.getByRole('button', {name: 'Imprimir ticket'}).click();
+      await confirmPayment(session.window, {print: true});
       await expect(session.window.getByRole('button', {name: 'Imprimir ticket'})).toHaveCount(0);
     }
 
@@ -142,7 +141,7 @@ test('saves print mode, header, and paper width', async () => {
     await expect(session.window.getByRole('heading', {name: 'Ticket'})).toBeVisible();
     await session.window.getByRole('combobox', {name: 'Al imprimir'}).selectOption({label: 'Siempre'});
     await session.window.getByRole('textbox', {name: 'Cabecera'}).fill('Gracias');
-    await session.window.getByRole('combobox', {name: 'Ancho del papel'}).selectOption({label: '58 mm'});
+    await session.window.getByRole('combobox', {name: 'Plantilla'}).selectOption({label: '58 mm clásica'});
     await session.window.getByRole('button', {name: 'Guardar', exact: true}).click();
     await expect(session.window.getByText('Ajustes guardados').first()).toBeVisible();
     await expect(session.window.getByText('Ajustes guardados')).toHaveCount(0);
@@ -182,8 +181,16 @@ test('saves print mode, header, and paper width', async () => {
     await session.window.getByRole('button', {name: 'Guardar', exact: true}).click();
     await expect(session.window.getByText('Ajustes guardados').first()).toBeVisible();
 
-    await sell();
-    await expect(session.window.getByRole('button', {name: 'Imprimir ticket'})).toBeVisible();
+    await openNewOrder(session.window);
+    await scanBarcode(session.window, '8400000000011');
+    await session.window.locator('button', {hasText: 'Cobrar'}).click();
+    const asked = session.window.getByRole('dialog');
+    await expect(asked.getByRole('button', {name: 'Sin ticket', exact: true})).toBeVisible();
+    await expect(asked.getByRole('button', {name: 'Cobrar e imprimir', exact: true})).toBeVisible();
+    await asked.getByRole('button', {name: /Exacto/}).click();
+    await asked.getByRole('button', {name: 'Sin ticket', exact: true}).click();
+    await expect(session.window.getByRole('button', {name: 'Imprimir ticket'})).toHaveCount(0);
+    expect(fs.readFileSync(logFile, 'utf8')).toBe(afterAlways);
   } finally {
     await closeApp(session.app, userData, {keep: true});
   }
@@ -192,7 +199,7 @@ test('saves print mode, header, and paper width', async () => {
   try {
     await second.window.getByRole('link', {name: 'Ajustes', exact: true}).click();
     await expect(second.window.getByRole('combobox', {name: 'Al imprimir'})).toHaveValue('ask');
-    await expect(second.window.getByRole('combobox', {name: 'Ancho del papel'})).toHaveValue('58');
+    await expect(second.window.getByRole('combobox', {name: 'Plantilla'})).toHaveValue('classic-58');
     await expect(second.window.getByRole('textbox', {name: 'Cabecera'})).toHaveValue('Gracias');
   } finally {
     await closeApp(second.app, userData);

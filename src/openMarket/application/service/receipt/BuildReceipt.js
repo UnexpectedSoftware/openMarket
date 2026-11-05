@@ -10,10 +10,13 @@ import Money from '../../../domain/money/Money';
 import Quantity from '../../../domain/money/Quantity';
 import SellPreferencesQuery from '../../../domain/shop/SellPreferencesQuery';
 import SellPreferencesView from '../../../domain/shop/SellPreferencesView';
+import ShopProfileQuery from '../../../domain/shop/ShopProfileQuery';
 import VatRate from '../../../domain/tax/VatRate';
 import VatBreakdown from '../../../domain/tax/VatBreakdown';
 /** @typedef {import('../../../domain/invoice/InvoiceRepository').default} InvoiceRepository */
+/** @typedef {import('../../../domain/order/OrderRepository').default} OrderRepository */
 /** @typedef {import('../../../domain/shop/SellPreferencesRepository').default} SellPreferencesRepository */
+/** @typedef {import('../../../domain/shop/ShopProfileRepository').default} ShopProfileRepository */
 /** @typedef {import('../../../infrastructure/receipt/ReceiptSlots').default} ReceiptSlots */
 
 /**
@@ -26,6 +29,7 @@ import VatBreakdown from '../../../domain/tax/VatBreakdown';
  * @property {*} [amount]
  * @property {*} [vatRate]
  * @property {string} [kind]
+ * @property {boolean} [weighted]
  */
 
 /**
@@ -34,6 +38,8 @@ import VatBreakdown from '../../../domain/tax/VatBreakdown';
  * @property {string | null} [tradeName]
  * @property {string | null} [legalName]
  * @property {string | null} [nif]
+ * @property {string | null} [phone]
+ * @property {{street?: string, postalCode?: string, city?: string, province?: string, country?: string} | null} [address]
  */
 
 /**
@@ -48,15 +54,30 @@ export default class BuildReceipt {
    * @param {InvoiceRepository} deps.invoiceRepository
    * @param {ReceiptSlots} deps.receiptSlots
    * @param {SellPreferencesRepository} [deps.sellPreferencesRepository]
+   * @param {ShopProfileRepository} [deps.shopProfileRepository]
+   * @param {OrderRepository} [deps.orderRepository]
    * @param {(error: unknown) => void} [deps.recordError]
    * @param {{render: (receipt: {blocks?: object[]}) => string}} [deps.htmlReceiptRenderer]
+   * @param {{zonedNow: () => {date?: string, local?: string}}} [deps.clock]
    */
-  constructor({invoiceRepository, receiptSlots, sellPreferencesRepository, recordError, htmlReceiptRenderer}) {
+  constructor({
+    invoiceRepository,
+    receiptSlots,
+    sellPreferencesRepository,
+    shopProfileRepository,
+    orderRepository,
+    recordError,
+    htmlReceiptRenderer,
+    clock
+  }) {
     this._invoiceRepository = invoiceRepository;
     this._receiptSlots = receiptSlots;
     this._sellPreferencesRepository = sellPreferencesRepository || null;
+    this._shopProfileRepository = shopProfileRepository || null;
+    this._orderRepository = orderRepository || null;
     this._recordError = typeof recordError === 'function' ? recordError : () => {};
     this._html = htmlReceiptRenderer || null;
+    this._clock = clock || null;
   }
 
   /**
@@ -67,20 +88,33 @@ export default class BuildReceipt {
     return this._preferences().flatMap(preferences =>
       this._invoiceRepository.findByOrderId({orderId: orderId == null ? '' : String(orderId)})
         .defaultIfEmpty(null)
-        .map(invoice => {
-          const payload = invoice ? issuedPayload(invoice) : null;
-          return this._document(payload, undefined, preferences);
-        }));
+        .flatMap(invoice => this._profile().flatMap(profile =>
+          this._sale(orderId).map(detail => {
+            const payload = invoice ? issuedPayload(invoice) : null;
+            const receipt = withLineWeight(
+              withPayment(withPhone(payload, profile), paymentOf(detail)),
+              detail
+            );
+            return this._document(receipt, payload, preferences);
+          }))));
   }
 
   /**
    * A ticket for a cart that is not saved yet. Plugin slots receive no invoice.
-   * @param {{lines?: PreviewLine[], issuer?: PreviewIssuer | null}} query
+   * The shop block comes from the profile repository. A passed issuer is ignored.
+   * @param {{lines?: PreviewLine[], payment?: {method?: string, tenderedCents?: number, changeCents?: number, parts?: object[] | null} | null, invoiceNumber?: string | null}} query
    * @returns {Observable<{blocks: object[], html: string}>}
    */
-  preview({lines, issuer}) {
-    return this._preferences().map(preferences =>
-      this._document(previewPayload({lines, issuer}), null, preferences));
+  preview({lines, payment, invoiceNumber}) {
+    return this._preferences().flatMap(preferences =>
+      this._profile().map(profile =>
+        this._document(previewPayload({
+          lines,
+          issuer: shopIssuer(profile),
+          when: this._now(),
+          payment,
+          invoiceNumber
+        }), null, preferences)));
   }
 
   /**
@@ -104,11 +138,42 @@ export default class BuildReceipt {
     });
     const blocks = fiscal
       .concat(copyBlock(copy.headerText))
-      .concat(coreBlocks(payload))
+      .concat(coreBlocks(payload ? {...payload, paperWidthMm: copy.paperWidthMm} : payload))
       .concat(copyBlock(copy.footerText))
       .concat(footer);
     const html = this._html ? this._html.render({blocks}) : '';
     return {blocks, html};
+  }
+
+  /**
+   * Shop-local now, for a preview that is not an invoice yet.
+   * @returns {{date?: string, local?: string} | null}
+   */
+  _now() {
+    if (!this._clock || typeof this._clock.zonedNow !== 'function') {
+      return null;
+    }
+    return this._clock.zonedNow();
+  }
+
+  /**
+   * Payment stored on the order. It is not part of the invoice payload.
+   * @param {string} orderId
+   * @returns {Observable<object | null>}
+   */
+  _sale(orderId) {
+    if (!this._orderRepository || orderId == null || orderId === '') {
+      return Observable.of(null);
+    }
+    return this._orderRepository.find({id: String(orderId)}).defaultIfEmpty(null);
+  }
+
+  /** @returns {Observable<object | null>} */
+  _profile() {
+    if (!this._shopProfileRepository) {
+      return Observable.of(null);
+    }
+    return this._shopProfileRepository.find(new ShopProfileQuery()).defaultIfEmpty(null);
   }
 
   /** @returns {Observable<SellPreferencesView>} */
@@ -119,6 +184,103 @@ export default class BuildReceipt {
     return this._sellPreferencesRepository.find(new SellPreferencesQuery());
   }
 
+}
+
+/**
+ * The open shop, including the phone the invoice snapshot does not store.
+ * @param {{tradeName?: string | null, legalName?: string | null, nif?: string | null, phone?: string | null, street?: string, postalCode?: string, city?: string, province?: string, country?: string} | null | undefined} profile
+ * @returns {PreviewIssuer | null}
+ */
+function shopIssuer(profile) {
+  if (!profile) {
+    return null;
+  }
+  return {
+    tradeName: profile.tradeName || null,
+    legalName: profile.legalName || null,
+    nif: profile.nif || null,
+    phone: profile.phone || null,
+    address: {
+      street: profile.street || '',
+      postalCode: profile.postalCode || '',
+      city: profile.city || '',
+      province: profile.province || '',
+      country: profile.country || ''
+    }
+  };
+}
+
+/**
+ * @param {{payment?: {method?: string, tenderedCents?: number | null, changeCents?: number | null, parts?: object[] | null}} | null | undefined} detail
+ * @returns {{method: string, tenderedCents: number | null, changeCents: number | null} | null}
+ */
+function paymentOf(detail) {
+  const payment = detail && detail.payment;
+  if (!payment || !payment.method) {
+    return null;
+  }
+  return {
+    method: payment.method,
+    tenderedCents: payment.tenderedCents,
+    changeCents: payment.changeCents
+  };
+}
+
+/**
+ * Payment stays off the invoice payload the fiscal slot receives.
+ * @param {object | null} payload
+ * @param {{method: string, tenderedCents: number | null, changeCents: number | null} | null} payment
+ * @returns {object | null}
+ */
+/**
+ * The detail line remembers weight for rows saved before the invoice column.
+ * @param {{lines?: object[]} | null} payload
+ * @param {{lines?: Array<{weighted?: boolean}>} | null | undefined} detail
+ * @returns {object | null}
+ */
+function withLineWeight(payload, detail) {
+  const stored = detail && detail.lines;
+  if (!payload || !stored) {
+    return payload;
+  }
+  return {
+    ...payload,
+    lines: (payload.lines || []).map((line, index) => {
+      const row = stored[index];
+      if (!row || typeof row.weighted !== 'boolean') {
+        return line;
+      }
+      return {...line, weighted: row.weighted};
+    })
+  };
+}
+
+function withPayment(payload, payment) {
+  if (!payload || !payment) {
+    return payload;
+  }
+  return {...payload, payment};
+}
+
+/**
+ * Phone for a saved ticket. The stored invoice payload is left unchanged.
+ * @param {{issuer?: PreviewIssuer | null} | null} payload
+ * @param {{phone?: string | null} | null | undefined} profile
+ * @returns {object | null}
+ */
+function withPhone(payload, profile) {
+  const phone = profile && profile.phone ? String(profile.phone).trim() : '';
+  if (!payload || phone === '') {
+    return payload;
+  }
+  const issuer = payload.issuer ? {...payload.issuer, phone} : {
+    tradeName: null,
+    legalName: null,
+    nif: null,
+    phone,
+    address: null
+  };
+  return {...payload, issuer};
 }
 
 /**
@@ -136,16 +298,17 @@ function copyBlock(text) {
 
 /**
  * Shop blocks for the open cart. This is not an InvoiceIssued payload.
- * @param {{lines?: PreviewLine[], issuer?: PreviewIssuer | null}} query
+ * @param {{lines?: PreviewLine[], issuer?: PreviewIssuer | null, when?: {date?: string, local?: string} | null, payment?: object | null, invoiceNumber?: string | null}} query
  * @returns {object}
  */
-function previewPayload({lines, issuer}) {
+function previewPayload({lines, issuer, when, payment, invoiceNumber}) {
   const priced = (lines || []).map(line => ({
     name: line && line.name != null ? String(line.name) : '',
     quantity: line && line.quantity,
     unitPrice: line && (line.unitPrice != null ? line.unitPrice : line.price),
     amount: lineAmount(line),
-    vatRate: line && line.vatRate != null ? VatRate.from(line.vatRate) : VatRate.standard()
+    vatRate: line && line.vatRate != null ? VatRate.from(line.vatRate) : VatRate.standard(),
+    weighted: !!(line && line.weighted)
   }));
   const breakdown = VatBreakdown.fromLines(priced.map(line => ({
     amount: line.amount,
@@ -153,17 +316,20 @@ function previewPayload({lines, issuer}) {
   })));
   const total = priced.reduce((sum, line) => sum.plus(line.amount), Money.ofCents(0));
   return {
-    issuer: issuer && (issuer.tradeName || issuer.legalName || issuer.nif) ? {
+    issuer: issuer ? {
       tradeName: issuer.tradeName || null,
       legalName: issuer.legalName || null,
-      nif: issuer.nif || null
+      nif: issuer.nif || null,
+      phone: issuer.phone || null,
+      address: issuer.address || null
     } : null,
-    invoiceNumber: null,
-    issueDate: '',
-    issuedAt: '',
+    invoiceNumber: invoiceNumber ? String(invoiceNumber) : null,
+    issueDate: when && when.date ? when.date : '',
+    issuedAt: when && when.local ? when.local : '',
     lines: priced.map(line => ({
       name: line.name,
       quantityMilli: quantityMilli(line.quantity),
+      weighted: !!(line && line.weighted),
       unitPriceCents: moneyCents(line.unitPrice),
       amountCents: line.amount.cents
     })),
@@ -175,7 +341,8 @@ function previewPayload({lines, issuer}) {
       quotaCents: row.quota.cents,
       grossCents: row.gross.cents
     })),
-    totalCents: total.cents
+    totalCents: total.cents,
+    payment: payment || null
   };
 }
 

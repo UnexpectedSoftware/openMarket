@@ -2,6 +2,8 @@ import React, {Component} from 'react';
 import TextField from '../../components/TextField';
 import {parseDecimal} from '../../components/NumberField';
 import Quantity from '../../../domain/money/Quantity';
+import Money from '../../../domain/money/Money';
+import Payment from '../../../domain/payment/Payment';
 import VatRate from '../../../domain/tax/VatRate';
 import {lineIsValid} from './model';
 import {isScannerBurst, applyShortcut} from './input';
@@ -19,11 +21,6 @@ class Container extends Component {
       selected: -1,
       freeOpen: false,
       helpOpen: false,
-      paymentOpen: false,
-      payMethod: 'cash',
-      tendered: '',
-      previewOpen: true,
-      reprintOpen: false,
       freeDescription: 'Venta libre',
       freeAmount: '',
       freeVat: VatRate.standard().code()
@@ -40,8 +37,8 @@ class Container extends Component {
     this.closePayment = this.closePayment.bind(this);
     this.confirmPayment = this.confirmPayment.bind(this);
     this.onPayMethod = this.onPayMethod.bind(this);
+    this.onPart = this.onPart.bind(this);
     this.onTendered = this.onTendered.bind(this);
-    this.togglePreview = this.togglePreview.bind(this);
     this.openReprint = this.openReprint.bind(this);
     this.closeReprint = this.closeReprint.bind(this);
     this.printLast = this.printLast.bind(this);
@@ -77,6 +74,9 @@ class Container extends Component {
     if (this.props.saleCategoriesRequested) {
       this.props.saleCategoriesRequested();
     }
+    if (this.props.sellPreferencesRequested) {
+      this.props.sellPreferencesRequested();
+    }
     this.focusSearch();
   }
 
@@ -86,8 +86,8 @@ class Container extends Component {
     if (before > 0 && after === 0 && this.props.saleTilesRequested) {
       this.props.saleTilesRequested({text: this.state.search || '', limit: TILE_LIMIT});
     }
-    if (before > 0 && after === 0 && this.state.paymentOpen) {
-      this.setState({paymentOpen: false, tendered: ''});
+    if (this.props.paymentOpen && previous.nextInvoiceNumber !== this.props.nextInvoiceNumber) {
+      this.requestPreview(this.props.payMethod, this.props.tenderedCents);
     }
     if (after !== before) {
       const selected = after === 0 ? -1 : after - 1;
@@ -185,44 +185,69 @@ class Container extends Component {
     if (!this.canCharge()) {
       return;
     }
-    this.setState({
-      paymentOpen: true,
-      payMethod: 'cash',
-      tendered: '',
-      previewOpen: true
-    });
-    if (this.props.paymentPreviewRequested) {
-      this.props.paymentPreviewRequested({
-        lines: this.props.order.lines,
-        issuer: this.props.issuer
-      });
+    if (this.props.checkoutOpened) {
+      this.props.checkoutOpened();
+    }
+    this.requestPreview('cash', 0);
+    if (this.props.nextInvoiceRequested) {
+      this.props.nextInvoiceRequested();
     }
   }
 
   closePayment() {
-    this.setState({paymentOpen: false}, this.focusSearch);
+    if (this.props.checkoutClosed) {
+      this.props.checkoutClosed();
+    }
+    this.focusSearch();
   }
 
   onPayMethod(payMethod) {
-    this.setState({payMethod});
+    if (this.props.checkoutMethodChanged) {
+      this.props.checkoutMethodChanged(payMethod);
+    }
+    this.requestPreview(payMethod, this.props.tenderedCents);
   }
 
-  onTendered(tendered) {
-    this.setState({tendered});
+  onPart(slot, method) {
+    if (this.props.checkoutPartChanged) {
+      this.props.checkoutPartChanged(slot, method);
+    }
+    this.requestPreview(this.props.payMethod, this.props.tenderedCents);
   }
 
-  togglePreview() {
-    this.setState({previewOpen: !this.state.previewOpen});
+  onTendered(cents) {
+    if (this.props.checkoutTenderChanged) {
+      this.props.checkoutTenderChanged(cents);
+    }
+    this.requestPreview(this.props.payMethod, cents);
   }
 
-  confirmPayment(payment) {
+  requestPreview(method, tendered) {
+    if (!this.props.paymentPreviewRequested) {
+      return;
+    }
+    this.props.paymentPreviewRequested({
+      lines: this.props.order.lines,
+      payment: quotedPayment(
+        this.props.order && this.props.order.total,
+        method,
+        tendered,
+        this.props.mixedFirst,
+        this.props.mixedSecond
+      ),
+      invoiceNumber: this.props.nextInvoiceNumber || ''
+    });
+  }
+
+  confirmPayment(payment, print) {
     if (!payment || this.props.saving) {
       return;
     }
     this.props.newOrderSave(this.props.order, {
       method: payment.method,
-      tenderedCents: payment.tenderedCents
-    });
+      tenderedCents: payment.tenderedCents,
+      parts: payment.parts || null
+    }, print === true);
   }
 
   openReprint() {
@@ -230,19 +255,27 @@ class Container extends Component {
     if (!order || !order.id) {
       return;
     }
-    this.setState({reprintOpen: true});
+    if (this.props.reprintOpened) {
+      this.props.reprintOpened();
+    }
     if (this.props.reprintPreviewRequested) {
       this.props.reprintPreviewRequested({orderId: order.id});
     }
   }
 
   closeReprint() {
-    this.setState({reprintOpen: false}, this.focusSearch);
+    if (this.props.reprintClosed) {
+      this.props.reprintClosed();
+    }
+    this.focusSearch();
   }
 
   printLast() {
     const order = this.props.lastOrder;
-    this.setState({reprintOpen: false}, this.focusSearch);
+    if (this.props.reprintClosed) {
+      this.props.reprintClosed();
+    }
+    this.focusSearch();
     if (order && this.props.printOrderButtonClicked) {
       this.props.printOrderButtonClicked(order);
     }
@@ -480,8 +513,8 @@ class Container extends Component {
         onFreeVat={this.onFreeVat}
         onCloseHelp={this.closeHelp}
         onPayMethod={this.onPayMethod}
+        onPart={this.onPart}
         onTendered={this.onTendered}
-        onTogglePreview={this.togglePreview}
         onConfirmPayment={this.confirmPayment}
         onClosePayment={this.closePayment}
         onCloseReprint={this.closeReprint}
@@ -511,6 +544,51 @@ class Container extends Component {
     );
   }
 
+}
+
+/**
+ * The payment the preview should show. Null while cash has no usable tender.
+ * @param {*} total
+ * @param {string} method
+ * @param {string | number | null | undefined} tendered
+ * @returns {{method: string, tenderedCents: number, changeCents: number} | null}
+ */
+function quotedPayment(total, method, tenderedCents, mixedFirst, mixedSecond) {
+  if (!total) {
+    return null;
+  }
+  try {
+    let payment = null;
+    if (method === 'card') {
+      payment = Payment.card({total});
+    } else if (method === 'bizum') {
+      payment = Payment.bizum({total});
+    } else if (method === 'mixed') {
+      if (!tenderedCents || tenderedCents >= total.cents) {
+        return null;
+      }
+      payment = Payment.mixed({
+        total,
+        parts: [
+          {method: mixedFirst || 'cash', amountCents: tenderedCents},
+          {method: mixedSecond || 'card', amountCents: total.cents - tenderedCents}
+        ]
+      });
+    } else if (tenderedCents) {
+      payment = Payment.cash({total, tendered: Money.ofCents(tenderedCents)});
+    }
+    if (!payment) {
+      return null;
+    }
+    return {
+      method: payment.method,
+      tenderedCents: payment.tenderedCents,
+      changeCents: payment.changeCents,
+      parts: payment.parts
+    };
+  } catch (error) {
+    return null;
+  }
 }
 
 function emptyBurst() {

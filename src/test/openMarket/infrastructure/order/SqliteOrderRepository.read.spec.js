@@ -68,7 +68,7 @@ describe('SqliteOrderRepository read model', () => {
           order_id: 'bare',
           created_at: '2026-10-21 08:00:00',
           total_cents: 50,
-          payment_method: 'bizum',
+          payment_method: 'cheque',
           invoice_number: '',
           item_count: null
         },

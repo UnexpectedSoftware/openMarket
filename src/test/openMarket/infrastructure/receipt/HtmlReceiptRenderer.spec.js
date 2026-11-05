@@ -2,6 +2,7 @@ import {expect} from 'chai';
 import HtmlReceiptRenderer from '../../../../openMarket/infrastructure/receipt/HtmlReceiptRenderer';
 import EscPosReceiptRenderer from '../../../../openMarket/infrastructure/printer/EscPosReceiptRenderer';
 import {coreBlocks} from '../../../../openMarket/domain/receipt/coreBlocks';
+import {formatEuroCents} from '../../../../openMarket/domain/money/formatEs';
 
 describe('HtmlReceiptRenderer', () => {
   const payload = {
@@ -54,7 +55,10 @@ describe('HtmlReceiptRenderer', () => {
     expect(html).to.include('NIF B12345674');
     expect(html).to.include('2026/000001');
     expect(html).to.include('Leche');
-    expect(html).to.include('Total: 1.15 €');
+    expect(html).to.include('FACTURA SIMPLIFICADA');
+    expect(html).to.include('18/10/2026 12:00');
+    expect(html).to.include('TOTAL ' + formatEuroCents(115));
+    expect(html).to.not.include('Date ');
     expect(html).to.include('4 %');
     expect(html).to.include('VERI*FACTU');
     expect(html).to.include('om-receipt-feed');

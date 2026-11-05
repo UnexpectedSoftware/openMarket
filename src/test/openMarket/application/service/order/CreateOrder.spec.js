@@ -184,6 +184,7 @@ describe('CreateOrder domain events', () => {
             name: 'Cola',
             unitPriceCents: 55,
             quantityMilli: 2000,
+            weighted: false,
             amountCents: 110,
             vat: {kind: 'S1', percent: 21, cause: null}
           }]);

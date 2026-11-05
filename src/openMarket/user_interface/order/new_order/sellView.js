@@ -1,5 +1,6 @@
 import SellLayout from '../../../domain/appearance/SellLayout';
 import {parseDecimal} from '../../components/NumberField';
+import {sellPreferencesState} from './model';
 
 /**
  * Shop name for the top bar, and the NIF line the settings screen checks.
@@ -81,15 +82,19 @@ export function sellView(props, state) {
     selected: local.selected,
     lowStockBarcodes: source.lowStockBarcodes,
     saving: source.saving,
+    printMode: sellPreferencesState(source.sellPreferences).printMode,
+    templateId: sellPreferencesState(source.sellPreferences).templateId,
+    nextInvoiceNumber: source.nextInvoiceNumber || '',
     previewHtml: source.previewHtml,
     reprintHtml: source.reprintHtml,
     freeOpen: !!local.freeOpen,
     helpOpen: !!local.helpOpen,
-    paymentOpen: !!local.paymentOpen,
-    reprintOpen: !!local.reprintOpen,
-    payMethod: local.payMethod,
-    tendered: local.tendered,
-    previewOpen: local.previewOpen,
+    paymentOpen: !!source.paymentOpen,
+    reprintOpen: !!source.reprintOpen,
+    payMethod: source.payMethod || 'cash',
+    tenderedCents: source.tenderedCents || 0,
+    mixedFirst: source.mixedFirst || 'cash',
+    mixedSecond: source.mixedSecond || 'card',
     freeDescription: local.freeDescription,
     freeAmount: local.freeAmount,
     freeVat: local.freeVat

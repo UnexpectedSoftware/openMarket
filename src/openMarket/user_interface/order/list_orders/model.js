@@ -87,7 +87,7 @@ function keptSelection(items, selectedOrderId) {
   if (stillThere) {
     return selectedOrderId;
   }
-  return items.length ? items[0].orderId : null;
+  return null;
 }
 
 /**

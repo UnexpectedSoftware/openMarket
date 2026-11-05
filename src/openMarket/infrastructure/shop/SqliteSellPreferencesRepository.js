@@ -48,7 +48,8 @@ export default class SqliteSellPreferencesRepository {
         printMode: stored.printMode,
         headerText: stored.headerText,
         footerText: stored.footerText,
-        paperWidthMm: stored.paperWidthMm
+        paperWidthMm: stored.paperWidthMm,
+        templateId: stored.templateId
       };
       try {
         this._database.prepare(SAVE_SQL).run(KEY, JSON.stringify(payload));
@@ -82,16 +83,29 @@ function aggregateFromJson(text) {
 
 /**
  * @param {string} text
- * @returns {{printMode: string, headerText: string, footerText: string, paperWidthMm: number}}
+ * @returns {{printMode: string, headerText: string, footerText: string, paperWidthMm: number, templateId: 'classic-80' | 'classic-58'}}
  */
 function fieldsFromJson(text) {
   const data = parsed(text);
+  const templateId = templateFrom(data);
   return {
     printMode: modeFrom(data),
     headerText: textField(data.headerText),
     footerText: textField(data.footerText),
-    paperWidthMm: widthFrom(data)
+    templateId,
+    paperWidthMm: templateId === 'classic-58' ? 58 : 80
   };
+}
+
+/**
+ * @param {StoredSellPreferences} data
+ * @returns {'classic-80' | 'classic-58'}
+ */
+function templateFrom(data) {
+  if (data.templateId === 'classic-58' || data.templateId === 'classic-80') {
+    return data.templateId;
+  }
+  return widthFrom(data) === 58 ? 'classic-58' : 'classic-80';
 }
 
 /**
@@ -101,6 +115,7 @@ function fieldsFromJson(text) {
  * @property {string} [headerText]
  * @property {string} [footerText]
  * @property {number} [paperWidthMm]
+ * @property {string} [templateId]
  */
 
 /**

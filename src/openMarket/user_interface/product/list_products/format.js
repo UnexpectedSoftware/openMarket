@@ -1,5 +1,6 @@
+import {formatKgMilli} from '../../../domain/money/formatEs';
+
 const whole = new Intl.NumberFormat('es-ES', {maximumFractionDigits: 0});
-const kilos = new Intl.NumberFormat('es-ES', {maximumFractionDigits: 3});
 
 /**
  * Integer percent, or an em dash when the price cannot produce one.
@@ -27,6 +28,5 @@ export function formatStock(stock, weighted) {
   if (!weighted) {
     return whole.format(value);
   }
-  const text = Number.isInteger(value) ? whole.format(value) : kilos.format(value);
-  return text + ' kg';
+  return formatKgMilli(Math.round(value * 1000)) + ' kg';
 }

@@ -141,6 +141,7 @@ Amounts are integer cents. A missing value is null. Adding a field stays on vers
 | `name` | string | Line name | 1 |
 | `unitPriceCents` | number | VAT-included unit price in cents | 1 |
 | `quantityMilli` | number | Quantity in milli-units. `1000` is one unit | 1 |
+| `weighted` | boolean | The line was sold by weight. `1000` milli is one kilogram | 1 |
 | `amountCents` | number | VAT-included line amount in cents | 1 |
 | `vat` | object | Line rate | 1 |
 | `kind` | string | `S1`, `E`, or `N` | 1 |

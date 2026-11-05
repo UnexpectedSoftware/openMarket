@@ -15,30 +15,30 @@ describe('TicketForm', () => {
       />
     );
     const mode = view.node.querySelector('#ticket-print-mode');
-    const width = view.node.querySelector('#ticket-paper-width');
+    const width = view.node.querySelector('#ticket-template');
     const header = view.node.querySelector('#ticket-header');
     const footer = view.node.querySelector('#ticket-footer');
     expect(view.node.querySelector('label[for="ticket-print-mode"]').textContent).to.equal('Al imprimir');
-    expect(view.node.querySelector('label[for="ticket-paper-width"]').textContent).to.equal('Ancho del papel');
+    expect(view.node.querySelector('label[for="ticket-template"]').textContent).to.equal('Plantilla');
     expect(view.node.querySelector('label[for="ticket-header"]').textContent).to.equal('Cabecera');
     expect(view.node.querySelector('label[for="ticket-footer"]').textContent).to.equal('Pie');
     expect(mode.value).to.equal('ask');
-    expect(width.value).to.equal('80');
+    expect(width.value).to.equal('classic-80');
     expect(header.getAttribute('aria-describedby')).to.equal('ticket-header-error');
     expect(view.node.textContent).to.contain('Siempre');
     expect(view.node.textContent).to.contain('Preguntar');
     expect(view.node.textContent).to.contain('Nunca');
-    expect(view.node.textContent).to.contain('58 mm');
-    expect(view.node.textContent).to.contain('80 mm');
+    expect(view.node.textContent).to.contain('58 mm clásica');
+    expect(view.node.textContent).to.contain('80 mm clásica');
     mode.value = 'never';
     ReactTestUtils.Simulate.change(mode);
-    width.value = '58';
+    width.value = 'classic-58';
     ReactTestUtils.Simulate.change(width);
     footer.value = 'Pie';
     ReactTestUtils.Simulate.change(footer);
     expect(changes).to.deep.equal([
       ['printMode', 'never'],
-      ['paperWidthMm', 58],
+      ['templateId', 'classic-58'],
       ['footerText', 'Pie']
     ]);
     view.unmount();

@@ -59,7 +59,7 @@ Two panes inside the Phase 1 shell, route `/list_orders` and `/list_orders/:id`:
 - itest for `SqliteOrderRepository` newest-first (#70 acceptance).
 - Unit: `rangeFor` (day boundaries in Europe/Madrid, month start, DST day), `makeOrdersListEpic` (switchMap cancels the previous range, failure → `ORDERS_FAILED`), reducer.
 - Component: `OrderList` renders newest first, empty state, selected row.
-- e2e `e2e/orders.spec.js`: make two sales, open Pedidos → newest first and summary shows 2 tickets; click "Ayer" → list refetches without any Filter click and shows the empty state (#83 acceptance). Update the old date-picker test. Screenshots of the list in the four themes into `docs/design/after/`.
+- e2e `e2e/orders.spec.js`: make two sales, open Pedidos → newest first and summary shows 2 tickets; click "Ayer" → list refetches without any Filter click and shows the empty state (#83 acceptance). Update the old date-picker test. `e2e/screenshots.spec.js` writes the list in the four themes into `docs/design/after/`.
 
 **5a closes:** #70, #83. Refs #111, #88.
 
@@ -74,7 +74,7 @@ Two panes inside the Phase 1 shell, route `/list_orders` and `/list_orders/:id`:
 **5b tests**
 - itest for the detail find: mixed PRODUCT/FREE/weighted order with payment → lines, VAT rows and total in cents match the invoice; cancelled invoice flag; unknown id → null; a read model, not an `Order`.
 - Unit: detail reducer/epic, payment line formatting from cents.
-- e2e: open an order → heading contains the invoice number and the date, Reimprimir visible without scrolling at 1366×768, then F2 → Vender shows an empty cart and the full product grid (#82 acceptance). Screenshots of the detail in the four themes.
+- e2e: open an order → heading contains the invoice number and the date, Reimprimir visible without scrolling at 1366×768, then F2 → Vender shows an empty cart and the full product grid (#82 acceptance). `e2e/screenshots.spec.js` writes the detail in the four themes into `docs/design/after/`.
 
 **5b closes:** #82, #111 (all three covered). Refs #105.
 

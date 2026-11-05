@@ -65,5 +65,7 @@ describe('sell view', () => {
     expect(empty.categories).to.deep.equal([]);
     expect(empty.categoryId).to.equal(null);
     expect(empty.search).to.equal('');
+    expect(empty.printMode).to.equal('ask');
+    expect(sellView({sellPreferences: {printMode: 'never'}}, null).printMode).to.equal('never');
   });
 });

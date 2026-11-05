@@ -5,9 +5,82 @@ import VatBreakdown from '../../../domain/tax/VatBreakdown';
 import {validateLine} from '../../../domain/order/lineValidity';
 
 /**
+ * @param {object} current
+ * @returns {object}
+ */
+export function openCheckout(current) {
+  return {...current, paymentOpen: true, payMethod: 'cash', tenderedCents: 0, mixedFirst: 'cash', mixedSecond: 'card'};
+}
+
+/**
+ * @param {object} current
+ * @returns {object}
+ */
+export function closeCheckout(current) {
+  return {...current, paymentOpen: false, tenderedCents: 0};
+}
+
+/**
+ * @param {object} current
+ * @param {string} method
+ * @returns {object}
+ */
+export function setPayMethod(current, method) {
+  const allowed = method === 'card' || method === 'bizum' || method === 'mixed';
+  return {
+    ...current,
+    payMethod: allowed ? method : 'cash',
+    mixedFirst: current.mixedFirst || 'cash',
+    mixedSecond: current.mixedSecond || 'card'
+  };
+}
+
+/**
+ * @param {object} current
+ * @param {'first'|'second'} slot
+ * @param {string} method
+ * @returns {object}
+ */
+export function setMixedPart(current, slot, method) {
+  const part = method === 'card' || method === 'bizum' ? method : 'cash';
+  const first = slot === 'second' ? (current.mixedFirst || 'cash') : part;
+  let second = slot === 'second' ? part : (current.mixedSecond || 'card');
+  if (second === first) {
+    second = first === 'cash' ? 'card' : 'cash';
+  }
+  return {...current, mixedFirst: first, mixedSecond: second};
+}
+
+/**
+ * @param {object} current
+ * @param {number} cents
+ * @returns {object}
+ */
+export function setTenderCents(current, cents) {
+  const value = Number.isInteger(cents) && cents > 0 ? cents : 0;
+  return {...current, tenderedCents: value};
+}
+
+/**
+ * Till print choice for the open sale. A missing read asks.
+ * @param {{printMode?: string, headerText?: string, footerText?: string, paperWidthMm?: number} | null | undefined} view
+ * @returns {{printMode: 'always' | 'ask' | 'never', headerText: string, footerText: string, paperWidthMm: 58 | 80}}
+ */
+export function sellPreferencesState(view) {
+  const mode = view && view.printMode;
+  return {
+    printMode: mode === 'always' || mode === 'never' ? mode : 'ask',
+    headerText: view && typeof view.headerText === 'string' ? view.headerText : '',
+    footerText: view && typeof view.footerText === 'string' ? view.footerText : '',
+    templateId: view && (view.templateId === 'classic-58' || view.paperWidthMm === 58) ? 'classic-58' : 'classic-80',
+    paperWidthMm: view && (view.templateId === 'classic-58' || view.paperWidthMm === 58) ? 58 : 80
+  };
+}
+
+/**
  * Cart draft. Lines hold the same value objects Order uses.
  * The total is cents. Formatting happens at render.
- * @returns {{order: {lines: object[], total: Money}, lowStockBarcodes: string[], lastOrder: object | null, tiles: object[], tilesStatus: string, categories: object[], categoryId: string | null}}
+ * @returns {{order: {lines: object[], total: Money}, lowStockBarcodes: string[], lastOrder: object | null, tiles: object[], tilesStatus: string, categories: object[], categoryId: string | null, sellPreferences: {printMode: string, headerText: string, footerText: string, paperWidthMm: number}}}
  */
 export const state = () => ({
   order: {
@@ -20,6 +93,14 @@ export const state = () => ({
   tilesStatus: 'idle',
   categories: [],
   categoryId: null,
+  sellPreferences: sellPreferencesState(null),
+  nextInvoiceNumber: '',
+  paymentOpen: false,
+  payMethod: 'cash',
+  tenderedCents: 0,
+  mixedFirst: 'cash',
+  mixedSecond: 'card',
+  reprintOpen: false,
   saving: false,
   previewHtml: '',
   reprintHtml: ''
