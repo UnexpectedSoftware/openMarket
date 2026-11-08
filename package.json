@@ -1,7 +1,7 @@
 {
   "name": "OpenMarket",
   "productName": "OpenMarket",
-  "version": "1.28.0",
+  "version": "1.28.1",
   "description": "Desktop application to administrate a generic market with stocks, products, categories etc...",
   "main": "dist/main.js",
   "scripts": {

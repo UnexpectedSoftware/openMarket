@@ -1,6 +1,7 @@
 import React from 'react';
 import Select from '../components/Select';
 import TextField from '../components/TextField';
+import {ticketTemplateId} from './model';
 
 const PRINT_MODES = [
   {value: 'always', label: 'Siempre'},
@@ -19,9 +20,7 @@ const TEMPLATES = [
 export default function TicketForm(props) {
   const values = props.values || {};
   const fieldErrors = props.fieldErrors || {};
-  const template = values.templateId === 'classic-58' || values.paperWidthMm === 58
-    ? 'classic-58'
-    : 'classic-80';
+  const template = ticketTemplateId(values);
   return (
     <div className="settings-fields">
       <Select

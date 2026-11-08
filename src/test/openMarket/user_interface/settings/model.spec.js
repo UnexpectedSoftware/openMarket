@@ -16,6 +16,7 @@ import {
   pageOpened,
   printerFieldErrors,
   saveFailed,
+  savePlan,
   saveStarted,
   saved,
   shopLoaded,
@@ -219,6 +220,31 @@ describe('settings model', () => {
     expect(next.saved.printMode).to.equal('never');
     expect(next.saved.paperWidthMm).to.equal(58);
     expect(next.saved.legalName).to.equal('Guardado');
+  });
+
+  it('switches the ticket template off 58 mm and keeps the width with it', () => {
+    const ticket = new SellPreferencesView({
+      printMode: 'ask',
+      headerText: '',
+      footerText: '',
+      paperWidthMm: 58
+    });
+    const current = shopLoaded(state(), view(), {ticket});
+    const edited = draftChanged(current, {templateId: 'classic-80'});
+    expect(edited.draft.templateId).to.equal('classic-80');
+    expect(edited.draft.paperWidthMm).to.equal(80);
+    const plan = savePlan(edited);
+    expect(plan.ticket).to.equal(true);
+    expect(plan.ticketCommand.templateId).to.equal('classic-80');
+    expect(plan.ticketCommand.paperWidthMm).to.equal(80);
+    const both = draftChanged(current, {templateId: 'classic-80', paperWidthMm: 58});
+    expect(both.draft.templateId).to.equal('classic-80');
+    expect(both.draft.paperWidthMm).to.equal(80);
+    const narrow = draftChanged(loaded(), {paperWidthMm: 58});
+    expect(narrow.draft.templateId).to.equal('classic-58');
+    expect(narrow.draft.paperWidthMm).to.equal(58);
+    expect(savePlan(narrow).ticketCommand.templateId).to.equal('classic-58');
+    expect(savePlan(narrow).ticketCommand.paperWidthMm).to.equal(58);
   });
 
   it('does not start a save when the header or footer is over 80 characters', () => {
