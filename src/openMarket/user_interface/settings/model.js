@@ -136,7 +136,25 @@ export function draftChanged(current, patch) {
   if (!touched) {
     return current;
   }
+  alignTicket(draft, change);
   return {...current, draft, fieldErrors, saveError: null, printerError: null};
+}
+
+/**
+ * A template edit sets the width. A width-only edit sets the template.
+ * When both arrive together, the template id wins.
+ * @param {object} draft
+ * @param {object} change
+ */
+function alignTicket(draft, change) {
+  const templateTouched = Object.prototype.hasOwnProperty.call(change, 'templateId');
+  const widthTouched = Object.prototype.hasOwnProperty.call(change, 'paperWidthMm');
+  if (!templateTouched && !widthTouched) {
+    return;
+  }
+  const aligned = ticketFields(templateTouched ? draft : {paperWidthMm: draft.paperWidthMm});
+  draft.templateId = aligned.templateId;
+  draft.paperWidthMm = aligned.paperWidthMm;
 }
 
 /**
@@ -455,14 +473,25 @@ function shopFields(profile) {
 }
 
 /**
+ * A known template selects the paper. Width is only the fallback when the id is missing.
+ * @param {{templateId?: string, paperWidthMm?: number}} [source]
+ * @returns {'classic-80' | 'classic-58'}
+ */
+export function ticketTemplateId(source) {
+  const value = source || {};
+  if (value.templateId === 'classic-58' || value.templateId === 'classic-80') {
+    return value.templateId;
+  }
+  return Number(value.paperWidthMm) === 58 ? 'classic-58' : 'classic-80';
+}
+
+/**
  * @param {object} [source]
- * @returns {{printMode: string, headerText: string, footerText: string, paperWidthMm: number}}
+ * @returns {{printMode: string, headerText: string, footerText: string, templateId: string, paperWidthMm: number}}
  */
 function ticketFields(source) {
   const value = source || {};
-  const templateId = value.templateId === 'classic-58' || Number(value.paperWidthMm) === 58
-    ? 'classic-58'
-    : 'classic-80';
+  const templateId = ticketTemplateId(value);
   return {
     printMode: modeOf(value.printMode),
     headerText: textOrEmpty(value.headerText),

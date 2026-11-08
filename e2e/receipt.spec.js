@@ -142,6 +142,9 @@ test('saves print mode, header, and paper width', async () => {
     await session.window.getByRole('combobox', {name: 'Al imprimir'}).selectOption({label: 'Siempre'});
     await session.window.getByRole('textbox', {name: 'Cabecera'}).fill('Gracias');
     await session.window.getByRole('combobox', {name: 'Plantilla'}).selectOption({label: '58 mm clásica'});
+    await session.window.getByRole('combobox', {name: 'Plantilla'}).selectOption({label: '80 mm clásica'});
+    await expect(session.window.getByRole('combobox', {name: 'Plantilla'})).toHaveValue('classic-80');
+    await session.window.getByRole('combobox', {name: 'Plantilla'}).selectOption({label: '58 mm clásica'});
     await session.window.getByRole('button', {name: 'Guardar', exact: true}).click();
     await expect(session.window.getByText('Ajustes guardados').first()).toBeVisible();
     await expect(session.window.getByText('Ajustes guardados')).toHaveCount(0);

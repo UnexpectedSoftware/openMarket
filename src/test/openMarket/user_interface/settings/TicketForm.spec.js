@@ -43,4 +43,15 @@ describe('TicketForm', () => {
     ]);
     view.unmount();
   });
+
+  it('shows the chosen template when the stored width is still 58 mm', () => {
+    const view = mount(
+      <TicketForm
+        values={{templateId: 'classic-80', paperWidthMm: 58, printMode: 'ask'}}
+        onChange={() => {}}
+      />
+    );
+    expect(view.node.querySelector('#ticket-template').value).to.equal('classic-80');
+    view.unmount();
+  });
 });
