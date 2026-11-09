@@ -250,8 +250,9 @@ async function shootLowStock(window) {
   await shotThemes(window, 'low-stock-sell');
 
   await window.getByRole('link', {name: /^Informes\b/}).click();
-  await expect(window.getByRole('heading', {name: 'Most sold'})).toBeVisible();
-  await expect(window.getByRole('link', {name: 'Stock bajo 1'})).toBeVisible();
+  await expect(window.getByRole('heading', {name: 'Resumen'})).toBeVisible();
+  await expect(window.getByRole('heading', {name: 'Stock bajo'})).toBeVisible();
+  await expect(window.locator('.report-stock-row', {hasText: 'Pan'})).toBeVisible();
   await shotThemes(window, 'low-stock-informes');
 }
 

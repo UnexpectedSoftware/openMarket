@@ -171,6 +171,24 @@ describe('architecture', () => {
     expect(orphans, 'Add the port in domain/<context>/<Name>Repository.js').to.deep.equal([]);
   });
 
+  it('keeps a use case from depending on another use case', () => {
+    const bad = [];
+    files.filter(file => rel(file).startsWith('application/service/')).forEach(file => {
+      const from = rel(file);
+      const fromDir = path.dirname(from);
+      importsOf(file).forEach(spec => {
+        const to = resolveTarget(file, spec);
+        if (!to || !to.startsWith('application/service/')) {
+          return;
+        }
+        if (path.dirname(to) !== fromDir) {
+          bad.push(`${from} -> ${to}`);
+        }
+      });
+    });
+    expect(bad, 'A use case depends on ports, not on another use case').to.deep.equal([]);
+  });
+
   it('keeps Sqlite*QueryService private to infrastructure', () => {
     const bad = [];
     files.filter(file => !rel(file).startsWith('infrastructure/')).forEach(file => {

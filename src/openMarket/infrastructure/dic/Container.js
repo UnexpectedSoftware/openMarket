@@ -27,6 +27,7 @@ import CancelInvoice from "../../application/service/invoice/CancelInvoice";
 import PeekNextInvoiceNumber from "../../application/service/invoice/PeekNextInvoiceNumber";
 import ListAllOrders from "../../application/service/order/ListAllOrders";
 import OrdersStatistics from "../../application/service/order/OrdersStatistics";
+import LoadReportSummary from "../../application/service/report/LoadReportSummary";
 import OrderFactoryImpl from "../order/OrderFactoryImpl";
 import ProductFactoryImpl from "../product/ProductFactoryImpl";
 import ProductFilterFactoryImpl from "../product/ProductFilterFactoryImpl";
@@ -584,6 +585,14 @@ class Container {
 
   _orderStatisticsUseCase() {
     return new OrdersStatistics({repository: this.getInstance({key: 'orderRepository'})});
+  }
+
+  _loadReportSummary() {
+    return new LoadReportSummary({
+      orderRepository: this.getInstance({key: 'orderRepository'}),
+      productSaleStatisticsRepository: this.getInstance({key: 'productSaleStatisticsRepository'}),
+      productRepository: this.getInstance({key: 'productRepository'})
+    });
   }
 
   _productImageSource() {

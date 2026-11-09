@@ -2,7 +2,7 @@ import React from 'react';
 import {expect} from 'chai';
 import {renderToStaticMarkup} from 'react-dom/server';
 import PropTypes from 'prop-types';
-import NavRail, {NAV_ITEMS, handleNavShortcut, lowStockCountFor, routeForShortcut} from '../../../../openMarket/user_interface/containers/NavRail';
+import NavRail, {NAV_ITEMS, handleNavShortcut, routeForShortcut} from '../../../../openMarket/user_interface/containers/NavRail';
 
 function routerFor(pathname) {
   return {
@@ -87,15 +87,14 @@ describe('NavRail', () => {
       '#/list_orders',
       '#/list_products',
       '#/categories',
-      '#/',
-      '#/takings',
+      '#/informes',
       '#/plugins',
       '#/settings'
     ]);
     NAV_ITEMS.forEach(item => {
       expect(html).to.contain(item.label);
     });
-    expect(html).to.contain('Takings');
+    expect(html).to.not.contain('Takings');
     expect(html).to.contain('aria-label="Principal"');
     expect(html.indexOf('nav-rail-mark')).to.be.below(html.indexOf('href="#/create_order"'));
     expect(html).to.contain('aria-label="OpenMarket"');
@@ -113,32 +112,22 @@ describe('NavRail', () => {
     expect(html).to.not.contain('>OM<');
   });
 
-  it('shows the low-stock count on Productos and Informes', () => {
-    expect(lowStockCountFor({to: '/list_products'}, 4)).to.equal(4);
-    expect(lowStockCountFor({to: '/'}, 4)).to.equal(4);
-    expect(lowStockCountFor({to: '/list_products'}, 2.9)).to.equal(2);
-    expect(lowStockCountFor({to: '/takings'}, 4)).to.equal(0);
-    expect(lowStockCountFor({to: '/create_order'}, 4)).to.equal(0);
-    expect(lowStockCountFor({to: '/list_products'}, 0)).to.equal(0);
-    expect(lowStockCountFor({to: '/list_products'}, null)).to.equal(0);
-    expect(lowStockCountFor(null, 4)).to.equal(0);
-
+  it('does not show a low-stock count on the rail', () => {
     const html = renderToStaticMarkup(
       <RouterHarness router={routerFor('/create_order')}>
         <NavRail lowStockCount={4} />
       </RouterHarness>
     );
-    expect(html).to.contain('aria-label="Productos, 4 con stock bajo"');
-    expect(html).to.contain('aria-label="Informes, 4 con stock bajo"');
-    expect(html.match(/om-badge--warning/g)).to.have.length(2);
-    expect(html).to.not.contain('aria-label="Vender, 4 con stock bajo"');
-    expect(html).to.not.contain('aria-label="Takings, 4 con stock bajo"');
+    expect(html).to.not.contain('nav-rail-count');
+    expect(html).to.not.contain('con stock bajo');
+    expect(html).to.not.match(/om-badge/);
   });
 
   it('marks the active item for the current location', () => {
     expect(currentHref(renderAt('/list_orders'))).to.equal('#/list_orders');
-    expect(currentHref(renderAt('/'))).to.equal('#/');
-    expect(currentHref(renderAt('/takings'))).to.equal('#/takings');
+    expect(currentHref(renderAt('/informes'))).to.equal('#/informes');
+    expect(anchors(renderAt('/')).filter(anchor => anchor.current)).to.have.length(0);
+    expect(anchors(renderAt('/takings')).filter(anchor => anchor.current)).to.have.length(0);
     expect(currentHref(renderAt('/settings'))).to.equal('#/settings');
   });
 

@@ -33,8 +33,7 @@ test('sells down to the minimum and updates the tile badge and the nav count', a
     await confirmPayment(window);
     await expect(window.getByText('Quedan 1 de Milk (mínimo 1).')).toBeVisible();
     await expect(window.locator('.sell-tile', {hasText: 'Milk'}).getByText('Quedan 1', {exact: true})).toBeVisible();
-    await expect(window.getByRole('link', {name: /^Productos\b/}).locator('.om-badge')).toHaveText('1');
-    await expect(window.getByRole('link', {name: /^Informes\b/}).locator('.om-badge')).toHaveText('1');
+    await expect(window.locator('.nav-rail-count')).toHaveCount(0);
     await dismissTicket(window);
     const stockNotice = window.locator('.notification').filter({hasText: 'Stock bajo'});
     if (await stockNotice.count()) {
@@ -46,8 +45,9 @@ test('sells down to the minimum and updates the tile badge and the nav count', a
     await expect(window.locator('.sell-line', {hasText: 'Milk'}).getByText('Quedan 1', {exact: true})).toBeVisible();
 
     await window.getByRole('link', {name: /^Informes\b/}).click();
-    await expect(window.getByRole('heading', {name: 'Most sold'})).toBeVisible();
-    await expect(window.getByRole('link', {name: 'Stock bajo 1'})).toBeVisible();
+    await expect(window.getByRole('heading', {name: 'Resumen'})).toBeVisible();
+    await expect(window.getByRole('heading', {name: 'Stock bajo'})).toBeVisible();
+    await expect(window.locator('.report-stock-row', {hasText: 'Milk'})).toBeVisible();
   } finally {
     await closeApp(app, userData);
   }

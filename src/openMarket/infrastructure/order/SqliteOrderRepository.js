@@ -4,6 +4,7 @@ import OrderView from "../../domain/order/OrderView";
 import OrderDetail from "../../domain/order/OrderDetail";
 import OrdersQuery from "../../domain/order/OrdersQuery";
 import OrderRangeSummary from "../../domain/order/OrderRangeSummary";
+import OrderTakings from "../../domain/order/OrderTakings";
 import UnexpectedFailure from "../../domain/error/UnexpectedFailure";
 import {record, rethrow} from "../logging/ErrorLog";
 import { toStoredBound } from "../service/sqliteDates";
@@ -63,6 +64,14 @@ const TOTAL_AMOUNT_SQL = 'SELECT total, total_cents FROM "order" WHERE created_a
 
 const TOTAL_AMOUNT_BY_DAYS_SQL = 'SELECT total, total_cents, ' + DISPLAY_DAY + ' as createdAt FROM "order" ' +
   'WHERE created_at BETWEEN ? AND ? ORDER BY created_at ASC';
+
+const TAKINGS_SQL = 'SELECT total, total_cents, payment_method, payment_parts, ' +
+  "strftime('%Y-%m-%d', created_at) AS soldOn FROM \"order\" " +
+  'WHERE created_at BETWEEN ? AND ? ORDER BY created_at ASC';
+
+const TAKINGS_LINES_SQL = 'SELECT l.quantity_milli AS quantityMilli, l.quantity AS quantity ' +
+  'FROM line l INNER JOIN "order" o ON o.id = l.order_id ' +
+  'WHERE o.created_at BETWEEN ? AND ?';
 
 const INSERT_ORDER_SQL = 'INSERT INTO "order" ' +
   '(id, created_at, total, total_cents, payment_method, tendered_cents, change_cents, payment_parts) ' +
@@ -157,6 +166,22 @@ export default class SqliteOrderRepository {
         toStoredBound(endDate)
       );
       return Rx.Observable.of(this._queryService.totalsByDay(rows));
+    });
+  }
+
+  takings({from, to}) {
+    return Rx.Observable.defer(() => {
+      try {
+        const bounds = storedBounds(from, to);
+        const orders = this._database.prepare(TAKINGS_SQL).all(bounds.from, bounds.to).map(takingOrder);
+        const lines = this._database.prepare(TAKINGS_LINES_SQL).all(bounds.from, bounds.to);
+        return Rx.Observable.of(OrderTakings.fromRows({orders, lines}));
+      } catch (error) {
+        rethrow(error, {
+          message: 'Could not read the takings',
+          context: {from, to, operation: 'takings'}
+        });
+      }
     });
   }
 
@@ -496,6 +521,19 @@ function partsOf(raw) {
   } catch (error) {
     return null;
   }
+}
+
+/**
+ * @param {{soldOn?: string, total?: number | null, total_cents?: number | null, payment_method?: string | null, payment_parts?: string | null}} row
+ * @returns {{soldOn: string, totalCents: number, method: 'cash'|'card'|'bizum'|'mixed'|null, parts: Array<{method: string, amountCents: number}> | null}}
+ */
+function takingOrder(row) {
+  return {
+    soldOn: row.soldOn == null ? '' : String(row.soldOn),
+    totalCents: moneyFromColumns(row.total_cents, row.total).cents,
+    method: paymentMethod(row.payment_method),
+    parts: partsOf(row.payment_parts)
+  };
 }
 
 /**
