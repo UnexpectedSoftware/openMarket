@@ -10,9 +10,8 @@ export const NAV_ITEMS = [
   {label: 'Categorías', to: '/categories', icon: 'fa-tags'},
   {
     label: 'Informes',
-    to: '/',
-    icon: 'fa-bar-chart',
-    indexOnly: true
+    to: '/informes',
+    icon: 'fa-bar-chart'
   },
   {label: 'Plugins', to: '/plugins', icon: 'fa-plug'},
   {label: 'Ajustes', to: '/settings', icon: 'fa-cog', end: true}

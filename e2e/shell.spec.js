@@ -20,16 +20,12 @@ test('navigates from the rail with a click or a shortcut', async () => {
   try {
     await window.setViewportSize({width: 1366, height: 768});
     await expect(window.getByRole('link', {name: 'Saltar al contenido'})).toHaveCount(0);
-    await expect.poll(async () => window.evaluate(() => {
-      const active = document.activeElement;
-      if (!active || active === document.body || active === document.documentElement) {
-        return 'none';
-      }
-      return getComputedStyle(active).outlineStyle;
-    })).toBe('none');
     await expect(window.locator('.header')).toHaveCount(0);
     await expect(window.locator('.app-version')).toHaveCount(0);
     await expect(window.getByRole('heading', {name: 'OpenMarket', exact: true})).toHaveCount(0);
+    await expect(window.getByRole('heading', {name: 'Vender'})).toBeVisible();
+    await expect(window.getByRole('link', {name: 'Vender', exact: true})).toHaveAttribute('aria-current', 'page');
+    await expect(window.getByLabel('Buscar o escanear')).toBeFocused();
     const mark = window.locator('.nav-rail-mark');
     await expect(mark).toHaveText('OM');
     await expect(mark).toHaveAttribute('aria-label', 'OpenMarket');
@@ -59,14 +55,13 @@ test('navigates from the rail with a click or a shortcut', async () => {
     for (const screen of SCREENS) {
       await window.getByRole('link', {name: screen.link, exact: true}).click();
       await expect(window.getByRole('heading', {name: screen.heading})).toBeVisible();
-      if (screen.link === 'Vender') {
-        await expect(window.getByLabel('Buscar o escanear')).toBeFocused();
-      }
       await expect(window.getByRole('link', {name: screen.link, exact: true})).toHaveAttribute('aria-current', 'page');
       await window.screenshot({path: path.join('test-results', `shell-${screen.shot}.png`)});
     }
 
     await expect(window.getByRole('link', {name: 'Takings', exact: true})).toHaveCount(0);
+    await window.getByRole('link', {name: 'Vender', exact: true}).click();
+    await expect(window.getByLabel('Buscar o escanear')).toBeFocused();
 
     await window.getByRole('link', {name: 'Ajustes', exact: true}).click();
     await expect(window.getByRole('heading', {name: 'Ajustes'})).toBeVisible();

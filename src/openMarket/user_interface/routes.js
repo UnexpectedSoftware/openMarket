@@ -1,5 +1,5 @@
 import React from 'react';
-import { Route, IndexRoute, Redirect } from 'react-router';
+import { Route, IndexRedirect, Redirect } from 'react-router';
 import App from './containers/App';
 import HomePage from './home/ReduxConnector';
 import ReportPage from './report/ReduxConnector';
@@ -19,7 +19,8 @@ const showGallery = isGalleryEnabled({
 
 function childRoutes() {
   const routes = [
-    <IndexRoute key="home" component={ReportPage} />,
+    <IndexRedirect key="home" to="/create_order" />,
+    <Route key="informes" path="/informes" component={ReportPage} />,
     <Route key="takings" path="/takings" component={HomePage} />,
     <Route key="create-product" path="/create_product" component={ProductListing} />,
     <Route key="list-products" path="/list_products" component={ProductListing} />,

@@ -113,6 +113,21 @@
   min-width: 0;
 }
 
+.report-chart-card .om-card {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.report-chart-card .om-card-header {
+  align-items: flex-start;
+}
+
+.report-chart-card .om-card-actions {
+  margin-left: auto;
+  justify-content: flex-end;
+  max-width: 100%;
+}
+
 .report-side {
   flex: 1;
   min-width: 0;
@@ -121,45 +136,56 @@
   gap: var(--om-space-4);
 }
 
-.report-chart-head,
-.report-legend {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--om-space-2) var(--om-space-3);
-}
-
 .report-section-title {
   margin: 0 0 var(--om-space-3);
   font-size: var(--om-font-size-md);
 }
 
-.report-chart-head .report-section-title {
-  margin: 0;
-}
-
 .report-legend {
+  display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: center;
+  gap: var(--om-space-2) var(--om-space-3);
   margin: 0;
   padding: 0;
   list-style: none;
   color: var(--om-color-text-muted);
 }
 
+.report-legend li {
+  white-space: nowrap;
+}
+
+.report-chart-scroll {
+  min-width: 0;
+  overflow-x: auto;
+}
+
 .report-columns {
   display: flex;
+  width: max-content;
+  min-width: 100%;
   gap: var(--om-space-2);
   align-items: flex-end;
 }
 
+.report-columns.is-compact {
+  gap: var(--om-space-1);
+}
+
 .report-column {
-  flex: 1;
-  min-width: 0;
+  flex: 1 0 calc(var(--om-space-8) * 2);
+  min-width: calc(var(--om-space-8) * 2);
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: var(--om-space-1);
+}
+
+.report-columns.is-compact .report-column {
+  flex: 0 0 var(--om-space-6);
+  min-width: var(--om-space-6);
 }
 
 .report-plot {
@@ -176,9 +202,18 @@
   align-items: center;
 }
 
+.report-column-total,
+.report-column-day {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+}
+
 .report-segment {
-  width: calc(var(--om-space-8) + var(--om-space-2));
-  max-width: 100%;
+  width: 100%;
+  max-width: calc(var(--om-space-8) + var(--om-space-2));
 }
 
 .report-segment-cash {
@@ -222,6 +257,9 @@
 }
 
 .report-swatch-previous {
+  width: var(--om-space-4);
+  height: 0;
+  background: transparent;
   border-top: var(--om-button-border-width) dashed var(--om-color-border-strong);
 }
 

@@ -4,7 +4,9 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import EmptyState from '../components/EmptyState';
 import {formatMoney} from '../i18n/money';
-import {formatChange, formatDay, formatStock, formatUnits} from './format';
+import {formatChange, formatDay, formatDayNumber, formatStock, formatUnits} from './format';
+
+const COMPACT_DAYS = 12;
 
 /**
  * @param {{summary: object}} props
@@ -21,11 +23,7 @@ export default function SummaryView(props) {
       </div>
       <div className="report-split">
         <div className="report-chart-card">
-          <Card>
-            <div className="report-chart-head">
-              <h2 className="report-section-title">Ventas por día</h2>
-              <Legend />
-            </div>
+          <Card title="Ventas por día" actions={<Legend />}>
             <DailyChart days={summary.days} />
           </Card>
         </div>
@@ -92,24 +90,30 @@ function DailyChart(props) {
   if (!days.length || max === 0) {
     return <EmptyState title="Sin ventas en este periodo" />;
   }
+  const compact = days.length > COMPACT_DAYS;
+  const className = compact ? 'report-columns is-compact' : 'report-columns';
   return (
-    <div className="report-columns">
-      {days.map(day => (
-        <DayColumn key={day.date} day={day} max={max} />
-      ))}
+    <div className="report-chart-scroll">
+      <div className={className}>
+        {days.map(day => (
+          <DayColumn key={day.date} day={day} max={max} compact={compact} />
+        ))}
+      </div>
     </div>
   );
 }
 
 /**
- * @param {{day: {date: string, cashCents: number, cardCents: number, bizumCents: number, previousTotalCents: number}, max: number}} props
+ * @param {{day: {date: string, cashCents: number, cardCents: number, bizumCents: number, previousTotalCents: number}, max: number, compact: boolean}} props
  */
 function DayColumn(props) {
   const day = props.day;
   const total = dayTotal(day);
+  const amount = total ? formatMoney(Money.ofCents(total)) : '';
+  const label = props.compact ? formatDayNumber(day.date) : formatDay(day.date);
   return (
-    <div className="report-column">
-      <p className="report-column-total">{total ? formatMoney(Money.ofCents(total)) : ' '}</p>
+    <div className="report-column" title={amount ? label + ' ' + amount : label}>
+      {props.compact ? null : <p className="report-column-total">{amount || ' '}</p>}
       <div className="report-plot">
         <div className="report-stack">
           <Segment className="report-segment-bizum" cents={day.bizumCents} max={props.max} />
@@ -118,7 +122,7 @@ function DayColumn(props) {
         </div>
         <div className="report-previous" style={{bottom: percent(day.previousTotalCents, props.max)}} />
       </div>
-      <p className="report-column-day">{formatDay(day.date)}</p>
+      <p className="report-column-day">{label}</p>
     </div>
   );
 }

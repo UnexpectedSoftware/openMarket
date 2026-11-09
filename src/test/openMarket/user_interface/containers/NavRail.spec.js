@@ -87,7 +87,7 @@ describe('NavRail', () => {
       '#/list_orders',
       '#/list_products',
       '#/categories',
-      '#/',
+      '#/informes',
       '#/plugins',
       '#/settings'
     ]);
@@ -125,7 +125,8 @@ describe('NavRail', () => {
 
   it('marks the active item for the current location', () => {
     expect(currentHref(renderAt('/list_orders'))).to.equal('#/list_orders');
-    expect(currentHref(renderAt('/'))).to.equal('#/');
+    expect(currentHref(renderAt('/informes'))).to.equal('#/informes');
+    expect(anchors(renderAt('/')).filter(anchor => anchor.current)).to.have.length(0);
     expect(anchors(renderAt('/takings')).filter(anchor => anchor.current)).to.have.length(0);
     expect(currentHref(renderAt('/settings'))).to.equal('#/settings');
   });
