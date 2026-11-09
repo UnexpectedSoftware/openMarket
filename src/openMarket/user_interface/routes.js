@@ -2,7 +2,7 @@ import React from 'react';
 import { Route, IndexRoute, Redirect } from 'react-router';
 import App from './containers/App';
 import HomePage from './home/ReduxConnector';
-import MostSoldPage from './home/MostSoldReduxConnector';
+import ReportPage from './report/ReduxConnector';
 import ProductListing from './product/list_products/ReduxConnector';
 import CategoriesPage from './category/ReduxConnector';
 import OrderPage from './order/new_order/ReduxConnector';
@@ -19,7 +19,7 @@ const showGallery = isGalleryEnabled({
 
 function childRoutes() {
   const routes = [
-    <IndexRoute key="home" component={MostSoldPage} />,
+    <IndexRoute key="home" component={ReportPage} />,
     <Route key="takings" path="/takings" component={HomePage} />,
     <Route key="create-product" path="/create_product" component={ProductListing} />,
     <Route key="list-products" path="/list_products" component={ProductListing} />,

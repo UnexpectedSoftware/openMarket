@@ -4,6 +4,7 @@
 /** @typedef {import('./OrderDetail').default} OrderDetail */
 /** @typedef {import('./OrdersQuery').default} OrdersQuery */
 /** @typedef {import('./OrderRangeSummary').default} OrderRangeSummary */
+/** @typedef {import('./OrderTakings').default} OrderTakings */
 
 /**
  * One row of the order list.
@@ -87,6 +88,15 @@ export default class OrderRepository {
    */
   calculateTotalAmountByDays({startDate, endDate}) {
     throw new Error('OrderRepository#calculateTotalAmountByDays must be implemented');
+  }
+
+  /**
+   * Ticket totals, units sold, and each day's cash, card, and bizum for one range.
+   * @param {{from: string, to: string}} query
+   * @returns {Observable<OrderTakings>}
+   */
+  takings({from, to}) {
+    throw new Error('OrderRepository#takings must be implemented');
   }
 
   /**

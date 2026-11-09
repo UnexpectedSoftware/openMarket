@@ -98,11 +98,7 @@ class App extends Component {
     return (
       <div className="app-shell">
         <div className="app-body">
-          <NavRail
-            lowStockCount={this.props.lowStockCount}
-            shopName={shopName}
-            initials={initials}
-          />
+          <NavRail shopName={shopName} initials={initials} />
           <main id="main" className="app-main">
             <JobProgress imageFetch={this.props.imageFetch} catalogPrint={this.props.catalogPrint} />
             {children}

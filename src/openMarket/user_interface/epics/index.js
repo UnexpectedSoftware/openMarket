@@ -11,6 +11,7 @@ import pluginsEpic from '../plugin/epic';
 import settingsEpic from '../settings/epic';
 import appearanceEpic from '../appearance/epic';
 import lowStockEpic from '../low_stock/epic';
+import reportEpic from '../report/epic';
 
 export const rootEpic = combineEpics(
   newProductEpic,
@@ -24,5 +25,6 @@ export const rootEpic = combineEpics(
   pluginsEpic,
   settingsEpic,
   appearanceEpic,
-  lowStockEpic
+  lowStockEpic,
+  reportEpic
 );

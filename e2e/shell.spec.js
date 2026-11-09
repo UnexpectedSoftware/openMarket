@@ -7,7 +7,7 @@ const SCREENS = [
   {link: 'Pedidos', heading: 'Pedidos', shot: 'pedidos'},
   {link: 'Productos', heading: 'Productos', shot: 'productos'},
   {link: 'Categorías', heading: 'Categorías', shot: 'categorias'},
-  {link: 'Informes', heading: 'Most sold', shot: 'informes'},
+  {link: 'Informes', heading: 'Resumen', shot: 'informes'},
   {link: 'Plugins', heading: 'Plugins', shot: 'plugins'}
 ];
 
@@ -66,10 +66,7 @@ test('navigates from the rail with a click or a shortcut', async () => {
       await window.screenshot({path: path.join('test-results', `shell-${screen.shot}.png`)});
     }
 
-    await window.getByRole('link', {name: 'Takings', exact: true}).click();
-    await expect(window.getByRole('heading', {name: 'Last 7 days'})).toBeVisible();
-    await expect(window.getByRole('link', {name: 'Takings', exact: true})).toHaveAttribute('aria-current', 'page');
-    await expect(window.getByRole('link', {name: 'Informes', exact: true})).not.toHaveAttribute('aria-current', 'page');
+    await expect(window.getByRole('link', {name: 'Takings', exact: true})).toHaveCount(0);
 
     await window.getByRole('link', {name: 'Ajustes', exact: true}).click();
     await expect(window.getByRole('heading', {name: 'Ajustes'})).toBeVisible();

@@ -18,6 +18,8 @@ The examples use a made-up `Supplier` context and an `AdjustStock` use case. Ren
 
 ## Recipe 1: add a use case
 
+A use case depends on ports. It does not import another use case and does not receive one in its constructor. A helper in the same folder, such as `salesWindows.js`, is fine.
+
 Checklist:
 1. `src/openMarket/application/service/<ctx>/<VerbNoun>.js`
 2. Domain behaviour it needs: add a method on the aggregate (`domain/<ctx>/<Aggregate>.js`). Never put it in the use case or the repository.
@@ -468,7 +470,7 @@ The loader is `src/openMarket/infrastructure/plugins/`. A plugin is not source i
 - [ ] No new `*Store`/`*Dao`/`*Manager`/`*Helper`, and every persistence class is `<Name>Repository`
 - [ ] Repository methods are collection-like. No business decision inside SQL or adapter code.
 - [ ] Behaviour is on aggregates. Use cases load → call → save. No `obj._field =` from outside.
-- [ ] Use cases depend on ports via the constructor, with multiple writes in `transaction.run`
+- [ ] Use cases depend on ports via the constructor, never on another use case, with multiple writes in `transaction.run`
 - [ ] Durable events are saved, and live events are recorded, inside the caller's transaction. `raise()` after commit drains the bus queue, and `discard()` runs when the transaction fails. The bus and `SqliteTransaction` do not reference each other
 - [ ] Typed `AppError` with an `ErrorCode`, and no `new Error('…')` for shop failures
 - [ ] Container factory added. Facade key added if the UI needs it.
