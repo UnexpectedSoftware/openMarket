@@ -1,54 +1,78 @@
 /**
  * @class FixturesService
  */
-import { createFixtureInserter } from '../service/sqliteSeed';
+import {createFixtureInserter, clearShopData, runSeedTransaction} from '../service/sqliteSeed';
+import {installInvoiceGuards} from '../service/SqliteConnection';
+import {installDemoImages} from './demoImages';
 
 export default class FixturesService {
 
-  constructor({database = null, demoCatalog = null, demoOrders = null} = {}) {
+  constructor({
+    database = null,
+    demoCatalog = null,
+    demoOrders = null,
+    demoShop = null,
+    demoSettings = null,
+    resetOnLoad = false,
+    imageDirectory = null
+  } = {}) {
     this._database = database;
     this._demoCatalog = demoCatalog;
     this._demoOrders = demoOrders;
+    this._demoShop = demoShop;
+    this._demoSettings = demoSettings;
+    this._resetOnLoad = resetOnLoad === true;
+    this._imageDirectory = imageDirectory;
   }
 
+  /**
+   * Seeds only when this process was started with a one-shot reset.
+   * An empty database stays empty.
+   */
   load() {
-    if (process.env.NODE_ENV !== 'development' || !this._database || !this._demoCatalog || !this._demoOrders) {
+    if (!this._resetOnLoad) {
       return;
     }
-    const count = Number(this._database.prepare('SELECT count(*) AS total FROM category').get().total);
-    if (count > 0) {
+    this.reset();
+  }
+
+  /**
+   * Clears the shop tables and writes the demo set in one transaction.
+   * @param {{now?: Date}} [options]
+   */
+  reset({now = new Date()} = {}) {
+    if (process.env.NODE_ENV !== 'development' || !this._database || !this._ready()) {
       return;
     }
-
-    this._inserter = createFixtureInserter(this._database);
-    this._database.exec('BEGIN');
-    try {
-      this.loadCategories();
-      this.loadProducts();
-      this.loadOrders();
-      this._database.exec('COMMIT');
-    } catch (error) {
-      try {
-        this._database.exec('ROLLBACK');
-      } catch (rollbackError) {
-        // A failed statement can already have ended the transaction.
-      }
-      throw error;
+    const profile = this._demoShop.buildProfile();
+    const settings = this._demoSettings.buildSettings();
+    const categories = this._demoCatalog.buildCategories();
+    const products = this._demoCatalog.buildProducts(categories);
+    const orders = this._demoOrders.buildDemoOrders(products, now);
+    this._write({profile, settings, categories, products, orders});
+    if (this._imageDirectory) {
+      installDemoImages({directory: this._imageDirectory, products});
     }
   }
 
-  loadCategories() {
-    this._categories = this._demoCatalog.buildCategories();
-    this._categories.forEach(category => this._inserter.insertCategory(category));
+  _ready() {
+    return Boolean(this._demoCatalog && this._demoOrders && this._demoShop && this._demoSettings);
   }
 
-  loadProducts() {
-    this._products = this._demoCatalog.buildProducts(this._categories);
-    this._products.forEach(product => this._inserter.insertProduct(product));
-  }
-
-  loadOrders() {
-    this._demoOrders.buildDemoOrders(this._products).forEach(order => this._inserter.insertOrder(order));
+  /**
+   * @param {{profile: object, settings: object[], categories: object[], products: object[], orders: object[]}} seed
+   */
+  _write(seed) {
+    const inserter = createFixtureInserter(this._database);
+    runSeedTransaction(this._database, () => {
+      clearShopData(this._database);
+      inserter.insertProfile(seed.profile);
+      seed.settings.forEach(setting => inserter.insertSetting(setting));
+      seed.categories.forEach(category => inserter.insertCategory(category));
+      seed.products.forEach(product => inserter.insertProduct(product));
+      seed.orders.forEach(order => inserter.insertOrder(order));
+      installInvoiceGuards(this._database);
+    });
   }
 
 }

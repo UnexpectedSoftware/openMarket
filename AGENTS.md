@@ -81,6 +81,17 @@ productRepository.findByBarcode({barcode})
   .flatMap(product => productRepository.save({product}).map(() => product));
 ```
 
+## Dev fixtures
+
+Demo data lives in `infrastructure/dev/`. `npm run dev` does not fill an empty database. `npm run dev -- --reset-fixtures` and the development menu **Desarrollo → Reiniciar datos de demo** both call `FixturesService.reset()` on the open database.
+
+When a feature adds shop data the screens show (a table, a setting, or a column), extend the builder for that aggregate and its unit test in the same change:
+
+- `demoShop` — shop profile
+- `demoSettings` — ticket, printer, theme, layout, language
+- `demoCatalog` — categories and products
+- `demoOrders` — tickets, payments, and invoice numbers
+
 ## Commands (run before you say you're done)
 
 - `npm ci` (Node 24+)

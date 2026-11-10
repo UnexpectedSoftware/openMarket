@@ -66,6 +66,14 @@ class OpenMarket {
   }
 
     /**
+     * Replaces the development shop with the demo set. Production builds no-op.
+     * @returns {void}
+     */
+  resetDemoData() {
+    this.fixturesService.reset();
+  }
+
+    /**
      *
      * @param {string} key
      * @returns {object}

@@ -1,3 +1,6 @@
 export function createFixturesService() {
-  return { load() {} };
+  return {
+    load() {},
+    reset() {}
+  };
 }

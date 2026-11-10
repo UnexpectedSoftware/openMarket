@@ -6,28 +6,37 @@ describe('Demo catalog', () => {
   const categories = buildCategories();
   const products = buildProducts(categories);
 
-  it('builds eight categories and five products in each', () => {
-    expect(categories).to.have.length(8);
-    const ids = categories.map(category => category._id);
-    expect(new Set(ids).size).to.equal(8);
+  it('builds a grocery catalogue with mixed VAT, weight, and stock', () => {
+    expect(categories).to.have.length(25);
     expect(categories.map(category => category._name)).to.deep.equal(catalog.map(entry => entry.name));
-    expect(products).to.have.length(40);
-    const barcodes = catalog.reduce((all, entry) => all.concat(entry.products.map(product => product.barcode)), []);
-    expect(products.map(product => product._barcode)).to.deep.equal(barcodes);
+    expect(new Set(categories.map(category => category._id)).size).to.equal(25);
+    expect(products).to.have.length(100);
+    const barcodes = products.map(product => product._barcode);
+    expect(new Set(barcodes).size).to.equal(products.length);
+    expect([...new Set(products.map(product => product._vatPercent))].sort((left, right) => left - right))
+      .to.deep.equal([4, 10, 21]);
+    expect(products.some(product => product._weighted)).to.equal(true);
+    expect(products.some(product => product._weighted === false)).to.equal(true);
+    expect(products.filter(product => product._status === 'DISABLED').length).to.be.above(0);
+    expect(products.filter(product => product._status === 'ENABLED' && product._stock === 0).length).to.be.above(0);
+    expect(products.filter(product =>
+      product._status === 'ENABLED' && product._stock > 0 && product._stock < product._stockMin
+    ).length).to.be.above(0);
+    expect(products.filter(product => product._imageName).map(product => product._imageName))
+      .to.have.length(6);
+    expect(products.some(product => product._name.length > 40)).to.equal(true);
     products.forEach(product => {
-      expect(ids).to.include(product._categoryId);
+      expect(categories.map(category => category._id)).to.include(product._categoryId);
       expect(product._name.trim()).to.not.equal('');
-      expect(product._barcode).to.match(/^[0-9]{8}$|^[0-9]{12,13}$/);
+      expect(product._barcode).to.match(/^[0-9]{13}$/);
+      expect(product._vatKind).to.equal('S1');
       expect(product._price).to.be.a('number');
+      expect(product._basePrice).to.be.at.most(product._price);
+      expect(product._stockMin).to.equal(5);
+      if (product._imageName) {
+        expect(product._imageName).to.equal(product._barcode + '.png');
+      }
     });
-  });
-
-  it('includes disabled products and products under their minimum stock', () => {
-    expect(products.filter(product => product._status === 'DISABLED')).to.have.length(2);
-    const lowStock = products.filter(product =>
-      product._status === 'ENABLED' && product._stock < product._stockMin
-    );
-    expect(lowStock.length).to.be.above(0);
   });
 
   it('repeats the same catalog', () => {

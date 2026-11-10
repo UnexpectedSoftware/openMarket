@@ -1,9 +1,11 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
-import { app, BrowserWindow, Menu, shell } from 'electron';
+import { app, BrowserWindow, Menu, dialog, ipcMain, shell } from 'electron';
 import electronLog from 'electron-log/main';
 import { FETCH_IMAGES_CHANNEL } from './image/channel.js';
+import { RESET_FIXTURES_CHANNEL, RESET_FIXTURES_CONSUME, RESET_FIXTURES_DONE } from './dev/channel.js';
+import { demoDataMenu } from './dev/menu.js';
 import { bindLogger, record } from '../infrastructure/logging/ErrorLog.js';
 import { preferOsKeyring, registerSecretIpc } from './main/secretsIpc.js';
 
@@ -34,6 +36,63 @@ function sendFetchImages() {
   if (mainWindow) {
     mainWindow.webContents.send(FETCH_IMAGES_CHANNEL);
   }
+}
+
+function registerDemoReset() {
+  if (process.env.NODE_ENV !== 'development') {
+    return;
+  }
+  let pending = process.argv.includes('--reset-fixtures');
+  ipcMain.on(RESET_FIXTURES_CONSUME, event => {
+    event.returnValue = pending === true;
+    pending = false;
+  });
+  ipcMain.on(RESET_FIXTURES_DONE, (event, failure) => {
+    finishDemoReset(failure);
+  });
+}
+
+function finishDemoReset(failure) {
+  if (!mainWindow) {
+    return;
+  }
+  if (failure) {
+    dialog.showMessageBox(mainWindow, {
+      type: 'error',
+      message: 'No se han podido reiniciar los datos de demo',
+      detail: String(failure)
+    }).catch(error => record(error));
+    return;
+  }
+  mainWindow.webContents.reload();
+}
+
+function confirmDemoReset() {
+  if (!mainWindow) {
+    return;
+  }
+  dialog.showMessageBox(mainWindow, {
+    type: 'warning',
+    buttons: ['Cancelar', 'Reiniciar'],
+    defaultId: 0,
+    cancelId: 0,
+    message: 'Reiniciar datos de demo',
+    detail: 'Esto borra los datos de la tienda de desarrollo y carga el conjunto de demo. No se puede deshacer.'
+  }).then(result => {
+    if (!mainWindow || result.response !== 1) {
+      return;
+    }
+    mainWindow.webContents.send(RESET_FIXTURES_CHANNEL);
+  }).catch(error => record(error));
+}
+
+function developmentMenu() {
+  return demoDataMenu({
+    development: process.env.NODE_ENV === 'development',
+    onReset() {
+      confirmDemoReset();
+    }
+  });
 }
 
 async function enableProcessHelpers() {
@@ -74,6 +133,7 @@ const installExtensions = async () => {
 
 app.whenReady().then(async () => {
   registerSecretIpc();
+  registerDemoReset();
   await enableProcessHelpers();
   await installExtensions();
 
@@ -245,7 +305,7 @@ app.whenReady().then(async () => {
         label: 'Bring All to Front',
         selector: 'arrangeInFront:'
       }]
-    }, {
+    }, ...developmentMenu(), {
       label: 'Help',
       submenu: [{
         label: 'Learn More',
@@ -311,7 +371,7 @@ app.whenReady().then(async () => {
           mainWindow.toggleDevTools();
         }
       }]
-    }, {
+    }, ...developmentMenu(), {
       label: 'Help',
       submenu: [{
         label: 'Learn More',

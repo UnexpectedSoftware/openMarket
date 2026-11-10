@@ -10,6 +10,7 @@ import webpackHotMiddleware from 'webpack-hot-middleware';
 import { spawn } from 'child_process';
 
 import config from './webpack.config.development';
+import { electronArgs } from './devArgs';
 
 const argv = require('minimist')(process.argv.slice(2));
 const pkg = require('../../../../../package.json');
@@ -33,7 +34,12 @@ const server = app.listen(PORT, 'localhost', serverError => {
   }
 
   if (argv['start-hot']) {
-    spawn('npm', ['run', 'start-hot'], { shell: true, env: process.env, stdio: 'inherit' })
+    const npmArgs = ['run', 'start-hot'];
+    const forwarded = electronArgs(process.argv.slice(2));
+    if (forwarded.length > 0) {
+      npmArgs.push('--', ...forwarded);
+    }
+    spawn('npm', npmArgs, { shell: true, env: process.env, stdio: 'inherit' })
       .on('close', code => process.exit(code))
       .on('error', spawnError => console.error(spawnError));
   }

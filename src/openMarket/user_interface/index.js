@@ -13,6 +13,7 @@ import { syncHistoryWithStore } from 'react-router-redux';
 import routes from './routes';
 import configureStore from './store/configureStore';
 import OpenMarket from '../application/index';
+import './dev/resetFixtures';
 import savedThemeId, {savedLayoutId} from './appearance/savedThemeId';
 import './file.scss';
 

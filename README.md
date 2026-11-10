@@ -20,7 +20,13 @@ npm ci
 
 ## Run it locally
 
-The app stores the shop in an embedded SQLite file, `openmarket.sqlite`, in Electron's user-data directory. Development, `npm start`, and a packaged install all use that file. The first `npm run dev` fills it, when it has no categories, with generated categories, products, and a week of orders. Later launches leave the file alone, so an installed app with an empty file starts empty.
+The app stores the shop in an embedded SQLite file, `openmarket.sqlite`, in Electron's user-data directory. Development, `npm start`, and a packaged install all use that file. An empty database stays empty until a development reset. **Desarrollo → Reiniciar datos de demo** loads the demo shop into the open file. The same reset runs once at boot with:
+
+```bash
+npm run dev -- --reset-fixtures
+```
+
+A later `npm run dev` leaves the file alone. A packaged app does not include the menu or the flag.
 
 ```bash
 npm run dev
