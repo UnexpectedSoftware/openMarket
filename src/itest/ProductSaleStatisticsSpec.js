@@ -2,8 +2,12 @@ import {expect} from 'chai';
 import 'rxjs/add/operator/do';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
-import {replaceSqliteData} from '../openMarket/infrastructure/service/sqliteSeed';
 import OrderCreated from '../openMarket/domain/event/OrderCreated';
+import placedOrder from '../test/openMarket/support/placedOrder';
+import seedShop from '../test/openMarket/support/seedShop';
+import {shopCategory, shopProduct} from '../test/openMarket/support/catalog';
+import Money from '../openMarket/domain/money/Money';
+import Quantity from '../openMarket/domain/money/Quantity';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 const createOrder = openMarket.get('orders_create_use_case');
@@ -11,23 +15,11 @@ const sales = openMarket.get('product_sale_statistics_use_case');
 const domainEventBus = openMarket.get('domain_event_bus');
 const dispatcher = container.getInstance({key: 'domainEventDispatcher'});
 
-const product = {
-  _id: 'Seq-0',
-  _barcode: '0001',
-  _name: 'Coca-Cola',
-  _description: '',
-  _price: 0.55,
-  _basePrice: 0.3,
-  _stock: 100,
-  _stockMin: 10,
-  _imageUrl: 'a',
-  _categoryId: '1',
-  _status: 'ENABLED'
-};
+const product = shopProduct({barcode: '0001', name: 'Coca-Cola', price: '0.55', basePrice: '0.30', stock: 100, stockMin: 10});
 
 describe('Product sale statistics', () => {
   beforeEach(() => {
-    replaceSqliteData(database, {products: [product]});
+    seedShop(container, {categories: [shopCategory('1')], products: [product]});
   });
 
   it('records each created order and accumulates the same product', (done) => {
@@ -75,21 +67,12 @@ describe('Product sale statistics', () => {
   });
 
   it('rebuilds counters from orders inserted without an event', () => {
-    replaceSqliteData(database, {
+    seedShop(container, {
+      categories: [shopCategory('1')],
       products: [product],
       orders: [
-        {
-          _id: 'h1',
-          _createdAt: '02/03/2020 10:00:00',
-          _lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 2}],
-          _total: 1.1
-        },
-        {
-          _id: 'h2',
-          _createdAt: '02/03/2020 11:00:00',
-          _lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 3}],
-          _total: 1.65
-        }
+        placedOrder({id: 'h1', date: '02/03/2020 10:00:00', lines: [{barcode: '0001', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(2)}]}),
+        placedOrder({id: 'h2', date: '02/03/2020 11:00:00', lines: [{barcode: '0001', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(3)}]})
       ]
     });
 

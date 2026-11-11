@@ -6,8 +6,9 @@ import is from 'check-more-types';
 import Rx from 'rxjs/Rx';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
-import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
 import { imagesDirectory } from '../openMarket/infrastructure/service/ImageStore';
+import seedShop from '../test/openMarket/support/seedShop';
+import {shopCategory} from '../test/openMarket/support/catalog';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 /**
@@ -39,12 +40,7 @@ const noop = () => {};
 const crash = (err) => { throw err; };  // rethrow
 
 beforeEach(function () {
-  const data =[
-      {"_id":"1","_name":"Odin"},
-      {"_id":"2","_name":"Thor"},
-      {"_id":"3","_name":"Heimdall"}
-    ];
-  replaceSqliteData(database, {categories: data});
+  seedShop(container, {categories: [shopCategory('1', 'Odin'), shopCategory('2', 'Thor'), shopCategory('3', 'Heimdall')]});
 });
 
 describe('Category find by id use case', () => {

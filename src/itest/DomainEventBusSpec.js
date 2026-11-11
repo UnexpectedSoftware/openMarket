@@ -7,7 +7,6 @@ import 'rxjs/add/observable/of';
 import 'rxjs/add/operator/do';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
-import {replaceSqliteData} from '../openMarket/infrastructure/service/sqliteSeed';
 import SqliteConnection from '../openMarket/infrastructure/service/SqliteConnection';
 import SqliteDomainEventRepository from '../openMarket/infrastructure/event/SqliteDomainEventRepository';
 import SqliteTransaction from '../openMarket/infrastructure/service/SqliteTransaction';
@@ -17,6 +16,8 @@ import DomainEventBus from '../openMarket/domain/service/DomainEventBus';
 import OrderCreated from '../openMarket/domain/event/OrderCreated';
 import ProductEnabledAgain from '../openMarket/domain/event/ProductEnabledAgain';
 import ProductWithLowStock from '../openMarket/domain/event/ProductWithLowStock';
+import seedShop from '../test/openMarket/support/seedShop';
+import {shopCategory, shopProduct} from '../test/openMarket/support/catalog';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 const domainEventBus = openMarket.get('domain_event_bus');
@@ -24,19 +25,7 @@ const dispatcher = container.getInstance({key: 'domainEventDispatcher'});
 const createOrder = openMarket.get('orders_create_use_case');
 const enableProduct = openMarket.get('products_enable_use_case');
 
-const product = {
-  _id: 'Seq-0',
-  _barcode: '0001',
-  _name: 'Coca-Cola',
-  _description: '',
-  _price: 0.55,
-  _basePrice: 0.3,
-  _stock: 100,
-  _stockMin: 10,
-  _imageUrl: 'a',
-  _categoryId: '1',
-  _status: 'ENABLED'
-};
+const product = shopProduct({barcode: '0001', name: 'Coca-Cola', price: '0.55', basePrice: '0.30', stock: 100, stockMin: 10});
 
 function count(sql) {
   return Number(database.prepare(sql).get().total);
@@ -118,7 +107,7 @@ describe('Domain event bus', () => {
 
   describe('when a sale is saved inside its transaction and raised after commit', () => {
     beforeEach(() => {
-      replaceSqliteData(database, {products: [product]});
+      seedShop(container, {categories: [shopCategory('1')], products: [product]});
     });
 
     it('records the event, then runs live and durable subscribers', () => {
@@ -277,14 +266,9 @@ describe('Domain event bus', () => {
 
   describe('when a disabled product is enabled in its own transaction', () => {
     beforeEach(() => {
-      replaceSqliteData(database, {
-        products: [{
-          ...product,
-          _barcode: '0005',
-          _name: 'Coca-Cola Zero 42',
-          _stock: 10,
-          _status: 'DISABLED'
-        }]
+      seedShop(container, {
+        categories: [shopCategory('1')],
+        products: [shopProduct({barcode: '0005', name: 'Coca-Cola Zero 42', price: '0.55', stock: 10, status: 'DISABLED'})]
       });
     });
 

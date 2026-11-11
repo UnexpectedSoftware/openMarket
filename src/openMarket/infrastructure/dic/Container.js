@@ -51,13 +51,13 @@ import SqliteOrderQueryService from "../order/SqliteOrderQueryService";
 import SqlInvoiceMapper from "../invoice/SqlInvoiceMapper";
 import SqliteInvoiceRepository from "../invoice/SqliteInvoiceRepository";
 import SqliteInvoiceSequence from "../invoice/SqliteInvoiceSequence";
-import { createFixturesService } from "../dev";
 import OpenFoodFactsProductImageSource from "../image/OpenFoodFactsProductImageSource";
 import WikimediaCategoryImageSource from "../image/WikimediaCategoryImageSource";
 import FetchCatalogImages from "../../application/service/image/FetchCatalogImages";
 import FindProductImage from "../../application/service/image/FindProductImage";
 import PrintProductCatalog from "../../application/service/product/PrintProductCatalog";
 import DomainEventBus from "../../domain/service/DomainEventBus";
+import DomainEventSubscribers from "../../domain/service/DomainEventSubscribers";
 import DomainEventDispatcher from "../event/DomainEventDispatcher";
 import SqliteDomainEventRepository from "../event/SqliteDomainEventRepository";
 import SqliteTransaction from "../service/SqliteTransaction";
@@ -117,12 +117,6 @@ class Container {
     return new SqliteConnection();
   }
 
-  _fixturesService() {
-    return createFixturesService({
-      database: this.getInstance({key: 'sqliteConnection'}).database
-    });
-  }
-
   _printerConnection(){
     return new PrinterConnection({
       printerSettingsRepository: this.getInstance({key: 'printerSettingsRepository'})
@@ -158,7 +152,7 @@ class Container {
       orderRepository: this.getInstance({key: 'orderRepository'}),
       recordError: record,
       htmlReceiptRenderer: this.getInstance({key: 'htmlReceiptRenderer'}),
-      clock: this.getInstance({key: 'systemClock'})
+      clock: this.getInstance({key: 'clock'})
     });
   }
 
@@ -308,7 +302,7 @@ class Container {
   _productSaleStatisticsUseCase() {
     return new ProductSaleStatistics({
       repository: this.getInstance({key: 'productSaleStatisticsRepository'}),
-      clock: this.getInstance({key: 'systemClock'})
+      clock: this.getInstance({key: 'clock'})
     });
   }
 
@@ -363,7 +357,6 @@ class Container {
 
   _productMapper() {
     return new SqlProductMapper({
-      productFactory: this.getInstance({key: 'productFactory'}),
       categoryFactory: this.getInstance({key: 'categoryFactory'})
     });
   }
@@ -396,8 +389,17 @@ class Container {
     });
   }
 
-  _systemClock() {
+  /** @returns {import('../../domain/Clock').default} */
+  _clock() {
     return new SystemClock();
+  }
+
+  /**
+   * Who listens on the bus. The app's subscribers register on it when it starts;
+   * another bootstrap (the demo fixtures script) can wire its own.
+   */
+  _domainEventSubscribers() {
+    return new DomainEventSubscribers();
   }
 
   _domainEventBus() {
@@ -405,7 +407,8 @@ class Container {
     return new DomainEventBus({
       repository: this.getInstance({key: 'domainEventRepository'}),
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
-      clock: this.getInstance({key: 'systemClock'}),
+      clock: this.getInstance({key: 'clock'}),
+      subscribers: this.getInstance({key: 'domainEventSubscribers'}),
       recordError: record,
       inTransaction: () => connection.database.isTransaction
     });
@@ -426,7 +429,7 @@ class Container {
       invoiceSequence: this.getInstance({key: 'invoiceSequence'}),
       orderFactory: this.getInstance({key: 'orderFactory'}),
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
-      clock: this.getInstance({key: 'systemClock'}),
+      clock: this.getInstance({key: 'clock'}),
       domainEventBus: this.getInstance({key: 'domainEventBus'}),
       transaction: this.getInstance({key: 'transaction'}),
       domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'}),
@@ -437,7 +440,7 @@ class Container {
   _orderFactory() {
     return new OrderFactoryImpl({
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
-      clock: this.getInstance({key: 'systemClock'})
+      clock: this.getInstance({key: 'clock'})
     });
   }
 
@@ -559,7 +562,7 @@ class Container {
   _peekNextInvoiceNumber() {
     return new PeekNextInvoiceNumber({
       invoiceSequence: this.getInstance({key: 'invoiceSequence'}),
-      clock: this.getInstance({key: 'systemClock'})
+      clock: this.getInstance({key: 'clock'})
     });
   }
 
@@ -572,7 +575,7 @@ class Container {
   _cancelInvoice() {
     return new CancelInvoice({
       invoiceRepository: this.getInstance({key: 'invoiceRepository'}),
-      clock: this.getInstance({key: 'systemClock'}),
+      clock: this.getInstance({key: 'clock'}),
       domainEventBus: this.getInstance({key: 'domainEventBus'}),
       transaction: this.getInstance({key: 'transaction'}),
       domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'})
@@ -658,6 +661,10 @@ class Container {
     });
   }
 
+  /**
+   * Plugin delivery: loads the enabled plugins, which subscribe on the bus.
+   * @returns {{start: () => void}}
+   */
   _pluginHost() {
     return new PluginHost({
       pluginSource: this.getInstance({key: 'pluginSource'}),
@@ -674,6 +681,8 @@ class Container {
   }
 
 }
+
+export {Container};
 
 const staticContainer = new Container({environment: env});
 

@@ -1,82 +1,227 @@
 [
   {
-    "name": "CHIPS",
+    "name": "Fruta",
     "products": [
-      {"barcode": "5053990125029", "name": "Pringles Original 70g"},
-      {"barcode": "8411859554606", "name": "risketos 80g"},
-      {"barcode": "8410199019660", "name": "3D Bugles 72g"},
-      {"barcode": "8410199004727", "name": "Artesanas Lays 130g"},
-      {"barcode": "8422114711863", "name": "Apetinas 90g"}
+      {"barcode": "8410000001001", "name": "Manzana golden", "weighted": true, "vat": 4, "stock": "normal", "image": true},
+      {"barcode": "8410000001002", "name": "Plátano de Canarias", "weighted": true, "vat": 4, "stock": "low"},
+      {"barcode": "8410000001003", "name": "Naranja de mesa", "weighted": true, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001004", "name": "Pera conferencia", "weighted": true, "vat": 4, "stock": "out"}
     ]
   },
   {
-    "name": "conservas",
+    "name": "Verdura",
     "products": [
-      {"barcode": "8410010000181", "name": "Aceite Carbonell 1L"},
-      {"barcode": "8410066000029", "name": "Tomate Orlando frito 400g"},
-      {"barcode": "8413176915825", "name": "Pimientos del Piquillo Enteros"},
-      {"barcode": "8718114782638", "name": "Salsa Rosa Calve"},
-      {"barcode": "3073780902366", "name": "Babibel"}
+      {"barcode": "8410000001005", "name": "Tomate pera", "weighted": true, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001006", "name": "Patata agria", "weighted": true, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001007", "name": "Cebolla dulce", "weighted": true, "vat": 4, "stock": "low"},
+      {"barcode": "8410000001008", "name": "Calabacín", "weighted": true, "vat": 4, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Panadería",
+    "products": [
+      {"barcode": "8410000001009", "name": "Barra de pan", "weighted": false, "vat": 4, "stock": "low", "image": true},
+      {"barcode": "8410000001010", "name": "Pan de molde integral", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001011", "name": "Hogaza de centeno", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001012", "name": "Ensaimada", "weighted": false, "vat": 4, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Carnicería",
+    "products": [
+      {"barcode": "8410000001013", "name": "Pechuga de pollo", "weighted": true, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001014", "name": "Muslo de pollo", "weighted": true, "vat": 10, "stock": "out"},
+      {"barcode": "8410000001015", "name": "Ternera para guisar", "weighted": true, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001016", "name": "Carne picada de vacuno", "weighted": true, "vat": 10, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Charcutería",
+    "products": [
+      {"barcode": "8410000001017", "name": "Jamón cocido", "weighted": true, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001018", "name": "Chorizo extra", "weighted": true, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001019", "name": "Lomo embuchado", "weighted": true, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001020", "name": "Salchichón", "weighted": true, "vat": 10, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Pescadería",
+    "products": [
+      {"barcode": "8410000001021", "name": "Merluza", "weighted": true, "vat": 10, "stock": "low"},
+      {"barcode": "8410000001022", "name": "Salmón", "weighted": true, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001023", "name": "Bacalao desalado", "weighted": true, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001024", "name": "Gambas", "weighted": true, "vat": 10, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Lácteos",
+    "products": [
+      {"barcode": "8410000001025", "name": "Leche entera 1 l", "weighted": false, "vat": 4, "stock": "low", "image": true},
+      {"barcode": "8410000001026", "name": "Leche semidesnatada 1 l", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001027", "name": "Yogur natural pack 4", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001028", "name": "Natillas de vainilla", "weighted": false, "vat": 4, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Huevos",
+    "products": [
+      {"barcode": "8410000001029", "name": "Huevos camperos docena", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001030", "name": "Huevos morenos media docena", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001031", "name": "Claras de huevo pasteurizadas", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001032", "name": "Huevos ecológicos docena", "weighted": false, "vat": 4, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Quesos",
+    "products": [
+      {"barcode": "8410000001033", "name": "Queso semicurado", "weighted": true, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001034", "name": "Queso curado de oveja reserva madurado 12 meses", "weighted": true, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001035", "name": "Queso en lonchas", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001036", "name": "Requesón", "weighted": false, "vat": 4, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Conservas",
+    "products": [
+      {"barcode": "8410000001037", "name": "Atún en aceite de oliva", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001038", "name": "Tomate triturado", "weighted": false, "vat": 10, "stock": "low"},
+      {"barcode": "8410000001039", "name": "Pimientos del piquillo", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001040", "name": "Garbanzos cocidos", "weighted": false, "vat": 10, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Aceites",
+    "products": [
+      {"barcode": "8410000001041", "name": "Aceite de oliva virgen extra de cosecha temprana 500 ml", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001042", "name": "Aceite de girasol 1 l", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001043", "name": "Vinagre de manzana", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001044", "name": "Aceitunas rellenas de anchoa", "weighted": false, "vat": 10, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Arroces y pastas",
+    "products": [
+      {"barcode": "8410000001045", "name": "Arroz redondo 1 kg", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001046", "name": "Macarrones 500 g", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001047", "name": "Espaguetis 500 g", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001048", "name": "Fideos finos 250 g", "weighted": false, "vat": 4, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Legumbres",
+    "products": [
+      {"barcode": "8410000001049", "name": "Lentejas pardinas 1 kg", "weighted": false, "vat": 4, "stock": "low"},
+      {"barcode": "8410000001050", "name": "Garbanzos secos 1 kg", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001051", "name": "Alubias blancas 1 kg", "weighted": false, "vat": 4, "stock": "normal"},
+      {"barcode": "8410000001052", "name": "Lentejas cocidas 570 g", "weighted": false, "vat": 4, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Desayuno",
+    "products": [
+      {"barcode": "8410000001053", "name": "Cereales con miel", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001054", "name": "Mermelada de fresa", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001055", "name": "Cacao soluble", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001056", "name": "Galletas maría", "weighted": false, "vat": 10, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Dulces",
+    "products": [
+      {"barcode": "8410000001057", "name": "Turrón de Jijona", "weighted": false, "vat": 10, "stock": "disabled"},
+      {"barcode": "8410000001058", "name": "Chocolate con leche", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001059", "name": "Magdalenas", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001060", "name": "Galletas de mantequilla", "weighted": false, "vat": 10, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Bebidas",
+    "products": [
+      {"barcode": "8410000001061", "name": "Agua mineral 1,5 l", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001062", "name": "Zumo de naranja 1 l", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001063", "name": "Bebida de avena 1 l", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001064", "name": "Té frío de limón", "weighted": false, "vat": 10, "stock": "normal"}
     ]
   },
   {
     "name": "Refrescos",
     "products": [
-      {"barcode": "5449000131805", "name": "Coca Cola Zero Lata"},
-      {"barcode": "5449000004840", "name": "Fanta Naranja 2L"},
-      {"barcode": "5449000018472", "name": "Nestea 1L Limon"},
-      {"barcode": "5449000131843", "name": "Coca-Cola zero 2L"},
-      {"barcode": "54491472", "name": "CocaCola 50cl"}
+      {"barcode": "8410000001065", "name": "Refresco de cola", "weighted": false, "vat": 10, "stock": "normal", "image": true},
+      {"barcode": "8410000001066", "name": "Refresco de naranja", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001067", "name": "Tónica", "weighted": false, "vat": 10, "stock": "out"},
+      {"barcode": "8410000001068", "name": "Refresco de limón", "weighted": false, "vat": 10, "stock": "normal"}
     ]
   },
   {
-    "name": "dulces&pasteleria",
+    "name": "Vinos y cervezas",
     "products": [
-      {"barcode": "80135463", "name": "Nutella 200g"},
-      {"barcode": "80310891", "name": "Kinder Joy"},
-      {"barcode": "80052760", "name": "kinder bueno negro"},
-      {"barcode": "8410022116498", "name": "madalenas bella easo"},
-      {"barcode": "8410196099009", "name": "Neulas Virginias"}
+      {"barcode": "8410000001069", "name": "Vino tinto joven", "weighted": false, "vat": 21, "stock": "normal"},
+      {"barcode": "8410000001070", "name": "Cerveza lager pack 6", "weighted": false, "vat": 21, "stock": "normal"},
+      {"barcode": "8410000001071", "name": "Vino blanco verdejo", "weighted": false, "vat": 21, "stock": "normal"},
+      {"barcode": "8410000001072", "name": "Cerveza sin alcohol", "weighted": false, "vat": 21, "stock": "normal"}
     ]
   },
   {
-    "name": "arrozesypastas",
+    "name": "Congelados",
     "products": [
-      {"barcode": "8076802085981", "name": "Fusilli Barilla"},
-      {"barcode": "8076808060654", "name": "Barilla farfalle"},
-      {"barcode": "8410069001320", "name": "fideo 4"},
-      {"barcode": "8413080018742", "name": "fideo 4"},
-      {"barcode": "8410069001078", "name": "letras gallo"}
+      {"barcode": "8410000001073", "name": "Guisantes congelados", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001074", "name": "Croquetas de jamón", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001075", "name": "Pizza margarita", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001076", "name": "Varitas de merluza", "weighted": false, "vat": 10, "stock": "normal"}
     ]
   },
   {
-    "name": "caldos&sopas",
+    "name": "Limpieza",
     "products": [
-      {"barcode": "8711200405343", "name": "caldo knorr"},
-      {"barcode": "8410300349044", "name": "Caldo de Carne Gallina Blanca"},
-      {"barcode": "8718114806129", "name": "Tomaten Soep 515ml"},
-      {"barcode": "5000354403194", "name": "Cup a Soup Golden Vegetable"},
-      {"barcode": "8718452744664", "name": "Goulash Soep Jumbo"}
+      {"barcode": "8410000001077", "name": "Detergente líquido para ropa de color con aroma a marsella", "weighted": false, "vat": 21, "stock": "normal", "image": true},
+      {"barcode": "8410000001078", "name": "Lavavajillas a mano", "weighted": false, "vat": 21, "stock": "normal"},
+      {"barcode": "8410000001079", "name": "Lejía", "weighted": false, "vat": 21, "stock": "out"},
+      {"barcode": "8410000001080", "name": "Bolsas de basura", "weighted": false, "vat": 21, "stock": "normal"}
     ]
   },
   {
-    "name": "leche&batidos",
+    "name": "Higiene",
     "products": [
-      {"barcode": "8410050021078", "name": "El Castillo Semi 1.5L"},
-      {"barcode": "8410050021009", "name": "El Castillo Entera 1L"},
-      {"barcode": "8410320328869", "name": "Queso Gouda"},
-      {"barcode": "8413080016052", "name": "saquitos leche"},
-      {"barcode": "8413176917911", "name": "queso semi cortado coaliment"}
+      {"barcode": "8410000001081", "name": "Gel de ducha", "weighted": false, "vat": 21, "stock": "disabled"},
+      {"barcode": "8410000001082", "name": "Champú suave", "weighted": false, "vat": 21, "stock": "normal"},
+      {"barcode": "8410000001083", "name": "Pasta de dientes", "weighted": false, "vat": 21, "stock": "normal"},
+      {"barcode": "8410000001084", "name": "Papel higiénico 12 rollos", "weighted": false, "vat": 21, "stock": "normal"}
     ]
   },
   {
-    "name": "pan",
+    "name": "Bebé",
     "products": [
-      {"barcode": "8412600022825", "name": "Silueta Integral 450g"},
-      {"barcode": "8412600024324", "name": "Thins 100% Integral"},
-      {"barcode": "8412600300138", "name": "mini tostas integral"},
-      {"barcode": "8412600450024", "name": "Hot Dogs 6"},
-      {"barcode": "8412600550014", "name": "palitos aceite"}
+      {"barcode": "8410000001085", "name": "Pañales talla 3", "weighted": false, "vat": 10, "stock": "low"},
+      {"barcode": "8410000001086", "name": "Toallitas", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001087", "name": "Potito de fruta", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001088", "name": "Leche de continuación", "weighted": false, "vat": 10, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Mascotas",
+    "products": [
+      {"barcode": "8410000001089", "name": "Pienso para gato", "weighted": false, "vat": 21, "stock": "disabled"},
+      {"barcode": "8410000001090", "name": "Pienso para perro", "weighted": false, "vat": 21, "stock": "normal"},
+      {"barcode": "8410000001091", "name": "Arena aglomerante", "weighted": false, "vat": 21, "stock": "normal"},
+      {"barcode": "8410000001092", "name": "Latas de atún para gato", "weighted": false, "vat": 21, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Snacks",
+    "products": [
+      {"barcode": "8410000001093", "name": "Patatas fritas onduladas", "weighted": false, "vat": 10, "stock": "normal", "image": true},
+      {"barcode": "8410000001094", "name": "Aros de maíz", "weighted": false, "vat": 10, "stock": "disabled"},
+      {"barcode": "8410000001095", "name": "Palomitas saladas", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001096", "name": "Frutos secos mix", "weighted": false, "vat": 10, "stock": "normal"}
+    ]
+  },
+  {
+    "name": "Especias",
+    "products": [
+      {"barcode": "8410000001097", "name": "Pimentón dulce", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001098", "name": "Sal marina", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001099", "name": "Orégano", "weighted": false, "vat": 10, "stock": "normal"},
+      {"barcode": "8410000001100", "name": "Pimienta negra molida", "weighted": false, "vat": 10, "stock": "normal"}
     ]
   }
 ]

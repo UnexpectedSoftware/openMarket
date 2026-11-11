@@ -16,10 +16,10 @@ export const SALES_WINDOWS = [
 
 /**
  * @param {string} window
- * @param {moment.Moment} [now]
+ * @param {import('moment').Moment} now The shop's current local time, from the Clock
  * @returns {{window: string, bucket: string, startOn: string, endOn: string}}
  */
-export function resolveSalesWindow(window, now = moment()) {
+export function resolveSalesWindow(window, now) {
   const spec = SALES_WINDOWS.find(item => item.id === window);
   if (!spec) {
     raise(new UnknownSalesWindowError({window}));

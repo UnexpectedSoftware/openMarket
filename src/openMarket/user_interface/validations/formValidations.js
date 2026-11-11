@@ -1,5 +1,8 @@
 export const required = value =>
   value === undefined || value === null || value === '' || value === false ? 'Required' : undefined
+/** A text field that holds only spaces is empty too. */
+export const requiredText = value =>
+  typeof value === 'string' && value.trim() !== '' ? undefined : 'Required'
 const maxLength = max => value =>
   value && value.length > max ? `Must be ${max} characters or less` : undefined
 export const maxLength15 = maxLength(15)

@@ -13,8 +13,6 @@ class OpenMarket {
      * @param {{container: AppContainer}} deps
      */
   constructor({container}) {
-    this.fixturesService = container.getInstance({key:'fixturesService'});
-    this.fixturesService.load();
         /**
          *
          * @type {Map<string, object>}

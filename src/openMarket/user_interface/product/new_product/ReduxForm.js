@@ -1,6 +1,6 @@
 import React, {Component} from 'react';
 import {Field, reduxForm} from 'redux-form';
-import {required, maxLength15, number, greaterThan0, greaterOrEqualsThan0, vatRateCode} from '../../validations/formValidations';
+import {required, requiredText, maxLength15, number, greaterThan0, greaterOrEqualsThan0, vatRateCode} from '../../validations/formValidations';
 import VatRate from '../../../domain/tax/VatRate';
 import Button from '../../components/Button';
 import ImageField from '../../components/ImageField';
@@ -76,8 +76,8 @@ class ReduxForm extends Component {
           <section className="product-block">
             <h3>General information</h3>
             <div className="product-fields">
-              <Field name="name" component={textField} label="Name" validate={required} />
-              <Field name="barcode" readOnly={edition} component={textField} label="Barcode" validate={[required, maxLength15]} />
+              <Field name="name" component={textField} label="Name" validate={requiredText} />
+              <Field name="barcode" readOnly={edition} component={textField} label="Barcode" validate={[requiredText, maxLength15]} />
             </div>
             <Field name="description" component={textField} label="Description" multiline />
             <div className="product-image-row">

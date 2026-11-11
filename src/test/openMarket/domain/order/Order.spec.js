@@ -6,6 +6,7 @@ import InvalidOrderQuantityError from '../../../../openMarket/domain/order/Inval
 import OrderAlreadyPlacedError from '../../../../openMarket/domain/order/OrderAlreadyPlacedError';
 import InvalidOrderLineError from '../../../../openMarket/domain/order/InvalidOrderLineError';
 import Money from '../../../../openMarket/domain/money/Money';
+import UnrecognisedDateError from '../../../../openMarket/domain/error/UnrecognisedDateError';
 import VatRate from '../../../../openMarket/domain/tax/VatRate';
 
 const date = '03/10/2026 10:00:00';
@@ -22,6 +23,12 @@ function plain(orderLine) {
 }
 
 describe('Order', () => {
+  it('refuses an order without a date', () => {
+    expect(() => Order.draft({id: '1', date: undefined})).to.throw(UnrecognisedDateError);
+    expect(() => Order.draft({id: '1', date: '  '})).to.throw(UnrecognisedDateError);
+    expect(() => new Order()).to.throw(UnrecognisedDateError);
+  });
+
   it('keeps a draft with no lines until it is placed', () => {
     const order = Order.draft({id: '1', date});
 
@@ -55,6 +62,36 @@ describe('Order', () => {
     expect(() => order.addLine(line(-1))).to.throw(InvalidOrderLineError, 'Quantity must be greater than 0');
     expect(order.lines).to.deep.equal([]);
     expect(order.isPlaced()).to.equal(false);
+  });
+
+  it('refuses a catalog line without a barcode, a name, or a price', () => {
+    const order = Order.draft({id: '1', date});
+    const refused = [
+      null,
+      {name: 'Milk', price: 2, quantity: 1},
+      {...line(1), barcode: ''},
+      {...line(1), barcode: '   '},
+      {...line(1), barcode: 1},
+      {barcode: '1', price: 2, quantity: 1},
+      {...line(1), name: ' '},
+      {barcode: '1', name: 'Milk', quantity: 1},
+      {...line(1), price: ''}
+    ];
+
+    refused.forEach(candidate => {
+      try {
+        order.addLine(candidate);
+        expect.fail('accepted ' + JSON.stringify(candidate));
+      } catch (error) {
+        expect(error).to.be.instanceOf(InvalidOrderLineError);
+        expect(error.message).to.equal('The order line is not valid');
+        expect(error.context.reason).to.equal(ErrorCode.ORDER_LINE_INVALID);
+      }
+    });
+    expect(order.lines).to.deep.equal([]);
+    expect(plain(order.addLine({...line(1), price: 0}).lines[0])).to.deep.equal({
+      barcode: '1', name: 'Milk', cents: 0, milli: 1000, amount: 0
+    });
   });
 
   it('rejects a fraction on a whole-unit product', () => {

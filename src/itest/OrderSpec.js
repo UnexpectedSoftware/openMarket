@@ -5,9 +5,13 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import * as Rx from 'rxjs';
 import container from '../openMarket/infrastructure/dic/Container';
-import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
 import ProductWithLowStock from '../openMarket/domain/event/ProductWithLowStock';
 import OrderCreated from '../openMarket/domain/event/OrderCreated';
+import placedOrder from '../test/openMarket/support/placedOrder';
+import seedShop from '../test/openMarket/support/seedShop';
+import {shopCategory, shopProduct} from '../test/openMarket/support/catalog';
+import Money from '../openMarket/domain/money/Money';
+import Quantity from '../openMarket/domain/money/Quantity';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 
@@ -30,7 +34,7 @@ const observableFindProducts = openMarket.get('products_find_use_case');
 const domainEventBus = openMarket.get('domain_event_bus');
 
 afterEach(function () {
-  replaceSqliteData(database, {});
+  seedShop(container);
 
 
 });
@@ -39,14 +43,15 @@ describe('Order create use case', () => {
 
   beforeEach(function () {
     const orderData = [
-      {"_id":"01","_createdAt":"01/07/2017 17:53:04","_lines":[{"barcode":"0001","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
+      placedOrder({id: 'o1', date: '01/07/2017 17:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]})
     ];
+    const categories = [shopCategory('1'), shopCategory('2')];
     const productData = [
-      {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_imageUrl":"a","_categoryId":"1","_status":"ENABLED"},
-      {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_imageUrl":"a","_categoryId":"2","_status":"ENABLED"}
+      shopProduct({barcode: '0001', name: 'Coca-Cola', price: '0.55', stock: 100, category: categories[0]}),
+      shopProduct({barcode: '0002', name: 'Coca-Cola Zero', price: '0.60', stock: 1500, category: categories[1]})
     ];
 
-    replaceSqliteData(database, {orders: orderData, products: productData});
+    seedShop(container, {categories, orders: orderData, products: productData});
   });
   describe('When save an order', () => {
     it('should create a new order and then would be 2 Orders on DB', (done) => {
@@ -274,11 +279,11 @@ describe('Order find use case by dates', () => {
 
   beforeEach(function () {
     const data = [
-      {"_id":"01","_createdAt":"01/07/2017 17:53:04","_lines":[{"barcode":"0001","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
-      {"_id":"01","_createdAt":"02/07/2017 17:53:04","_lines":[{"barcode":"0002","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
-      {"_id":"01","_createdAt":"03/07/2017 17:53:04","_lines":[{"barcode":"0003","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
+      placedOrder({id: 'o2', date: '01/07/2017 17:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]}),
+      placedOrder({id: 'o3', date: '02/07/2017 17:53:04', lines: [{barcode: '0002', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]}),
+      placedOrder({id: 'o4', date: '03/07/2017 17:53:04', lines: [{barcode: '0003', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]})
     ];
-    replaceSqliteData(database, {orders: data});
+    seedShop(container, {orders: data});
   });
 
 
@@ -296,7 +301,7 @@ describe('Order find use case by dates', () => {
     })
       .subscribe(
         (orderArray) => {
-          expect(orderArray[0]).to.deep.equals({id:'01',createdAt:'01/07/2017 17:53:04',total:0.55});
+          expect(orderArray[0]).to.deep.equals({id:'o2',createdAt:'01/07/2017 17:53:04',total:0.55});
           spyNext();
         },
         (error) => done(new Error(error)),
@@ -368,62 +373,17 @@ describe('Order statistics', () => {
 
     beforeEach(function () {
       const data = [
-        {
-          "_id": "01",
-          "_createdAt": "01/07/2017 13:53:04",
-          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "01/07/2017 14:53:04",
-          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "01/07/2017 17:53:04",
-          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "01/07/2017 19:53:04",
-          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "02/07/2017 17:53:04",
-          "_lines": [{"barcode": "0002", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "02/07/2017 17:53:04",
-          "_lines": [{"barcode": "0002", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "03/07/2017 17:53:04",
-          "_lines": [{"barcode": "0003", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "03/07/2017 17:53:04",
-          "_lines": [{"barcode": "0003", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "03/07/2017 17:53:04",
-          "_lines": [{"barcode": "0003", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        }
+        placedOrder({id: 'o5', date: '01/07/2017 13:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]}),
+        placedOrder({id: 'o6', date: '01/07/2017 14:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]}),
+        placedOrder({id: 'o7', date: '01/07/2017 17:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]}),
+        placedOrder({id: 'o8', date: '01/07/2017 19:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]}),
+        placedOrder({id: 'o9', date: '02/07/2017 17:53:04', lines: [{barcode: '0002', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]}),
+        placedOrder({id: 'o10', date: '02/07/2017 17:53:04', lines: [{barcode: '0002', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]}),
+        placedOrder({id: 'o11', date: '03/07/2017 17:53:04', lines: [{barcode: '0003', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]}),
+        placedOrder({id: 'o12', date: '03/07/2017 17:53:04', lines: [{barcode: '0003', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]}),
+        placedOrder({id: 'o13', date: '03/07/2017 17:53:04', lines: [{barcode: '0003', name: 'Coca-Cola', price: Money.fromEuros('0.55'), quantity: Quantity.from(1)}]})
       ];
-      replaceSqliteData(database, {orders: data});
+      seedShop(container, {orders: data});
     });
 
 

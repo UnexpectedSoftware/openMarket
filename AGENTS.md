@@ -81,6 +81,19 @@ productRepository.findByBarcode({barcode})
   .flatMap(product => productRepository.save({product}).map(() => product));
 ```
 
+## Dev fixtures
+
+Demo data lives in `infrastructure/dev/` and is written only by `npm run fixtures`, a standalone Node script with its own `FixturesContainer` (a clock the saga sets to each ticket's time, the real sale statistics subscriber, and no plugin delivery). The app never imports `infrastructure/dev/`; an architecture test enforces it. The script replays the demo through the use cases in one transaction, so every row passes the domain invariants.
+
+When a feature adds shop data the screens show (a table, a setting, or a column), extend the builder for that aggregate and its unit test in the same change:
+
+- `demoShop` — shop profile
+- `demoSettings` — ticket, printer, theme, layout, language
+- `demoCatalog` — categories and products
+- `demoOrders` — tickets, payments, and invoice numbers
+
+New data goes through a use case in the saga (`FixturesService`), never through SQL inserts. Run `npm run fixtures` and check the screen that shows it.
+
 ## Commands (run before you say you're done)
 
 - `npm ci` (Node 24+)

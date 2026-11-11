@@ -124,6 +124,31 @@ describe('architecture', () => {
     expect(stale, 'These are fixed; remove them from KNOWN_VIOLATIONS').to.deep.equal([]);
   });
 
+  it('reads the time only through the Clock port in domain and application code', () => {
+    const systemTime = /\bnew Date\(\s*\)|\bDate\.now\(|\bmoment\(\s*\)/;
+    const bad = files.map(rel)
+      .filter(file => file.startsWith('domain/') || file.startsWith('application/'))
+      .filter(file => systemTime.test(fs.readFileSync(path.join(ROOT, file), 'utf8')));
+    expect(bad, 'Take a Clock (domain/Clock.js) in the constructor instead of reading the system time').to.deep.equal([]);
+  });
+
+  it('keeps the demo fixtures out of the app: only infrastructure/dev imports infrastructure/dev', () => {
+    const bad = [];
+    files.forEach(file => {
+      const from = rel(file);
+      if (from.startsWith('infrastructure/dev/')) {
+        return;
+      }
+      importsOf(file).forEach(spec => {
+        const to = resolveTarget(file, spec);
+        if (to && to.startsWith('infrastructure/dev/')) {
+          bad.push(from + ' -> ' + to);
+        }
+      });
+    });
+    expect(bad).to.deep.equal([]);
+  });
+
   it('keeps the domain free of I/O and framework packages', () => {
     const bad = [];
     files.filter(file => rel(file).startsWith('domain/')).forEach(file => {

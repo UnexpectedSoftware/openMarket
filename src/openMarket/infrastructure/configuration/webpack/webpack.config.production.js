@@ -75,11 +75,7 @@ export default merge(baseConfig, {
       // A deferred head script can paint :root (Mercado) first.
       inject: 'body',
       scriptLoading: 'blocking'
-    }),
-    new webpack.NormalModuleReplacementPlugin(
-      /[\\/]infrastructure[\\/]dev[\\/]index\.js$/,
-      path.join(root, 'src/openMarket/infrastructure/fixturesNoop.js')
-    )
+    })
   ],
 
   externals: {

@@ -1,4 +1,3 @@
-import moment from 'moment';
 import Money from '../money/Money';
 import Quantity from '../money/Quantity';
 import VatRate from '../tax/VatRate';
@@ -10,6 +9,8 @@ import InvalidOrderLineError from './InvalidOrderLineError';
 import OrderAlreadyPlacedError from './OrderAlreadyPlacedError';
 import {lineKind, validateLine} from './lineValidity';
 import Payment from '../payment/Payment';
+import UnrecognisedDateError from '../error/UnrecognisedDateError';
+import hasText from '../hasText';
 
 /**
  * One line stored on an order. Amount is the line total after one half-up rounding.
@@ -57,14 +58,18 @@ export default class Order {
   }
 
   /**
-   * @param {object} [params]
+   * The date comes from the caller's Clock (`DD/MM/YYYY HH:mm:ss`); an order never reads the system time.
+   * @param {object} params
    * @param {string} [params.id]
    * @param {OrderLine[]} [params.lines]
-   * @param {string} [params.date]
+   * @param {string} params.date
    * @param {string} [params.status]
    * @param {Payment | null} [params.payment]
    */
-  constructor({id, lines = [], date = moment().format('DD/MM/YYYY HH:mm:ss'), status = OrderStatus.DRAFT, payment = null} = {}) {
+  constructor({id, lines = [], date, status = OrderStatus.DRAFT, payment = null} = {date: undefined}) {
+    if (!hasText(date)) {
+      throw new UnrecognisedDateError({value: date});
+    }
     /**
      * @type {string}
      * @private
@@ -170,6 +175,7 @@ export default class Order {
   /**
    * Adds a catalog line while the order is still a draft.
    * A line that cannot be sold is refused and the order stays unchanged.
+   * A catalog line needs a barcode, a name, and a price: without them it is refused.
    * A free-amount line uses {@link Order#addFreeLine}.
    * @param {{kind?: 'PRODUCT' | 'FREE', barcode: string, name: string, price: Money | number | string, quantity: Quantity | number | string, vatRate?: VatRate | object, weighted?: boolean}} line
    * @returns {Order}
@@ -179,6 +185,12 @@ export default class Order {
     if (line && line.kind === 'FREE') {
       throw new InvalidOrderLineError({
         barcode: line.barcode,
+        reason: ErrorCode.ORDER_LINE_INVALID
+      });
+    }
+    if (!identifiesProduct(line)) {
+      throw new InvalidOrderLineError({
+        barcode: line && line.barcode,
         reason: ErrorCode.ORDER_LINE_INVALID
       });
     }
@@ -272,6 +284,15 @@ export default class Order {
     return this._lines.reduce((acc, element) => acc.plus(element.amount), Money.ofCents(0));
   }
 
+}
+
+/**
+ * A catalog line names the product it sells and its price.
+ * @param {{barcode?: string, name?: string, price?: Money | number | string} | null | undefined} line
+ * @returns {boolean}
+ */
+function identifiesProduct(line) {
+  return Boolean(line) && hasText(line.barcode) && hasText(line.name) && line.price != null && line.price !== '';
 }
 
 /**

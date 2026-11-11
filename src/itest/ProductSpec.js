@@ -6,8 +6,9 @@ import is from 'check-more-types';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
 import ProductEnabledAgain from '../openMarket/domain/event/ProductEnabledAgain';
-import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
 import { imagesDirectory } from '../openMarket/infrastructure/service/ImageStore';
+import seedShop from '../test/openMarket/support/seedShop';
+import {shopCategory, shopProduct} from '../test/openMarket/support/catalog';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 
@@ -42,21 +43,16 @@ const noop = () => {};
 const crash = (err) => { throw err; };  // rethrow
 
 beforeEach(function () {
+  const [odin, thor, heimdall] = [shopCategory('1', 'Odin'), shopCategory('2', 'Thor'), shopCategory('3', 'Heimdall')];
   const productsData = [
-    {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_categoryId":"1","_status":"ENABLED"},
-    {"_id":"Seq-1","_barcode":"0002","_name":"Coca-Cola Zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1500,"_stockMin":10,"_categoryId":"2","_status":"ENABLED"},
-    {"_id":"Seq-2","_barcode":"0003","_name":"Coca-Cola Zero sin cafeina","_description":"","_price":0.6,"_basePrice":0.3,"_stock":1000,"_stockMin":10,"_categoryId":"2","_status":"ENABLED"},
-    {"_id":"Seq-3","_barcode":"0004","_name":"Coca-Cola Zero zero","_description":"","_price":0.6,"_basePrice":0.3,"_stock":9,"_stockMin":10,"_categoryId":"1","_status":"ENABLED"},
-    {"_id":"Seq-4","_barcode":"0005","_name":"Coca-Cola Zero 42","_description":"","_price":0.6,"_basePrice":0.3,"_stock":10,"_stockMin":10,"_categoryId":"3","_status":"DISABLED"}
+    shopProduct({barcode: '0001', name: 'Coca-Cola', price: '0.55', stock: 100, category: odin}),
+    shopProduct({barcode: '0002', name: 'Coca-Cola Zero', price: '0.60', stock: 1500, category: thor}),
+    shopProduct({barcode: '0003', name: 'Coca-Cola Zero sin cafeina', price: '0.60', stock: 1000, category: thor}),
+    shopProduct({barcode: '0004', name: 'Coca-Cola Zero zero', price: '0.60', stock: 9, category: odin}),
+    shopProduct({barcode: '0005', name: 'Coca-Cola Zero 42', price: '0.60', stock: 10, category: heimdall, status: 'DISABLED'})
   ];
 
-  const categoryData = [
-    {"_id":"1","_name":"Odin"},
-    {"_id":"2","_name":"Thor"},
-    {"_id":"3","_name":"Heimdall"}
-  ];
-
-  replaceSqliteData(database, {products: productsData, categories: categoryData});
+  seedShop(container, {products: productsData, categories: [odin, thor, heimdall]});
 
 });
 describe('Product list all use case', () => {

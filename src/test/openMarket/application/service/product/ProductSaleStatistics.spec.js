@@ -5,6 +5,7 @@ import SqliteProductSaleStatisticsRepository from '../../../../../openMarket/inf
 import SqliteProductSaleQueryService from '../../../../../openMarket/infrastructure/product/SqliteProductSaleQueryService';
 import ProductSaleStatistics from '../../../../../openMarket/application/service/product/ProductSaleStatistics';
 import {fillSeries, previousYearRange, resolveSalesWindow} from '../../../../../openMarket/application/service/product/salesWindows';
+import SystemClock from '../../../../../openMarket/infrastructure/service/SystemClock';
 
 describe('sales windows', () => {
   const now = moment('2026-10-01', 'YYYY-MM-DD');
@@ -72,7 +73,7 @@ describe('Product sale statistics', () => {
       connection,
       queryService: new SqliteProductSaleQueryService()
     });
-    useCase = new ProductSaleStatistics({repository});
+    useCase = new ProductSaleStatistics({repository, clock: new SystemClock()});
   });
 
   function at(day) {
@@ -134,7 +135,7 @@ describe('Product sale statistics', () => {
       createdAt: at(moment().startOf('day')),
       lines: [{barcode: '0001', name: 'Old cola', price: 1, quantity: 1}]
     });
-    const range = resolveSalesWindow('year');
+    const range = resolveSalesWindow('year', moment());
     read(done, '0001', 'year', result => {
       expect(result.series[0].soldOn).to.have.lengthOf(7);
       expect(result.series).to.have.lengthOf(fillSeries({

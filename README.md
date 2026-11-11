@@ -20,7 +20,16 @@ npm ci
 
 ## Run it locally
 
-The app stores the shop in an embedded SQLite file, `openmarket.sqlite`, in Electron's user-data directory. Development, `npm start`, and a packaged install all use that file. The first `npm run dev` fills it, when it has no categories, with generated categories, products, and a week of orders. Later launches leave the file alone, so an installed app with an empty file starts empty.
+The app stores the shop in an embedded SQLite file, `openmarket.sqlite`, in Electron's user-data directory. Development, `npm start`, and a packaged install all use that file. The app never seeds it: an empty database stays empty.
+
+To get demo data, close the app and write the demo shop into the dev database, then start the app:
+
+```bash
+npm run fixtures
+npm run dev
+```
+
+`npm run fixtures` is a plain Node script, not part of the app. It replaces the shop in the file `npm run dev` opens (on Linux, `~/.config/OpenMarket/openmarket.sqlite`) with a Spanish grocery shop: 25 categories, 100 products, and 45 days of paid tickets with sequential invoices. Set `OPENMARKET_USER_DATA=<folder>` to write another file. The run is one transaction, so a failure leaves the file as it was; it exits non-zero and prints the error.
 
 ```bash
 npm run dev

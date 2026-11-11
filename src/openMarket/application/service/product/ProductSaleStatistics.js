@@ -15,11 +15,11 @@ import {fillSeries, previousYearRange, resolveSalesWindow} from './salesWindows'
 export default class ProductSaleStatistics {
 
   /**
-   * @param {{repository: ProductSaleStatisticsRepository, clock?: {zonedNow: () => {local: string}}}} deps
+   * @param {{repository: ProductSaleStatisticsRepository, clock: {zonedNow: () => {local: string}}}} deps
    */
   constructor({repository, clock}) {
     this._repository = repository;
-    this._clock = clock || null;
+    this._clock = clock;
   }
 
   /**
@@ -28,9 +28,6 @@ export default class ProductSaleStatistics {
    * @returns {moment.Moment}
    */
   _shopNow() {
-    if (!this._clock || typeof this._clock.zonedNow !== 'function') {
-      return moment();
-    }
     return moment.parseZone(this._clock.zonedNow().local);
   }
 

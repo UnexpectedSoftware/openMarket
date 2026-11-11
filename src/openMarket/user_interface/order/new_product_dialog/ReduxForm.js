@@ -4,7 +4,7 @@ import Button from '../../components/Button';
 import NumberField from '../../components/NumberField';
 import TextField from '../../components/TextField';
 import reduxFormField from '../../components/reduxFormField';
-import {greaterThan0, number, required} from '../../validations/formValidations';
+import {greaterThan0, number, required, requiredText} from '../../validations/formValidations';
 
 const textField = reduxFormField(TextField);
 const priceField = reduxFormField(NumberField);
@@ -24,8 +24,8 @@ class ReduxForm extends Component {
     const {close} = this.props;
     return (
       <form onKeyPress={event => { if (event.which === 13) { event.preventDefault(); } }}>
-        <Field name="barcode" component={textField} label="Barcode" validate={[required]} />
-        <Field name="name" component={textField} label="Name" validate={required} />
+        <Field name="barcode" component={textField} label="Barcode" validate={[requiredText]} />
+        <Field name="name" component={textField} label="Name" validate={requiredText} />
         <Field name="price" component={priceField} label="Price" unit="€" validate={[required, greaterThan0, number]} />
         <div className="om-gallery-row">
           <Button type="button" icon="floppy-o" onClick={this.save}>Save</Button>

@@ -22,6 +22,7 @@
     "start": "cross-env NODE_ENV=production electron ./dist/main.js",
     "start-hot": "cross-env HOT=1 NODE_ENV=development electron ./src/openMarket/user_interface/main.development.js",
     "dev": "npm run hot-server -- --start-hot",
+    "fixtures": "cross-env NODE_ENV=development NODE_OPTIONS=--no-experimental-detect-module node -r @babel/register src/openMarket/infrastructure/dev/fixtures.js",
     "package": "npm run build && electron-builder --publish never",
     "package-win": "npm run build && electron-builder --win --x64 --publish never",
     "package-linux": "npm run build && electron-builder --linux --publish never",

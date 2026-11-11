@@ -2,28 +2,18 @@ import {expect} from 'chai';
 import 'rxjs/add/operator/map';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
-import {replaceSqliteData} from '../openMarket/infrastructure/service/sqliteSeed';
+import seedShop from '../test/openMarket/support/seedShop';
+import {shopCategory, shopProduct} from '../test/openMarket/support/catalog';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 const createOrder = openMarket.get('orders_create_use_case');
 const invoiceRepository = container.getInstance({key: 'invoiceRepository'});
 
-const product = {
-  _id: 'Seq-0',
-  _barcode: '0001',
-  _name: 'Milk',
-  _description: '',
-  _price: 1.1,
-  _basePrice: 1,
-  _stock: 10,
-  _stockMin: 1,
-  _categoryId: '1',
-  _status: 'ENABLED'
-};
+const product = shopProduct({barcode: '0001', name: 'Milk', price: '1.10', basePrice: '1.00', stock: 10, stockMin: 1});
 
 describe('VAT rates', () => {
   beforeEach(() => {
-    replaceSqliteData(database, {products: [product]});
+    seedShop(container, {categories: [shopCategory('1')], products: [product]});
   });
 
   it('stores 21 % on a product that had no rate and keeps the invoice breakdown', done => {
