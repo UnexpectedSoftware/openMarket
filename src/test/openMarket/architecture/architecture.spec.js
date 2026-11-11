@@ -132,6 +132,23 @@ describe('architecture', () => {
     expect(bad, 'Take a Clock (domain/Clock.js) in the constructor instead of reading the system time').to.deep.equal([]);
   });
 
+  it('keeps the demo fixtures out of the app: only infrastructure/dev imports infrastructure/dev', () => {
+    const bad = [];
+    files.forEach(file => {
+      const from = rel(file);
+      if (from.startsWith('infrastructure/dev/')) {
+        return;
+      }
+      importsOf(file).forEach(spec => {
+        const to = resolveTarget(file, spec);
+        if (to && to.startsWith('infrastructure/dev/')) {
+          bad.push(from + ' -> ' + to);
+        }
+      });
+    });
+    expect(bad).to.deep.equal([]);
+  });
+
   it('keeps the domain free of I/O and framework packages', () => {
     const bad = [];
     files.filter(file => rel(file).startsWith('domain/')).forEach(file => {

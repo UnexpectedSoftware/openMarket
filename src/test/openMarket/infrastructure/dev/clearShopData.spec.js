@@ -1,7 +1,7 @@
 import { expect } from 'chai';
 import {Container} from '../../../../openMarket/infrastructure/dic/Container';
 import SqliteConnection from '../../../../openMarket/infrastructure/service/SqliteConnection';
-import { clearShopData } from '../../../../openMarket/infrastructure/service/sqliteSeed';
+import { clearShopData } from '../../../../openMarket/infrastructure/dev/clearShopData';
 import runNow from '../../../../openMarket/infrastructure/service/runNow';
 import Money from '../../../../openMarket/domain/money/Money';
 import Quantity from '../../../../openMarket/domain/money/Quantity';

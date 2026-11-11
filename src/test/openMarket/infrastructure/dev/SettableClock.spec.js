@@ -1,5 +1,5 @@
 import {expect} from 'chai';
-import SettableClock from '../../../../openMarket/infrastructure/service/SettableClock';
+import SettableClock from '../../../../openMarket/infrastructure/dev/SettableClock';
 import SystemClock from '../../../../openMarket/infrastructure/service/SystemClock';
 
 describe('SettableClock', () => {

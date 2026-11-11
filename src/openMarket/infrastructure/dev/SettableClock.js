@@ -1,4 +1,4 @@
-import SystemClock from './SystemClock';
+import SystemClock from '../service/SystemClock';
 /** @typedef {import('../../domain/Clock').default} Clock */
 
 /**

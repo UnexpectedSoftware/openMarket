@@ -13,8 +13,6 @@ class OpenMarket {
      * @param {{container: AppContainer}} deps
      */
   constructor({container}) {
-    this.fixturesService = container.getInstance({key:'fixturesService'});
-    this.fixturesService.load();
         /**
          *
          * @type {Map<string, object>}
@@ -63,14 +61,6 @@ class OpenMarket {
     container.getInstance({key:'pluginHost'}).start();
     container.getInstance({key:'recordProductSales'}).start();
     container.getInstance({key:'domainEventDispatcher'}).start();
-  }
-
-    /**
-     * Replaces the development shop with the demo set. Production builds no-op.
-     * @returns {void}
-     */
-  resetDemoData() {
-    this.fixturesService.reset();
   }
 
     /**

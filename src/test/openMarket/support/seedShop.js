@@ -1,4 +1,4 @@
-import {clearShopData} from '../../../openMarket/infrastructure/service/sqliteSeed';
+import {clearShopData} from '../../../openMarket/infrastructure/dev/clearShopData';
 import runNow from '../../../openMarket/infrastructure/service/runNow';
 /** @typedef {import('../../../openMarket/domain/category/Category').default} Category */
 /** @typedef {import('../../../openMarket/domain/product/Product').default} Product */

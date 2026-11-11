@@ -15,7 +15,7 @@ import UpdateCategory from "../../application/service/category/UpdateCategory";
 import DeleteCategory from "../../application/service/category/DeleteCategory";
 import ProductStatistics from "../../application/service/product/ProductStatistics";
 import ProductSaleStatistics from "../../application/service/product/ProductSaleStatistics";
-import RecordProductSales, {RECORD_PRODUCT_SALES} from "../../application/service/product/RecordProductSales";
+import RecordProductSales from "../../application/service/product/RecordProductSales";
 import ListAllProducts from "../../application/service/product/ListAllProducts";
 import AddStock from "../../application/service/product/AddStock";
 import CreateOrUpdateProduct from "../../application/service/product/CreateOrUpdateProduct";
@@ -51,7 +51,6 @@ import SqliteOrderQueryService from "../order/SqliteOrderQueryService";
 import SqlInvoiceMapper from "../invoice/SqlInvoiceMapper";
 import SqliteInvoiceRepository from "../invoice/SqliteInvoiceRepository";
 import SqliteInvoiceSequence from "../invoice/SqliteInvoiceSequence";
-import { createFixturesService } from "../dev";
 import OpenFoodFactsProductImageSource from "../image/OpenFoodFactsProductImageSource";
 import WikimediaCategoryImageSource from "../image/WikimediaCategoryImageSource";
 import FetchCatalogImages from "../../application/service/image/FetchCatalogImages";
@@ -59,12 +58,10 @@ import FindProductImage from "../../application/service/image/FindProductImage";
 import PrintProductCatalog from "../../application/service/product/PrintProductCatalog";
 import DomainEventBus from "../../domain/service/DomainEventBus";
 import DomainEventSubscribers from "../../domain/service/DomainEventSubscribers";
-import SeedableDomainEventSubscribers from "../event/SeedableDomainEventSubscribers";
 import DomainEventDispatcher from "../event/DomainEventDispatcher";
 import SqliteDomainEventRepository from "../event/SqliteDomainEventRepository";
 import SqliteTransaction from "../service/SqliteTransaction";
 import SystemClock from "../service/SystemClock";
-import SettableClock from "../service/SettableClock";
 import {eventClasses} from "../../domain/event/registry";
 import ListPlugins from "../../application/service/plugin/ListPlugins";
 import SavePlugin from "../../application/service/plugin/SavePlugin";
@@ -118,41 +115,6 @@ class Container {
 
   _sqliteConnection() {
     return new SqliteConnection();
-  }
-
-  _fixturesService() {
-    return createFixturesService({
-      database: this.getInstance({key: 'sqliteConnection'}).database,
-      seed: () => this.getInstance({key: 'demoSeed'})
-    });
-  }
-
-  /**
-   * The use cases the demo reset replays, on the app's one bus and dispatcher.
-   * The seed bootstraps the subscriber set with the sale statistics only: every other
-   * durable subscriber (plugin delivery) runs as a stand-in that does nothing.
-   */
-  _demoSeed() {
-    return {
-      transaction: this.getInstance({key: 'transaction'}),
-      clock: this.getInstance({key: 'clock'}),
-      subscribers: this.getInstance({key: 'domainEventSubscribers'}),
-      seedSubscribers: {keep: [RECORD_PRODUCT_SALES]},
-      eventDispatcher: this.getInstance({key: 'domainEventDispatcher'}),
-      recordProductSales: this.getInstance({key: 'recordProductSales'}),
-      updateShopProfile: this.getInstance({key: 'updateShopProfile'}),
-      updateSellPreferences: this.getInstance({key: 'updateSellPreferences'}),
-      updatePrinterSettings: this.getInstance({key: 'updatePrinterSettings'}),
-      updateLanguagePreferences: this.getInstance({key: 'updateLanguagePreferences'}),
-      changeTheme: this.getInstance({key: 'changeTheme'}),
-      changeLayout: this.getInstance({key: 'changeLayout'}),
-      createCategory: this.getInstance({key: 'createCategory'}),
-      listAllCategories: this.getInstance({key: 'listAllCategories'}),
-      createProduct: this.getInstance({key: 'createProduct'}),
-      addStock: this.getInstance({key: 'addStockProduct'}),
-      disableProduct: this.getInstance({key: 'disableProduct'}),
-      createOrder: this.getInstance({key: 'createOrderUseCase'})
-    };
   }
 
   _printerConnection(){
@@ -427,38 +389,25 @@ class Container {
     });
   }
 
-  _systemClock() {
+  /** @returns {import('../../domain/Clock').default} */
+  _clock() {
     return new SystemClock();
   }
 
   /**
-   * Business time. Development wires a clock the demo seed moves to each historical
-   * ticket; every other build reads the system time.
-   */
-  _clock() {
-    const systemClock = this.getInstance({key: 'systemClock'});
-    return process.env.NODE_ENV === 'development' ? new SettableClock({clock: systemClock}) : systemClock;
-  }
-
-  /**
-   * Who listens on the bus. Development can bootstrap it for the demo seed.
+   * Who listens on the bus. The app's subscribers register on it when it starts;
+   * another bootstrap (the demo fixtures script) can wire its own.
    */
   _domainEventSubscribers() {
-    return process.env.NODE_ENV === 'development'
-      ? new SeedableDomainEventSubscribers()
-      : new DomainEventSubscribers();
+    return new DomainEventSubscribers();
   }
 
-  /**
-   * The outbox stamps rows with the system time: it compares when an event was stored
-   * with when a subscriber registered, while the sale time travels in the payload.
-   */
   _domainEventBus() {
     const connection = this.getInstance({key: 'sqliteConnection'});
     return new DomainEventBus({
       repository: this.getInstance({key: 'domainEventRepository'}),
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
-      clock: this.getInstance({key: 'systemClock'}),
+      clock: this.getInstance({key: 'clock'}),
       subscribers: this.getInstance({key: 'domainEventSubscribers'}),
       recordError: record,
       inTransaction: () => connection.database.isTransaction
@@ -712,6 +661,10 @@ class Container {
     });
   }
 
+  /**
+   * Plugin delivery: loads the enabled plugins, which subscribe on the bus.
+   * @returns {{start: () => void}}
+   */
   _pluginHost() {
     return new PluginHost({
       pluginSource: this.getInstance({key: 'pluginSource'}),

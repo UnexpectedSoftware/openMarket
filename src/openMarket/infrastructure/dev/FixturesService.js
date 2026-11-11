@@ -6,26 +6,23 @@ import fs from 'fs';
 import path from 'path';
 import Quantity from '../../domain/money/Quantity';
 import ProductStatus from '../../domain/product/ProductStatus';
-import {clearShopData} from '../service/sqliteSeed';
+import {clearShopData} from './clearShopData';
 import {writeDemoImages} from './demoImages';
 import runNow from '../service/runNow';
 /** @typedef {import('./demoCatalog').DemoProduct} DemoProduct */
 /** @typedef {import('./demoOrders').DemoTicket} DemoTicket */
-/** @typedef {import('../service/SettableClock').default} SettableClock */
-/** @typedef {import('../event/SeedableDomainEventSubscribers').default} SeedableDomainEventSubscribers */
+/** @typedef {import('./SettableClock').default} SettableClock */
 
 /**
- * What the seed saga drives: the use cases the screens call, on the app's one event bus.
- * While it runs, `subscribers` is bootstrapped with `seedSubscribers`: the shop's own
- * durable handlers it keeps (sale statistics) run for real, and plugin delivery,
- * printing, and live listeners are replaced by stand-ins that do nothing.
+ * What the seed saga drives: the use cases the screens call, wired by the fixtures
+ * container on its own bus. `startSubscribers` registers the subscribers that bootstrap
+ * chose (the real sale statistics; plugin delivery as a stand-in that loads nothing).
  * @typedef {object} DemoSeed
+ * @property {{exec: Function}} database
  * @property {{execute: (work: () => *) => *}} transaction
  * @property {SettableClock} clock
- * @property {SeedableDomainEventSubscribers} subscribers
- * @property {{keep: string[]}} seedSubscribers
+ * @property {() => void} startSubscribers
  * @property {{dispatch: () => void}} eventDispatcher
- * @property {{start: () => void}} recordProductSales
  * @property {{update: Function}} updateShopProfile
  * @property {{update: Function}} updateSellPreferences
  * @property {{update: Function}} updatePrinterSettings
@@ -40,90 +37,68 @@ import runNow from '../service/runNow';
  * @property {{createOrder: Function}} createOrder
  */
 
+/**
+ * @typedef {object} SeedSummary
+ * @property {number} categories
+ * @property {number} products
+ * @property {number} orders
+ * @property {string} from first sale, ISO
+ * @property {string} to last sale, ISO
+ */
+
+/**
+ * Replaces the shop in a database with the demo shop. Only the fixtures script runs it.
+ */
 export default class FixturesService {
 
   /**
-   * @param {object} [deps]
-   * @param {{exec: Function} | null} [deps.database]
-   * @param {(() => DemoSeed) | null} [deps.seed] Built on the first reset, so a normal start pays nothing.
-   * @param {*} [deps.demoCatalog]
-   * @param {*} [deps.demoOrders]
-   * @param {*} [deps.demoShop]
-   * @param {*} [deps.demoSettings]
-   * @param {boolean} [deps.resetOnLoad]
+   * @param {object} deps
+   * @param {DemoSeed} deps.seed
+   * @param {*} deps.demoCatalog
+   * @param {*} deps.demoOrders
+   * @param {*} deps.demoShop
+   * @param {*} deps.demoSettings
    */
-  constructor({
-    database = null,
-    seed = null,
-    demoCatalog = null,
-    demoOrders = null,
-    demoShop = null,
-    demoSettings = null,
-    resetOnLoad = false
-  } = {}) {
-    this._database = database;
-    this._seedFactory = seed;
-    this._seed = null;
+  constructor({seed, demoCatalog, demoOrders, demoShop, demoSettings}) {
+    this._seed = seed;
     this._demoCatalog = demoCatalog;
     this._demoOrders = demoOrders;
     this._demoShop = demoShop;
     this._demoSettings = demoSettings;
-    this._resetOnLoad = resetOnLoad === true;
-  }
-
-  /**
-   * Seeds only when this process was started with a one-shot reset.
-   * An empty database stays empty.
-   */
-  load() {
-    if (!this._resetOnLoad) {
-      return;
-    }
-    this.reset();
   }
 
   /**
    * Clears the shop and replays the demo through the use cases, oldest sale first, in one
-   * transaction: a failure rolls every step back. After the commit the normal dispatcher
-   * delivers the stored events to the seed's subscribers, so the sale statistics are
-   * filled, and plugin deliveries are recorded as handled, before this returns.
-   * @param {{now?: Date}} [options]
+   * transaction: a failure rolls every step back. The shop opens at the first sale's time,
+   * when the subscribers register. After the commit the dispatcher delivers the stored
+   * events, so the sale statistics are filled before this returns.
+   * @param {{now: Date}} options
+   * @returns {SeedSummary}
    */
-  reset({now} = {}) {
-    if (process.env.NODE_ENV !== 'development' || !this._database || !this._ready()) {
-      return;
-    }
-    const seed = this._seedOnce();
-    const plan = this._plan(now || new Date(seed.clock.now()));
+  reset({now}) {
+    const seed = this._seed;
+    const plan = this._plan(now);
     const imageDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-demo-images-'));
-    seed.subscribers.seedWith(seed.seedSubscribers);
     try {
       const images = writeDemoImages({directory: imageDirectory, products: plan.products});
       seed.transaction.execute(() => {
-        clearShopData(this._database);
+        clearShopData(seed.database);
+        seed.clock.moveTo(plan.tickets[0].at);
+        seed.startSubscribers();
         runSaga(seed, plan, images);
       });
       seed.eventDispatcher.dispatch();
     } finally {
       seed.clock.resume();
-      seed.subscribers.resume();
       fs.rmSync(imageDirectory, {recursive: true, force: true});
     }
-  }
-
-  _ready() {
-    return Boolean(this._seedFactory && this._demoCatalog && this._demoOrders && this._demoShop && this._demoSettings);
-  }
-
-  /**
-   * @returns {DemoSeed}
-   */
-  _seedOnce() {
-    if (!this._seed) {
-      this._seed = this._seedFactory();
-      this._seed.recordProductSales.start();
-    }
-    return this._seed;
+    return {
+      categories: plan.categories.length,
+      products: plan.products.length,
+      orders: plan.tickets.length,
+      from: plan.tickets[0].at.toISOString(),
+      to: plan.tickets[plan.tickets.length - 1].at.toISOString()
+    };
   }
 
   /**
