@@ -22,6 +22,7 @@ import runNow from '../service/runNow';
  * @property {{execute: (work: () => *) => *}} transaction
  * @property {SettableClock} clock
  * @property {() => void} startSubscribers
+ * @property {{prepare: Function, settingsDone: Function, finish: Function}} progress
  * @property {{dispatch: () => void}} eventDispatcher
  * @property {{update: Function}} updateShopProfile
  * @property {{update: Function}} updateSellPreferences
@@ -80,6 +81,11 @@ export default class FixturesService {
     const plan = this._plan(now);
     const imageDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-demo-images-'));
     try {
+      seed.progress.prepare({
+        categories: plan.categories.length,
+        products: plan.products.length,
+        orders: plan.tickets.length
+      });
       const images = writeDemoImages({directory: imageDirectory, products: plan.products});
       seed.transaction.execute(() => {
         clearShopData(seed.database);
@@ -88,6 +94,10 @@ export default class FixturesService {
         runSaga(seed, plan, images);
       });
       seed.eventDispatcher.dispatch();
+      seed.progress.finish();
+    } catch (error) {
+      seed.progress.finish();
+      throw error;
     } finally {
       seed.clock.resume();
       fs.rmSync(imageDirectory, {recursive: true, force: true});
@@ -132,6 +142,7 @@ function runSaga(seed, plan, images) {
   runNow(seed.updateLanguagePreferences.update(plan.settings.language));
   runNow(seed.changeTheme.changeTheme({theme: plan.settings.appearance.theme}));
   runNow(seed.changeLayout.changeLayout({layout: plan.settings.appearance.layout}));
+  seed.progress.settingsDone();
   plan.categories.forEach(category => runNow(seed.createCategory.createCategory({name: category.name})));
   const categoryIds = new Map(runNow(seed.listAllCategories.findAllWithStats())
     .map(category => [category.name, category.id]));

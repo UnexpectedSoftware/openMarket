@@ -197,6 +197,32 @@ The order screen listens with `ofType` and shows the warning toast. A second sca
 {"barcode": "0001", "name": "Coca-Cola"}
 ```
 
+### `CategoryCreated`
+
+Saved by `CreateCategory` inside the category transaction, after the category row is inserted. The type is marked durable. Raised after that transaction commits. `aggregate_id` is the category id.
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Category id |
+| `name` | Category name |
+
+```json
+{"id": "6f1c0b9e-1b2a-4c3d-9e8f-0a1b2c3d4e5f", "name": "Fruta"}
+```
+
+### `ProductCreated`
+
+Saved by `CreateOrUpdateProduct` when the barcode is not already stored, inside the product transaction, after the upsert. Saving a product that already exists does not save this event. The type is marked durable. Raised after that transaction commits. `aggregate_id` is the barcode.
+
+| Field | Meaning |
+| --- | --- |
+| `barcode` | Product barcode |
+| `name` | Product name |
+
+```json
+{"barcode": "0001", "name": "Coca-Cola"}
+```
+
 ## What stays unaware of the tables
 
 Use cases, entities, and `ofType` listeners do not import the repository. They save, record, raise, or subscribe through `DomainEventBus`. `SqliteDomainEventRepository` only saves and finds rows. Retries and dead letters stay on the bus. The dispatcher owns the claim transaction. The container wires the repository, `RandomUUIDIdentity`, `SystemClock`, the error log, and the dispatcher.

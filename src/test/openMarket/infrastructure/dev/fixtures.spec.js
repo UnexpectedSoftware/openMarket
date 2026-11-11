@@ -7,8 +7,10 @@ import SqliteConnection from '../../../../openMarket/infrastructure/service/Sqli
 import FixturesContainer from '../../../../openMarket/infrastructure/dev/FixturesContainer';
 import FixturesService from '../../../../openMarket/infrastructure/dev/FixturesService';
 import {electronUserDataDirectory, fixturesDatabasePath, main, runFixtures} from '../../../../openMarket/infrastructure/dev/fixtures';
+import CategoryCreated from '../../../../openMarket/domain/event/CategoryCreated';
 import InvoiceIssued from '../../../../openMarket/domain/event/InvoiceIssued';
 import OrderCreated from '../../../../openMarket/domain/event/OrderCreated';
+import ProductCreated from '../../../../openMarket/domain/event/ProductCreated';
 import ProductWithLowStock from '../../../../openMarket/domain/event/ProductWithLowStock';
 import Money from '../../../../openMarket/domain/money/Money';
 import Quantity from '../../../../openMarket/domain/money/Quantity';
@@ -20,6 +22,10 @@ import * as demoSettings from '../../../../openMarket/infrastructure/dev/demoSet
 import * as demoShop from '../../../../openMarket/infrastructure/dev/demoShop';
 
 const NOW = new Date('2026-09-25T13:00:00Z');
+
+function quietOut() {
+  return {write() {}};
+}
 
 /** The app's own container, opened on the file the fixtures script wrote. */
 class AppContainer extends Container {
@@ -73,11 +79,27 @@ describe('npm run fixtures', function describeFixtures() {
   let app;
   let database;
   let plugin;
+  let eventTypes;
+  let progressText;
 
   before(() => {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), 'om-fixtures-'));
     filename = path.join(directory, 'openmarket.sqlite');
-    summary = runFixtures({filename, now: NOW});
+    const seen = [];
+    const chunks = [];
+    summary = runFixtures({
+      filename,
+      now: NOW,
+      out: {write(text) { chunks.push(String(text)); }},
+      prepare(container) {
+        const bus = container.getInstance({key: 'domainEventBus'});
+        [CategoryCreated, ProductCreated, OrderCreated].forEach(EventType => {
+          bus.subscribeSync(EventType, () => seen.push(EventType.type));
+        });
+      }
+    });
+    eventTypes = seen;
+    progressText = chunks.join('');
     app = new AppContainer(filename);
     database = app.getInstance({key: 'sqliteConnection'}).database;
     plugin = fakePlugin(app);
@@ -87,6 +109,22 @@ describe('npm run fixtures', function describeFixtures() {
   after(() => {
     database.close();
     fs.rmSync(directory, {recursive: true, force: true});
+  });
+
+  it('shows settings as one step, then categories, products, tickets, and informes', () => {
+    const categories = eventTypes.filter(type => type === 'CategoryCreated');
+    const products = eventTypes.filter(type => type === 'ProductCreated');
+    const orders = eventTypes.filter(type => type === 'OrderCreated');
+    expect(categories).to.have.length(25);
+    expect(products).to.have.length(100);
+    expect(orders).to.have.length(summary.orders);
+    expect(eventTypes).to.deep.equal([...categories, ...products, ...orders]);
+    expect(progressText).to.contain(':: Sembrando tienda demo\n');
+    expect(progressText).to.contain(' ajustes     [##########################] 100%\n');
+    expect(progressText).to.contain(' categorías  [##########################] 25/25\n');
+    expect(progressText).to.contain(' productos   [##########################] 100/100\n');
+    expect(progressText).to.contain(` tickets     [##########################] ${summary.orders}/${summary.orders}\n`);
+    expect(progressText).to.contain(` informes    [##########################] ${summary.orders}/${summary.orders}\n`);
   });
 
   it('reports what it wrote and how long it took', () => {
@@ -181,7 +219,7 @@ describe('npm run fixtures on a shop that already exists', function describeAgai
   beforeEach(() => {
     directory = fs.mkdtempSync(path.join(os.tmpdir(), 'om-fixtures-'));
     filename = path.join(directory, 'openmarket.sqlite');
-    runFixtures({filename, now: NOW});
+    runFixtures({filename, now: NOW, out: quietOut()});
   });
 
   afterEach(() => {
@@ -198,7 +236,7 @@ describe('npm run fixtures on a shop that already exists', function describeAgai
   }
 
   it('replaces the shop instead of adding to it', () => {
-    const again = runFixtures({filename, now: NOW});
+    const again = runFixtures({filename, now: NOW, out: quietOut()});
     expect(read('SELECT COUNT(*) AS total FROM "order"').total).to.equal(again.orders);
     expect(read('SELECT COUNT(*) AS total FROM product_sale_order').total).to.equal(again.orders);
     expect(read('SELECT MAX(number) AS last FROM invoice').last).to.equal(again.orders);
@@ -207,7 +245,8 @@ describe('npm run fixtures on a shop that already exists', function describeAgai
   it('rolls the whole run back when a step fails', () => {
     const products = demoCatalog.buildProducts();
     const broken = {...demoCatalog, buildProducts: () => products.map(product => product.enabled ? product : {...product, name: ' '})};
-    const container = new FixturesContainer({filename});
+    const chunks = [];
+    const container = new FixturesContainer({filename, out: {write(text) { chunks.push(String(text)); }}});
     try {
       const service = new FixturesService({
         seed: container.getInstance({key: 'demoSeed'}),
@@ -218,6 +257,12 @@ describe('npm run fixtures on a shop that already exists', function describeAgai
       });
       expect(() => service.reset({now: NOW})).to.throw('Product name is missing');
       expect(container.getInstance({key: 'clock'}).now() > '2026-10-01').to.equal(true);
+      const text = chunks.join('');
+      const stopped = text.match(/ productos   \[[#-]+\] (\d+)\/100/);
+      expect(stopped, text).to.not.equal(null);
+      expect(Number(stopped[1])).to.be.above(0).and.below(100);
+      expect(text).to.contain(' ajustes     [##########################] 100%');
+      expect(text).to.not.contain('Demo shop written');
     } finally {
       container.close();
     }
@@ -243,7 +288,7 @@ describe('npm run fixtures entry point', () => {
       expect(written.out).to.equal('');
 
       expect(main({filename: path.join(directory, 'openmarket.sqlite'), out, err, now: NOW})).to.equal(0);
-      expect(written.out).to.match(/^Demo shop written to .*openmarket\.sqlite\n  25 categories, 100 products, \d+ tickets and invoices\n  sales from 2026-08-12 to 2026-09-25, in \d+ ms\n$/);
+      expect(written.out).to.match(/^:: Sembrando tienda demo\n ajustes +\[[#]+\] 100%\n categorías +\[[#]+\] 25\/25\n productos +\[[#]+\] 100\/100\n tickets +\[[#]+\] (\d+)\/\1\n informes +\[[#]+\] \1\/\1\nDemo shop written to .*openmarket\.sqlite\n  25 categories, 100 products, \1 tickets and invoices\n  sales from 2026-08-12 to 2026-09-25, in \d+ ms\n$/);
     } finally {
       fs.rmSync(directory, {recursive: true, force: true});
     }

@@ -1,13 +1,17 @@
+import CategoryCreated from './CategoryCreated';
 import InvoiceCancelled from './InvoiceCancelled';
 import InvoiceIssued from './InvoiceIssued';
 import OrderCreated from './OrderCreated';
+import ProductCreated from './ProductCreated';
 import ProductEnabledAgain from './ProductEnabledAgain';
 import ProductWithLowStock from './ProductWithLowStock';
 
 const TYPES = {
+  [CategoryCreated.type]: CategoryCreated,
   [InvoiceCancelled.type]: InvoiceCancelled,
   [InvoiceIssued.type]: InvoiceIssued,
   [OrderCreated.type]: OrderCreated,
+  [ProductCreated.type]: ProductCreated,
   [ProductEnabledAgain.type]: ProductEnabledAgain,
   [ProductWithLowStock.type]: ProductWithLowStock
 };
