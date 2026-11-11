@@ -119,7 +119,7 @@ describe('npm run fixtures', function describeFixtures() {
     expect(products).to.have.length(100);
     expect(orders).to.have.length(summary.orders);
     expect(eventTypes).to.deep.equal([...categories, ...products, ...orders]);
-    expect(progressText).to.contain(':: Sembrando tienda demo\n');
+    expect(progressText).to.contain(':: Creando datos para la demo...\n');
     expect(progressText).to.contain(' ajustes     [##########################] 100%\n');
     expect(progressText).to.contain(' categorías  [##########################] 25/25\n');
     expect(progressText).to.contain(' productos   [##########################] 100/100\n');
@@ -288,7 +288,7 @@ describe('npm run fixtures entry point', () => {
       expect(written.out).to.equal('');
 
       expect(main({filename: path.join(directory, 'openmarket.sqlite'), out, err, now: NOW})).to.equal(0);
-      expect(written.out).to.match(/^:: Sembrando tienda demo\n ajustes +\[[#]+\] 100%\n categorías +\[[#]+\] 25\/25\n productos +\[[#]+\] 100\/100\n tickets +\[[#]+\] (\d+)\/\1\n informes +\[[#]+\] \1\/\1\nDemo shop written to .*openmarket\.sqlite\n  25 categories, 100 products, \1 tickets and invoices\n  sales from 2026-08-12 to 2026-09-25, in \d+ ms\n$/);
+      expect(written.out).to.match(/^:: Creando datos para la demo...\n ajustes +\[[#]+\] 100%\n categorías +\[[#]+\] 25\/25\n productos +\[[#]+\] 100\/100\n tickets +\[[#]+\] (\d+)\/\1\n informes +\[[#]+\] \1\/\1\nDemo shop written to .*openmarket\.sqlite\n  25 categories, 100 products, \1 tickets and invoices\n  sales from 2026-08-12 to 2026-09-25, in \d+ ms\n$/);
     } finally {
       fs.rmSync(directory, {recursive: true, force: true});
     }

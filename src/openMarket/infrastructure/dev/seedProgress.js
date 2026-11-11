@@ -3,7 +3,7 @@ import OrderCreated from '../../domain/event/OrderCreated';
 import ProductCreated from '../../domain/event/ProductCreated';
 /** @typedef {import('../../domain/service/DomainEventBus').default} DomainEventBus */
 
-const HEADER = ':: Sembrando tienda demo';
+const HEADER = ':: Creando datos para la demo...';
 const BAR_WIDTH = 26;
 const LABEL_WIDTH = 13;
 

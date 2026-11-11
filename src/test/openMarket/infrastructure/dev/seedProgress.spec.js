@@ -65,7 +65,7 @@ describe('SeedProgress', () => {
     events.emit(new ProductCreated({barcode: '1', name: 'Milk'}));
     progress.finish();
     expect(out.text()).to.equal([
-      ':: Sembrando tienda demo',
+      ':: Creando datos para la demo...',
       ' ajustes     [##########################] 100%',
       ' categorías  [##########################] 2/2',
       ' productos   [#############-------------] 1/2  50%',
