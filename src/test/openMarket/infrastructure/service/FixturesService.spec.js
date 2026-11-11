@@ -8,6 +8,13 @@ import SettableClock from '../../../../openMarket/infrastructure/service/Settabl
 import ImageStore from '../../../../openMarket/infrastructure/service/ImageStore';
 import FixturesService from '../../../../openMarket/infrastructure/dev/FixturesService';
 import InvoiceIssued from '../../../../openMarket/domain/event/InvoiceIssued';
+import OrderCreated from '../../../../openMarket/domain/event/OrderCreated';
+import ProductWithLowStock from '../../../../openMarket/domain/event/ProductWithLowStock';
+import SeedableDomainEventSubscribers from '../../../../openMarket/infrastructure/event/SeedableDomainEventSubscribers';
+import Money from '../../../../openMarket/domain/money/Money';
+import Quantity from '../../../../openMarket/domain/money/Quantity';
+import Payment from '../../../../openMarket/domain/payment/Payment';
+import runNow from '../../../../openMarket/infrastructure/service/runNow';
 import * as demoCatalog from '../../../../openMarket/infrastructure/dev/demoCatalog';
 import * as demoOrders from '../../../../openMarket/infrastructure/dev/demoOrders';
 import * as demoSettings from '../../../../openMarket/infrastructure/dev/demoSettings';
@@ -16,21 +23,26 @@ import * as demoShop from '../../../../openMarket/infrastructure/dev/demoShop';
 const NOW = new Date('2026-09-25T13:00:00Z');
 
 /**
- * The real container on an in-memory database, with the development clock
- * and product photos in a temporary folder.
+ * The real container with the development clock and subscriber set, on a database
+ * file (or in memory), with product photos in a temporary folder.
  */
 class SeedContainer extends Container {
-  constructor(imageDirectory) {
+  constructor(imageDirectory, filename = ':memory:') {
     super({environment: 'test'});
     this._imageDirectory = imageDirectory;
+    this._filename = filename;
   }
 
   _sqliteConnection() {
-    return new SqliteConnection({filename: ':memory:'});
+    return new SqliteConnection({filename: this._filename});
   }
 
   _clock() {
     return new SettableClock();
+  }
+
+  _domainEventSubscribers() {
+    return new SeedableDomainEventSubscribers();
   }
 
   _productImageStore() {
@@ -48,9 +60,9 @@ function withDevelopment(run) {
   }
 }
 
-function seeded(overrides = {}) {
+function seeded(overrides = {}, filename = ':memory:') {
   const imageDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'om-demo-store-'));
-  const container = new SeedContainer(imageDirectory);
+  const container = new SeedContainer(imageDirectory, filename);
   const database = container.getInstance({key: 'sqliteConnection'}).database;
   const service = new FixturesService({
     database,
@@ -62,6 +74,19 @@ function seeded(overrides = {}) {
     ...overrides
   });
   return {container, database, service, imageDirectory};
+}
+
+/**
+ * A plugin that would submit invoices, check sales inside the transaction, and toast.
+ * @param {Container} container
+ */
+function fakePlugin(container) {
+  const bus = container.getInstance({key: 'domainEventBus'});
+  const calls = {durable: [], sync: [], live: []};
+  bus.subscribeDurable('verifactu:submit', InvoiceIssued, event => calls.durable.push(event.number));
+  bus.subscribeSync(OrderCreated, event => calls.sync.push(event.id));
+  bus.ofType(ProductWithLowStock).subscribe(event => calls.live.push(event));
+  return {calls};
 }
 
 function count(database, table) {
@@ -80,22 +105,23 @@ describe('FixturesService', function describeFixtures() {
   const tickets = demoOrders.buildDemoOrders(products, NOW);
   const sold = demoOrders.soldQuantities(tickets);
   let shop;
-  let pluginDeliveries;
+  let plugin;
   let elapsedMs;
+  let databaseDirectory;
 
   before(() => {
-    shop = seeded();
-    pluginDeliveries = [];
-    const bus = shop.container.getInstance({key: 'domainEventBus'});
-    bus.subscribeDurable('plugin.verifactu.submit', InvoiceIssued, event => pluginDeliveries.push(event));
+    databaseDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'om-demo-db-'));
+    shop = seeded({}, path.join(databaseDirectory, 'shop.db'));
+    shop.container.getInstance({key: 'recordProductSales'}).start();
+    plugin = fakePlugin(shop.container);
     const started = Date.now();
     withDevelopment(() => shop.service.reset({now: NOW}));
     elapsedMs = Date.now() - started;
-    shop.container.getInstance({key: 'domainEventDispatcher'}).dispatch();
   });
 
   after(() => {
     fs.rmSync(shop.imageDirectory, {recursive: true, force: true});
+    fs.rmSync(databaseDirectory, {recursive: true, force: true});
   });
 
   it('replays the shop, the settings, the catalogue, and every sale through the use cases', () => {
@@ -146,16 +172,56 @@ describe('FixturesService', function describeFixtures() {
     expect(sold.get('8410000001004').milli).to.be.above(0);
   });
 
-  it('runs the sale statistics after the commit and keeps demo invoices away from plugins', () => {
+  it('runs the sale statistics after the commit on the normal bus', () => {
     const {database} = shop;
     const totals = new Map(database.prepare('SELECT barcode, SUM(quantity) AS quantity FROM product_sale_day GROUP BY barcode')
       .all().map(row => [row.barcode, row.quantity]));
     sold.forEach((quantity, barcode) => expect(totals.get(barcode), barcode).to.be.closeTo(quantity.units, 1e-9));
     expect(count(database, 'product_sale_order')).to.equal(tickets.length);
     expect(database.prepare("SELECT COUNT(*) AS total FROM domain_event WHERE dispatched_at IS NULL").get().total).to.equal(0);
-    expect(database.prepare('SELECT DISTINCT subscriber_name AS name, status FROM domain_event_processing').all())
-      .to.deep.equal([{name: 'record-product-sales', status: 'DONE'}]);
-    expect(pluginDeliveries).to.deep.equal([]);
+  });
+
+  it('records every demo invoice as handled for a running plugin without calling it', () => {
+    expect(plugin.calls).to.deep.equal({durable: [], sync: [], live: []});
+    expect(shop.database.prepare(
+      'SELECT subscriber_name AS name, status, COUNT(*) AS total FROM domain_event_processing GROUP BY name, status ORDER BY name'
+    ).all()).to.deep.equal([
+      {name: 'record-product-sales', status: 'DONE', total: tickets.length},
+      {name: 'verifactu:submit', status: 'DONE', total: tickets.length}
+    ]);
+  });
+
+  it('replays no demo invoice to plugins on the next start', () => {
+    const restarted = new SeedContainer(shop.imageDirectory, path.join(databaseDirectory, 'shop.db'));
+    const returning = fakePlugin(restarted);
+    const newcomer = [];
+    const bus = restarted.getInstance({key: 'domainEventBus'});
+    bus.subscribeDurable('newcomer:submit', InvoiceIssued, event => newcomer.push(event));
+    restarted.getInstance({key: 'recordProductSales'}).start();
+    restarted.getInstance({key: 'domainEventDispatcher'}).dispatch();
+    bus.processPending();
+    expect(returning.calls.durable).to.deep.equal([]);
+    expect(newcomer).to.deep.equal([]);
+    restarted.getInstance({key: 'sqliteConnection'}).database.close();
+  });
+
+  it('hands the real plugin back its handlers once the seed is over', () => {
+    const price = Money.fromEuros('1.00');
+    const fresh = seeded();
+    try {
+      const live = fakePlugin(fresh.container);
+      withDevelopment(() => fresh.service.reset({now: NOW}));
+      expect(live.calls).to.deep.equal({durable: [], sync: [], live: []});
+      const barcode = products.find(product => product.enabled && product.closingStock > 10 && !product.weighted).barcode;
+      runNow(fresh.container.getInstance({key: 'createOrderUseCase'}).createOrder({
+        lines: [{barcode, name: 'Venta real', price, quantity: Quantity.from(1), weighted: false}],
+        payment: Payment.card({total: price})
+      }));
+      expect(live.calls.durable).to.deep.equal([tickets.length + 1]);
+      expect(live.calls.sync).to.have.length(1);
+    } finally {
+      fs.rmSync(fresh.imageDirectory, {recursive: true, force: true});
+    }
   });
 
   it('replays the same shop on a second reset', () => {
@@ -187,6 +253,20 @@ describe('FixturesService', function describeFixtures() {
       expect(count(shopToKeep.database, 'invoice')).to.equal(tickets.length);
     } finally {
       fs.rmSync(shopToKeep.imageDirectory, {recursive: true, force: true});
+    }
+  });
+
+  it('gives plugins that start after a reset on load no demo invoice', () => {
+    const launched = seeded({resetOnLoad: true});
+    try {
+      withDevelopment(() => launched.service.load());
+      const later = fakePlugin(launched.container);
+      launched.container.getInstance({key: 'domainEventDispatcher'}).dispatch();
+      launched.container.getInstance({key: 'domainEventBus'}).processPending();
+      expect(later.calls.durable).to.deep.equal([]);
+      expect(count(launched.database, 'product_sale_order')).to.equal(count(launched.database, '"order"'));
+    } finally {
+      fs.rmSync(launched.imageDirectory, {recursive: true, force: true});
     }
   });
 

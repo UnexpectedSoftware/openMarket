@@ -1,8 +1,8 @@
 import {Observable} from 'rxjs/Observable';
-import {Subject} from 'rxjs/Subject';
 import {aggregateId, hydrate, typeName} from '../event/registry';
 import SyncSubscriberOutsideTransactionError from '../event/SyncSubscriberOutsideTransactionError';
 import {DEAD, DONE, FAILED, PENDING, PROCESSING} from './domainEventStatus';
+import DomainEventSubscribers from './DomainEventSubscribers';
 /** @typedef {import('../event/DomainEventRepository').default} DomainEventRepository */
 /** @typedef {import('../Identity').default} Identity */
 /** @typedef {import('../Clock').default} Clock */
@@ -22,6 +22,7 @@ export default class DomainEventBus {
    * @param {DomainEventRepository} [deps.repository]
    * @param {Identity} [deps.identity]
    * @param {Clock} [deps.clock]
+   * @param {DomainEventSubscribers} [deps.subscribers] who listens; the container wires it like the Clock
    * @param {number} [deps.maxAttempts]
    * @param {(error: any) => void} [deps.recordError]
    * @param {() => boolean} [deps.inTransaction]
@@ -30,6 +31,7 @@ export default class DomainEventBus {
     repository,
     identity,
     clock,
+    subscribers = new DomainEventSubscribers(),
     maxAttempts = DEFAULT_MAX_ATTEMPTS,
     recordError,
     inTransaction
@@ -37,16 +39,13 @@ export default class DomainEventBus {
     if (!repository || !identity || !clock) {
       throw new Error('DomainEventBus requires a repository, an identity, and a clock');
     }
-    this._events = new Subject();
     this._repository = repository;
     this._identity = identity;
     this._clock = clock;
     this._maxAttempts = maxAttempts;
     this._recordError = typeof recordError === 'function' ? recordError : () => {};
     this._inTransaction = typeof inTransaction === 'function' ? inTransaction : null;
-    this._durable = new Map();
-    this._sync = [];
-    this._live = [];
+    this._subscribers = subscribers;
     this._queued = [];
     this._draining = false;
     this._pumpAgain = false;
@@ -103,25 +102,21 @@ export default class DomainEventBus {
   }
 
   _notify(event) {
-    this._live.slice().forEach(listener => {
+    this._subscribers.live().forEach(listener => {
       try {
         listener(event);
       } catch (error) {
         this._recordError(error);
       }
     });
-    try {
-      this._events.next(event);
-    } catch (error) {
-      this._recordError(error);
-    }
   }
 
   /**
+   * Every raised event, live. Nothing is replayed.
    * @returns {Observable}
    */
   events() {
-    return this._events.asObservable();
+    return Observable.create(observer => this._subscribers.addLive(event => observer.next(event)));
   }
 
   /**
@@ -139,13 +134,7 @@ export default class DomainEventBus {
         }
         observer.next(event);
       };
-      this._live.push(listener);
-      return () => {
-        const index = this._live.indexOf(listener);
-        if (index >= 0) {
-          this._live.splice(index, 1);
-        }
-      };
+      return this._subscribers.addLive(listener);
     });
     const subscribe = observable.subscribe.bind(observable);
     observable.subscribe = function guardedSubscribe(observerOrNext, error, complete) {
@@ -169,14 +158,7 @@ export default class DomainEventBus {
     if (typeof handler !== 'function') {
       throw new Error('Domain event subscriber handler is required');
     }
-    const subscriber = {EventType, handler};
-    this._sync.push(subscriber);
-    return () => {
-      const index = this._sync.indexOf(subscriber);
-      if (index >= 0) {
-        this._sync.splice(index, 1);
-      }
-    };
+    return this._subscribers.addSync({EventType, handler});
   }
 
   /**
@@ -196,7 +178,7 @@ export default class DomainEventBus {
     if (!existing) {
       this._repository.saveSubscriber({subscriberName: name, registeredAt});
     }
-    this._durable.set(name, {
+    return this._subscribers.addDurable({
       name,
       EventType,
       handler,
@@ -204,12 +186,6 @@ export default class DomainEventBus {
       maxAttempts: maxAttempts > 0 ? maxAttempts : this._maxAttempts,
       registeredAt
     });
-    return () => {
-      const current = this._durable.get(name);
-      if (current && current.handler === handler) {
-        this._durable.delete(name);
-      }
-    };
   }
 
   /**
@@ -219,8 +195,9 @@ export default class DomainEventBus {
    */
   fanOut() {
     const updatedAt = this._clock.now();
+    const subscribers = this._subscribers.durable();
     this._repository.findUndispatched().forEach(record => {
-      this._durable.forEach(subscriber => {
+      subscribers.forEach(subscriber => {
         if (subscriber.EventType.type !== record.type) {
           return;
         }
@@ -247,7 +224,7 @@ export default class DomainEventBus {
   recover() {
     const updatedAt = this._clock.now();
     this._repository.findProcessingByStatus({status: PROCESSING}).forEach(row => {
-      const subscriber = this._durable.get(row.subscriberName);
+      const subscriber = this._subscribers.durableNamed(row.subscriberName);
       const maxAttempts = subscriber ? subscriber.maxAttempts : this._maxAttempts;
       const dead = row.attempts >= maxAttempts;
       this._repository.saveProcessing({
@@ -286,7 +263,7 @@ export default class DomainEventBus {
       while (progressed || this._pumpAgain) {
         progressed = false;
         this._pumpAgain = false;
-        this._durable.forEach(subscriber => {
+        this._subscribers.durable().forEach(subscriber => {
           let allowRetry = retry;
           for (;;) {
             const outcome = this._dispatchNext(subscriber, {retry: allowRetry});
@@ -392,7 +369,7 @@ export default class DomainEventBus {
    * @param {*} event
    */
   _runSync(event) {
-    const handlers = this._sync.filter(subscriber => event instanceof subscriber.EventType);
+    const handlers = this._subscribers.sync().filter(subscriber => event instanceof subscriber.EventType);
     if (handlers.length === 0) {
       return;
     }
@@ -407,13 +384,7 @@ export default class DomainEventBus {
       return true;
     }
     const type = typeName(event);
-    let durable = false;
-    this._durable.forEach(subscriber => {
-      if (subscriber.EventType.type === type) {
-        durable = true;
-      }
-    });
-    return durable;
+    return this._subscribers.durable().some(subscriber => subscriber.EventType.type === type);
   }
 
   _assertEvent(event) {

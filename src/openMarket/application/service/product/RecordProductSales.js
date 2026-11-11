@@ -3,6 +3,9 @@ import {record} from '../../../infrastructure/logging/ErrorLog';
 /** @typedef {import('../../../domain/product/ProductSaleStatisticsRepository').default} ProductSaleStatisticsRepository */
 /** @typedef {import('../../../domain/service/DomainEventBus').default} DomainEventBus */
 
+/** The durable subscriber name, kept stable so its delivery rows survive restarts. */
+export const RECORD_PRODUCT_SALES = 'record-product-sales';
+
 /**
  * Keeps product_sale_day in step with sales.
  * Started once, with the app. Delivery is durable and keyed by the order id,
@@ -34,7 +37,7 @@ export default class RecordProductSales {
         record(error);
       }
     }
-    this._domainEventBus.subscribeDurable('record-product-sales', OrderCreated, event => {
+    this._domainEventBus.subscribeDurable(RECORD_PRODUCT_SALES, OrderCreated, event => {
       this._repository.applyOrder({
         orderId: event.id,
         createdAt: event.createdAt,

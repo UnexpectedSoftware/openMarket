@@ -12,14 +12,18 @@ import runNow from '../service/runNow';
 /** @typedef {import('./demoCatalog').DemoProduct} DemoProduct */
 /** @typedef {import('./demoOrders').DemoTicket} DemoTicket */
 /** @typedef {import('../service/SettableClock').default} SettableClock */
+/** @typedef {import('../event/SeedableDomainEventSubscribers').default} SeedableDomainEventSubscribers */
 
 /**
- * What the seed saga drives. The use cases are the ones the screens call;
- * `createOrder` shares every repository with the till but publishes on a bus that only
- * the shop's own durable subscribers (sale statistics) listen to, so plugins never see demo sales.
+ * What the seed saga drives: the use cases the screens call, on the app's one event bus.
+ * While it runs, `subscribers` is bootstrapped with `seedSubscribers`: the shop's own
+ * durable handlers it keeps (sale statistics) run for real, and plugin delivery,
+ * printing, and live listeners are replaced by stand-ins that do nothing.
  * @typedef {object} DemoSeed
  * @property {{execute: (work: () => *) => *}} transaction
  * @property {SettableClock} clock
+ * @property {SeedableDomainEventSubscribers} subscribers
+ * @property {{keep: string[]}} seedSubscribers
  * @property {{dispatch: () => void}} eventDispatcher
  * @property {{start: () => void}} recordProductSales
  * @property {{update: Function}} updateShopProfile
@@ -80,8 +84,9 @@ export default class FixturesService {
 
   /**
    * Clears the shop and replays the demo through the use cases, oldest sale first, in one
-   * transaction: a failure rolls every step back. After the commit the durable
-   * subscribers run, so the sale statistics are filled before this returns.
+   * transaction: a failure rolls every step back. After the commit the normal dispatcher
+   * delivers the stored events to the seed's subscribers, so the sale statistics are
+   * filled, and plugin deliveries are recorded as handled, before this returns.
    * @param {{now?: Date}} [options]
    */
   reset({now} = {}) {
@@ -91,17 +96,19 @@ export default class FixturesService {
     const seed = this._seedOnce();
     const plan = this._plan(now || new Date(seed.clock.now()));
     const imageDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'openmarket-demo-images-'));
+    seed.subscribers.seedWith(seed.seedSubscribers);
     try {
       const images = writeDemoImages({directory: imageDirectory, products: plan.products});
       seed.transaction.execute(() => {
         clearShopData(this._database);
         runSaga(seed, plan, images);
       });
+      seed.eventDispatcher.dispatch();
     } finally {
       seed.clock.resume();
+      seed.subscribers.resume();
       fs.rmSync(imageDirectory, {recursive: true, force: true});
     }
-    seed.eventDispatcher.dispatch();
   }
 
   _ready() {

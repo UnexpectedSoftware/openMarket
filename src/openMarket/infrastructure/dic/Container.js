@@ -15,7 +15,7 @@ import UpdateCategory from "../../application/service/category/UpdateCategory";
 import DeleteCategory from "../../application/service/category/DeleteCategory";
 import ProductStatistics from "../../application/service/product/ProductStatistics";
 import ProductSaleStatistics from "../../application/service/product/ProductSaleStatistics";
-import RecordProductSales from "../../application/service/product/RecordProductSales";
+import RecordProductSales, {RECORD_PRODUCT_SALES} from "../../application/service/product/RecordProductSales";
 import ListAllProducts from "../../application/service/product/ListAllProducts";
 import AddStock from "../../application/service/product/AddStock";
 import CreateOrUpdateProduct from "../../application/service/product/CreateOrUpdateProduct";
@@ -58,6 +58,8 @@ import FetchCatalogImages from "../../application/service/image/FetchCatalogImag
 import FindProductImage from "../../application/service/image/FindProductImage";
 import PrintProductCatalog from "../../application/service/product/PrintProductCatalog";
 import DomainEventBus from "../../domain/service/DomainEventBus";
+import DomainEventSubscribers from "../../domain/service/DomainEventSubscribers";
+import SeedableDomainEventSubscribers from "../event/SeedableDomainEventSubscribers";
 import DomainEventDispatcher from "../event/DomainEventDispatcher";
 import SqliteDomainEventRepository from "../event/SqliteDomainEventRepository";
 import SqliteTransaction from "../service/SqliteTransaction";
@@ -126,19 +128,18 @@ class Container {
   }
 
   /**
-   * The use cases the demo reset replays. Sales run through a CreateOrder that shares
-   * the till's repositories and clock but publishes on its own bus, where only the shop's
-   * sale statistics subscribe: plugins (VeriFactu and others) never receive demo invoices.
+   * The use cases the demo reset replays, on the app's one bus and dispatcher.
+   * The seed bootstraps the subscriber set with the sale statistics only: every other
+   * durable subscriber (plugin delivery) runs as a stand-in that does nothing.
    */
   _demoSeed() {
     return {
       transaction: this.getInstance({key: 'transaction'}),
       clock: this.getInstance({key: 'clock'}),
-      eventDispatcher: this.getInstance({key: 'demoDomainEventDispatcher'}),
-      recordProductSales: new RecordProductSales({
-        repository: this.getInstance({key: 'productSaleStatisticsRepository'}),
-        domainEventBus: this.getInstance({key: 'demoDomainEventBus'})
-      }),
+      subscribers: this.getInstance({key: 'domainEventSubscribers'}),
+      seedSubscribers: {keep: [RECORD_PRODUCT_SALES]},
+      eventDispatcher: this.getInstance({key: 'domainEventDispatcher'}),
+      recordProductSales: this.getInstance({key: 'recordProductSales'}),
       updateShopProfile: this.getInstance({key: 'updateShopProfile'}),
       updateSellPreferences: this.getInstance({key: 'updateSellPreferences'}),
       updatePrinterSettings: this.getInstance({key: 'updatePrinterSettings'}),
@@ -150,25 +151,8 @@ class Container {
       createProduct: this.getInstance({key: 'createProduct'}),
       addStock: this.getInstance({key: 'addStockProduct'}),
       disableProduct: this.getInstance({key: 'disableProduct'}),
-      createOrder: this._createOrder({
-        domainEventBus: this.getInstance({key: 'demoDomainEventBus'}),
-        domainEventDispatcher: this.getInstance({key: 'demoDomainEventDispatcher'})
-      })
+      createOrder: this.getInstance({key: 'createOrderUseCase'})
     };
-  }
-
-  /**
-   * Records demo events when they are written. The sale time is in each event's payload.
-   */
-  _demoDomainEventBus() {
-    return this._domainEventBusWith({clock: new SystemClock()});
-  }
-
-  _demoDomainEventDispatcher() {
-    return new DomainEventDispatcher({
-      domainEventBus: this.getInstance({key: 'demoDomainEventBus'}),
-      transaction: this.getInstance({key: 'transaction'})
-    });
   }
 
   _printerConnection(){
@@ -443,24 +427,39 @@ class Container {
     });
   }
 
+  _systemClock() {
+    return new SystemClock();
+  }
+
   /**
-   * Development wires a clock the demo seed can move to each historical ticket.
-   * Every other build reads the system time.
+   * Business time. Development wires a clock the demo seed moves to each historical
+   * ticket; every other build reads the system time.
    */
   _clock() {
-    return process.env.NODE_ENV === 'development' ? new SettableClock() : new SystemClock();
+    const systemClock = this.getInstance({key: 'systemClock'});
+    return process.env.NODE_ENV === 'development' ? new SettableClock({clock: systemClock}) : systemClock;
   }
 
+  /**
+   * Who listens on the bus. Development can bootstrap it for the demo seed.
+   */
+  _domainEventSubscribers() {
+    return process.env.NODE_ENV === 'development'
+      ? new SeedableDomainEventSubscribers()
+      : new DomainEventSubscribers();
+  }
+
+  /**
+   * The outbox stamps rows with the system time: it compares when an event was stored
+   * with when a subscriber registered, while the sale time travels in the payload.
+   */
   _domainEventBus() {
-    return this._domainEventBusWith({clock: this.getInstance({key: 'clock'})});
-  }
-
-  _domainEventBusWith({clock}) {
     const connection = this.getInstance({key: 'sqliteConnection'});
     return new DomainEventBus({
       repository: this.getInstance({key: 'domainEventRepository'}),
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
-      clock,
+      clock: this.getInstance({key: 'systemClock'}),
+      subscribers: this.getInstance({key: 'domainEventSubscribers'}),
       recordError: record,
       inTransaction: () => connection.database.isTransaction
     });
@@ -474,13 +473,6 @@ class Container {
   }
 
   _createOrderUseCase() {
-    return this._createOrder({
-      domainEventBus: this.getInstance({key: 'domainEventBus'}),
-      domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'})
-    });
-  }
-
-  _createOrder({domainEventBus, domainEventDispatcher}) {
     return new CreateOrder({
       orderRepository: this.getInstance({key: 'orderRepository'}),
       productRepository: this.getInstance({key: 'productRepository'}),
@@ -489,9 +481,9 @@ class Container {
       orderFactory: this.getInstance({key: 'orderFactory'}),
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
       clock: this.getInstance({key: 'clock'}),
-      domainEventBus,
+      domainEventBus: this.getInstance({key: 'domainEventBus'}),
       transaction: this.getInstance({key: 'transaction'}),
-      domainEventDispatcher,
+      domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'}),
       shopProfileRepository: this.getInstance({key: 'shopProfileRepository'})
     });
   }
