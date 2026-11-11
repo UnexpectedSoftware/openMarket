@@ -52,11 +52,16 @@ export default class SqliteTransaction {
   }
 
   /**
+   * Inside an open transaction the work joins it, like {@link SqliteTransaction#execute}:
+   * the outer owner commits or rolls back.
    * @param {() => Observable<any>} work
    * @returns {Observable<any>}
    */
   run(work) {
     return Rx.Observable.defer(() => {
+      if (this.inTransaction()) {
+        return work();
+      }
       let committed = false;
       try {
         this._database.exec('BEGIN');

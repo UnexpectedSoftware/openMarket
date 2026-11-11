@@ -6,6 +6,7 @@ import InvalidOrderQuantityError from '../../../../openMarket/domain/order/Inval
 import OrderAlreadyPlacedError from '../../../../openMarket/domain/order/OrderAlreadyPlacedError';
 import InvalidOrderLineError from '../../../../openMarket/domain/order/InvalidOrderLineError';
 import Money from '../../../../openMarket/domain/money/Money';
+import UnrecognisedDateError from '../../../../openMarket/domain/error/UnrecognisedDateError';
 import VatRate from '../../../../openMarket/domain/tax/VatRate';
 
 const date = '03/10/2026 10:00:00';
@@ -22,6 +23,12 @@ function plain(orderLine) {
 }
 
 describe('Order', () => {
+  it('refuses an order without a date', () => {
+    expect(() => Order.draft({id: '1', date: undefined})).to.throw(UnrecognisedDateError);
+    expect(() => Order.draft({id: '1', date: '  '})).to.throw(UnrecognisedDateError);
+    expect(() => new Order()).to.throw(UnrecognisedDateError);
+  });
+
   it('keeps a draft with no lines until it is placed', () => {
     const order = Order.draft({id: '1', date});
 

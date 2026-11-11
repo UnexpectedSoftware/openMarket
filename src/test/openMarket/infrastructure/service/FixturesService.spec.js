@@ -2,37 +2,41 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { expect } from 'chai';
+import {Container} from '../../../../openMarket/infrastructure/dic/Container';
 import SqliteConnection from '../../../../openMarket/infrastructure/service/SqliteConnection';
+import SettableClock from '../../../../openMarket/infrastructure/service/SettableClock';
+import ImageStore from '../../../../openMarket/infrastructure/service/ImageStore';
 import FixturesService from '../../../../openMarket/infrastructure/dev/FixturesService';
+import InvoiceIssued from '../../../../openMarket/domain/event/InvoiceIssued';
 import * as demoCatalog from '../../../../openMarket/infrastructure/dev/demoCatalog';
 import * as demoOrders from '../../../../openMarket/infrastructure/dev/demoOrders';
 import * as demoSettings from '../../../../openMarket/infrastructure/dev/demoSettings';
 import * as demoShop from '../../../../openMarket/infrastructure/dev/demoShop';
-import InvoiceNumber from '../../../../openMarket/domain/invoice/InvoiceNumber';
-import Order from '../../../../openMarket/domain/order/Order';
-import VatRate from '../../../../openMarket/domain/tax/VatRate';
 
-const category = {_id: '1', _name: 'Fruit'};
-const product = {
-  _barcode: '1001',
-  _name: 'Apple',
-  _description: '',
-  _price: 1.2,
-  _basePrice: 0.4,
-  _stock: 3,
-  _stockMin: 5,
-  _weighted: false,
-  _categoryId: '1',
-  _status: 'ENABLED',
-  _vatPercent: 4
-};
-const order = {
-  order: Order.draft({id: '1', date: '25/09/2026 12:00:00'})
-    .addLine({barcode: '1001', name: 'Apple', price: 1.2, quantity: 1, vatRate: VatRate.standard(4)})
-    .place()
-    .recordPayment({method: 'cash', tenderedCents: 200}),
-  invoice: new InvoiceNumber({series: '2026', number: 1})
-};
+const NOW = new Date('2026-09-25T13:00:00Z');
+
+/**
+ * The real container on an in-memory database, with the development clock
+ * and product photos in a temporary folder.
+ */
+class SeedContainer extends Container {
+  constructor(imageDirectory) {
+    super({environment: 'test'});
+    this._imageDirectory = imageDirectory;
+  }
+
+  _sqliteConnection() {
+    return new SqliteConnection({filename: ':memory:'});
+  }
+
+  _clock() {
+    return new SettableClock();
+  }
+
+  _productImageStore() {
+    return new ImageStore({directory: this._imageDirectory});
+  }
+}
 
 function withDevelopment(run) {
   const previous = process.env.NODE_ENV;
@@ -44,8 +48,20 @@ function withDevelopment(run) {
   }
 }
 
-function memory() {
-  return new SqliteConnection({filename: ':memory:'}).database;
+function seeded(overrides = {}) {
+  const imageDirectory = fs.mkdtempSync(path.join(os.tmpdir(), 'om-demo-store-'));
+  const container = new SeedContainer(imageDirectory);
+  const database = container.getInstance({key: 'sqliteConnection'}).database;
+  const service = new FixturesService({
+    database,
+    seed: () => container.getInstance({key: 'demoSeed'}),
+    demoCatalog,
+    demoOrders,
+    demoShop,
+    demoSettings,
+    ...overrides
+  });
+  return {container, database, service, imageDirectory};
 }
 
 function count(database, table) {
@@ -58,161 +74,135 @@ function setting(database, key) {
 }
 
 describe('FixturesService', function describeFixtures() {
-  this.timeout(20000);
+  this.timeout(60000);
 
-  it('does not seed an empty database', () => {
-    const database = memory();
-    const service = new FixturesService({
-      database,
-      demoCatalog: {buildCategories() { throw new Error('categories'); }},
-      demoOrders: {buildDemoOrders() { throw new Error('orders'); }},
-      demoShop: {buildProfile() { throw new Error('shop'); }},
-      demoSettings: {buildSettings() { throw new Error('settings'); }}
-    });
-    withDevelopment(() => service.load());
-    expect(count(database, 'category')).to.equal(0);
+  const products = demoCatalog.buildProducts();
+  const tickets = demoOrders.buildDemoOrders(products, NOW);
+  const sold = demoOrders.soldQuantities(tickets);
+  let shop;
+  let pluginDeliveries;
+  let elapsedMs;
+
+  before(() => {
+    shop = seeded();
+    pluginDeliveries = [];
+    const bus = shop.container.getInstance({key: 'domainEventBus'});
+    bus.subscribeDurable('plugin.verifactu.submit', InvoiceIssued, event => pluginDeliveries.push(event));
+    const started = Date.now();
+    withDevelopment(() => shop.service.reset({now: NOW}));
+    elapsedMs = Date.now() - started;
+    shop.container.getInstance({key: 'domainEventDispatcher'}).dispatch();
   });
 
-  it('seeds when the one-shot flag was consumed, without appending on a second load', () => {
-    const database = memory();
-    const service = new FixturesService({
-      database,
-      demoCatalog: {
-        buildCategories: () => [category],
-        buildProducts: () => [product]
-      },
-      demoOrders: {buildDemoOrders: () => [order]},
-      demoShop,
-      demoSettings,
-      resetOnLoad: true
-    });
-    withDevelopment(() => service.load());
-    withDevelopment(() => service.load());
-    expect(database.prepare('SELECT name FROM category').get().name).to.equal('Fruit');
-    expect(count(database, '"order"')).to.equal(1);
-    expect(count(database, 'invoice')).to.equal(1);
-    expect(database.prepare('SELECT invoice_number FROM invoice').get().invoice_number).to.equal('2026/000001');
-    expect(database.prepare('SELECT payment_method, change_cents FROM "order"').get()).to.deep.equal({
-      payment_method: 'cash',
-      change_cents: 80
-    });
+  after(() => {
+    fs.rmSync(shop.imageDirectory, {recursive: true, force: true});
   });
 
-  it('rolls the reset back when a write fails', () => {
-    const database = memory();
-    database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('keep', 'Kept');
-    const directory = path.join(os.tmpdir(), 'om-demo-rollback-' + process.pid);
-    const service = new FixturesService({
-      database,
-      imageDirectory: directory,
-      demoCatalog: {
-        buildCategories: () => [category],
-        buildProducts: () => [product]
-      },
-      demoOrders: {
-        buildDemoOrders: () => [order, {order: Order.draft({id: '2'}), invoice: null}]
-      },
+  it('replays the shop, the settings, the catalogue, and every sale through the use cases', () => {
+    const {database} = shop;
+    expect(setting(database, 'shop_profile')).to.include({tradeName: 'Ultramarinos La Plaza', invoicingEnabled: true});
+    expect(setting(database, 'sell_auto_print')).to.include({printMode: 'ask', paperWidthMm: 80, templateId: 'classic-80'});
+    expect(setting(database, 'printer')).to.include({type: 'epson', characterSet: 'SPAIN1'});
+    expect(setting(database, 'appearance')).to.include({theme: 'mercado', layout: 'mostrador'});
+    expect(setting(database, 'language')).to.include({locale: 'es'});
+    expect(count(database, 'category')).to.equal(25);
+    expect(count(database, 'product')).to.equal(100);
+    expect(count(database, '"order"')).to.equal(tickets.length);
+    expect(count(database, 'invoice')).to.equal(tickets.length);
+    expect(database.prepare('SELECT COUNT(*) AS total FROM product WHERE image_name IS NOT NULL').get().total).to.equal(6);
+    expect(fs.readdirSync(shop.imageDirectory)).to.have.length(6);
+    expect(elapsedMs).to.be.below(30000);
+  });
+
+  it('dates each sale and its invoice at the ticket time and numbers the invoices in order', () => {
+    const {database} = shop;
+    const first = database.prepare('SELECT MIN(created_at) AS first, MAX(created_at) AS last FROM "order"').get();
+    expect(first.first.slice(0, 10)).to.equal('2026-08-12');
+    expect(first.last < '2026-09-25 15:00:00').to.equal(true);
+    const invoices = database.prepare('SELECT number, issue_date, issued_at FROM invoice ORDER BY issued_at').all();
+    expect(invoices.map(row => row.number)).to.deep.equal(invoices.map((row, index) => index + 1));
+    expect(invoices[0].issue_date).to.equal('2026-08-12');
+    expect(database.prepare('SELECT last_number FROM invoice_sequence WHERE series = ?').get('2026').last_number)
+      .to.equal(tickets.length);
+    expect(database.prepare('SELECT DISTINCT payment_method AS method FROM "order" ORDER BY method').all()
+      .map(row => row.method)).to.deep.equal(['bizum', 'card', 'cash', 'mixed']);
+  });
+
+  it('ends each product on its closing stock, with low, out-of-stock, and disabled products', () => {
+    const stored = new Map(shop.database.prepare('SELECT barcode, stock, stock_min, status FROM product').all()
+      .map(row => [row.barcode, row]));
+    products.forEach(product => {
+      expect(stored.get(product.barcode).stock, product.name).to.be.closeTo(product.closingStock, 1e-9);
+    });
+    const enabled = [...stored.values()].filter(row => row.status === 'ENABLED');
+    expect(enabled.filter(row => Math.abs(row.stock) < 1e-9).map(row => row.barcode).sort())
+      .to.deep.equal(['8410000001004', '8410000001014', '8410000001067', '8410000001079']);
+    const low = products.filter(product => product.enabled && product.closingStock > 0 && product.closingStock < product.stockMin);
+    expect(low).to.have.length(8);
+    expect(enabled.filter(row => row.stock > 1e-9 && row.stock < row.stock_min).map(row => row.barcode).sort())
+      .to.deep.equal(low.map(product => product.barcode).sort());
+    expect([...stored.values()].filter(row => row.status === 'DISABLED').map(row => row.barcode).sort())
+      .to.deep.equal(['8410000001057', '8410000001081', '8410000001089', '8410000001094']);
+    expect(sold.get('8410000001004').milli).to.be.above(0);
+  });
+
+  it('runs the sale statistics after the commit and keeps demo invoices away from plugins', () => {
+    const {database} = shop;
+    const totals = new Map(database.prepare('SELECT barcode, SUM(quantity) AS quantity FROM product_sale_day GROUP BY barcode')
+      .all().map(row => [row.barcode, row.quantity]));
+    sold.forEach((quantity, barcode) => expect(totals.get(barcode), barcode).to.be.closeTo(quantity.units, 1e-9));
+    expect(count(database, 'product_sale_order')).to.equal(tickets.length);
+    expect(database.prepare("SELECT COUNT(*) AS total FROM domain_event WHERE dispatched_at IS NULL").get().total).to.equal(0);
+    expect(database.prepare('SELECT DISTINCT subscriber_name AS name, status FROM domain_event_processing').all())
+      .to.deep.equal([{name: 'record-product-sales', status: 'DONE'}]);
+    expect(pluginDeliveries).to.deep.equal([]);
+  });
+
+  it('replays the same shop on a second reset', () => {
+    withDevelopment(() => shop.service.reset({now: NOW}));
+    expect(count(shop.database, 'product')).to.equal(100);
+    expect(count(shop.database, '"order"')).to.equal(tickets.length);
+    expect(count(shop.database, 'product_sale_order')).to.equal(tickets.length);
+  });
+
+  it('rolls the whole reset back when a step fails', () => {
+    const broken = {
+      ...demoCatalog,
+      buildProducts: () => products.map(product => product.enabled ? product : {...product, name: ' '})
+    };
+    const shopToKeep = seeded();
+    const failing = new FixturesService({
+      database: shopToKeep.database,
+      seed: () => shopToKeep.container.getInstance({key: 'demoSeed'}),
+      demoCatalog: broken,
+      demoOrders,
       demoShop,
       demoSettings
     });
-    expect(() => withDevelopment(() => service.reset())).to.throw();
-    expect(database.prepare('SELECT name FROM category').get().name).to.equal('Kept');
-    expect(count(database, 'product')).to.equal(0);
-    expect(count(database, '"order"')).to.equal(0);
-    expect(fs.existsSync(directory)).to.equal(false);
-  });
-
-  it('does not reset outside development', () => {
-    const database = memory();
-    const service = serviceWith(database, null);
-    service.reset();
-    expect(count(database, 'category')).to.equal(0);
-  });
-
-  it('replaces the shop, the tickets, and the product images', () => {
-    const database = memory();
-    database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('old', 'Old');
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'om-demo-'));
-    const now = new Date(2026, 8, 25, 15, 0, 0);
     try {
-      const service = serviceWith(database, directory);
-      withDevelopment(() => service.reset({now}));
-      expect(database.prepare("SELECT id FROM category WHERE id = 'old'").get()).to.equal(undefined);
-      expect(count(database, 'category')).to.equal(25);
-      expect(count(database, 'product')).to.equal(100);
-      expect(vats(database)).to.deep.equal([4, 10, 21]);
-      expect(methods(database)).to.deep.equal(['bizum', 'card', 'cash', 'mixed']);
-      expect(setting(database, 'shop_profile').tradeName).to.equal('Ultramarinos La Plaza');
-      expect(setting(database, 'sell_auto_print').printMode).to.equal('ask');
-      expect(setting(database, 'sell_auto_print').templateId).to.equal('classic-80');
-      expect(setting(database, 'printer').type).to.equal('epson');
-      expect(setting(database, 'appearance')).to.deep.equal({theme: 'mercado', layout: 'mostrador'});
-      expect(setting(database, 'language').locale).to.equal('es');
-
-      const weighed = database.prepare(
-        'SELECT quantity_milli AS milli FROM invoice_line WHERE weighted = 1 AND quantity_milli % 1000 != 0 LIMIT 1'
-      ).get();
-      expect(weighed.milli % 1000).to.not.equal(0);
-      const cash = database.prepare(
-        "SELECT change_cents FROM \"order\" WHERE payment_method = 'cash' LIMIT 1"
-      ).get();
-      expect(cash.change_cents).to.be.above(0);
-      const mixed = database.prepare(
-        "SELECT total_cents, payment_parts FROM \"order\" WHERE payment_method = 'mixed' LIMIT 1"
-      ).get();
-      const parts = JSON.parse(mixed.payment_parts);
-      expect(parts[0].amountCents + parts[1].amountCents).to.equal(mixed.total_cents);
-
-      const invoices = database.prepare(
-        'SELECT series, number, invoice_number FROM invoice ORDER BY series, number'
-      ).all();
-      expect(invoices).to.have.length(count(database, '"order"'));
-      let previous = 0;
-      invoices.forEach(row => {
-        expect(row.number).to.equal(previous + 1);
-        expect(row.invoice_number).to.equal(row.series + '/' + String(row.number).padStart(6, '0'));
-        previous = row.number;
-      });
-      expect(database.prepare('SELECT last_number FROM invoice_sequence').get().last_number).to.equal(previous);
-      expect(database.prepare('SELECT issuer_json FROM invoice LIMIT 1').get().issuer_json)
-        .to.include('Ultramarinos La Plaza');
-      expect(count(database, 'product_sale_day')).to.equal(0);
-      expect(count(database, 'domain_event')).to.equal(0);
-      expect(count(database, 'plugin_state')).to.equal(0);
-
-      const files = fs.readdirSync(directory);
-      expect(files).to.have.length(6);
-      expect(files.every(file => file.endsWith('.png'))).to.equal(true);
-
-      database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('later', 'Later');
-      withDevelopment(() => service.reset({now}));
-      expect(database.prepare("SELECT id FROM category WHERE id = 'later'").get()).to.equal(undefined);
-      expect(count(database, 'invoice')).to.equal(invoices.length);
+      withDevelopment(() => shopToKeep.service.reset({now: NOW}));
+      expect(() => withDevelopment(() => failing.reset({now: NOW}))).to.throw('Product name is missing');
+      expect(count(shopToKeep.database, 'product')).to.equal(100);
+      expect(count(shopToKeep.database, '"order"')).to.equal(tickets.length);
+      expect(count(shopToKeep.database, 'invoice')).to.equal(tickets.length);
     } finally {
-      fs.rmSync(directory, {recursive: true, force: true});
+      fs.rmSync(shopToKeep.imageDirectory, {recursive: true, force: true});
+    }
+  });
+
+  it('does nothing outside development, on a plain load, or without the demo builders', () => {
+    const idle = seeded();
+    try {
+      idle.service.reset({now: NOW});
+      withDevelopment(() => idle.service.load());
+      withDevelopment(() => new FixturesService({database: idle.database}).reset({now: NOW}));
+      expect(count(idle.database, 'category')).to.equal(0);
+      const once = seeded({resetOnLoad: true});
+      withDevelopment(() => once.service.load());
+      expect(count(once.database, 'category')).to.equal(25);
+      fs.rmSync(once.imageDirectory, {recursive: true, force: true});
+    } finally {
+      fs.rmSync(idle.imageDirectory, {recursive: true, force: true});
     }
   });
 });
-
-function serviceWith(database, directory) {
-  return new FixturesService({
-    database,
-    demoCatalog,
-    demoOrders,
-    demoShop,
-    demoSettings,
-    imageDirectory: directory
-  });
-}
-
-function vats(database) {
-  return database.prepare('SELECT DISTINCT vat_percent AS vat FROM product').all()
-    .map(row => row.vat)
-    .sort((left, right) => left - right);
-}
-
-function methods(database) {
-  return database.prepare('SELECT DISTINCT payment_method AS method FROM "order"').all()
-    .map(row => row.method)
-    .sort();
-}

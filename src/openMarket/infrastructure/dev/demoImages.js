@@ -11,24 +11,18 @@ const COLORS = [
 ];
 
 /**
- * Writes one tiny PNG per product that names an image file.
- * A missing directory skips the copy. Called after the seed transaction commits.
- * @param {{directory?: string | null, products?: Array<{_imageName?: string | null}>}} files
- * @returns {void}
+ * Writes one tiny PNG per demo product that shows a photo, ready for the product form
+ * to copy into the image store. The caller removes the directory afterwards.
+ * @param {{directory: string, products: Array<{barcode: string, image: boolean}>}} files
+ * @returns {Map<string, string>} barcode to the PNG path
  */
-export function installDemoImages({directory, products} = {}) {
-  if (!directory) {
-    return;
-  }
+export function writeDemoImages({directory, products}) {
   fs.mkdirSync(directory, {recursive: true});
-  let color = 0;
-  (products || []).forEach(product => {
-    const imageName = product && product._imageName;
-    if (!imageName || path.basename(imageName) !== imageName) {
-      return;
-    }
-    const bytes = Buffer.from(COLORS[color % COLORS.length], 'base64');
-    color += 1;
-    fs.writeFileSync(path.join(directory, imageName), bytes);
+  const paths = new Map();
+  products.filter(product => product.image).forEach((product, index) => {
+    const file = path.join(directory, product.barcode + '.png');
+    fs.writeFileSync(file, Buffer.from(COLORS[index % COLORS.length], 'base64'));
+    paths.set(product.barcode, file);
   });
+  return paths;
 }

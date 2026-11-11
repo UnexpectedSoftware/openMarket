@@ -21,7 +21,6 @@ const orderFactory = new OrderFactoryImpl({identity});
 function repositories() {
   const connection = new SqliteConnection({filename: ':memory:'});
   const productMapper = new SqlProductMapper({
-    productFactory,
     categoryFactory
   });
   return {

@@ -3,19 +3,22 @@ import * as demoCatalog from './demoCatalog';
 import * as demoOrders from './demoOrders';
 import * as demoShop from './demoShop';
 import * as demoSettings from './demoSettings';
-import {imagesDirectory} from '../service/ImageStore';
 
 const RESET_FIXTURES_CONSUME = 'openmarket:reset-fixtures:consume';
 
-export function createFixturesService({database}) {
+/**
+ * @param {{database: *, seed: () => import('./FixturesService').DemoSeed}} deps
+ * @returns {FixturesService}
+ */
+export function createFixturesService({database, seed}) {
   return new FixturesService({
     database,
+    seed,
     demoCatalog,
     demoOrders,
     demoShop,
     demoSettings,
-    resetOnLoad: consumeResetFixturesFlag(),
-    imageDirectory: imagesDirectory('product-images')
+    resetOnLoad: consumeResetFixturesFlag()
   });
 }
 

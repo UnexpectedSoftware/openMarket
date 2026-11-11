@@ -1,4 +1,3 @@
-import moment from 'moment';
 import Money from '../money/Money';
 import Quantity from '../money/Quantity';
 import VatRate from '../tax/VatRate';
@@ -10,6 +9,8 @@ import InvalidOrderLineError from './InvalidOrderLineError';
 import OrderAlreadyPlacedError from './OrderAlreadyPlacedError';
 import {lineKind, validateLine} from './lineValidity';
 import Payment from '../payment/Payment';
+import UnrecognisedDateError from '../error/UnrecognisedDateError';
+import hasText from '../hasText';
 
 /**
  * One line stored on an order. Amount is the line total after one half-up rounding.
@@ -57,14 +58,18 @@ export default class Order {
   }
 
   /**
-   * @param {object} [params]
+   * The date comes from the caller's Clock (`DD/MM/YYYY HH:mm:ss`); an order never reads the system time.
+   * @param {object} params
    * @param {string} [params.id]
    * @param {OrderLine[]} [params.lines]
-   * @param {string} [params.date]
+   * @param {string} params.date
    * @param {string} [params.status]
    * @param {Payment | null} [params.payment]
    */
-  constructor({id, lines = [], date = moment().format('DD/MM/YYYY HH:mm:ss'), status = OrderStatus.DRAFT, payment = null} = {}) {
+  constructor({id, lines = [], date, status = OrderStatus.DRAFT, payment = null} = {date: undefined}) {
+    if (!hasText(date)) {
+      throw new UnrecognisedDateError({value: date});
+    }
     /**
      * @type {string}
      * @private
@@ -288,14 +293,6 @@ export default class Order {
  */
 function identifiesProduct(line) {
   return Boolean(line) && hasText(line.barcode) && hasText(line.name) && line.price != null && line.price !== '';
-}
-
-/**
- * @param {*} value
- * @returns {boolean}
- */
-function hasText(value) {
-  return typeof value === 'string' && value.trim() !== '';
 }
 
 /**

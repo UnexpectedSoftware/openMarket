@@ -2,33 +2,22 @@ import {expect} from 'chai';
 import 'rxjs/add/operator/mergeMap';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
-import {replaceSqliteData} from '../openMarket/infrastructure/service/sqliteSeed';
+import seedShop from '../test/openMarket/support/seedShop';
+import {shopCategory, shopProduct} from '../test/openMarket/support/catalog';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 const updateShopProfile = openMarket.get('shop_update_profile_use_case');
 const createOrder = openMarket.get('orders_create_use_case');
 
-const product = {
-  _id: 'Shop-0',
-  _barcode: '0001',
-  _name: 'Coca-Cola',
-  _description: '',
-  _price: 0.55,
-  _basePrice: 0.3,
-  _stock: 100,
-  _stockMin: 10,
-  _imageUrl: 'a',
-  _categoryId: '1',
-  _status: 'ENABLED'
-};
+const product = shopProduct({barcode: '0001', name: 'Coca-Cola', price: '0.55', basePrice: '0.30', stock: 100, stockMin: 10});
 
 describe('Shop profile on an invoice', () => {
   beforeEach(() => {
-    replaceSqliteData(database, {products: [product]});
+    seedShop(container, {categories: [shopCategory('1')], products: [product]});
   });
 
   afterEach(() => {
-    replaceSqliteData(database, {});
+    seedShop(container);
   });
 
   it('stores the issuer, the local date, and type F2, then refuses to rewrite the issuer', done => {

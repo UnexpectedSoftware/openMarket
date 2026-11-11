@@ -29,7 +29,7 @@ function setup() {
   connection.database.prepare('INSERT INTO category (id, name) VALUES (?, ?)').run('1', 'Fruit');
   const repository = new SqliteProductRepository({
     connection,
-    productMapper: new SqlProductMapper({productFactory, categoryFactory}),
+    productMapper: new SqlProductMapper({categoryFactory}),
     images,
     queryService: new SqliteProductQueryService()
   });

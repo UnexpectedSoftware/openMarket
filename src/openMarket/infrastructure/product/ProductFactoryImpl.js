@@ -24,7 +24,7 @@ export default class ProductFactoryImpl {
      * @returns {Product}
      */
   createWith({ barcode, name, description, price, basePrice, stock, stockMin, weighted, category, status = ProductStatus.ENABLED, imageName = null, vatRate = null} = {}) {
-    return new Product({
+    return Product.create({
       barcode,
       name,
       description,

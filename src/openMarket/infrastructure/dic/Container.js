@@ -62,6 +62,7 @@ import DomainEventDispatcher from "../event/DomainEventDispatcher";
 import SqliteDomainEventRepository from "../event/SqliteDomainEventRepository";
 import SqliteTransaction from "../service/SqliteTransaction";
 import SystemClock from "../service/SystemClock";
+import SettableClock from "../service/SettableClock";
 import {eventClasses} from "../../domain/event/registry";
 import ListPlugins from "../../application/service/plugin/ListPlugins";
 import SavePlugin from "../../application/service/plugin/SavePlugin";
@@ -119,7 +120,54 @@ class Container {
 
   _fixturesService() {
     return createFixturesService({
-      database: this.getInstance({key: 'sqliteConnection'}).database
+      database: this.getInstance({key: 'sqliteConnection'}).database,
+      seed: () => this.getInstance({key: 'demoSeed'})
+    });
+  }
+
+  /**
+   * The use cases the demo reset replays. Sales run through a CreateOrder that shares
+   * the till's repositories and clock but publishes on its own bus, where only the shop's
+   * sale statistics subscribe: plugins (VeriFactu and others) never receive demo invoices.
+   */
+  _demoSeed() {
+    return {
+      transaction: this.getInstance({key: 'transaction'}),
+      clock: this.getInstance({key: 'clock'}),
+      eventDispatcher: this.getInstance({key: 'demoDomainEventDispatcher'}),
+      recordProductSales: new RecordProductSales({
+        repository: this.getInstance({key: 'productSaleStatisticsRepository'}),
+        domainEventBus: this.getInstance({key: 'demoDomainEventBus'})
+      }),
+      updateShopProfile: this.getInstance({key: 'updateShopProfile'}),
+      updateSellPreferences: this.getInstance({key: 'updateSellPreferences'}),
+      updatePrinterSettings: this.getInstance({key: 'updatePrinterSettings'}),
+      updateLanguagePreferences: this.getInstance({key: 'updateLanguagePreferences'}),
+      changeTheme: this.getInstance({key: 'changeTheme'}),
+      changeLayout: this.getInstance({key: 'changeLayout'}),
+      createCategory: this.getInstance({key: 'createCategory'}),
+      listAllCategories: this.getInstance({key: 'listAllCategories'}),
+      createProduct: this.getInstance({key: 'createProduct'}),
+      addStock: this.getInstance({key: 'addStockProduct'}),
+      disableProduct: this.getInstance({key: 'disableProduct'}),
+      createOrder: this._createOrder({
+        domainEventBus: this.getInstance({key: 'demoDomainEventBus'}),
+        domainEventDispatcher: this.getInstance({key: 'demoDomainEventDispatcher'})
+      })
+    };
+  }
+
+  /**
+   * Records demo events when they are written. The sale time is in each event's payload.
+   */
+  _demoDomainEventBus() {
+    return this._domainEventBusWith({clock: new SystemClock()});
+  }
+
+  _demoDomainEventDispatcher() {
+    return new DomainEventDispatcher({
+      domainEventBus: this.getInstance({key: 'demoDomainEventBus'}),
+      transaction: this.getInstance({key: 'transaction'})
     });
   }
 
@@ -158,7 +206,7 @@ class Container {
       orderRepository: this.getInstance({key: 'orderRepository'}),
       recordError: record,
       htmlReceiptRenderer: this.getInstance({key: 'htmlReceiptRenderer'}),
-      clock: this.getInstance({key: 'systemClock'})
+      clock: this.getInstance({key: 'clock'})
     });
   }
 
@@ -308,7 +356,7 @@ class Container {
   _productSaleStatisticsUseCase() {
     return new ProductSaleStatistics({
       repository: this.getInstance({key: 'productSaleStatisticsRepository'}),
-      clock: this.getInstance({key: 'systemClock'})
+      clock: this.getInstance({key: 'clock'})
     });
   }
 
@@ -363,7 +411,6 @@ class Container {
 
   _productMapper() {
     return new SqlProductMapper({
-      productFactory: this.getInstance({key: 'productFactory'}),
       categoryFactory: this.getInstance({key: 'categoryFactory'})
     });
   }
@@ -396,16 +443,24 @@ class Container {
     });
   }
 
-  _systemClock() {
-    return new SystemClock();
+  /**
+   * Development wires a clock the demo seed can move to each historical ticket.
+   * Every other build reads the system time.
+   */
+  _clock() {
+    return process.env.NODE_ENV === 'development' ? new SettableClock() : new SystemClock();
   }
 
   _domainEventBus() {
+    return this._domainEventBusWith({clock: this.getInstance({key: 'clock'})});
+  }
+
+  _domainEventBusWith({clock}) {
     const connection = this.getInstance({key: 'sqliteConnection'});
     return new DomainEventBus({
       repository: this.getInstance({key: 'domainEventRepository'}),
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
-      clock: this.getInstance({key: 'systemClock'}),
+      clock,
       recordError: record,
       inTransaction: () => connection.database.isTransaction
     });
@@ -419,6 +474,13 @@ class Container {
   }
 
   _createOrderUseCase() {
+    return this._createOrder({
+      domainEventBus: this.getInstance({key: 'domainEventBus'}),
+      domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'})
+    });
+  }
+
+  _createOrder({domainEventBus, domainEventDispatcher}) {
     return new CreateOrder({
       orderRepository: this.getInstance({key: 'orderRepository'}),
       productRepository: this.getInstance({key: 'productRepository'}),
@@ -426,10 +488,10 @@ class Container {
       invoiceSequence: this.getInstance({key: 'invoiceSequence'}),
       orderFactory: this.getInstance({key: 'orderFactory'}),
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
-      clock: this.getInstance({key: 'systemClock'}),
-      domainEventBus: this.getInstance({key: 'domainEventBus'}),
+      clock: this.getInstance({key: 'clock'}),
+      domainEventBus,
       transaction: this.getInstance({key: 'transaction'}),
-      domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'}),
+      domainEventDispatcher,
       shopProfileRepository: this.getInstance({key: 'shopProfileRepository'})
     });
   }
@@ -437,7 +499,7 @@ class Container {
   _orderFactory() {
     return new OrderFactoryImpl({
       identity: this.getInstance({key: 'randomUUIDIdentity'}),
-      clock: this.getInstance({key: 'systemClock'})
+      clock: this.getInstance({key: 'clock'})
     });
   }
 
@@ -559,7 +621,7 @@ class Container {
   _peekNextInvoiceNumber() {
     return new PeekNextInvoiceNumber({
       invoiceSequence: this.getInstance({key: 'invoiceSequence'}),
-      clock: this.getInstance({key: 'systemClock'})
+      clock: this.getInstance({key: 'clock'})
     });
   }
 
@@ -572,7 +634,7 @@ class Container {
   _cancelInvoice() {
     return new CancelInvoice({
       invoiceRepository: this.getInstance({key: 'invoiceRepository'}),
-      clock: this.getInstance({key: 'systemClock'}),
+      clock: this.getInstance({key: 'clock'}),
       domainEventBus: this.getInstance({key: 'domainEventBus'}),
       transaction: this.getInstance({key: 'transaction'}),
       domainEventDispatcher: this.getInstance({key: 'domainEventDispatcher'})
@@ -674,6 +736,8 @@ class Container {
   }
 
 }
+
+export {Container};
 
 const staticContainer = new Container({environment: env});
 

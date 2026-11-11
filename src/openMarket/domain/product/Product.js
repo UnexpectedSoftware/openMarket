@@ -1,12 +1,43 @@
 import ProductStatus from "./ProductStatus";
 import Money from '../money/Money';
 import VatRate from '../tax/VatRate';
+import hasText from '../hasText';
+import InvalidProductError from './InvalidProductError';
 /** @typedef {import('../category/Category').default} Category */
 
 /**
  * @class Product
  */
 export default class Product {
+
+  /**
+   * A new catalog product. It needs a barcode, a name, and a price, the same
+   * values a sale line needs, so a product that cannot be sold is never stored.
+   * @param {ConstructorParameters<typeof Product>[0]} params
+   * @returns {Product}
+   */
+  static create(params) {
+    const barcode = params && params.barcode;
+    if (!hasText(barcode)) {
+      throw new InvalidProductError({field: 'barcode'});
+    }
+    if (!hasText(params.name)) {
+      throw new InvalidProductError({field: 'name', barcode});
+    }
+    if (params.price == null || params.price === '') {
+      throw new InvalidProductError({field: 'price', barcode});
+    }
+    return new Product(params);
+  }
+
+  /**
+   * Rebuilds a stored product. Rows written before these checks are read as they are.
+   * @param {ConstructorParameters<typeof Product>[0]} params
+   * @returns {Product}
+   */
+  static restore(params) {
+    return new Product(params);
+  }
     /**
      * @param {object} params
      * @param {string} params.barcode

@@ -1,31 +1,29 @@
 import { faker } from '@faker-js/faker';
-import InvoiceNumber from '../../domain/invoice/InvoiceNumber';
 import Money from '../../domain/money/Money';
 import Order from '../../domain/order/Order';
+import Quantity from '../../domain/money/Quantity';
 import Payment from '../../domain/payment/Payment';
-import VatRate from '../../domain/tax/VatRate';
+/** @typedef {import('./demoCatalog').DemoProduct} DemoProduct */
+/** @typedef {import('../../domain/tax/VatRate').default} VatRate */
 
 /**
- * @typedef {object} DemoProduct
- * @property {string} [_barcode]
- * @property {string} [_name]
- * @property {number | null} [_price]
- * @property {string} [_status]
- * @property {boolean} [_weighted]
- * @property {number} [_vatPercent]
+ * One sale line as the till sends it to CreateOrder.
+ * @typedef {object} DemoLine
+ * @property {string} barcode
+ * @property {string} name
+ * @property {Money} price
+ * @property {Quantity} quantity
+ * @property {boolean} weighted
+ * @property {VatRate} vatRate
  */
 
 /**
- * A placed demo ticket and the invoice number it was issued with.
- * @typedef {object} DemoOrder
- * @property {Order} order
- * @property {InvoiceNumber} invoice
- */
-
-/**
- * @typedef {object} PendingTicket
- * @property {Date} created
- * @property {Order} draft A placed and paid order that has no ticket number yet.
+ * One historical sale: the moment it happened, its lines, and how it was paid.
+ * The lines were already placed on a draft {@link Order}, so they can be sold.
+ * @typedef {object} DemoTicket
+ * @property {Date} at
+ * @property {DemoLine[]} lines
+ * @property {Payment} payment
  */
 
 const OPEN_MINUTES = 10 * 60;
@@ -38,14 +36,13 @@ const METHODS = ['cash', 'card', 'bizum', 'mixed'];
 /**
  * Forty-five shop days of tickets ending at `now`.
  * Two days in that window have no tickets. Weighed lines use kilograms.
- * Ticket numbers follow the local year and restart when the year changes.
- * Every ticket is a placed {@link Order}, so a line without a barcode, a name, or a price
- * is refused before it reaches the database.
+ * Only enabled products are sold. Tickets come out in time order, the order the
+ * seed sells them in, so CreateOrder numbers the invoices in sequence.
  * @param {DemoProduct[]} products
- * @param {Date} [now]
- * @returns {DemoOrder[]}
+ * @param {Date} now
+ * @returns {DemoTicket[]}
  */
-export function buildDemoOrders(products, now = new Date()) {
+export function buildDemoOrders(products, now) {
   faker.seed(481516);
   const catalog = sellableProducts(products);
   if (catalog.length === 0) {
@@ -57,14 +54,14 @@ export function buildDemoOrders(products, now = new Date()) {
   for (let index = 0; index < DAY_SPAN; index += 1) {
     collectDay(pending, addDays(firstDay, index), latest, QUIET_DAY_INDEXES.indexOf(index) !== -1, catalog);
   }
-  pending.sort((left, right) => left.created - right.created);
-  return assignTickets(pending);
+  pending.sort((left, right) => left.at - right.at);
+  return pending;
 }
 
 /**
  * A quiet day and a day that has not opened yet consume no faker values,
  * so the rest of the seed stays put.
- * @param {PendingTicket[]} pending
+ * @param {DemoTicket[]} pending
  * @param {Date} day
  * @param {Date} latest
  * @param {boolean} quiet
@@ -98,42 +95,55 @@ function ticketCount(day) {
 }
 
 /**
+ * The lines are placed and paid on a draft order first: a line or a payment the
+ * till would refuse fails here, before the seed starts.
  * @param {DemoProduct[]} catalog
  * @param {Date} rangeStart
  * @param {Date} rangeEnd
- * @returns {PendingTicket}
+ * @returns {DemoTicket}
  */
 function buildTicket(catalog, rangeStart, rangeEnd) {
-  const created = new Date(faker.number.int({
+  const at = new Date(faker.number.int({
     min: rangeStart.getTime(),
     max: rangeEnd.getTime() - 1
   }));
-  const draft = Order.draft({date: formatDisplay(created)});
-  addLines(draft, catalog);
+  const lines = buildLines(catalog);
+  const draft = Order.draft({date: formatDisplay(at)});
+  lines.forEach(line => draft.addLine(line));
   draft.place();
   draft.recordPayment(settle(draft.total));
-  return {created, draft};
+  return {at, lines, payment: draft.payment};
 }
 
 /**
- * @param {Order} draft
  * @param {DemoProduct[]} products
+ * @returns {DemoLine[]}
  */
-function addLines(draft, products) {
+function buildLines(products) {
   const lineCount = faker.number.int({min: 1, max: Math.min(4, products.length)});
-  faker.helpers.arrayElements(products, lineCount).forEach(product => {
-    const weighted = product._weighted === true;
-    draft.addLine({
-      barcode: product._barcode,
-      name: product._name,
-      price: Money.from(product._price),
-      quantity: weighted
-        ? faker.helpers.arrayElement(KILOS)
-        : faker.number.int({min: 1, max: 3}),
-      weighted,
-      vatRate: VatRate.standard(product._vatPercent == null ? 21 : product._vatPercent)
-    });
-  });
+  return faker.helpers.arrayElements(products, lineCount).map(product => ({
+    barcode: product.barcode,
+    name: product.name,
+    price: product.price,
+    quantity: Quantity.from(product.weighted
+      ? faker.helpers.arrayElement(KILOS)
+      : faker.number.int({min: 1, max: 3})),
+    weighted: product.weighted,
+    vatRate: product.vatRate
+  }));
+}
+
+/**
+ * What every ticket sold of each barcode, so the opening stock can cover it.
+ * @param {DemoTicket[]} tickets
+ * @returns {Map<string, Quantity>}
+ */
+export function soldQuantities(tickets) {
+  const sold = new Map();
+  tickets.forEach(ticket => ticket.lines.forEach(line => {
+    sold.set(line.barcode, (sold.get(line.barcode) || Quantity.ofMilli(0)).plus(line.quantity));
+  }));
+  return sold;
 }
 
 /**
@@ -183,40 +193,11 @@ function mixedPayment(total) {
 }
 
 /**
- * Ticket ids and invoice numbers follow time order, so they are given after sorting.
- * @param {PendingTicket[]} pending
- * @returns {DemoOrder[]}
- */
-function assignTickets(pending) {
-  const next = new Map();
-  return pending.map(({created, draft}, index) => {
-    const series = String(created.getFullYear());
-    const number = (next.get(series) || 0) + 1;
-    next.set(series, number);
-    return {
-      order: Order.restore({
-        id: String(index + 1),
-        lines: draft.lines,
-        date: draft.createdAt,
-        payment: draft.payment
-      }),
-      invoice: new InvoiceNumber({series, number})
-    };
-  });
-}
-
-/**
  * @param {DemoProduct[]} products
  * @returns {DemoProduct[]}
  */
 function sellableProducts(products) {
-  return products.filter(product =>
-    product._status === 'ENABLED' &&
-    typeof product._name === 'string' &&
-    product._name.trim() !== '' &&
-    product._price != null &&
-    Number.isFinite(Number(product._price))
-  );
+  return products.filter(product => product.enabled);
 }
 
 /**

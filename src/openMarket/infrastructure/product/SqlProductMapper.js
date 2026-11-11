@@ -1,19 +1,16 @@
 import * as Rx from "rxjs";
 import {moneyFromColumns} from "../service/storedMoney";
-/** @typedef {import('../../domain/product/ProductFactory').default} ProductFactory */
+import Product from "../../domain/product/Product";
 /** @typedef {import('../../domain/category/CategoryFactory').default} CategoryFactory */
-/** @typedef {import('../../domain/product/Product').default} Product */
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 
 export default class SqlProductMapper {
 
   /**
    * @param {object} deps
-   * @param {ProductFactory} deps.productFactory
    * @param {CategoryFactory} deps.categoryFactory
    */
-  constructor({ productFactory, categoryFactory }){
-    this._productFactory = productFactory;
+  constructor({ categoryFactory }){
     this._categoryFactory = categoryFactory;
   }
 
@@ -24,7 +21,7 @@ export default class SqlProductMapper {
    */
   toDomain({persistenceProduct}) {
     return Rx.Observable.of(
-      this._productFactory.createWith({
+      Product.restore({
         barcode: persistenceProduct.barcode,
         basePrice: moneyFromColumns(persistenceProduct.base_price_cents, persistenceProduct.base_price),
         description: persistenceProduct.description,

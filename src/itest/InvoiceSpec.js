@@ -3,12 +3,13 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/mergeMap';
 import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
-import {replaceSqliteData} from '../openMarket/infrastructure/service/sqliteSeed';
 import InvoiceIssued from '../openMarket/domain/event/InvoiceIssued';
 import Invoice from '../openMarket/domain/invoice/Invoice';
 import InvoiceNumber from '../openMarket/domain/invoice/InvoiceNumber';
 import ErrorCode from '../openMarket/domain/error/ErrorCode';
 import SystemClock from '../openMarket/infrastructure/service/SystemClock';
+import seedShop from '../test/openMarket/support/seedShop';
+import {shopCategory, shopProduct} from '../test/openMarket/support/catalog';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 const cancelInvoice = openMarket.get('invoices_cancel_use_case');
@@ -17,19 +18,7 @@ const invoiceRepository = container.getInstance({key: 'invoiceRepository'});
 const transaction = container.getInstance({key: 'transaction'});
 const domainEventBus = openMarket.get('domain_event_bus');
 
-const product = {
-  _id: 'Seq-0',
-  _barcode: '0001',
-  _name: 'Coca-Cola',
-  _description: '',
-  _price: 0.55,
-  _basePrice: 0.3,
-  _stock: 100,
-  _stockMin: 10,
-  _imageUrl: 'a',
-  _categoryId: '1',
-  _status: 'ENABLED'
-};
+const product = shopProduct({barcode: '0001', name: 'Coca-Cola', price: '0.55', basePrice: '0.30', stock: 100, stockMin: 10});
 
 const lines = [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 2}];
 
@@ -61,11 +50,11 @@ function stock() {
 
 describe('Invoice', () => {
   beforeEach(() => {
-    replaceSqliteData(database, {products: [product]});
+    seedShop(container, {categories: [shopCategory('1')], products: [product]});
   });
 
   afterEach(() => {
-    replaceSqliteData(database, {});
+    seedShop(container);
   });
 
   it('stores the next invoice with each order', done => {
