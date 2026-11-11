@@ -57,6 +57,36 @@ describe('Order', () => {
     expect(order.isPlaced()).to.equal(false);
   });
 
+  it('refuses a catalog line without a barcode, a name, or a price', () => {
+    const order = Order.draft({id: '1', date});
+    const refused = [
+      null,
+      {name: 'Milk', price: 2, quantity: 1},
+      {...line(1), barcode: ''},
+      {...line(1), barcode: '   '},
+      {...line(1), barcode: 1},
+      {barcode: '1', price: 2, quantity: 1},
+      {...line(1), name: ' '},
+      {barcode: '1', name: 'Milk', quantity: 1},
+      {...line(1), price: ''}
+    ];
+
+    refused.forEach(candidate => {
+      try {
+        order.addLine(candidate);
+        expect.fail('accepted ' + JSON.stringify(candidate));
+      } catch (error) {
+        expect(error).to.be.instanceOf(InvalidOrderLineError);
+        expect(error.message).to.equal('The order line is not valid');
+        expect(error.context.reason).to.equal(ErrorCode.ORDER_LINE_INVALID);
+      }
+    });
+    expect(order.lines).to.deep.equal([]);
+    expect(plain(order.addLine({...line(1), price: 0}).lines[0])).to.deep.equal({
+      barcode: '1', name: 'Milk', cents: 0, milli: 1000, amount: 0
+    });
+  });
+
   it('rejects a fraction on a whole-unit product', () => {
     const order = Order.draft({id: '1', date});
 

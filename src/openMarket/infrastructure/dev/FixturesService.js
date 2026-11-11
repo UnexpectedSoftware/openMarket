@@ -4,6 +4,7 @@
 import {createFixtureInserter, clearShopData, runSeedTransaction} from '../service/sqliteSeed';
 import {installInvoiceGuards} from '../service/SqliteConnection';
 import {installDemoImages} from './demoImages';
+/** @typedef {import('../service/sqliteSeed').SeedOrder} SeedOrder */
 
 export default class FixturesService {
 
@@ -60,7 +61,7 @@ export default class FixturesService {
   }
 
   /**
-   * @param {{profile: object, settings: object[], categories: object[], products: object[], orders: object[]}} seed
+   * @param {{profile: object, settings: object[], categories: object[], products: object[], orders: SeedOrder[]}} seed
    */
   _write(seed) {
     const inserter = createFixtureInserter(this._database);

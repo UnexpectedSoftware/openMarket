@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import Money from '../../../../openMarket/domain/money/Money';
-import Quantity from '../../../../openMarket/domain/money/Quantity';
+import Order from '../../../../openMarket/domain/order/Order';
 import { buildDemoOrders } from '../../../../openMarket/infrastructure/dev/demoOrders';
 
 const DISPLAY_FORMAT = /^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2}):(\d{2})$/;
@@ -15,7 +15,8 @@ const products = [
 
 describe('Demo orders', () => {
   const now = new Date(2026, 8, 25, 15, 0, 0);
-  const orders = buildDemoOrders(products, now);
+  const tickets = buildDemoOrders(products, now);
+  const orders = tickets.map(ticket => ticket.order);
 
   it('fills forty-five shop days, with two quiet days and a busier Saturday', () => {
     const counts = countsByDay(orders);
@@ -32,7 +33,7 @@ describe('Demo orders', () => {
       if (count === 0) {
         return;
       }
-      const created = orders.find(order => order._createdAt.slice(0, 10) === dayKey(day));
+      const created = orders.find(order => order.createdAt.slice(0, 10) === dayKey(day));
       expect(insideOpenHours(created._createdAt)).to.equal(true);
       if (day.getDay() === 6) {
         saturday.push(count);
@@ -46,62 +47,72 @@ describe('Demo orders', () => {
     expect(Math.max(...sunday)).to.be.below(Math.min(...weekday));
   });
 
-  it('sells weighed lines in kilograms and pays with every method', () => {
+  it('sells placed orders, weighed lines in kilograms, and pays with every method', () => {
     expect(orders.length).to.be.above(0);
     const methods = new Set();
     orders.forEach(order => {
-      methods.add(order._payment.method);
-      expect(order._lines.length).to.be.within(1, 4);
-      order._lines.forEach(line => {
+      expect(order).to.be.instanceOf(Order);
+      expect(order.isPlaced()).to.equal(true);
+      methods.add(order.payment.method);
+      expect(order.lines.length).to.be.within(1, 4);
+      order.lines.forEach(line => {
         expect(['1001', '1002']).to.include(line.barcode);
+        expect(line.name).to.equal(line.barcode === '1001' ? 'Fideo' : 'Manzana');
       });
-      const total = order._lines.reduce(
-        (sum, line) => sum.plus(Money.from(line.price).times(Quantity.from(line.quantity))),
+      const total = order.lines.reduce(
+        (sum, line) => sum.plus(line.price.times(line.quantity)),
         Money.ofCents(0)
       );
-      expect(Money.from(order._total).cents).to.equal(total.cents);
-      expect(order._payment.tenderedCents - order._payment.changeCents).to.equal(total.cents);
+      expect(order.total.cents).to.equal(total.cents);
+      expect(order.payment.tenderedCents - order.payment.changeCents).to.equal(total.cents);
     });
     expect([...methods].sort()).to.deep.equal(['bizum', 'card', 'cash', 'mixed']);
 
-    const weighed = orders.reduce((lines, order) => lines.concat(order._lines.filter(line => line.weighted)), []);
+    const all = orders.reduce((lines, order) => lines.concat(order.lines), []);
+    const weighed = all.filter(line => line.weighted);
     expect(weighed.length).to.be.above(0);
     weighed.forEach(line => {
       expect(line.barcode).to.equal('1002');
-      expect(Quantity.from(line.quantity).milli % 1000).to.not.equal(0);
-      expect(line.vatPercent).to.equal(4);
+      expect(line.quantity.milli % 1000).to.not.equal(0);
+      expect(line.vatRate.percent).to.equal(4);
+    });
+    all.filter(line => !line.weighted).forEach(line => {
+      expect(line.weighted).to.equal(false);
+      expect(line.quantity.milli % 1000).to.equal(0);
+      expect(line.vatRate.percent).to.equal(10);
     });
 
-    orders.filter(order => order._payment.method === 'cash').forEach(order => {
-      expect(order._payment.changeCents).to.be.above(0);
-      expect(order._payment.parts).to.equal(null);
+    orders.filter(order => order.payment.method === 'cash').forEach(order => {
+      expect(order.payment.changeCents).to.be.above(0);
+      expect(order.payment.parts).to.equal(null);
     });
-    orders.filter(order => order._payment.method === 'mixed').forEach(order => {
-      expect(order._payment.changeCents).to.equal(0);
-      expect(order._payment.parts).to.have.length(2);
-      expect(order._payment.parts[0].method).to.not.equal(order._payment.parts[1].method);
-      const split = order._payment.parts[0].amountCents + order._payment.parts[1].amountCents;
-      expect(split).to.equal(Money.from(order._total).cents);
+    orders.filter(order => order.payment.method === 'mixed').forEach(order => {
+      expect(order.payment.changeCents).to.equal(0);
+      expect(order.payment.parts).to.have.length(2);
+      expect(order.payment.parts[0].method).to.not.equal(order.payment.parts[1].method);
+      const split = order.payment.parts[0].amountCents + order.payment.parts[1].amountCents;
+      expect(split).to.equal(order.total.cents);
     });
   });
 
   it('numbers tickets in time order and restarts the series each year', () => {
-    expectSequential(orders);
-    expect(orders[0]._invoice.series).to.equal('2026');
-    expect(orders[0]._invoice.number).to.equal(1);
+    expectSequential(tickets);
+    expect(orders[0].id).to.equal('1');
+    expect(tickets[0].invoice.series).to.equal('2026');
+    expect(tickets[0].invoice.number).to.equal(1);
 
     const yearTurn = new Date(2026, 0, 5, 15, 0, 0);
     const turned = buildDemoOrders(products, yearTurn);
     expectSequential(turned);
-    const december = turned.find(order => order._createdAt.slice(3, 10) === '12/2025');
-    const january = turned.find(order => order._createdAt.slice(3, 10) === '01/2026');
-    expect(december._invoice.series).to.equal('2025');
-    expect(january._invoice.series).to.equal('2026');
-    expect(january._invoice.number).to.equal(1);
+    const december = turned.find(ticket => ticket.order.createdAt.slice(3, 10) === '12/2025');
+    const january = turned.find(ticket => ticket.order.createdAt.slice(3, 10) === '01/2026');
+    expect(december.invoice.series).to.equal('2025');
+    expect(january.invoice.series).to.equal('2026');
+    expect(january.invoice.number).to.equal(1);
   });
 
   it('repeats the same tickets for the same moment', () => {
-    expect(buildDemoOrders(products, now)).to.deep.equal(orders);
+    expect(buildDemoOrders(products, now)).to.deep.equal(tickets);
   });
 
   it('sells nothing when every product is unsellable', () => {
@@ -111,28 +122,28 @@ describe('Demo orders', () => {
 });
 
 /**
- * @param {object[]} orders
+ * @param {Array<{order: Order, invoice: import('../../../../openMarket/domain/invoice/InvoiceNumber').default}>} tickets
  */
-function expectSequential(orders) {
+function expectSequential(tickets) {
   const next = {};
-  orders.forEach(order => {
-    const series = order._createdAt.slice(6, 10);
+  tickets.forEach(({order, invoice}) => {
+    const series = order.createdAt.slice(6, 10);
     const number = (next[series] || 0) + 1;
-    expect(order._invoice.series).to.equal(series);
-    expect(order._invoice.number).to.equal(number);
-    expect(order._invoice.invoiceNumber).to.equal(series + '/' + String(number).padStart(6, '0'));
+    expect(invoice.series).to.equal(series);
+    expect(invoice.number).to.equal(number);
+    expect(invoice.formatted).to.equal(series + '/' + String(number).padStart(6, '0'));
     next[series] = number;
   });
 }
 
 /**
- * @param {object[]} orders
+ * @param {Order[]} orders
  * @returns {Map<string, number>}
  */
 function countsByDay(orders) {
   const counts = new Map();
   orders.forEach(order => {
-    const key = order._createdAt.slice(0, 10);
+    const key = order.createdAt.slice(0, 10);
     counts.set(key, (counts.get(key) || 0) + 1);
   });
   return counts;

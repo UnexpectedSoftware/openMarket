@@ -8,6 +8,9 @@ import * as demoCatalog from '../../../../openMarket/infrastructure/dev/demoCata
 import * as demoOrders from '../../../../openMarket/infrastructure/dev/demoOrders';
 import * as demoSettings from '../../../../openMarket/infrastructure/dev/demoSettings';
 import * as demoShop from '../../../../openMarket/infrastructure/dev/demoShop';
+import InvoiceNumber from '../../../../openMarket/domain/invoice/InvoiceNumber';
+import Order from '../../../../openMarket/domain/order/Order';
+import VatRate from '../../../../openMarket/domain/tax/VatRate';
 
 const category = {_id: '1', _name: 'Fruit'};
 const product = {
@@ -24,12 +27,11 @@ const product = {
   _vatPercent: 4
 };
 const order = {
-  _id: '1',
-  _createdAt: '25/09/2026 12:00:00',
-  _total: '1.20',
-  _lines: [{barcode: '1001', name: 'Apple', price: 1.2, quantity: 1, vatPercent: 4}],
-  _payment: {method: 'cash', tenderedCents: 200, changeCents: 80, parts: null},
-  _invoice: {series: '2026', number: 1, invoiceNumber: '2026/000001'}
+  order: Order.draft({id: '1', date: '25/09/2026 12:00:00'})
+    .addLine({barcode: '1001', name: 'Apple', price: 1.2, quantity: 1, vatRate: VatRate.standard(4)})
+    .place()
+    .recordPayment({method: 'cash', tenderedCents: 200}),
+  invoice: new InvoiceNumber({series: '2026', number: 1})
 };
 
 function withDevelopment(run) {
@@ -108,7 +110,7 @@ describe('FixturesService', function describeFixtures() {
         buildProducts: () => [product]
       },
       demoOrders: {
-        buildDemoOrders: () => [{...order, _total: {}}]
+        buildDemoOrders: () => [order, {order: Order.draft({id: '2'}), invoice: null}]
       },
       demoShop,
       demoSettings

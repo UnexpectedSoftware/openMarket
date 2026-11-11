@@ -1,8 +1,9 @@
 import { faker } from '@faker-js/faker';
 import InvoiceNumber from '../../domain/invoice/InvoiceNumber';
 import Money from '../../domain/money/Money';
-import Quantity from '../../domain/money/Quantity';
+import Order from '../../domain/order/Order';
 import Payment from '../../domain/payment/Payment';
+import VatRate from '../../domain/tax/VatRate';
 
 /**
  * @typedef {object} DemoProduct
@@ -15,15 +16,16 @@ import Payment from '../../domain/payment/Payment';
  */
 
 /**
- * @typedef {object} DemoLine
- * @property {string} barcode
- * @property {string} name
- * @property {number} price
- * @property {number | string} quantity
- * @property {boolean} weighted
- * @property {number} vatPercent
- * @property {string} vatKind
- * @property {null} vatCause
+ * A placed demo ticket and the invoice number it was issued with.
+ * @typedef {object} DemoOrder
+ * @property {Order} order
+ * @property {InvoiceNumber} invoice
+ */
+
+/**
+ * @typedef {object} PendingTicket
+ * @property {Date} created
+ * @property {Order} draft A placed and paid order that has no ticket number yet.
  */
 
 const OPEN_MINUTES = 10 * 60;
@@ -37,9 +39,11 @@ const METHODS = ['cash', 'card', 'bizum', 'mixed'];
  * Forty-five shop days of tickets ending at `now`.
  * Two days in that window have no tickets. Weighed lines use kilograms.
  * Ticket numbers follow the local year and restart when the year changes.
+ * Every ticket is a placed {@link Order}, so a line without a barcode, a name, or a price
+ * is refused before it reaches the database.
  * @param {DemoProduct[]} products
  * @param {Date} [now]
- * @returns {object[]}
+ * @returns {DemoOrder[]}
  */
 export function buildDemoOrders(products, now = new Date()) {
   faker.seed(481516);
@@ -60,7 +64,7 @@ export function buildDemoOrders(products, now = new Date()) {
 /**
  * A quiet day and a day that has not opened yet consume no faker values,
  * so the rest of the seed stays put.
- * @param {Array<{created: Date, lines: DemoLine[], total: Money, payment: Payment}>} pending
+ * @param {PendingTicket[]} pending
  * @param {Date} day
  * @param {Date} latest
  * @param {boolean} quiet
@@ -97,48 +101,39 @@ function ticketCount(day) {
  * @param {DemoProduct[]} catalog
  * @param {Date} rangeStart
  * @param {Date} rangeEnd
- * @returns {{created: Date, lines: DemoLine[], total: Money, payment: Payment}}
+ * @returns {PendingTicket}
  */
 function buildTicket(catalog, rangeStart, rangeEnd) {
   const created = new Date(faker.number.int({
     min: rangeStart.getTime(),
     max: rangeEnd.getTime() - 1
   }));
-  const lines = buildLines(catalog);
-  const total = lineTotal(lines);
-  return {created, lines, total, payment: settle(total)};
+  const draft = Order.draft({date: formatDisplay(created)});
+  addLines(draft, catalog);
+  draft.place();
+  draft.recordPayment(settle(draft.total));
+  return {created, draft};
 }
 
 /**
+ * @param {Order} draft
  * @param {DemoProduct[]} products
- * @returns {DemoLine[]}
  */
-function buildLines(products) {
+function addLines(draft, products) {
   const lineCount = faker.number.int({min: 1, max: Math.min(4, products.length)});
-  return faker.helpers.arrayElements(products, lineCount).map(product => ({
-    barcode: product._barcode || '',
-    name: product._name || '',
-    price: Number(product._price),
-    quantity: product._weighted === true
-      ? faker.helpers.arrayElement(KILOS)
-      : faker.number.int({min: 1, max: 3}),
-    weighted: product._weighted === true,
-    vatPercent: product._vatPercent == null ? 21 : product._vatPercent,
-    vatKind: 'S1',
-    vatCause: null
-  }));
-}
-
-/**
- * @param {DemoLine[]} lines
- * @returns {Money}
- */
-function lineTotal(lines) {
-  let total = Money.ofCents(0);
-  lines.forEach(line => {
-    total = total.plus(Money.from(line.price).times(Quantity.from(line.quantity)));
+  faker.helpers.arrayElements(products, lineCount).forEach(product => {
+    const weighted = product._weighted === true;
+    draft.addLine({
+      barcode: product._barcode,
+      name: product._name,
+      price: Money.from(product._price),
+      quantity: weighted
+        ? faker.helpers.arrayElement(KILOS)
+        : faker.number.int({min: 1, max: 3}),
+      weighted,
+      vatRate: VatRate.standard(product._vatPercent == null ? 21 : product._vatPercent)
+    });
   });
-  return total;
 }
 
 /**
@@ -188,32 +183,24 @@ function mixedPayment(total) {
 }
 
 /**
- * @param {Array<{created: Date, lines: DemoLine[], total: Money, payment: Payment}>} pending
- * @returns {object[]}
+ * Ticket ids and invoice numbers follow time order, so they are given after sorting.
+ * @param {PendingTicket[]} pending
+ * @returns {DemoOrder[]}
  */
 function assignTickets(pending) {
   const next = new Map();
-  return pending.map((order, index) => {
-    const series = String(order.created.getFullYear());
+  return pending.map(({created, draft}, index) => {
+    const series = String(created.getFullYear());
     const number = (next.get(series) || 0) + 1;
     next.set(series, number);
-    const invoice = new InvoiceNumber({series, number});
     return {
-      _id: String(index + 1),
-      _createdAt: formatDisplay(order.created),
-      _lines: order.lines,
-      _total: eurosText(order.total.cents),
-      _payment: {
-        method: order.payment.method,
-        tenderedCents: order.payment.tenderedCents,
-        changeCents: order.payment.changeCents,
-        parts: order.payment.parts
-      },
-      _invoice: {
-        series: invoice.series,
-        number: invoice.number,
-        invoiceNumber: invoice.formatted
-      }
+      order: Order.restore({
+        id: String(index + 1),
+        lines: draft.lines,
+        date: draft.createdAt,
+        payment: draft.payment
+      }),
+      invoice: new InvoiceNumber({series, number})
     };
   });
 }
@@ -230,16 +217,6 @@ function sellableProducts(products) {
     product._price != null &&
     Number.isFinite(Number(product._price))
   );
-}
-
-/**
- * @param {number} cents
- * @returns {string}
- */
-function eurosText(cents) {
-  const abs = Math.abs(cents);
-  const text = Math.trunc(abs / 100) + '.' + String(abs % 100).padStart(2, '0');
-  return cents < 0 ? '-' + text : text;
 }
 
 /**

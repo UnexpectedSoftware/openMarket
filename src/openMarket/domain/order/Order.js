@@ -170,6 +170,7 @@ export default class Order {
   /**
    * Adds a catalog line while the order is still a draft.
    * A line that cannot be sold is refused and the order stays unchanged.
+   * A catalog line needs a barcode, a name, and a price: without them it is refused.
    * A free-amount line uses {@link Order#addFreeLine}.
    * @param {{kind?: 'PRODUCT' | 'FREE', barcode: string, name: string, price: Money | number | string, quantity: Quantity | number | string, vatRate?: VatRate | object, weighted?: boolean}} line
    * @returns {Order}
@@ -179,6 +180,12 @@ export default class Order {
     if (line && line.kind === 'FREE') {
       throw new InvalidOrderLineError({
         barcode: line.barcode,
+        reason: ErrorCode.ORDER_LINE_INVALID
+      });
+    }
+    if (!identifiesProduct(line)) {
+      throw new InvalidOrderLineError({
+        barcode: line && line.barcode,
         reason: ErrorCode.ORDER_LINE_INVALID
       });
     }
@@ -272,6 +279,23 @@ export default class Order {
     return this._lines.reduce((acc, element) => acc.plus(element.amount), Money.ofCents(0));
   }
 
+}
+
+/**
+ * A catalog line names the product it sells and its price.
+ * @param {{barcode?: string, name?: string, price?: Money | number | string} | null | undefined} line
+ * @returns {boolean}
+ */
+function identifiesProduct(line) {
+  return Boolean(line) && hasText(line.barcode) && hasText(line.name) && line.price != null && line.price !== '';
+}
+
+/**
+ * @param {*} value
+ * @returns {boolean}
+ */
+function hasText(value) {
+  return typeof value === 'string' && value.trim() !== '';
 }
 
 /**

@@ -8,6 +8,7 @@ import container from '../openMarket/infrastructure/dic/Container';
 import { replaceSqliteData } from '../openMarket/infrastructure/service/sqliteSeed';
 import ProductWithLowStock from '../openMarket/domain/event/ProductWithLowStock';
 import OrderCreated from '../openMarket/domain/event/OrderCreated';
+import placedOrder from '../test/openMarket/support/placedOrder';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 
@@ -39,7 +40,7 @@ describe('Order create use case', () => {
 
   beforeEach(function () {
     const orderData = [
-      {"_id":"01","_createdAt":"01/07/2017 17:53:04","_lines":[{"barcode":"0001","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
+      placedOrder({id: '01', date: '01/07/2017 17:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 1}]})
     ];
     const productData = [
       {"_id":"Seq-0","_barcode":"0001","_name":"Coca-Cola","_description":"","_price":0.55,"_basePrice":0.3,"_stock":100,"_stockMin":10,"_imageUrl":"a","_categoryId":"1","_status":"ENABLED"},
@@ -274,9 +275,9 @@ describe('Order find use case by dates', () => {
 
   beforeEach(function () {
     const data = [
-      {"_id":"01","_createdAt":"01/07/2017 17:53:04","_lines":[{"barcode":"0001","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
-      {"_id":"01","_createdAt":"02/07/2017 17:53:04","_lines":[{"barcode":"0002","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55},
-      {"_id":"01","_createdAt":"03/07/2017 17:53:04","_lines":[{"barcode":"0003","name":"Coca-Cola","price":0.55,"quantity":1}],"_total":0.55}
+      placedOrder({id: '01', date: '01/07/2017 17:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 1}]}),
+      placedOrder({id: '01', date: '02/07/2017 17:53:04', lines: [{barcode: '0002', name: 'Coca-Cola', price: 0.55, quantity: 1}]}),
+      placedOrder({id: '01', date: '03/07/2017 17:53:04', lines: [{barcode: '0003', name: 'Coca-Cola', price: 0.55, quantity: 1}]})
     ];
     replaceSqliteData(database, {orders: data});
   });
@@ -368,60 +369,15 @@ describe('Order statistics', () => {
 
     beforeEach(function () {
       const data = [
-        {
-          "_id": "01",
-          "_createdAt": "01/07/2017 13:53:04",
-          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "01/07/2017 14:53:04",
-          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "01/07/2017 17:53:04",
-          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "01/07/2017 19:53:04",
-          "_lines": [{"barcode": "0001", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "02/07/2017 17:53:04",
-          "_lines": [{"barcode": "0002", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "02/07/2017 17:53:04",
-          "_lines": [{"barcode": "0002", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "03/07/2017 17:53:04",
-          "_lines": [{"barcode": "0003", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "03/07/2017 17:53:04",
-          "_lines": [{"barcode": "0003", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        },
-        {
-          "_id": "01",
-          "_createdAt": "03/07/2017 17:53:04",
-          "_lines": [{"barcode": "0003", "name": "Coca-Cola", "price": 0.55, "quantity": 1}],
-          "_total": 0.55
-        }
+        placedOrder({id: '01', date: '01/07/2017 13:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 1}]}),
+        placedOrder({id: '01', date: '01/07/2017 14:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 1}]}),
+        placedOrder({id: '01', date: '01/07/2017 17:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 1}]}),
+        placedOrder({id: '01', date: '01/07/2017 19:53:04', lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 1}]}),
+        placedOrder({id: '01', date: '02/07/2017 17:53:04', lines: [{barcode: '0002', name: 'Coca-Cola', price: 0.55, quantity: 1}]}),
+        placedOrder({id: '01', date: '02/07/2017 17:53:04', lines: [{barcode: '0002', name: 'Coca-Cola', price: 0.55, quantity: 1}]}),
+        placedOrder({id: '01', date: '03/07/2017 17:53:04', lines: [{barcode: '0003', name: 'Coca-Cola', price: 0.55, quantity: 1}]}),
+        placedOrder({id: '01', date: '03/07/2017 17:53:04', lines: [{barcode: '0003', name: 'Coca-Cola', price: 0.55, quantity: 1}]}),
+        placedOrder({id: '01', date: '03/07/2017 17:53:04', lines: [{barcode: '0003', name: 'Coca-Cola', price: 0.55, quantity: 1}]})
       ];
       replaceSqliteData(database, {orders: data});
     });

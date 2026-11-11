@@ -4,6 +4,7 @@ import openMarket from '../openMarket/application/index';
 import container from '../openMarket/infrastructure/dic/Container';
 import {replaceSqliteData} from '../openMarket/infrastructure/service/sqliteSeed';
 import OrderCreated from '../openMarket/domain/event/OrderCreated';
+import placedOrder from '../test/openMarket/support/placedOrder';
 
 const database = container.getInstance({key: 'sqliteConnection'}).database;
 const createOrder = openMarket.get('orders_create_use_case');
@@ -78,18 +79,8 @@ describe('Product sale statistics', () => {
     replaceSqliteData(database, {
       products: [product],
       orders: [
-        {
-          _id: 'h1',
-          _createdAt: '02/03/2020 10:00:00',
-          _lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 2}],
-          _total: 1.1
-        },
-        {
-          _id: 'h2',
-          _createdAt: '02/03/2020 11:00:00',
-          _lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 3}],
-          _total: 1.65
-        }
+        placedOrder({id: 'h1', date: '02/03/2020 10:00:00', lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 2}]}),
+        placedOrder({id: 'h2', date: '02/03/2020 11:00:00', lines: [{barcode: '0001', name: 'Coca-Cola', price: 0.55, quantity: 3}]})
       ]
     });
 

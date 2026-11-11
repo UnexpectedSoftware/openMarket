@@ -1,16 +1,22 @@
 import { toStoredBound } from './sqliteDates';
 import {dropInvoiceGuards, installInvoiceGuards} from './SqliteConnection';
 import issuerSnapshot from '../../domain/shop/issuerSnapshot';
-import Money from '../../domain/money/Money';
-import Quantity from '../../domain/money/Quantity';
+import Order from '../../domain/order/Order';
 import VatBreakdown from '../../domain/tax/VatBreakdown';
+import SqliteOrderRepository from '../order/SqliteOrderRepository';
 import {centsOf, eurosOf, milliOf, unitsOf} from './storedMoney';
+/** @typedef {import('../../domain/order/Order').OrderLine} OrderLine */
+/** @typedef {import('../../domain/invoice/InvoiceNumber').default} InvoiceNumber */
 
 const UPSERT_SEQUENCE_SQL = 'INSERT INTO invoice_sequence (series, last_number) VALUES (?, ?) ' +
   'ON CONFLICT(series) DO UPDATE SET last_number = MAX(invoice_sequence.last_number, excluded.last_number)';
 
-function allocateId(id, used) {
-  const base = id == null ? 'order' : String(id);
+/**
+ * @param {string} base
+ * @param {Set<string>} used
+ * @returns {string}
+ */
+function allocateId(base, used) {
   if (!used.has(base)) {
     used.add(base);
     return base;
@@ -23,16 +29,6 @@ function allocateId(id, used) {
   }
   used.add(next);
   return next;
-}
-
-function lineAmountCents(line) {
-  if (line.amount != null) {
-    return centsOf(line.amount);
-  }
-  const price = Money.from(line.price == null ? 0 : line.price);
-  const quantity = Quantity.from(line.quantity == null ? 0 : line.quantity);
-  const safe = quantity.milli < 0 ? Quantity.ofMilli(0) : quantity;
-  return price.times(safe).cents;
 }
 
 function bit(value) {
@@ -54,45 +50,8 @@ function vatOf(line) {
 }
 
 /**
- * @param {{method?: string | null, tenderedCents?: number | null, changeCents?: number | null, parts?: object[] | null} | null | undefined} payment
- * @returns {Array<string | number | null>}
- */
-function paymentValues(payment) {
-  if (!payment) {
-    return [null, null, null, null];
-  }
-  return [
-    payment.method == null ? null : String(payment.method),
-    payment.tenderedCents == null ? null : payment.tenderedCents,
-    payment.changeCents == null ? null : payment.changeCents,
-    payment.parts ? JSON.stringify(payment.parts) : null
-  ];
-}
-
-/**
- * @param {number} cents
- * @returns {number}
- */
-function eurosFromCents(cents) {
-  return Money.ofCents(cents).toEuros();
-}
-
-/**
  * @typedef {object} Runnable
  * @property {(...values: any[]) => unknown} run
- */
-
-/**
- * @typedef {object} SeedLine
- * @property {string} [barcode]
- * @property {string} [name]
- * @property {number | string | null} [price]
- * @property {number | string | null} [quantity]
- * @property {number | string} [amount]
- * @property {number | null} [vatPercent]
- * @property {string | null} [vatKind]
- * @property {string | null} [vatCause]
- * @property {boolean | null} [weighted]
  */
 
 /**
@@ -114,21 +73,17 @@ function eurosFromCents(cents) {
  */
 
 /**
+ * A placed order and, when it was issued one, its invoice number.
+ * Older shops have orders with no invoice and no payment.
  * @typedef {object} SeedOrder
- * @property {string | null} [_id]
- * @property {string} _createdAt
- * @property {number | string} _total
- * @property {SeedLine[]} [_lines]
- * @property {{method?: string | null, tenderedCents?: number | null, changeCents?: number | null, parts?: object[] | null} | null} [_payment]
- * @property {{series: string, number: number, invoiceNumber: string} | null} [_invoice]
+ * @property {Order} order
+ * @property {InvoiceNumber | null} [invoice]
  */
 
 /**
  * @typedef {object} SeedStatements
  * @property {Runnable} insertCategory
  * @property {Runnable} insertProduct
- * @property {Runnable} insertOrder
- * @property {Runnable} insertLine
  * @property {Runnable} insertInvoice
  * @property {Runnable} insertInvoiceLine
  * @property {Runnable} insertVat
@@ -142,6 +97,7 @@ export function createFixtureInserter(database) {
   const usedOrderIds = new Set();
   /** @type {{issuer: object | null}} */
   const state = {issuer: null};
+  const orderRepository = new SqliteOrderRepository({connection: {database}, objectMapper: null, queryService: null});
 
   return {
     insertProfile(profile) {
@@ -156,8 +112,9 @@ export function createFixtureInserter(database) {
     insertProduct(product) {
       saveProduct(statements, categoryIds, product);
     },
-    insertOrder(order) {
-      saveOrder(statements, state, usedOrderIds, order);
+    /** @param {SeedOrder} seed */
+    insertOrder(seed) {
+      saveOrder({statements, state, usedOrderIds, orderRepository}, seed);
     }
   };
 }
@@ -172,14 +129,6 @@ function prepareStatements(database) {
     insertProduct: database.prepare(
       'INSERT INTO product (barcode, name, description, price, price_cents, base_price, base_price_cents, stock, stock_min, status, weighted, category_id, vat_percent, vat_kind, vat_cause, image_name) ' +
       'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
-    ),
-    insertOrder: database.prepare(
-      'INSERT INTO "order" (id, created_at, total, total_cents, payment_method, tendered_cents, change_cents, payment_parts) ' +
-      'VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
-    ),
-    insertLine: database.prepare(
-      'INSERT INTO line (order_id, barcode, name, price, quantity, price_cents, quantity_milli, amount_cents, vat_percent, vat_kind, vat_cause) ' +
-      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     ),
     insertInvoice: database.prepare(
       'INSERT INTO invoice (id, series, number, invoice_number, issued_at, issue_date, type, issuer_json, order_id, status, cancelled_at, total, total_cents) ' +
@@ -275,84 +224,68 @@ function rememberCategory(statements, categoryIds, categoryId) {
 }
 
 /**
- * @param {SeedStatements} statements
- * @param {{issuer: object | null}} state
- * @param {Set<string>} usedOrderIds
- * @param {SeedOrder} order
+ * Writes the order the way a sale does. Only a placed {@link Order} is accepted,
+ * so every line already has a barcode, a name, a price, a quantity, and a VAT rate.
+ * A repeated id gets the next free `#n` suffix.
+ * @param {{statements: SeedStatements, state: {issuer: object | null}, usedOrderIds: Set<string>, orderRepository: SqliteOrderRepository}} context
+ * @param {SeedOrder} seed
  */
-function saveOrder(statements, state, usedOrderIds, order) {
-  const id = allocateId(order._id, usedOrderIds);
-  const createdAt = toStoredBound(order._createdAt);
-  const payment = paymentValues(order._payment);
-  statements.insertOrder.run(
-    id,
-    createdAt,
-    eurosOf(order._total),
-    centsOf(order._total),
-    payment[0],
-    payment[1],
-    payment[2],
-    payment[3]
-  );
-  (order._lines || []).forEach(line => insertSoldLine(statements.insertLine, id, line));
-  if (order._invoice) {
-    insertSoldInvoice(statements, order, id, createdAt, state.issuer);
+function saveOrder({statements, state, usedOrderIds, orderRepository}, {order, invoice = null}) {
+  if (!(order instanceof Order) || !order.isPlaced()) {
+    throw new TypeError('A seed order must be a placed Order');
+  }
+  const id = allocateId(order.id, usedOrderIds);
+  const stored = id === order.id
+    ? order
+    : Order.restore({id, lines: order.lines, date: order.createdAt, payment: order.payment});
+  saveNow(orderRepository, stored);
+  if (invoice) {
+    insertSoldInvoice(statements, stored, invoice, state.issuer);
   }
 }
 
 /**
- * @param {Runnable} insertLine
- * @param {string} orderId
- * @param {SeedLine} line
+ * The repository writes synchronously. A failed write is thrown so the seed transaction rolls back.
+ * @param {SqliteOrderRepository} orderRepository
+ * @param {Order} order
  */
-function insertSoldLine(insertLine, orderId, line) {
-  const vat = vatOf(line);
-  insertLine.run(
-    orderId,
-    line.barcode,
-    line.name,
-    eurosOf(line.price),
-    unitsOf(line.quantity),
-    centsOf(line.price),
-    milliOf(line.quantity),
-    lineAmountCents(line),
-    vat.percent,
-    vat.kind,
-    vat.cause
-  );
+function saveNow(orderRepository, order) {
+  let failure = null;
+  orderRepository.save({order}).subscribe(() => {}, error => {
+    failure = error;
+  });
+  if (failure) {
+    throw failure;
+  }
 }
 
 /**
  * @param {SeedStatements} statements
- * @param {SeedOrder} order
- * @param {string} orderId
- * @param {string} createdAt
+ * @param {Order} order
+ * @param {InvoiceNumber} invoice
  * @param {object | null} issuer
  */
-function insertSoldInvoice(statements, order, orderId, createdAt, issuer) {
-  const invoice = order._invoice;
-  if (!invoice) {
-    return;
-  }
-  const invoiceId = 'inv-' + orderId;
-  const lines = order._lines || [];
+function insertSoldInvoice(statements, order, invoice, issuer) {
+  const invoiceId = 'inv-' + order.id;
+  const createdAt = toStoredBound(order.createdAt);
+  const lines = order.lines;
   statements.insertInvoice.run(
     invoiceId,
-    String(invoice.series),
-    Number(invoice.number),
-    String(invoice.invoiceNumber),
+    invoice.series,
+    invoice.number,
+    invoice.formatted,
     createdAt,
-    String(createdAt).slice(0, 10),
+    createdAt.slice(0, 10),
     'F2',
     issuer ? JSON.stringify(issuer) : null,
-    orderId,
+    order.id,
     'ISSUED',
     null,
-    eurosOf(order._total),
-    centsOf(order._total)
+    eurosOf(order.total),
+    centsOf(order.total)
   );
   lines.forEach((line, position) => insertInvoiceLine(statements.insertInvoiceLine, invoiceId, position, line));
-  VatBreakdown.fromLines(lines.map(breakdownLine)).forEach((row, position) => {
+  VatBreakdown.fromLines(lines).forEach((row, position) => {
     statements.insertVat.run(
       invoiceId,
       position,
@@ -364,33 +297,32 @@ function insertSoldInvoice(statements, order, orderId, createdAt, issuer) {
       row.gross.cents
     );
   });
-  statements.upsertSequence.run(String(invoice.series), Number(invoice.number));
+  statements.upsertSequence.run(invoice.series, invoice.number);
 }
 
 /**
  * @param {Runnable} statement
  * @param {string} invoiceId
  * @param {number} position
- * @param {SeedLine} line
+ * @param {OrderLine} line
  */
 function insertInvoiceLine(statement, invoiceId, position, line) {
-  const amount = lineAmountCents(line);
-  const vat = vatOf(line);
+  const vatRate = line.vatRate;
   statement.run(
     invoiceId,
     position,
-    line.barcode == null ? '' : String(line.barcode),
-    line.name == null ? '' : String(line.name),
+    line.barcode,
+    line.name,
     eurosOf(line.price),
     unitsOf(line.quantity),
-    eurosFromCents(amount),
+    eurosOf(line.amount),
     centsOf(line.price),
     milliOf(line.quantity),
-    amount,
-    vat.percent,
-    vat.kind,
-    vat.cause,
-    'PRODUCT',
+    centsOf(line.amount),
+    vatRate.percent,
+    vatRate.kind,
+    vatRate.cause,
+    line.kind === 'FREE' ? 'FREE' : 'PRODUCT',
     bit(line.weighted)
   );
 }
@@ -426,17 +358,6 @@ function storedMoney(value) {
     return [null, null];
   }
   return [eurosOf(value), centsOf(value)];
-}
-
-/**
- * @param {SeedLine} line
- * @returns {{amount: Money, vatRate: {percent: number, kind: string, cause: string | null}}}
- */
-function breakdownLine(line) {
-  return {
-    amount: Money.ofCents(lineAmountCents(line)),
-    vatRate: vatOf(line)
-  };
 }
 
 /**
@@ -490,6 +411,10 @@ function rollback(database) {
   }
 }
 
+/**
+ * @param {{exec: Function, prepare: Function}} database
+ * @param {{categories?: object[], products?: SeedProduct[], orders?: SeedOrder[]}} [seed]
+ */
 export function replaceSqliteData(database, {categories = [], products = [], orders = []} = {}) {
   const inserter = createFixtureInserter(database);
   runSeedTransaction(database, () => {
