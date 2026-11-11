@@ -1,9 +1,12 @@
 import path from 'path';
 import {Container} from '../dic/Container';
 import SqliteConnection from '../service/SqliteConnection';
+import RecordProductSales from '../../application/service/product/RecordProductSales';
 import ImageStore from '../service/ImageStore';
 import SettableClock from './SettableClock';
 import FixturesService from './FixturesService';
+import ProgressSaleStatistics from './ProgressSaleStatistics';
+import SeedProgress from './seedProgress';
 import * as demoCatalog from './demoCatalog';
 import * as demoOrders from './demoOrders';
 import * as demoShop from './demoShop';
@@ -16,19 +19,21 @@ import * as demoSettings from './demoSettings';
 const NO_PLUGIN_DELIVERY = Object.freeze({start() {}});
 
 /**
- * The demo fixtures bootstrap. It is the app's container with three changes: the
- * database file it is given (photos go beside it), a clock the saga moves to each sale,
- * and plugin delivery replaced by a stand-in. The sale statistics subscriber is the
- * real one, so the seeded outbox rows end handled. The app never builds this.
+ * The demo fixtures bootstrap. It is the app's container with the database file it is
+ * given (photos go beside it), a clock the saga moves to each sale, plugin delivery
+ * replaced by a stand-in, and a progress bar that only this container subscribes.
+ * The sale statistics subscriber is the real one, so the seeded outbox rows end handled.
+ * The app never builds this.
  */
 export default class FixturesContainer extends Container {
 
   /**
-   * @param {{filename: string}} options
+   * @param {{filename: string, out?: {write: Function, isTTY?: boolean}}} options
    */
-  constructor({filename}) {
+  constructor({filename, out = process.stdout}) {
     super({environment: 'development'});
     this._filename = filename;
+    this._out = out;
   }
 
   _sqliteConnection() {
@@ -51,6 +56,25 @@ export default class FixturesContainer extends Container {
     return new ImageStore({directory: this._beside('category-images')});
   }
 
+  /** @returns {SeedProgress} */
+  _seedProgress() {
+    return new SeedProgress({out: this._out});
+  }
+
+  /**
+   * The real sale-statistics subscriber, counting each applied order for the informes bar.
+   * @returns {RecordProductSales}
+   */
+  _recordProductSales() {
+    return new RecordProductSales({
+      repository: new ProgressSaleStatistics({
+        repository: Container.prototype._productSaleStatisticsRepository.call(this),
+        onApply: () => this.getInstance({key: 'seedProgress'}).reportApplied()
+      }),
+      domainEventBus: this.getInstance({key: 'domainEventBus'})
+    });
+  }
+
   /**
    * The subscribers start as they do in the app: plugin delivery, then sale statistics.
    * @returns {import('./FixturesService').DemoSeed}
@@ -60,7 +84,9 @@ export default class FixturesContainer extends Container {
       database: this.getInstance({key: 'sqliteConnection'}).database,
       transaction: this.getInstance({key: 'transaction'}),
       clock: this.getInstance({key: 'clock'}),
+      progress: this.getInstance({key: 'seedProgress'}),
       startSubscribers: () => {
+        this.getInstance({key: 'seedProgress'}).attach(this.getInstance({key: 'domainEventBus'}));
         this.getInstance({key: 'pluginHost'}).start();
         this.getInstance({key: 'recordProductSales'}).start();
       },

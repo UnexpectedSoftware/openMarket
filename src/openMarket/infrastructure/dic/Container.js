@@ -230,7 +230,9 @@ class Container {
   _createCategory() {
     return new CreateCategory({
       repository: this.getInstance({key: 'categoryRepository'}),
-      categoryFactory: this.getInstance({key: 'categoryFactory'})
+      categoryFactory: this.getInstance({key: 'categoryFactory'}),
+      domainEventBus: this.getInstance({key: 'domainEventBus'}),
+      transaction: this.getInstance({key: 'transaction'})
     });
   }
 
@@ -331,7 +333,9 @@ class Container {
     return new CreateOrUpdateProduct({
       productRepository: this.getInstance({key: 'productRepository'}),
       productFactory: this.getInstance({key: 'productFactory'}),
-      categoryRepository: this.getInstance({key: 'categoryRepository'})
+      categoryRepository: this.getInstance({key: 'categoryRepository'}),
+      domainEventBus: this.getInstance({key: 'domainEventBus'}),
+      transaction: this.getInstance({key: 'transaction'})
     });
   }
 

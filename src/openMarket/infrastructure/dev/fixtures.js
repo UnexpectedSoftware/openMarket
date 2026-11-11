@@ -34,13 +34,18 @@ export function fixturesDatabasePath() {
 
 /**
  * Replaces the shop in `filename` with the demo shop and closes the database.
- * @param {{filename: string, now?: Date}} options
+ * `prepare` runs after the container exists and before the seed, so a test can
+ * subscribe on that bus. Progress is written to `out`.
+ * @param {{filename: string, now?: Date, out?: {write: Function, isTTY?: boolean}, prepare?: (container: FixturesContainer) => void}} options
  * @returns {import('./FixturesService').SeedSummary & {filename: string, ms: number}}
  */
-export function runFixtures({filename, now = new Date()}) {
+export function runFixtures({filename, now = new Date(), out = process.stdout, prepare}) {
   const started = process.hrtime.bigint();
-  const container = new FixturesContainer({filename});
+  const container = new FixturesContainer({filename, out});
   try {
+    if (typeof prepare === 'function') {
+      prepare(container);
+    }
     const summary = container.getInstance({key: 'fixturesService'}).reset({now});
     return {...summary, filename, ms: Number((process.hrtime.bigint() - started) / 1000000n)};
   } finally {
@@ -54,7 +59,7 @@ export function runFixtures({filename, now = new Date()}) {
  */
 export function main({filename, out, err, now}) {
   try {
-    const result = runFixtures({filename, now});
+    const result = runFixtures({filename, now, out});
     out.write(`Demo shop written to ${result.filename}\n` +
       `  ${result.categories} categories, ${result.products} products, ${result.orders} tickets and invoices\n` +
       `  sales from ${result.from.slice(0, 10)} to ${result.to.slice(0, 10)}, in ${result.ms} ms\n`);

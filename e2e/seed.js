@@ -154,16 +154,22 @@ function repositories(classes, connection, userData) {
     images: new classes.ImageStore({directory: path.join(userData, 'product-images')}),
     queryService: new classes.SqliteProductQueryService()
   });
+  const transaction = {run(work) { return work(); }};
+  const domainEventBus = {save() {}, record() {}, raise() {}, discard() {}};
   return {
     categoryRepository,
     createCategory: new classes.CreateCategory({
       repository: categoryRepository,
-      categoryFactory
+      categoryFactory,
+      domainEventBus,
+      transaction
     }),
     createProduct: new classes.CreateOrUpdateProduct({
       productRepository,
       productFactory,
-      categoryRepository
+      categoryRepository,
+      domainEventBus,
+      transaction
     }),
     orderFactory: new classes.OrderFactoryImpl({
       identity,
