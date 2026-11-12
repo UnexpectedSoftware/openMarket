@@ -1,0 +1,23 @@
+---
+description: Domain event bus semantics (save vs record, sync vs durable subscribers, raise/discard, plugins). Use when raising, subscribing to or delivering domain events.
+globs: src/openMarket/domain/event/**,src/openMarket/domain/service/DomainEventBus.js,src/openMarket/infrastructure/event/**,src/openMarket/infrastructure/plugins/**,src/openMarket/application/service/**
+alwaysApply: false
+---
+
+# Domain events
+
+- Inside the caller's transaction the use case calls `domainEventBus.save(event)` for a fact that must last, or `domainEventBus.record(event)` for a live notification.
+- `save` inserts a `domain_event` row only when the type is marked durable or already has a durable subscriber, and both methods queue the event.
+- `subscribeSync` runs inside `save`, before that insert, and only while a transaction is open.
+- A throw rolls the transaction back.
+- Sync handlers stay fast and local.
+- Network work uses `subscribeDurable`.
+- After `transaction.run` emits, `domainEventBus.raise()` notifies every queued event.
+- On the error path, `domainEventBus.discard()` drops the queue so a rolled-back fact is not announced later.
+- `raise` notifies `ofType` listeners; a throw is logged and does not stop the others or fail `raise`.
+- Durable handlers are claimed by `DomainEventDispatcher` (one `PENDING` row per subscriber, skipping events stored before that subscriber's registration time).
+- `CreateOrder` calls `dispatch()` right after `raise()`; the timer only retries and recovers.
+- The bus does not take a `Transaction`, and `SqliteTransaction` does not take the bus.
+- `PluginHost` starts in `application/index.js` before the other handlers and the dispatcher.
+
+Full design: `docs/domain-event-bus.md`. Recipe: `openmarket-architecture` → `references/recipe-3-domain-event.md`. Write use cases (settings included) raise a domain event for their fact even when nothing subscribes yet.

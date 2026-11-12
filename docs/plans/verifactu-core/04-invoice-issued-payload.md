@@ -1,6 +1,6 @@
 # 04 — Versioned InvoiceIssued / InvoiceCancelled payload (public plugin API)
 
-> **Grok Build prompt:** Implement `docs/plans/verifactu-core/04-invoice-issued-payload.md` in OpenMarket (after plans 01–03). Define a versioned payload contract (`schemaVersion: 1`) for `InvoiceIssued` and `InvoiceCancelled` carrying everything a fiscal plugin needs, build it in one place from the `Invoice` aggregate, document it as public API in `docs/domain-event-bus.md` and `docs/plugins.md`, and add contract tests. One PR, `Version: minor`.
+> **Cursor agent prompt:** Implement `docs/plans/verifactu-core/04-invoice-issued-payload.md` in OpenMarket (after plans 01–03). Define a versioned payload contract (`schemaVersion: 1`) for `InvoiceIssued` and `InvoiceCancelled` carrying everything a fiscal plugin needs, build it in one place from the `Invoice` aggregate, document it as public API in `docs/domain-event-bus.md` and `docs/plugins.md`, and add contract tests. One PR, `Version: minor`.
 
 ## Goal
 Plugins (VeriFactu first) get every fiscal fact from the event payload, never from core tables. The payload is a documented, versioned, tested contract.

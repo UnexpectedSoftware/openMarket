@@ -1,0 +1,14 @@
+---
+description: How OpenMarket tests are written and run (mocha/chai unit, SQLite itests, Playwright e2e).
+globs: src/test/**,src/itest/**,e2e/**
+alwaysApply: false
+---
+
+# Tests
+
+- Places: unit `src/test/openMarket/<layer>/<ctx>/<Name>.spec.js` (mocha + chai, ports faked with plain objects returning `Rx.Observable.of(...)`); integration `src/itest/<Ctx>Spec.js` (real container, temp SQLite under the OS temp dir); e2e `e2e/*.spec.js` (Playwright + Electron).
+- Test data is built through the aggregates and use cases, never by raw SQL or by assigning `_fields`. Reuse helpers such as `src/test/openMarket/support/placedOrder.js`; a helper that can build an invalid aggregate is a bug.
+- Time is a fake `Clock` passed in, never the real date.
+- Assert behaviour the caller can see (returned values, saved aggregates, raised events, dispatched actions), not private calls.
+- A changed `domain/` file needs its mutants killed (`om-finish` skill). Never weaken, skip or delete a test to pass a gate.
+- Iterate with `npm test -- --reporter dot --grep "<Name>"`; e2e with `npx playwright test e2e/<name>.spec.js --reporter=line`. Layout e2e uses `setViewportSize` at 1024×700 and 1366×768.

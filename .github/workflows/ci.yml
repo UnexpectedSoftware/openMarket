@@ -6,7 +6,7 @@ on:
 
 jobs:
   # Decides whether anything outside docs changed. Docs-only changes skip the heavy jobs.
-  # Docs = docs/**, **/*.md, .grok/**, LICENSE. Everything else (including .github/**) counts as code.
+  # Docs = docs/**, **/*.md, .agents/**, .cursor/**, .cursorignore, LICENSE. Everything else (including .github/**) counts as code.
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -34,7 +34,7 @@ jobs:
           fi
           CHANGED=$(git diff --name-only "$BASE" HEAD)
           echo "Changed files:"; echo "$CHANGED"
-          CODE=$(echo "$CHANGED" | grep -v -E '^(docs/|\.grok/)|\.md$|^LICENSE$' | grep -c . || true)
+          CODE=$(echo "$CHANGED" | grep -v -E '^(docs/|\.agents/|\.cursor/)|\.md$|^\.cursorignore$|^LICENSE$' | grep -c . || true)
           if [ "$CODE" -gt 0 ]; then echo "code=true" >> "$GITHUB_OUTPUT"; else echo "code=false" >> "$GITHUB_OUTPUT"; fi
           echo "Non-docs files changed: $CODE"
 

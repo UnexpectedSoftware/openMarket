@@ -19,13 +19,13 @@ Branch every implementation PR from **master**. Do not branch from `cursor/produ
 
 #153 edits these files. While that PR is open, categories work does not edit them:
 
-`.grok/skills/openmarket-architecture/SKILL.md`, `AGENTS.md`, `src/openMarket/domain/AGENTS.md`, `src/openMarket/application/index.js`, `src/openMarket/infrastructure/dic/Container.js`, `src/openMarket/application/service/product/ListAllProducts.js`, `src/openMarket/domain/product/ProductRepository.js`, `src/openMarket/domain/product/ProductView.js`, `src/openMarket/domain/product/ProductsQuery.js`, `src/openMarket/domain/product/margin.js`, `src/openMarket/infrastructure/product/SqliteProductQueryService.js`, `src/openMarket/infrastructure/product/SqliteProductRepository.js`, `src/openMarket/infrastructure/product/SqliteProductsQuery.js`, `src/openMarket/user_interface/order/new_order/epic.js`, `src/openMarket/user_interface/order/new_order/epicFactory.js`, and the product/new-order tests listed on that PR (`ProductViewSpec`, `ProductsQuerySpec`, `ListAllProducts.spec`, `ports.spec.js`, `margin.spec`, `SqliteProductQueryService.spec`, `saleTilesEpic.spec`, `new_order/Container.spec.js`).
+`.agents/skills/openmarket-architecture/SKILL.md`, `AGENTS.md`, `src/openMarket/domain/AGENTS.md`, `src/openMarket/application/index.js`, `src/openMarket/infrastructure/dic/Container.js`, `src/openMarket/application/service/product/ListAllProducts.js`, `src/openMarket/domain/product/ProductRepository.js`, `src/openMarket/domain/product/ProductView.js`, `src/openMarket/domain/product/ProductsQuery.js`, `src/openMarket/domain/product/margin.js`, `src/openMarket/infrastructure/product/SqliteProductQueryService.js`, `src/openMarket/infrastructure/product/SqliteProductRepository.js`, `src/openMarket/infrastructure/product/SqliteProductsQuery.js`, `src/openMarket/user_interface/order/new_order/epic.js`, `src/openMarket/user_interface/order/new_order/epicFactory.js`, and the product/new-order tests listed on that PR (`ProductViewSpec`, `ProductsQuerySpec`, `ListAllProducts.spec`, `ports.spec.js`, `margin.spec`, `SqliteProductQueryService.spec`, `saleTilesEpic.spec`, `new_order/Container.spec.js`).
 
 7a does not need `application/index.js` or `Container.js`. The facade key `categories_list_all_use_case` already exists. `list` is a new method on `ListAllCategories`. `find` is a new method on the existing repository. No new container factory.
 
 `e2e/shell.spec.js` and `e2e/themes.spec.js` assert the heading "Categories". 7b changes only that Categorías heading line. Leave the Productos line as it is on the branch you started from. If a products PR is open and has touched those two files, rebase and still change only the Categorías line.
 
-## Ready-to-paste Grok Build prompt (7a)
+## Ready-to-paste Cursor agent prompt (7a)
 
 ```
 Implement Phase 7a of the OpenMarket redesign in UnexpectedSoftware/openMarket, following

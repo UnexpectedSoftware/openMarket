@@ -1,6 +1,6 @@
 # 05 — Plugin runtime: process, Node APIs and secrets
 
-> **Grok Build prompt:** Implement `docs/plans/verifactu-core/05-plugin-runtime.md` in OpenMarket. Document and test that plugins run in the renderer with Node APIs (fs, tls, https, crypto) available, add a `secrets` capability to the plugin context backed by Electron `safeStorage` through IPC to the main process, store secret settings encrypted instead of in `plugin_state.config_json`, and bump the plugin `apiVersion` contract docs accordingly. One PR, `Version: minor`.
+> **Cursor agent prompt:** Implement `docs/plans/verifactu-core/05-plugin-runtime.md` in OpenMarket. Document and test that plugins run in the renderer with Node APIs (fs, tls, https, crypto) available, add a `secrets` capability to the plugin context backed by Electron `safeStorage` through IPC to the main process, store secret settings encrypted instead of in `plugin_state.config_json`, and bump the plugin `apiVersion` contract docs accordingly. One PR, `Version: minor`.
 
 ## Goal
 Resolve the plugin plan's open question before plugin phase 4: where plugins run, which Node APIs they can use for mTLS to the AEAT, and how a certificate password is stored safely.

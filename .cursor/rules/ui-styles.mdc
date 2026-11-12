@@ -1,0 +1,10 @@
+---
+description: SCSS rules for OpenMarket UI styles.
+globs: src/openMarket/user_interface/**/*.scss
+alwaysApply: false
+---
+
+- Only `var(--om-…)` for colour, spacing, type, radius, shadow; grep `docs/design/themes/mercado.css` for names. New tokens go into every theme file (CSS + JSON) and `style/settings/themes.scss`.
+- Styles live in `style/components/<area>.scss`, imported by `user_interface/file.scss`. Shared component styles are the `om-*.scss` files; extend a variant there before adding a screen-specific copy.
+- Flex/grid children that hold text or tables get `min-width: 0`. No horizontal scroll. Dialog widths via `clamp()` built from tokens. Prefer `@container` queries over `@media`; the window is never narrower than 1024 px. Details: `pos-layout` skill.
+- `:focus-visible` outline stays; touch targets ≥ 44 px; respect `prefers-reduced-motion`.

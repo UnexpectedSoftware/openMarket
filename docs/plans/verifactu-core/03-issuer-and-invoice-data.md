@@ -1,6 +1,6 @@
 # 03 — Issuer data, local timestamps and invoice type
 
-> **Grok Build prompt:** Implement `docs/plans/verifactu-core/03-issuer-and-invoice-data.md` in OpenMarket (after plan 01). Add shop settings (NIF, legal name, trade name, address) with a validated NIF/CIF value object and a Settings screen, copy the issuer onto each invoice at issue, store `issuedAt` as local date + ISO-8601 timestamp with offset (Europe/Madrid via `Clock`), and add the invoice type (F2 now; R5 designed). One PR, `Version: minor`.
+> **Cursor agent prompt:** Implement `docs/plans/verifactu-core/03-issuer-and-invoice-data.md` in OpenMarket (after plan 01). Add shop settings (NIF, legal name, trade name, address) with a validated NIF/CIF value object and a Settings screen, copy the issuer onto each invoice at issue, store `issuedAt` as local date + ISO-8601 timestamp with offset (Europe/Madrid via `Clock`), and add the invoice type (F2 now; R5 designed). One PR, `Version: minor`.
 
 ## Goal
 An issued invoice is self-describing: who issued it, when (local date and offset timestamp), and what type it is. Covers OM-26 #89 (hard-coded shop data, no Settings) and OM-30 #93 (timestamps without zone).

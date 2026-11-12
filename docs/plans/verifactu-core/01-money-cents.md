@@ -1,6 +1,6 @@
 # 01 — Money in integer cents
 
-> **Grok Build prompt:** Implement `docs/plans/verifactu-core/01-money-cents.md` in OpenMarket. Add a `Money` value object in integer cents and a `Quantity` in milli-units, migrate REAL money columns to `*_cents` INTEGER columns, make `Order`, `Invoice` and the UI use them, remove the domain → infrastructure `floatCalculatorService` import, and add the test vectors. Follow root `AGENTS.md` and the `openmarket-architecture` skill. One PR, `Version: minor`.
+> **Cursor agent prompt:** Implement `docs/plans/verifactu-core/01-money-cents.md` in OpenMarket. Add a `Money` value object in integer cents and a `Quantity` in milli-units, migrate REAL money columns to `*_cents` INTEGER columns, make `Order`, `Invoice` and the UI use them, remove the domain → infrastructure `floatCalculatorService` import, and add the test vectors. Follow root `AGENTS.md` and the `openmarket-architecture` skill. One PR, `Version: minor`.
 
 ## Goal
 Exact money everywhere: amounts are integer cents, weighted quantities are integer milli-units (grams for kg), and rounding is half-up once per line. Fixes OM-02 #65 (0.35 kg × 18.50 €/kg must be 6.48 €), OM-29 #92 (REAL storage), roadmap #102.

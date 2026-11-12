@@ -2,8 +2,7 @@
 
 React 15 + Redux 3 + redux-observable UI. Root `AGENTS.md` rules apply.
 
-- **Design system:** read `docs/design/DESIGN.md` before changing components or styles, and follow the plan for the current phase in `docs/design/ROADMAP.md` / `docs/design/plans/`.
-- **Skill:** use `.grok/skills/openmarket-design/SKILL.md` for the step-by-step workflow.
+- **Design system:** the `openmarket-design` skill (workflow, which `docs/design/DESIGN.md` section to read) and `pos-layout` (sizes, dialogs, overflow, charts).
 - Colours, spacing, type, radius and shadows: `var(--om-…)` tokens only, never hard-coded values.
 - Use application use cases for writes and queries for reads, through the facade (`OpenMarket.get('<key>')`) from epics. The UI may import domain value objects (`Money`, `Quantity`, `VatRate`, `VatBreakdown`) and domain functions directly, for example to compute cart totals the same way `CreateOrder` does. Never import SQLite, fs, the container or infrastructure adapters.
 - React 15: no hooks, Fragments or portals.
@@ -44,11 +43,4 @@ Rules:
 - Components don't call the facade, use cases or queries. Epics do, and they always end by dispatching an action. Reducers never do I/O.
 - Existing `this.setState` usage is not something to copy. Don't refactor it just for this rule; move it to the store when you change that screen.
 
-New screen checklist:
-
-1. `model.js`: `state()` and pure update functions (add unit tests).
-2. `action.js`: types and creators, as request/result pairs for side effects.
-3. `reducer.js`: delegates to `model.js`; register it in `reducers/index.js`.
-4. `epicFactory.js` + `epic.js`: one epic per side effect, ending in a result or failure action; register it in `epics/index.js`. Unit test the factories with faked use cases (`Rx.Observable.of(...)`).
-5. `Container.js`: render props, dispatch actions; `setState` only for ephemeral visual state.
-6. `ReduxConnector.js`: `mapStateToProps` and `mapDispatchToProps`; route to this file.
+New screen checklist: see the `openmarket-design` skill.

@@ -4,7 +4,7 @@
 > Umbrella: #111 (covers OM-07 #70, OM-19 #82, OM-20 #83).
 > Mockup: `docs/design/mockups/A-orders.webp`. Before: `docs/design/before/22-orders-list.webp`, `24-order-detail.webp`.
 
-## Ready-to-paste Grok Build prompt (5a)
+## Ready-to-paste Cursor agent prompt (5a)
 
 ```
 Implement Phase 5a of the OpenMarket redesign in UnexpectedSoftware/openMarket, following
