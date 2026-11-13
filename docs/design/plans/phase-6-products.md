@@ -10,13 +10,13 @@ This is roadmap item 3. It is numbered phase 6 because orders took phase 5. Sett
 
 Branch every implementation PR from **master**. Do not branch from `cursor/orders-list-5a-831c` and do not take orders behavior into a products PR.
 
-#148 edits `AGENTS.md`, `src/openMarket/domain/AGENTS.md`, `src/openMarket/user_interface/AGENTS.md`, `docs/design/plans/phase-5-orders.md`, `.grok/skills/openmarket-architecture/SKILL.md`, the orders list, `e2e/orders.spec.js`, `e2e/shell.spec.js`, `e2e/themes.spec.js`, `user_interface/components/Button.js`, and `user_interface/file.scss`. While that PR is open, products work does not edit those files, except the Productos heading line in the two e2e files (next paragraph). Styles for this screen go in `style/components/products.scss` and `style/components/om-dialog.scss`, which `file.scss` already imports.
+#148 edits `AGENTS.md`, `src/openMarket/domain/AGENTS.md`, `src/openMarket/user_interface/AGENTS.md`, `docs/design/plans/phase-5-orders.md`, `.agents/skills/openmarket-architecture/SKILL.md`, the orders list, `e2e/orders.spec.js`, `e2e/shell.spec.js`, `e2e/themes.spec.js`, `user_interface/components/Button.js`, and `user_interface/file.scss`. While that PR is open, products work does not edit those files, except the Productos heading line in the two e2e files (next paragraph). Styles for this screen go in `style/components/products.scss` and `style/components/om-dialog.scss`, which `file.scss` already imports.
 
 6b changes the Productos heading, which `e2e/shell.spec.js` and `e2e/themes.spec.js` assert. If #148 is still open, rebase and change only the Productos heading. Leave the Pedidos line as it is on the branch you started from.
 
 On master `cc9a913`, root `AGENTS.md` still tells a redesigned screen to add a query port. #148, when it merges, replaces that with the read-model rule and tells later work to leave the sell-grid `ProductsQuery` port until this screen is revisited. **This plan is that revisit.** If that sentence is already on master when 6a starts, 6a rewrites it so a product read goes through `ProductRepository.find`. If #148 has not merged, 6a does not edit `AGENTS.md`.
 
-## Ready-to-paste Grok Build prompt (6a)
+## Ready-to-paste Cursor agent prompt (6a)
 
 ```
 Implement Phase 6a of the OpenMarket redesign in UnexpectedSoftware/openMarket, following

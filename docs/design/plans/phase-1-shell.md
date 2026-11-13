@@ -1,6 +1,6 @@
 # Phase 1 plan — app shell + base tokens
 
-Grok Build-ready plan. Scope: **shell only** (navigation, layout, header, base tokens, focus). Screens keep their current content. Issues: #112 (left rail), OM-14 #77, OM-15 #78, OM-09 #72, and it removes the hover-menu race behind OM-11 #74. Read [../DESIGN.md](../DESIGN.md) and root `AGENTS.md` first.
+Agent-ready plan. Scope: **shell only** (navigation, layout, header, base tokens, focus). Screens keep their current content. Issues: #112 (left rail), OM-14 #77, OM-15 #78, OM-09 #72, and it removes the hover-menu race behind OM-11 #74. Read [../DESIGN.md](../DESIGN.md) and root `AGENTS.md` first.
 
 **Version: minor** — this changes the UI visibly (new navigation). Bump `package.json` to the next minor and put `Version: minor` in the PR body.
 

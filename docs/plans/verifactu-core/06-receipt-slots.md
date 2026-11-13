@@ -1,6 +1,6 @@
 # 06 — Receipt blocks for plugins
 
-> **Grok Build prompt:** Implement `docs/plans/verifactu-core/06-receipt-slots.md` in OpenMarket (after plan 04). Add a minimal receipt block model and a `receipt.header.fiscal` / `receipt.footer` slot so a plugin can add a QR image and a legend to the printed ticket, render it in `OrderPrinterService`, and expose `context.receipt.register(...)` to plugins. One PR, `Version: minor`. Can land any time before plugin phase 5.
+> **Cursor agent prompt:** Implement `docs/plans/verifactu-core/06-receipt-slots.md` in OpenMarket (after plan 04). Add a minimal receipt block model and a `receipt.header.fiscal` / `receipt.footer` slot so a plugin can add a QR image and a legend to the printed ticket, render it in `OrderPrinterService`, and expose `context.receipt.register(...)` to plugins. One PR, `Version: minor`. Can land any time before plugin phase 5.
 
 ## Goal
 Smallest API that lets the VeriFactu plugin print "QR tributario:", the QR (30–40 mm, error correction M) and "VERI*FACTU" at the very top of the ticket (AEAT QR spec, Orden HAC/1177/2024), without core knowing VeriFactu. First step of #106 (printer-agnostic blocks) and #105 (named slots); OM-31 #94.

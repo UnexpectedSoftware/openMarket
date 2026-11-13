@@ -37,7 +37,7 @@ These three stay out of 8a–8d. Each one is its own later plan, branched from m
 2. **#110, after #87.** `Version: none`. Presets B "Escáner" and C "Táctil" (mockups `B-sell-scanner`, `C-sell-touch`), built from the sell-screen components, chosen in Apariencia, applied without a reload. 8d leaves Apariencia as the four themes only, so this PR adds the layout field instead of rewriting the section. Acceptance on the issue: switching the preset changes the layout without a reload, and an e2e smoke per preset.
 3. **#113, after #110.** The accessibility pass (covers #80, #72, #73): automated contrast and target-size checks, and a keyboard walk of every screen, including Ajustes and both presets. ROADMAP already places this last. **This is the only redesign PR that carries `Version: minor`.**
 
-## Ready-to-paste Grok Build prompt (8a)
+## Ready-to-paste Cursor agent prompt (8a)
 
 ```
 Implement Phase 8a of the OpenMarket redesign in UnexpectedSoftware/openMarket, following

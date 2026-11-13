@@ -1,0 +1,20 @@
+# Cursor already skips everything in .gitignore (node_modules, dist, release,
+# coverage, .metrics, test-results, playwright-report) and its default list
+# (lockfiles, *.png, *.webp, fonts, archives). This file only adds tracked
+# files that are noise for the agent. It is a hard block: ignored files can't
+# be read or @-mentioned, so keep it short.
+
+# Vendored Python quality tools: run them via npm scripts, never edit or read.
+tools/quality/crapper/
+tools/quality/dryer/
+tools/quality/mutator/
+
+# Binary app icons
+src/openMarket/user_interface/resources/*.icns
+src/openMarket/user_interface/resources/*.ico
+src/openMarket/user_interface/app.icns
+
+# Optional: finished redesign plans (~43k tokens). They are never loaded
+# automatically; this only hides them from grep. Uncomment to block them,
+# delete the line again when you want to @-mention one.
+# docs/design/plans/

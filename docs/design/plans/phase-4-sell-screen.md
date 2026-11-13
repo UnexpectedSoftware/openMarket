@@ -4,7 +4,7 @@
 > Mockups: `docs/design/mockups/A-sell.webp`, `A-payment.webp`, `A-sell-plugin-slots.webp` (B/C are reference only).
 > Before: `docs/design/before/15-*`, `16-*`, `17-*`, `20-*`.
 
-## Ready-to-paste Grok Build prompt (4a)
+## Ready-to-paste Cursor agent prompt (4a)
 
 ```
 Implement Phase 4a of the OpenMarket redesign in UnexpectedSoftware/openMarket, following

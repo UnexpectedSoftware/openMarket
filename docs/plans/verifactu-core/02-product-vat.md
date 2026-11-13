@@ -1,6 +1,6 @@
 # 02 — VAT rate per product and per line
 
-> **Grok Build prompt:** Implement `docs/plans/verifactu-core/02-product-vat.md` in OpenMarket (after plan 01 is merged). Add a `VatRate` value object, a VAT rate on `Product` with a selector in the product form and a default from settings, snapshot the rate on order and invoice lines, compute base/quota per line and per-rate totals on the invoice, migrate existing products to 21 %, and print the breakdown on the receipt. One PR, `Version: minor`.
+> **Cursor agent prompt:** Implement `docs/plans/verifactu-core/02-product-vat.md` in OpenMarket (after plan 01 is merged). Add a `VatRate` value object, a VAT rate on `Product` with a selector in the product form and a default from settings, snapshot the rate on order and invoice lines, compute base/quota per line and per-rate totals on the invoice, migrate existing products to 21 %, and print the breakdown on the receipt. One PR, `Version: minor`.
 
 ## Goal
 Every sold line carries its VAT rate; every invoice carries the breakdown by rate (base, rate, quota) that VeriFactu's `Desglose` needs. Fixes OM-28 #91 and the per-product VAT roadmap item.
