@@ -22,6 +22,10 @@ const versionLabel = process.env.OPENMARKET_VERSION;
 
 app.setName('OpenMarket');
 
+if (process.env.OPENMARKET_USER_DATA) {
+  app.setPath('userData', process.env.OPENMARKET_USER_DATA);
+}
+
 let menu;
 let template;
 let mainWindow = null;
