@@ -17,10 +17,16 @@ export default class PaymentSheet extends Component {
 
   constructor(props) {
     super(props);
+    this.state = {previewOpen: false};
     this.panelRef = {current: null};
     this.onKeyDown = this.onKeyDown.bind(this);
     this.setPanel = this.setPanel.bind(this);
     this.confirm = this.confirm.bind(this);
+    this.togglePreview = this.togglePreview.bind(this);
+  }
+
+  togglePreview() {
+    this.setState(state => ({previewOpen: !state.previewOpen}));
   }
 
   setPanel(node) {
@@ -168,6 +174,15 @@ export default class PaymentSheet extends Component {
       >
         <div className="checkout" tabIndex="-1" ref={this.setPanel} onKeyDown={this.onKeyDown}>
           <div className="checkout-main">
+            <Button
+              type="button"
+              variant="secondary"
+              className="payment-preview-toggle"
+              expanded={this.state.previewOpen}
+              onClick={this.togglePreview}
+            >
+              Ver ticket
+            </Button>
             <div className="checkout-tiles">
               <Tile label="Total a cobrar" amount={total} />
               <Tile label="Entregado" amount={given} outlined />
@@ -233,7 +248,7 @@ export default class PaymentSheet extends Component {
             {short ? <p className="payment-short">Entregado insuficiente</p> : null}
             <PluginSlot name="sell.payment.after" />
           </div>
-          <aside className="checkout-preview">
+          <aside className={this.state.previewOpen ? 'checkout-preview is-open' : 'checkout-preview'}>
             <p className="checkout-preview-title">
               {'Vista previa del ticket · plantilla "' + templateName(props.templateId) + '"'}
             </p>
