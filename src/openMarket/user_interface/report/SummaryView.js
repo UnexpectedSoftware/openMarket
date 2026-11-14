@@ -4,9 +4,14 @@ import Card from '../components/Card';
 import Badge from '../components/Badge';
 import EmptyState from '../components/EmptyState';
 import {formatMoney} from '../i18n/money';
-import {formatChange, formatDay, formatDayNumber, formatStock, formatUnits} from './format';
+import {axisLabels, formatBucketTooltip, formatChange, formatSalesGap, formatStock, formatUnits} from './format';
 
-const COMPACT_DAYS = 12;
+const TOTALS_AT = 12;
+const CHART_TITLES = {
+  day: 'Ventas por día',
+  week: 'Ventas por semana',
+  month: 'Ventas por mes'
+};
 
 /**
  * @param {{summary: object}} props
@@ -23,8 +28,8 @@ export default function SummaryView(props) {
       </div>
       <div className="report-split">
         <div className="report-chart-card">
-          <Card title="Ventas por día" actions={<Legend />}>
-            <DailyChart days={summary.days} />
+          <Card title={chartTitle(summary.grain)} actions={<Legend />}>
+            <SalesChart summary={summary} />
           </Card>
         </div>
         <div className="report-side">
@@ -82,47 +87,85 @@ function Legend() {
 }
 
 /**
- * @param {{days: Array<{date: string, cashCents: number, cardCents: number, bizumCents: number, previousTotalCents: number}>}} props
+ * @param {string} grain
+ * @returns {string}
  */
-function DailyChart(props) {
-  const days = props.days || [];
-  const max = days.reduce((highest, day) => Math.max(highest, dayTotal(day), day.previousTotalCents), 0);
-  if (!days.length || max === 0) {
+function chartTitle(grain) {
+  return CHART_TITLES[grain] || CHART_TITLES.day;
+}
+
+/**
+ * @param {number} index
+ * @param {number} count
+ * @returns {string}
+ */
+function edgeClass(index, count) {
+  if (count < 2) {
+    return '';
+  }
+  if (index === 0) {
+    return ' is-start';
+  }
+  if (index === count - 1) {
+    return ' is-end';
+  }
+  return '';
+}
+
+/**
+ * @param {{summary: {grain: string, buckets: SalesBucket[], firstSale: string|null, lastSale: string|null}}} props
+ */
+function SalesChart(props) {
+  const summary = props.summary;
+  const buckets = summary.buckets || [];
+  if (!buckets.length) {
     return <EmptyState title="Sin ventas en este periodo" />;
   }
-  const compact = days.length > COMPACT_DAYS;
-  const className = compact ? 'report-columns is-compact' : 'report-columns';
+  const max = buckets.reduce((highest, bucket) => {
+    return Math.max(highest, bucketTotal(bucket), bucket.previousTotalCents);
+  }, 0);
+  const labels = axisLabels(buckets, summary.grain);
+  const caption = formatSalesGap(summary);
+  const showTotals = buckets.length <= TOTALS_AT;
   return (
-    <div className="report-chart-scroll">
-      <div className={className}>
-        {days.map(day => (
-          <DayColumn key={day.date} day={day} max={max} compact={compact} />
+    <div className="report-chart">
+      <div className="report-columns">
+        {buckets.map((bucket, index) => (
+          <BucketColumn
+            key={bucket.from}
+            bucket={bucket}
+            max={max}
+            label={labels[index]}
+            showTotal={showTotals}
+            grain={summary.grain}
+            edge={edgeClass(index, buckets.length)}
+          />
         ))}
       </div>
+      {caption ? <p className="report-chart-note">{caption}</p> : null}
     </div>
   );
 }
 
 /**
- * @param {{day: {date: string, cashCents: number, cardCents: number, bizumCents: number, previousTotalCents: number}, max: number, compact: boolean}} props
+ * @param {{bucket: SalesBucket, max: number, label: string, showTotal: boolean, grain: string, edge: string}} props
  */
-function DayColumn(props) {
-  const day = props.day;
-  const total = dayTotal(day);
+function BucketColumn(props) {
+  const bucket = props.bucket;
+  const total = bucketTotal(bucket);
   const amount = total ? formatMoney(Money.ofCents(total)) : '';
-  const label = props.compact ? formatDayNumber(day.date) : formatDay(day.date);
   return (
-    <div className="report-column" title={amount ? label + ' ' + amount : label}>
-      {props.compact ? null : <p className="report-column-total">{amount || ' '}</p>}
+    <div className="report-column" title={formatBucketTooltip(bucket, props.grain)}>
+      {props.showTotal ? <p className="report-column-total">{amount || '\u00a0'}</p> : null}
       <div className="report-plot">
         <div className="report-stack">
-          <Segment className="report-segment-bizum" cents={day.bizumCents} max={props.max} />
-          <Segment className="report-segment-card" cents={day.cardCents} max={props.max} />
-          <Segment className="report-segment-cash" cents={day.cashCents} max={props.max} />
+          <Segment className="report-segment-bizum" cents={bucket.bizumCents} max={props.max} />
+          <Segment className="report-segment-card" cents={bucket.cardCents} max={props.max} />
+          <Segment className="report-segment-cash" cents={bucket.cashCents} max={props.max} />
         </div>
-        <div className="report-previous" style={{bottom: percent(day.previousTotalCents, props.max)}} />
+        <div className="report-previous" style={{bottom: percent(bucket.previousTotalCents, props.max)}} />
       </div>
-      <p className="report-column-day">{label}</p>
+      <p className={'report-column-day' + props.edge}>{props.label ? <span>{props.label}</span> : '\u00a0'}</p>
     </div>
   );
 }
@@ -187,11 +230,21 @@ function LowStock(props) {
 }
 
 /**
- * @param {{cashCents: number, cardCents: number, bizumCents: number}} day
+ * @typedef {object} SalesBucket
+ * @property {string} from
+ * @property {string} to
+ * @property {number} cashCents
+ * @property {number} cardCents
+ * @property {number} bizumCents
+ * @property {number} previousTotalCents
+ */
+
+/**
+ * @param {{cashCents: number, cardCents: number, bizumCents: number}} bucket
  * @returns {number}
  */
-function dayTotal(day) {
-  return day.cashCents + day.cardCents + day.bizumCents;
+function bucketTotal(bucket) {
+  return bucket.cashCents + bucket.cardCents + bucket.bizumCents;
 }
 
 /**

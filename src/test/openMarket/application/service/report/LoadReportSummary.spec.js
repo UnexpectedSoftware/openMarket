@@ -59,13 +59,17 @@ describe('LoadReportSummary', () => {
       expect(summary.previousSalesCents).to.equal(250);
       expect(summary.salesChange).to.equal(1);
       expect(summary.units).to.equal(1);
-      expect(summary.days).to.have.length(7);
-      expect(summary.days[0]).to.deep.equal({
-        date: '2026-11-03', cashCents: 0, cardCents: 0, bizumCents: 0, previousTotalCents: 250
-      });
-      expect(summary.days[1]).to.deep.equal({
-        date: '2026-11-04', cashCents: 0, cardCents: 500, bizumCents: 0, previousTotalCents: 0
-      });
+      expect(summary.grain).to.equal('day');
+      expect(summary.firstSale).to.equal('2026-11-04');
+      expect(summary.lastSale).to.equal('2026-11-04');
+      expect(summary.buckets).to.deep.equal([{
+        from: '2026-11-04',
+        to: '2026-11-04',
+        cashCents: 0,
+        cardCents: 500,
+        bizumCents: 0,
+        previousTotalCents: 0
+      }]);
       expect(summary.mostSold[0].amountCents).to.equal(150);
       expect(summary.lowStock.total).to.equal(4);
       expect(summary.lowStock.items[0].name).to.equal('Bread');
