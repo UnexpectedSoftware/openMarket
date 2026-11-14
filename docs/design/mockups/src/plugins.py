@@ -145,8 +145,8 @@ def listing(vf_state):
     enc = '<div class="banner info xs">🔒 Las contraseñas de los plugins se guardan cifradas en este equipo.</div>'
     cards = []
     if vf_state == "warn":
-        missing = '''<div class="todo"><div class="b" style="color:var(--om-color-warning)">Faltan 3 ajustes obligatorios para activarlo</div>
-<ul class="muted"><li>Entorno (pruebas o producción)</li><li>NIF del emisor</li><li>Ruta del certificado (.p12/.pfx)</li></ul></div>'''
+        missing = '''<div class="todo"><div class="b" style="color:var(--om-color-warning)">Faltan 5 ajustes obligatorios para activarlo</div>
+<ul class="muted"><li>Entorno (pruebas o producción)</li><li>NIF del emisor</li><li>Nombre del productor</li><li>NIF del productor</li><li>Ruta del certificado (.p12/.pfx)</li></ul></div>'''
         cards.append(card("🧾", "VeriFactu", "0.1.0", "UnexpectedSoftware", VF_DESC, "&gt;=1.22.0 &lt;2", [], "warn",
             toggle(False, "Desactivado", dis=True), '<div class="btn p">Configurar VeriFactu →</div>', missing))
     else:
@@ -174,10 +174,12 @@ detail = f'''<div class="t"><span class="btn g" style="padding-left:0">← Plugi
 <div class="grid2">
 <div class="fld"><label>Entorno *</label><div class="seg"><span class="on">Pruebas</span><span>Producción</span></div><div class="xs muted">Selector: <span class="new">nuevo</span> <code>"type": "select"</code> en plugin.json. Hoy es texto libre.</div></div>
 <div class="fld"><label>NIF del emisor *</label><div class="in">B12345678</div></div>
-<div class="fld"><label>Ruta del certificado (.p12/.pfx) *</label><div class="in bad"></div><div class="err-t">Obligatorio para activar el plugin</div></div>
+<div class="fld"><label>Nombre del productor *</label><div class="in bad"></div><div class="err-t">Obligatorio para activar el plugin</div></div>
+<div class="fld"><label>NIF del productor *</label><div class="in">B12345678</div><div class="xs muted">Por defecto, el NIF del emisor</div></div>
+<div class="fld"><label>Ruta del certificado (.p12/.pfx) *</label><div class="in"><span class="grow muted" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">/home/victux/certs/colmado.p12</span></div></div>
 <div class="fld"><label>Contraseña del certificado</label><div class="in"><span class="grow">••••••••</span><span class="st ok">✓ guardado</span></div><div class="xs muted">Déjalo vacío para conservar la guardada. Se cifra en este equipo.</div></div>
 </div>
-<div class="xs muted" style="margin-top:var(--om-space-4)">Los datos del sistema informático (productor, Id. del sistema y nº de instalación) los pone el plugin. No hace falta introducirlos.</div>
+<div class="xs muted" style="margin-top:var(--om-space-4)">El Id. del sistema (2 caracteres, p. ej. OM), el nombre del sistema, la versión y el nº de instalación los pone el plugin.</div>
 <div class="ft"><span class="xs muted" style="margin-right:auto;align-self:center">* obligatorio · Los cambios se aplican al reiniciar</span><div class="btn">Cancelar</div><div class="btn p">Guardar</div></div>
 </section>
 <aside style="display:flex;flex-direction:column;gap:var(--om-space-4);min-width:0">
