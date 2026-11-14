@@ -18,7 +18,7 @@ Anything tagged **nuevo** in the mockups needs data or an action the host does n
 - **Restart:** `restartRequired` is a renderer flag set after any save. No relaunch action. No IPC to open the folder (`main.development.js` only has `shell.openExternal`).
 - **Secrets:** `encryption.backend === 'basic_text'` or `available === false` shows "Secrets are stored with basic encryption".
 - `PluginSlot.js` renders nothing (#105 open).
-- Verifactu `plugin.json` (0.1.0, `>=1.22.0 <2`): `environment` (free text "pruebas | produccion"), `nif`, `softwareId`, `certificatePath` required; `certificatePassword` secret, not required. Labels are English. Phase 1 registers sync `InvoiceIssued`/`InvoiceCancelled` and durable `verifactu:send`/`verifactu:send-cancellation`; no receipt slot yet.
+- Verifactu `plugin.json` (0.1.0, `>=1.22.0 <2`): `environment` (free text "pruebas | produccion"), `nif`, `softwareId`, `certificatePath` required; `certificatePassword` secret, not required. `softwareId` (IdSistemaInformatico) is producer data and is being removed ([openmarket-plugin-verifactu#10](https://github.com/UnexpectedSoftware/openmarket-plugin-verifactu/issues/10)), so the mockups show the three required settings that remain: Entorno, NIF del emisor and Ruta del certificado, plus the secret password. Labels are English. Phase 1 registers sync `InvoiceIssued`/`InvoiceCancelled` and durable `verifactu:send`/`verifactu:send-cancellation`; no receipt slot yet.
 
 ## Statuses
 
@@ -83,7 +83,7 @@ Each chunk is one PR, branched from master, smallest first. P1–P3 do not depen
 
 - `FolderPluginSource` keeps `author` (string), a setting `type` of `text` (default) or `select` with `options: [{value, label}]`, and an optional `apiVersion` number. A select with no valid options, or an `apiVersion` the host does not support, makes the plugin "Incompatible" with a clear reason (not a silent skip).
 - `SavePlugin` rejects a select value outside its options. P5's form renders `select` as the segmented control in the mockup (Pruebas / Producción).
-- `docs/plugins.md` documents the fields. Follow-up PR in `openmarket-plugin-verifactu`: `"type": "select"` for `environment`, Spanish labels, `author`.
+- `docs/plugins.md` documents the fields. Follow-up PR in `openmarket-plugin-verifactu`: `"type": "select"` for `environment`, Spanish labels, `author` (after #10 removes `softwareId`).
 - **Acceptance:** source and save specs for each new field and each rejection. `Version: none`.
 
 ### P7 — diagnostics: bad folders and "Usa" (host change)
