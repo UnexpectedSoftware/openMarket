@@ -15,7 +15,7 @@ metadata:
 ## Step 1: load only the context you need
 1. Read the `DESIGN.md` section for what you're touching (Tokens, Component catalogue, States, Accessibility). Don't read the whole file for a one-component change.
 2. Phases 1–8 of `docs/design/ROADMAP.md` are done. Don't read the roadmap or `docs/design/plans/` unless the issue links a plan.
-3. Open a mockup (`docs/design/mockups/*.webp`) only when the issue names it or the screen has one: `A-payment-responsive-{wide,compact}` for Cobrar, `A-sell-weight-dialog*` for the weight dialog, `A-reports-*` for Informes, `A-settings-*` for Ajustes. One image costs about as much as a long file; never open `docs/design/after/` or `before/` unless asked.
+3. Open a mockup (`docs/design/mockups/*.webp`) only when the issue names it or the screen has one: `A-payment-responsive-{wide,compact}` for Cobrar, `A-sell-weight-dialog*` for the weight dialog, `A-reports-*` for Informes, `A-settings-*` for Ajustes, `A-plugins-*` for Plugins (plan: `docs/design/plans/plugins-screen.md`). One image costs about as much as a long file; never open `docs/design/after/` or `before/` unless asked.
 
 ## Step 2: tokens
 - Colours, spacing, font sizes, radii, shadows: `var(--om-…)` only. Values are in `docs/design/themes/mercado.css`; grep it for the name instead of reading it.

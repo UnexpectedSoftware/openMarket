@@ -1,0 +1,90 @@
+<!doctype html><html data-theme="mercado"><head><meta charset="utf-8"><title>PLUGINS · NECESITA CONFIGURACIÓN</title>
+<link rel="stylesheet" href="../../themes/all-themes.css"><style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{font-family:var(--om-font-sans);font-size:var(--om-font-size-sm);line-height:var(--om-line-height-normal);background:var(--om-color-background);color:var(--om-color-text);overflow:hidden}
+.app{display:flex;height:100vh}
+.rail{width:var(--om-rail-width);flex:none;background:var(--om-color-surface);border-right:1px solid var(--om-color-border);display:flex;flex-direction:column;align-items:center;padding:var(--om-space-3) 0;gap:var(--om-space-1)}
+.mark{width:var(--om-rail-mark-size);height:var(--om-rail-mark-size);border-radius:var(--om-radius-md);background:var(--om-color-primary);color:var(--om-color-primary-contrast);font-weight:var(--om-font-weight-bold);display:flex;align-items:center;justify-content:center;margin-bottom:var(--om-space-4)}
+.ri{width:calc(var(--om-rail-width) - var(--om-space-3));min-height:var(--om-rail-item-height);border-radius:var(--om-radius-md);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:var(--om-font-size-xs);color:var(--om-color-text-muted);gap:var(--om-space-1)}
+.ri i{font-style:normal;font-size:var(--om-font-size-lg);filter:grayscale(1)}
+.ri.on{background:var(--om-color-primary-soft);color:var(--om-color-primary);font-weight:var(--om-font-weight-bold)}
+.grow{flex:1}
+.main{flex:1;min-width:0;min-height:0;overflow:auto;padding:var(--om-space-5) var(--om-space-6);display:flex;flex-direction:column;gap:var(--om-space-4)}
+.head{display:flex;align-items:flex-start;gap:var(--om-space-4);flex-wrap:wrap}
+.head h1{font-family:var(--om-font-display);font-size:var(--om-font-size-2xl);letter-spacing:var(--om-letter-spacing-heading);line-height:var(--om-line-height-tight)}
+.sub{color:var(--om-color-text-muted);margin-top:var(--om-space-1)}
+.path{font-family:var(--om-font-mono);font-size:var(--om-font-size-xs);background:var(--om-color-surface-alt);border-radius:var(--om-radius-sm);padding:var(--om-space-1) var(--om-space-2);overflow-wrap:anywhere}
+.btn{height:var(--om-button-height);padding:0 var(--om-button-padding-x);border-radius:var(--om-button-radius);font-weight:var(--om-button-font-weight);display:inline-flex;align-items:center;gap:var(--om-space-2);white-space:nowrap;border:var(--om-button-border-width) solid var(--om-button-secondary-border);background:var(--om-button-secondary-bg);color:var(--om-button-secondary-fg);font-size:var(--om-font-size-sm)}
+.btn.p{background:var(--om-button-primary-bg);color:var(--om-button-primary-fg);border-color:var(--om-button-primary-bg)}
+.btn.g{background:transparent;border-color:transparent;color:var(--om-button-ghost-fg)}
+.btn.sm{height:var(--om-control-height)}
+.card{background:var(--om-color-surface);border:1px solid var(--om-color-border);border-radius:var(--om-radius-lg);box-shadow:var(--om-shadow-sm)}
+.list{display:flex;flex-direction:column;gap:var(--om-space-3)}
+.pc{display:grid;grid-template-columns:var(--om-rail-mark-size) minmax(0,1fr) auto;gap:var(--om-space-4);padding:var(--om-space-4) var(--om-space-5);align-items:start}
+.ico{width:var(--om-rail-mark-size);height:var(--om-rail-mark-size);border-radius:var(--om-radius-md);background:var(--om-color-surface-alt);display:flex;align-items:center;justify-content:center;font-size:var(--om-font-size-xl)}
+.t{display:flex;align-items:center;gap:var(--om-space-2);flex-wrap:wrap}
+.name{font-size:var(--om-font-size-lg);font-weight:var(--om-font-weight-bold)}
+.muted{color:var(--om-color-text-muted)}.xs{font-size:var(--om-font-size-xs)}.b{font-weight:var(--om-font-weight-bold)}
+.desc{margin-top:var(--om-space-1);color:var(--om-color-text)}
+.meta{display:flex;flex-wrap:wrap;gap:var(--om-space-2);margin-top:var(--om-space-3)}
+.chip{font-size:var(--om-font-size-xs);border:1px solid var(--om-color-border);border-radius:var(--om-radius-pill);padding:var(--om-space-0) var(--om-space-2);line-height:1.8;color:var(--om-color-text-muted);white-space:nowrap}
+code,.msg,.path{font-variant-ligatures:none}
+.btn.p .new{color:var(--om-color-primary-contrast);border-color:var(--om-color-primary-contrast)}
+.chip code{font-family:var(--om-font-mono);color:var(--om-color-text)}
+.st{display:inline-flex;align-items:center;gap:var(--om-space-1);font-size:var(--om-font-size-xs);font-weight:var(--om-font-weight-bold);border-radius:var(--om-radius-pill);padding:var(--om-space-1) var(--om-space-2);border:1px solid transparent;white-space:nowrap}
+.st.ok{background:var(--om-color-success-soft);color:var(--om-color-success)}
+.st.warn{background:var(--om-color-surface);color:var(--om-color-warning);border-color:var(--om-color-warning)}
+.st.err{background:var(--om-color-danger-soft);color:var(--om-color-danger)}
+.st.off{background:var(--om-color-surface-alt);color:var(--om-color-text-muted)}
+.side{display:flex;flex-direction:column;align-items:flex-end;gap:var(--om-space-3)}
+.tg{display:flex;align-items:center;gap:var(--om-space-2);min-height:var(--om-control-height);font-weight:var(--om-font-weight-medium)}
+.sw{width:calc(var(--om-space-8) + var(--om-space-2));height:calc(var(--om-space-5) + var(--om-space-2));border-radius:var(--om-radius-pill);background:var(--om-color-border-strong);position:relative;flex:none}
+.sw::after{content:"";position:absolute;top:var(--om-space-1);left:var(--om-space-1);width:var(--om-space-5);height:var(--om-space-5);border-radius:50%;background:var(--om-color-surface)}
+.sw.on{background:var(--om-color-primary)}.sw.on::after{left:auto;right:var(--om-space-1)}
+.sw.dis{opacity:.45}
+.new{display:inline-block;font-size:var(--om-font-size-xs);font-weight:var(--om-font-weight-bold);letter-spacing:var(--om-letter-spacing-label);text-transform:uppercase;color:var(--om-color-accent);border:1px dashed var(--om-color-accent);border-radius:var(--om-radius-sm);padding:0 var(--om-space-1);line-height:1.6;vertical-align:middle;white-space:nowrap}
+.ex{display:inline-block;font-size:var(--om-font-size-xs);color:var(--om-color-text-muted);border:1px solid var(--om-color-border-strong);border-radius:var(--om-radius-sm);padding:0 var(--om-space-1);line-height:1.6}
+.banner{display:flex;align-items:center;gap:var(--om-space-3);padding:var(--om-space-3) var(--om-space-4);border-radius:var(--om-radius-md);border:1px solid var(--om-color-border)}
+.banner.info{background:var(--om-color-primary-soft);border-color:var(--om-color-primary-soft)}
+.banner.warn{background:var(--om-color-surface);border-color:var(--om-color-warning)}
+.banner.err{background:var(--om-color-danger-soft);border-color:var(--om-color-danger-soft)}
+.msg{font-family:var(--om-font-mono);font-size:var(--om-font-size-xs);background:var(--om-color-surface-alt);border-radius:var(--om-radius-sm);padding:var(--om-space-2) var(--om-space-3);margin-top:var(--om-space-3);overflow-wrap:anywhere}
+.todo{margin-top:var(--om-space-3);border:1px solid var(--om-color-warning);border-radius:var(--om-radius-md);padding:var(--om-space-3) var(--om-space-4)}
+.todo li{margin-left:var(--om-space-5);line-height:1.9}
+.foot{position:fixed;right:var(--om-space-3);bottom:var(--om-space-2);font-family:var(--om-font-mono);font-size:var(--om-font-size-xs);color:var(--om-color-text-muted);letter-spacing:var(--om-letter-spacing-label)}
+.steps{counter-reset:s;display:flex;flex-direction:column;gap:var(--om-space-3);margin:var(--om-space-4) 0}
+.steps li{list-style:none;display:grid;grid-template-columns:var(--om-space-7) minmax(0,1fr);gap:var(--om-space-3);align-items:start}
+.steps li::before{counter-increment:s;content:counter(s);width:var(--om-space-7);height:var(--om-space-7);border-radius:50%;background:var(--om-color-primary-soft);color:var(--om-color-primary);font-weight:var(--om-font-weight-bold);display:flex;align-items:center;justify-content:center}
+.fld{display:flex;flex-direction:column;gap:var(--om-space-1)}
+.fld label{font-size:var(--om-font-size-xs);font-weight:var(--om-font-weight-bold);color:var(--om-color-text-muted)}
+.in{height:var(--om-control-height);border:1px solid var(--om-color-border-strong);border-radius:var(--om-control-radius);background:var(--om-color-surface);padding:0 var(--om-space-3);display:flex;align-items:center;gap:var(--om-space-2);min-width:0}
+.in.bad{border-color:var(--om-color-danger);box-shadow:0 0 0 1px var(--om-color-danger)}
+.err-t{font-size:var(--om-font-size-xs);color:var(--om-color-danger)}
+.seg{display:flex;background:var(--om-color-surface-alt);border-radius:var(--om-control-radius);padding:var(--om-space-1);gap:var(--om-space-1)}
+.seg span{flex:1;text-align:center;padding:var(--om-space-2) var(--om-space-4);border-radius:var(--om-radius-sm);font-weight:var(--om-font-weight-medium);min-height:calc(var(--om-control-height) - var(--om-space-2));display:flex;align-items:center;justify-content:center}
+.seg .on{background:var(--om-color-surface);box-shadow:var(--om-shadow-sm);font-weight:var(--om-font-weight-bold)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--om-space-4)}
+.detail{display:grid;grid-template-columns:minmax(0,1fr) clamp(calc(var(--om-space-9) * 4.5), 28%, calc(var(--om-space-9) * 6.5));gap:var(--om-space-4);min-height:0}
+.sec{padding:var(--om-space-5)}
+.sec h2{font-size:var(--om-font-size-md);font-weight:var(--om-font-weight-bold);margin-bottom:var(--om-space-3)}
+dl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--om-space-2) var(--om-space-3)}dt{color:var(--om-color-text-muted)}dd{overflow-wrap:anywhere}
+.slot{border:1px dashed var(--om-color-border-strong);border-radius:var(--om-radius-md);padding:var(--om-space-4)}
+.ft{display:flex;justify-content:flex-end;gap:var(--om-space-2);padding-top:var(--om-space-4);border-top:1px solid var(--om-color-border);margin-top:var(--om-space-4)}
+</style></head>
+<body><div class="app"><nav class="rail"><div class="mark">OM</div><div class="ri"><i>🧺</i>Vender</div><div class="ri"><i>📋</i>Pedidos</div><div class="ri"><i>📦</i>Productos</div><div class="ri"><i>🏷</i>Categorías</div><div class="ri"><i>📊</i>Informes</div><div class="ri on"><i>🔌</i>Plugins</div><div class="grow"></div><div class="ri"><i>⚙</i>Ajustes</div></nav><main class="main"><div class="head"><div style="flex:1;min-width:0"><h1>Plugins</h1>
+<div class="sub">Amplían OpenMarket. Se cargan al iniciar la aplicación.</div></div>
+<div class="btn sm">📂 Abrir carpeta de plugins <span class="new">nuevo</span></div></div><div class="t xs muted">3 plugins en <span class=path>/home/victux/.config/OpenMarket/plugins</span></div><div class="list"><article class="card pc"><div class="ico">🧾</div>
+<div style="min-width:0"><div class="t"><span class="name">VeriFactu</span><span class="muted">v0.1.0</span><span class="muted">· UnexpectedSoftware</span> <span class="new">nuevo</span><span class="st warn">⚠ Necesita configuración</span></div>
+<div class="desc">Cumplimiento VERI*FACTU de la AEAT: registros de factura encadenados, QR en el ticket y envío a la AEAT.</div>
+<div class="meta"><span class="chip">OpenMarket <code>&gt;=1.22.0 &lt;2</code></span></div><div class="todo"><div class="b" style="color:var(--om-color-warning)">Faltan 4 ajustes obligatorios para activarlo</div>
+<ul class="muted"><li>Entorno (pruebas o producción)</li><li>NIF del emisor</li><li>Id. del sistema informático</li><li>Ruta del certificado (.p12/.pfx)</li></ul></div></div>
+<div class="side"><div class="tg"><span class="sw dis"></span>Desactivado</div><div class="btn p">Configurar VeriFactu →</div></div></article><article class="card pc"><div class="ico">🏷</div>
+<div style="min-width:0"><div class="t"><span class="name">Etiquetas de estante</span><span class="muted">v1.2.0</span><span class="muted">· Ejemplo S.L.</span> <span class="new">nuevo</span> <span class="ex">Ejemplo</span><span class="st ok">✓ Activo</span></div>
+<div class="desc">Imprime una etiqueta de precio para cada producto nuevo.</div>
+<div class="meta"><span class="chip">OpenMarket <code>&gt;=1.20.0 &lt;2</code></span><span class="chip"><code>ProductCreated</code></span><span class="new">nuevo</span></div></div>
+<div class="side"><div class="tg"><span class="sw on"></span>Activado</div><div class="btn sm">Ajustes</div></div></article><article class="card pc"><div class="ico">⚖</div>
+<div style="min-width:0"><div class="t"><span class="name">Báscula Dibal</span><span class="muted">v0.4.1</span><span class="muted">· Ejemplo S.L.</span> <span class="new">nuevo</span> <span class="ex">Ejemplo</span><span class="st off">○ Desactivado</span></div>
+<div class="desc">Lee el peso de una báscula conectada por USB y lo pasa al diálogo de peso.</div>
+<div class="meta"><span class="chip">OpenMarket <code>&gt;=1.25.0 &lt;2</code></span></div></div>
+<div class="side"><div class="tg"><span class="sw"></span>Desactivado</div></div></article></div></main></div><div class="foot">PLUGINS · NECESITA CONFIGURACIÓN · 1366×768</div></body></html>
