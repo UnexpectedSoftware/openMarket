@@ -20,7 +20,10 @@ export default class ReportSummary {
     previousAverageCents,
     units,
     previousUnits,
-    days,
+    grain,
+    buckets,
+    firstSale,
+    lastSale,
     mostSold,
     lowStockTotal,
     lowStockItems
@@ -41,7 +44,10 @@ export default class ReportSummary {
     this.ticketChange = changeRatio(ticketCount, previousTicketCount);
     this.averageChange = changeRatio(averageCents, previousAverageCents);
     this.unitsChange = changeRatio(units, previousUnits);
-    this.days = Object.freeze((days || []).map(freezeDay));
+    this.grain = grain === 'week' || grain === 'month' ? grain : 'day';
+    this.buckets = Object.freeze((buckets || []).map(freezeBucket));
+    this.firstSale = firstSale || null;
+    this.lastSale = lastSale || null;
     this.mostSold = Object.freeze((mostSold || []).map(freezeSold));
     this.lowStock = Object.freeze({
       total: lowStockTotal,
@@ -66,7 +72,10 @@ export default class ReportSummary {
  * @property {number} previousAverageCents
  * @property {number} units
  * @property {number} previousUnits
- * @property {Array<{date: string, cashCents: number, cardCents: number, bizumCents: number, previousTotalCents: number}>} [days]
+ * @property {'day'|'week'|'month'} [grain]
+ * @property {SalesBucket[]} [buckets]
+ * @property {string|null} [firstSale] First sale, when leading empty buckets were dropped.
+ * @property {string|null} [lastSale] Last sale, when trailing empty buckets were dropped.
  * @property {Array<{barcode: string, name: string, quantity: number, amountCents: number}>} [mostSold]
  * @property {number} lowStockTotal
  * @property {Array<{barcode: string, name: string, stock: number | null, stockMin: number | null, weighted?: boolean}>} [lowStockItems]
@@ -85,16 +94,27 @@ function changeRatio(current, previous) {
 }
 
 /**
- * @param {{date: string, cashCents: number, cardCents: number, bizumCents: number, previousTotalCents: number}} day
- * @returns {{date: string, cashCents: number, cardCents: number, bizumCents: number, previousTotalCents: number}}
+ * @typedef {object} SalesBucket
+ * @property {string} from `YYYY-MM-DD`
+ * @property {string} to `YYYY-MM-DD`
+ * @property {number} cashCents
+ * @property {number} cardCents
+ * @property {number} bizumCents
+ * @property {number} previousTotalCents
  */
-function freezeDay(day) {
+
+/**
+ * @param {SalesBucket} bucket
+ * @returns {SalesBucket}
+ */
+function freezeBucket(bucket) {
   return Object.freeze({
-    date: day.date,
-    cashCents: day.cashCents,
-    cardCents: day.cardCents,
-    bizumCents: day.bizumCents,
-    previousTotalCents: day.previousTotalCents
+    from: bucket.from,
+    to: bucket.to,
+    cashCents: bucket.cashCents,
+    cardCents: bucket.cardCents,
+    bizumCents: bucket.bizumCents,
+    previousTotalCents: bucket.previousTotalCents
   });
 }
 

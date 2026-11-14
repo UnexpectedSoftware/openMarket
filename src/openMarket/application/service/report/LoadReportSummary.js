@@ -7,7 +7,7 @@ import Money from '../../../domain/money/Money';
 import ProductsQuery from '../../../domain/product/ProductsQuery';
 import ProductStatus from '../../../domain/product/ProductStatus';
 import ReportSummary from '../../../domain/report/ReportSummary';
-import {alignDays, eachDay, previousRange} from './reportPeriod';
+import {bucketSales, previousRange} from './reportPeriod';
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} ObservableOf */
 /** @typedef {import('../../../domain/order/OrderRepository').default} OrderRepository */
 /** @typedef {import('../../../domain/product/ProductSaleStatisticsRepository').default} ProductSaleStatisticsRepository */
@@ -90,8 +90,9 @@ function summaryOf({from, to, previous, current, prior, products, stock}) {
     previousAverageCents: prior.averageCents,
     units: current.units,
     previousUnits: prior.units,
-    days: alignDays({
-      dates: eachDay({from, to}),
+    ...bucketSales({
+      from,
+      to,
       currentDays: current.days,
       previousDays: prior.days
     }),
