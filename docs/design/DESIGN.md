@@ -2,7 +2,7 @@
 
 The single reference for how OpenMarket's UI looks and behaves. Read it before changing anything in `src/openMarket/user_interface/`. The phased plan is in [ROADMAP.md](ROADMAP.md); per-phase build plans are in [plans/](plans/).
 
-- **Mockups (target):** [`mockups/`](mockups/): `A-sell` (default "Mostrador" sell screen), `A-payment`, `A-orders`, `A-products`, `A-sell-plugin-slots`, `B-sell-scanner`, `C-sell-touch`.
+- **Mockups (target):** [`mockups/`](mockups/): `A-sell` (default "Mostrador" sell screen), `A-payment`, `A-orders`, `A-products`, `A-sell-plugin-slots`, `B-sell-scanner`, `C-sell-touch`, `A-plugins-*` (Plugins screen, plan in [plans/plugins-screen.md](plans/plugins-screen.md)).
 - **Current UI ("before"):** [`before/`](before/), captured at 1366×768 on v1.14.
 - **Themes:** [`themes/`](themes/): one CSS file and one JSON token file per theme, `all-themes.css` (all four, switched by `data-theme`), `contrast.json` (measured WCAG ratios), previews.
 
