@@ -653,7 +653,8 @@ class Container {
     return new ListPlugins({
       pluginSource: this.getInstance({key: 'pluginSource'}),
       pluginRepository: this.getInstance({key: 'pluginRepository'}),
-      secretStore: this.getInstance({key: 'secretStore'})
+      secretStore: this.getInstance({key: 'secretStore'}),
+      appVersion: process.env.OPENMARKET_VERSION || '0.0.0'
     });
   }
 

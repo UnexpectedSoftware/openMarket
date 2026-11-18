@@ -53,6 +53,37 @@ describe('SavePlugin', () => {
     }, done);
   });
 
+  it('refuses to enable a plugin when a required secret is not stored', done => {
+    const useCase = new SavePlugin({
+      pluginSource: source([{
+        id: 'sample',
+        settings: [
+          {key: 'nif', label: 'NIF', required: true, secret: false},
+          {key: 'certificatePassword', label: 'Certificate password', required: true, secret: true}
+        ]
+      }]),
+      pluginRepository: {save: () => Rx.Observable.of(null)},
+      secretStore: {
+        get() {
+          return Rx.Observable.of(null);
+        }
+      }
+    });
+
+    useCase.save({
+      pluginId: 'sample',
+      enabled: true,
+      config: {nif: 'B123', certificatePassword: '  '}
+    }).subscribe(
+      () => done(new Error('should fail')),
+      error => {
+        expect(error.code).to.equal(ErrorCode.PLUGIN_SETTINGS_INCOMPLETE);
+        expect(error.context.keys).to.deep.equal(['certificatePassword']);
+        done();
+      }
+    );
+  });
+
   it('fails when the folder is not installed', done => {
     const useCase = new SavePlugin({
       pluginSource: source([]),

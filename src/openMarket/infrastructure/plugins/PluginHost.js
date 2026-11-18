@@ -1,8 +1,9 @@
 import 'rxjs/add/operator/toPromise';
 import PluginIncompatibleError from '../../domain/plugin/PluginIncompatibleError';
 import PluginSettingsIncompleteError from '../../domain/plugin/PluginSettingsIncompleteError';
+import {missingSettings} from '../../domain/plugin/pluginStatus';
+import {openMarketCompatibility} from '../../domain/plugin/openMarketCompatibility';
 import {eventClasses} from '../../domain/event/registry';
-import {openMarketCompatibility} from './semverRange';
 import scopedEventBus from './scopedEventBus';
 /** @typedef {import('../../domain/plugin/PluginSource').default} PluginSource */
 /** @typedef {import('../../domain/plugin/PluginSource').PluginManifest} PluginManifest */
@@ -122,12 +123,13 @@ export default class PluginHost {
       return;
     }
     const prepared = this._prepareConfig(manifest, state);
-    const missing = (manifest.settings || [])
-      .filter(setting => setting.secret && setting.required)
-      .map(setting => setting.key)
-      .filter(key => !prepared.present[key]);
+    const storedSecrets = Object.keys(prepared.present).filter(key => prepared.present[key]);
+    const missing = missingSettings(manifest, prepared.config, storedSecrets);
     if (missing.length > 0) {
-      const error = new PluginSettingsIncompleteError({pluginId: manifest.id, keys: missing});
+      const error = new PluginSettingsIncompleteError({
+        pluginId: manifest.id,
+        keys: missing.map(item => item.key)
+      });
       this._recordError(error);
       this._store(prepared.state, error.message);
       return;

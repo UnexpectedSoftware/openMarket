@@ -11,17 +11,14 @@ function parseVersion(text) {
 }
 
 /**
+ * Negative when left is older, positive when it is newer, zero when equal.
+ * A zero part falls through to the next one.
  * @param {number[]} left
  * @param {number[]} right
  * @returns {number}
  */
 function compare(left, right) {
-  for (let index = 0; index < 3; index += 1) {
-    if (left[index] !== right[index]) {
-      return left[index] < right[index] ? -1 : 1;
-    }
-  }
-  return 0;
+  return left[0] - right[0] || left[1] - right[1] || left[2] - right[2];
 }
 
 /**
@@ -74,14 +71,19 @@ export function openMarketCompatibility({version, range}) {
     return {ok: false, invalid: true};
   }
   let matched = false;
-  for (let index = 0; index < groups.length; index += 1) {
-    const checks = groups[index].split(/\s+/).map(part => satisfiesComparator(app, part));
+  let invalid = false;
+  groups.forEach(group => {
+    const checks = group.split(/\s+/).map(part => satisfiesComparator(app, part));
     if (checks.some(check => check == null)) {
-      return {ok: false, invalid: true};
+      invalid = true;
+      return;
     }
     if (checks.every(Boolean)) {
       matched = true;
     }
+  });
+  if (invalid) {
+    return {ok: false, invalid: true};
   }
   return {ok: matched, invalid: false};
 }

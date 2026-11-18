@@ -91,6 +91,28 @@ describe('PluginHost', () => {
     expect(context.config).to.deep.equal({nif: 'B'});
   });
 
+  it('does not load an enabled plugin that is missing a required setting', () => {
+    const rows = [{pluginId: 'sample', enabled: true, config: {nif: '  '}, lastError: null}];
+    const recorded = [];
+    const {pluginHost, loaded} = host({
+      manifests: [manifest({
+        settings: [{key: 'nif', label: 'NIF', required: true, secret: false}]
+      })],
+      rows,
+      recordError: error => recorded.push(error),
+      loadPlugin: () => {
+        throw new Error('should not load');
+      }
+    });
+
+    pluginHost.start();
+
+    expect(loaded.count).to.equal(0);
+    expect(rows[0].lastError).to.equal('Plugin sample is missing nif');
+    expect(rows[0].enabled).to.equal(true);
+    expect(recorded[0].code).to.equal('PLUGIN_SETTINGS_INCOMPLETE');
+  });
+
   it('skips a plugin whose range does not match and stores last_error', () => {
     const rows = [{pluginId: 'sample', enabled: true, config: {}, lastError: null}];
     const {pluginHost, loaded} = host({

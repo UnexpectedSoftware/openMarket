@@ -6,6 +6,7 @@ import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/toArray';
 import PluginNotFoundError from '../../../domain/plugin/PluginNotFoundError';
+import {missingSettings} from '../../../domain/plugin/pluginStatus';
 import PluginSettingsIncompleteError from '../../../domain/plugin/PluginSettingsIncompleteError';
 import observableError from '../../../infrastructure/logging/observableError';
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
@@ -67,22 +68,21 @@ export default class SavePlugin {
           publicConfig[key] = entered[key];
         }
       });
-      const missingPublic = (plugin.settings || [])
-        .filter(setting => setting.required && !setting.secret)
-        .map(setting => setting.key)
-        .filter(key => publicConfig[key] == null || publicConfig[key].trim() === '');
-      const requiredSecrets = enabled
-        ? (plugin.settings || []).filter(setting => setting.required && setting.secret).map(setting => setting.key)
-        : [];
-      return missingSecrets({
+      const requiredSecrets = (plugin.settings || [])
+        .filter(setting => setting.required && setting.secret)
+        .map(setting => setting.key);
+      return presentSecretKeys({
         pluginId,
         keys: requiredSecrets,
         provided: secrets.map(item => item.key),
         secretStore: this._secretStore
-      }).flatMap(missing => {
-        const absent = missingPublic.concat(missing);
-        if (enabled && absent.length > 0) {
-          return observableError(new PluginSettingsIncompleteError({pluginId, keys: absent}));
+      }).flatMap(storedSecrets => {
+        const missing = missingSettings(plugin, publicConfig, storedSecrets);
+        if (enabled && missing.length > 0) {
+          return observableError(new PluginSettingsIncompleteError({
+            pluginId,
+            keys: missing.map(item => item.key)
+          }));
         }
         return writeSecrets({secretStore: this._secretStore, pluginId, secrets})
           .flatMap(() => this._pluginRepository.save({
@@ -98,6 +98,7 @@ export default class SavePlugin {
 }
 
 /**
+ * Required secret keys that this save, or the store, already holds.
  * @param {object} params
  * @param {string} params.pluginId
  * @param {string[]} params.keys
@@ -105,19 +106,19 @@ export default class SavePlugin {
  * @param {SecretStore | null} params.secretStore
  * @returns {Observable<string[]>}
  */
-function missingSecrets({pluginId, keys, provided, secretStore}) {
+function presentSecretKeys({pluginId, keys, provided, secretStore}) {
   if (keys.length === 0) {
     return Rx.Observable.of([]);
   }
   return Rx.Observable.from(keys)
     .mergeMap(key => {
       if (provided.indexOf(key) !== -1) {
-        return Rx.Observable.of(null);
-      }
-      if (!secretStore) {
         return Rx.Observable.of(key);
       }
-      return secretStore.get({pluginId, key}).map(value => value ? null : key);
+      if (!secretStore) {
+        return Rx.Observable.of(null);
+      }
+      return secretStore.get({pluginId, key}).map(value => value ? key : null);
     })
     .filter(key => key != null)
     .toArray();
