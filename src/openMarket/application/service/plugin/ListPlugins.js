@@ -5,9 +5,13 @@ import 'rxjs/add/operator/filter';
 import 'rxjs/add/operator/map';
 import 'rxjs/add/operator/mergeMap';
 import 'rxjs/add/operator/toArray';
+import {openMarketCompatibility} from '../../../domain/plugin/openMarketCompatibility';
+import {pluginStatus} from '../../../domain/plugin/pluginStatus';
 /** @template T @typedef {import('rxjs/Observable').Observable<T>} Observable */
 /** @typedef {import('../../../domain/plugin/PluginSource').default} PluginSource */
+/** @typedef {import('../../../domain/plugin/PluginSource').PluginManifest} PluginManifest */
 /** @typedef {import('../../../domain/plugin/PluginRepository').default} PluginRepository */
+/** @typedef {import('../../../domain/plugin/PluginRepository').PluginState} PluginState */
 /** @typedef {import('../../../domain/plugin/SecretStore').default} SecretStore */
 
 /**
@@ -16,16 +20,17 @@ import 'rxjs/add/operator/toArray';
 export default class ListPlugins {
 
   /**
-   * @param {{pluginSource: PluginSource, pluginRepository: PluginRepository, secretStore?: SecretStore}} deps
+   * @param {{pluginSource: PluginSource, pluginRepository: PluginRepository, secretStore?: SecretStore, appVersion: string}} deps
    */
-  constructor({pluginSource, pluginRepository, secretStore}) {
+  constructor({pluginSource, pluginRepository, secretStore, appVersion}) {
     this._pluginSource = pluginSource;
     this._pluginRepository = pluginRepository;
     this._secretStore = secretStore || null;
+    this._appVersion = appVersion;
   }
 
   /**
-   * @returns {Observable<{directory: string, encryption: {available: boolean, backend: string}, plugins: object[]}>}
+   * @returns {Observable<{directory: string, encryption: {available: boolean, backend: string}, appVersion: string, plugins: object[]}>}
    */
   list() {
     const encryption = this._secretStore
@@ -35,37 +40,64 @@ export default class ListPlugins {
       this._pluginRepository.findAll().flatMap(states =>
         encryption.flatMap(backend => Rx.Observable.from(discovered.length ? discovered : [null])
           .filter(plugin => plugin != null)
-          .mergeMap(plugin => storedSecretKeys(this._secretStore, plugin).map(storedSecrets => {
-            const state = states.find(item => item.pluginId === plugin.id);
-            const secretKeys = (plugin.settings || []).filter(setting => setting.secret).map(setting => setting.key);
-            const config = {};
-            Object.keys(state && state.config ? state.config : {}).forEach(key => {
-              if (secretKeys.indexOf(key) === -1) {
-                config[key] = state.config[key];
-              }
-            });
-            return {
-              id: plugin.id,
-              name: plugin.name,
-              description: plugin.description,
-              version: plugin.version,
-              settings: plugin.settings,
+          .mergeMap(plugin => storedSecretKeys(this._secretStore, plugin).map(storedSecrets =>
+            pluginRow({
+              plugin,
+              state: states.find(item => item.pluginId === plugin.id),
               storedSecrets,
-              enabled: Boolean(state && state.enabled),
-              config,
-              lastError: state ? state.lastError : null
-            };
-          }))
+              appVersion: this._appVersion
+            })
+          ))
           .toArray()
           .map(plugins => ({
             directory: this._pluginSource.directory(),
             encryption: backend,
+            appVersion: this._appVersion,
             plugins
           })))
       )
     );
   }
 
+}
+
+/**
+ * @param {object} params
+ * @param {PluginManifest} params.plugin
+ * @param {PluginState | undefined} params.state
+ * @param {string[]} params.storedSecrets
+ * @param {string} params.appVersion
+ * @returns {object}
+ */
+function pluginRow({plugin, state, storedSecrets, appVersion}) {
+  const stored = state || {pluginId: plugin.id, enabled: false, config: {}, lastError: null};
+  const secretKeys = (plugin.settings || []).filter(setting => setting.secret).map(setting => setting.key);
+  const config = {};
+  Object.keys(stored.config || {}).forEach(key => {
+    if (secretKeys.indexOf(key) === -1) {
+      config[key] = stored.config[key];
+    }
+  });
+  const judged = pluginStatus({
+    manifest: plugin,
+    state: stored,
+    storedSecrets,
+    compatibility: openMarketCompatibility({version: appVersion, range: plugin.openmarket})
+  });
+  return {
+    id: plugin.id,
+    name: plugin.name,
+    description: plugin.description,
+    version: plugin.version,
+    openmarket: plugin.openmarket == null ? null : plugin.openmarket,
+    settings: plugin.settings,
+    storedSecrets,
+    enabled: Boolean(stored.enabled),
+    config,
+    lastError: stored.lastError,
+    status: judged.status,
+    missingSettings: judged.missingSettings
+  };
 }
 
 /**
